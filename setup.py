@@ -9,6 +9,9 @@ def read_full_documentation(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
+requirements = ['redbaron']
+
+
 setup(
     name="darglint",
     version="0.0.0",
@@ -26,6 +29,7 @@ setup(
             'darglint = darglint.driver:main',
         ],
     },
-    setup_requires=['pytest-runner', 'redbaron'],
+    install_requires=requirements,
+    setup_requires=requirements,
     tests_require=['pytest'],
 )
