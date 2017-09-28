@@ -1,7 +1,8 @@
 # Darglint
 
 A limited docstring linter which checks that function/method parameters
-are defined in their docstrings.
+are defined in their docstrings.  *Darglint* expects docstrings to be
+formatted using the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html).
 
 Darglint is in a very early stage, and fails for a lot of things.
 Certain features, such as a robust command-line interface, still
@@ -9,20 +10,6 @@ do not exist.
 
 ## Installation
 
-Clone the repository:
-
-```
-git clone https://github.com/terrencepreilly/darglint.git
-```
-
-`cd` into the directory, create a virtual environment (optional), then setup:
-
-```
-cd darglint/
-virtualenv -p python3.6 .env
-source .env/bin/activate
-pip install -e .
-```
 
 ## Usage
 
@@ -40,10 +27,28 @@ darglint serializers.py
 - [ ] Line number printout for function/method definition.
 - [ ] Syntastic support.
 - [ ] Add support for type hints. (By replacing `redbaron`?)
+- [ ] Add support for python versions earlier than 3.6.
+      (The typing module is being used, which is the only real
+       limiting factor.)
 
 ## Development
 
-Install `darglint` as above. To run tests,
+Install `darglint`. First, clone the repository:
+
+```
+git clone https://github.com/terrencepreilly/darglint.git
+```
+
+`cd` into the directory, create a virtual environment (optional), then setup:
+
+```
+cd darglint/
+virtualenv -p python3.6 .env
+source .env/bin/activate
+pip install -e .
+```
+
+You can run the tests using
 
 ```
 python setup.py test

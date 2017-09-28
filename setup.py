@@ -20,10 +20,10 @@ setup(
     description=("A utility for ensuring Google-style docstrings"
                  "stay up to date with the source code."),
     license="MIT",
-    keywords="documentation linter",
+    keywords="documentation linter development",
     url="http://github.com/terrencepreilly/darglint",
     packages=find_packages(exclude=('tests', 'docs')),
-    long_description=read_full_documentation('README.md'),
+    long_description=read_full_documentation('README.rst'),
     entry_points={
         'console_scripts': [
             'darglint = darglint.driver:main',
@@ -32,4 +32,13 @@ setup(
     install_requires=requirements,
     setup_requires=requirements,
     tests_require=['pytest'],
+    python_requires='>=3.6',
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Developers',
+        'Topic :: Software Development :: Documentation',
+        'Topic :: Software Development :: Quality Assurance',
+        'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3.6',
+    ]
 )
