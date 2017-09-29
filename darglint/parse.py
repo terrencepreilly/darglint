@@ -95,6 +95,10 @@ def parse_arguments(tokens: Iterable[Token]) -> Set[str]:
 
     # Toss away everything up to Args
     peaker.take_while(_not(_token_is_args))
+
+    if not peaker.has_next():
+        return set()
+
     peaker.next()
     _expect_type(peaker, TokenType.COLON)
     peaker.next()
