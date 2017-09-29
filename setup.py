@@ -9,12 +9,14 @@ def read_full_documentation(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-requirements = ['redbaron']
+requirements = [
+    'redbaron==0.6.3'
+]
 
 
 setup(
     name="darglint",
-    version="0.0.0",
+    version="0.0.1",
     author="Terrence Reilly",
     author_email="terrencepreilly@gmail.com",
     description=("A utility for ensuring Google-style docstrings"
