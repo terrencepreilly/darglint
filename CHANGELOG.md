@@ -7,10 +7,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.0.2]
 
 ### Added
+
 - Changelog.
+
 - Handling for methods.  Checks for whether the method is a static
-method or a class method.  Doesn't prompt for documentation for
-"self", or "cls" when not appropriate.
+  method or a class method.  Doesn't prompt for documentation for
+  "self", or "cls" when not appropriate.
+
+- Change format for error messages to be less verbose.
+  The format is now:
+    ```
+    <function/method name>
+      - <missing argument>
+      + <extraneous argument>
+    ```
 
 ## [0.0.1] - 2017-09-18
 
