@@ -48,3 +48,7 @@ class PeakerTestCase(TestCase):
         numbers = ''.join(peaker.take_while(str.isdecimal))
         self.assertEqual(numbers, '1234')
         self.assertFalse(peaker.has_next())
+
+    def test_passing_none_to_peaker_marks_empty(self):
+        peaker = Peaker((x for x in []))
+        self.assertFalse(peaker.has_next())

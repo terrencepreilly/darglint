@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
       + <extraneous argument>
     ```
 
+### Fixed
+
+- Handle functions/methods without docstrings by ignoring them.
+  `darglint` should only care about whether a docstring is up to
+  date, not whether it is present or not.
+
 ## [0.0.1] - 2017-09-18
 
 Began project.  Added check of function definitions.  Buggy and

@@ -91,7 +91,6 @@ def _parse_argument(peaker: Peaker, indentation: int) -> str:
 def parse_arguments(tokens: Iterable[Token]) -> Set[str]:
     """Parse the stream of tokens into a `Docstring`."""
     peaker = Peaker(tokens)
-    _expect_not_empty(peaker)
 
     # Toss away everything up to Args
     peaker.take_while(_not(_token_is_args))

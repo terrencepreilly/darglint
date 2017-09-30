@@ -34,6 +34,9 @@ def main():
     red = RedBaron(program)
     functions = get_functions_and_docstrings(red.fst())
     for name, argnames, has_return, docstring in functions:
+        # We should ignore methods/functions without docstrings.
+        if docstring is None:
+            continue
         docstring_arguments = set(parse_arguments(lex(docstring)))
         actual_arguments = set(argnames) - {'self'}
         if len(docstring_arguments) != len(actual_arguments):
