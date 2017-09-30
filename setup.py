@@ -14,7 +14,7 @@ requirements = []
 
 setup(
     name="darglint",
-    version="0.0.1",
+    version="0.0.2",
     author="Terrence Reilly",
     author_email="terrencepreilly@gmail.com",
     description=("A utility for ensuring Google-style docstrings"
