@@ -23,7 +23,7 @@ darglint serializers.py
 ## Features planned and implemented
 
 - [x] Function definitions can be checked.
-- [ ] Methods definitions of top-level class can be checked.
+- [x] Methods definitions of top-level class can be checked.
 - [ ] Line number printout for function/method definition.
 - [ ] Syntastic support.
 - [ ] Add support for type hints. (By replacing `redbaron`?)

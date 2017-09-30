@@ -33,7 +33,7 @@ setup(
     },
     install_requires=requirements,
     setup_requires=requirements,
-    tests_require=['pytest'],
+    tests_require=['pytest'] + requirements,
     python_requires='>=3.6',
     classifiers=[
         'Development Status :: 3 - Alpha',
