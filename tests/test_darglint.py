@@ -1,5 +1,6 @@
+import ast
 from unittest import TestCase
-from darglint.darglint import get_ast, get_functions_and_docstrings
+from darglint.darglint import get_function_descriptions
 
 
 class GetFunctionsAndDocstrings(TestCase):
@@ -10,14 +11,12 @@ def top_level_function(arg):
     """My docstring"""
     return 1
 '''
-        ast = get_ast(program)
-        name, args, has_return, docstring = (
-            get_functions_and_docstrings(ast)[0]
-        )
-        self.assertEqual(name, 'top_level_function')
-        self.assertEqual(args, ['arg'])
-        self.assertEqual(has_return, True)
-        self.assertEqual(docstring, '"""My docstring"""')
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        self.assertEqual(function.name, 'top_level_function')
+        self.assertEqual(function.argument_names, ['arg'])
+        self.assertEqual(function.has_return, True)
+        self.assertEqual(function.docstring, 'My docstring')
 
     def test_gets_methods(self):
         program = '''
@@ -28,14 +27,12 @@ class MyClass(object):
         """But this one."""
         return arg1 - arg2
 '''
-        ast = get_ast(program)
-        name, args, has_return, docstring = (
-            get_functions_and_docstrings(ast)[0]
-        )
-        self.assertEqual(name, 'my_method')
-        self.assertEqual(args, ['arg1', 'arg2'])
-        self.assertEqual(has_return, True)
-        self.assertEqual(docstring, '"""But this one."""')
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        self.assertEqual(function.name, 'my_method')
+        self.assertEqual(function.argument_names, ['arg1', 'arg2'])
+        self.assertEqual(function.has_return, True)
+        self.assertEqual(function.docstring, 'But this one.')
 
     def test_removes_cls_from_class_arguments(self):
         program = '''
@@ -46,30 +43,24 @@ class AStaticClass(object):
         """This is a class method."""
         print('Hey!')
 '''
-        ast = get_ast(program)
-        name, args, has_return, docstring = (
-            get_functions_and_docstrings(ast)[0]
-        )
-        self.assertEqual(args, ['arg1'])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        self.assertEqual(function.argument_names, ['arg1'])
 
     def test_tells_if_not_fruitful(self):
         program = '''
 def baren_function(arg):
     print('hey!')
 '''
-        ast = get_ast(program)
-        name, args, has_return, docstring = (
-            get_functions_and_docstrings(ast)[0]
-        )
-        self.assertFalse(has_return)
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        self.assertFalse(function.has_return)
 
     def test_no_docstring_is_okay(self):
         program = '''
 def undocumented_function():
     return 3.1415
 '''
-        ast = get_ast(program)
-        name, args, has_return, docstring = (
-            get_functions_and_docstrings(ast)[0]
-        )
-        self.assertEqual(docstring, None)
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        self.assertEqual(function.docstring, None)

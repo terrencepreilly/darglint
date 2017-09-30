@@ -25,7 +25,7 @@ class ParserTestCase(TestCase):
     .. _PEP 484:
         https://www.python.org/dev/peps/pep-0484/
     """
-        docstring = '"""{}"""'.format(docstring)
+        docstring = '{}'.format(docstring)
         args = parse_arguments(lex(docstring))
         self.assertTrue('param1' in args)
         self.assertTrue('param2' in args)
@@ -52,7 +52,7 @@ class ParserTestCase(TestCase):
     Returns:
         bool: True if successful, False otherwise.
     """
-        docstring = '"""{}"""'.format(docstring)
+        docstring = '{}'.format(docstring)
         args = parse_arguments(lex(docstring))
         self.assertEqual(args, {'param1', 'param2', '*args', '**kwargs'})
 
@@ -75,6 +75,6 @@ class ParserTestCase(TestCase):
             param3 (list(str)): Description of `param3`.
 
         """
-        docstring = '"""{}"""'.format(docstring)
+        docstring = '{}'.format(docstring)
         args = parse_arguments(lex(docstring))
         self.assertEqual(args, {'param1', 'param2', 'param3'})
