@@ -28,8 +28,8 @@ darglint serializers.py
 - [ ] Syntastic support.
 - [ ] Add support for type hints. (By replacing `redbaron`?)
 - [ ] Add support for python versions earlier than 3.6.
-      (The typing module is being used, which is the only real
-       limiting factor.)
+(The typing module is being used, which is the only real
+limiting factor.)
 
 ## Development
 
