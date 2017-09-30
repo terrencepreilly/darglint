@@ -1,5 +1,5 @@
 from unittest import TestCase
-from darglint.darglint import get_fst, get_functions_and_docstrings
+from darglint.darglint import get_ast, get_functions_and_docstrings
 
 
 class GetFunctionsAndDocstrings(TestCase):
@@ -10,9 +10,9 @@ def top_level_function(arg):
     """My docstring"""
     return 1
 '''
-        fst = get_fst(program)
+        ast = get_ast(program)
         name, args, has_return, docstring = (
-            get_functions_and_docstrings(fst)[0]
+            get_functions_and_docstrings(ast)[0]
         )
         self.assertEqual(name, 'top_level_function')
         self.assertEqual(args, ['arg'])
@@ -28,9 +28,9 @@ class MyClass(object):
         """But this one."""
         return arg1 - arg2
 '''
-        fst = get_fst(program)
+        ast = get_ast(program)
         name, args, has_return, docstring = (
-            get_functions_and_docstrings(fst)[0]
+            get_functions_and_docstrings(ast)[0]
         )
         self.assertEqual(name, 'my_method')
         self.assertEqual(args, ['arg1', 'arg2'])
@@ -46,9 +46,9 @@ class AStaticClass(object):
         """This is a class method."""
         print('Hey!')
 '''
-        fst = get_fst(program)
+        ast = get_ast(program)
         name, args, has_return, docstring = (
-            get_functions_and_docstrings(fst)[0]
+            get_functions_and_docstrings(ast)[0]
         )
         self.assertEqual(args, ['arg1'])
 
@@ -57,9 +57,9 @@ class AStaticClass(object):
 def baren_function(arg):
     print('hey!')
 '''
-        fst = get_fst(program)
+        ast = get_ast(program)
         name, args, has_return, docstring = (
-            get_functions_and_docstrings(fst)[0]
+            get_functions_and_docstrings(ast)[0]
         )
         self.assertFalse(has_return)
 
@@ -68,8 +68,8 @@ def baren_function(arg):
 def undocumented_function():
     return 3.1415
 '''
-        fst = get_fst(program)
+        ast = get_ast(program)
         name, args, has_return, docstring = (
-            get_functions_and_docstrings(fst)[0]
+            get_functions_and_docstrings(ast)[0]
         )
         self.assertEqual(docstring, None)

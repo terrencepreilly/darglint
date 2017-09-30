@@ -1,11 +1,9 @@
 """A linter for docstrings following the google docstring format."""
-import sys
+import ast
 from typing import (
-    Dict,
     List,
-    Tuple,
+    Iterator,
 )
-from redbaron import RedBaron
 
 
 def read_program(filename: str) -> str:
@@ -16,70 +14,56 @@ def read_program(filename: str) -> str:
     return program
 
 
-def _get_arguments(args: List[Dict]) -> List[str]:
-    argnames = list()  # type: List[str]
-    for arg in args:
-        if arg['type'] == 'def_argument':
-            argnames.append(arg['target']['value'])
-    return argnames
+def _get_arguments(fn: ast.FunctionDef) -> List[str]:
+    ret = list()  # type: List[str]
+    for arg in fn.args.args:
+        ret.append(arg.arg)
+    return ret
 
 
-def _has_return(value: List[Dict]) -> bool:
-    return any([x['type'] == 'return' for x in value])
+def _has_return(fun: ast.FunctionDef) -> bool:
+    for node in ast.walk(fun):
+        if isinstance(node, ast.Return):
+            return True
+    return False
 
 
-def _get_docstring(value: List[Dict]) -> str:
-    for node in value:
-        if node['type'] == 'string':
-            return node['value']
-        if node['type'] not in ['endl']:
-            return None
-    return None
+def _get_docstring(fun: ast.AST) -> str:
+    return ast.get_docstring(fun)
 
 
-def get_functions(fst: List[Dict]) -> List[Dict]:
-    """Get the functions at the given level of the program."""
-    return [x for x in fst if x['type'] == 'def']
+def _get_all_functions(tree: ast.AST) -> Iterator[ast.FunctionDef]:
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef):
+            yield node
 
 
-def get_methods_of_classes(fst: List[Dict]) -> List[Dict]:
-    """Get the methods of the classes at this level."""
-    klasses = [x for x in fst if x['type'] == 'class']
-    methods = list()  # type: List[Dict]
-    for klass in klasses:
-        methods.extend([
-            x for x in klass['value']
-            if x['type'] == 'def'
-        ])
-    return methods
+def _get_all_classes(tree: ast.AST) -> Iterator[ast.ClassDef]:
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ClassDef):
+            yield node
 
 
-def _get_decorator_name(decorator_definition: Dict) -> str:
-    is_null = decorator_definition is None
-    is_decorator = decorator_definition['type'] == 'decorator'
-    if is_null or not is_decorator:
-        return None
-    inner_definition = decorator_definition['value']
-    if inner_definition['type'] != 'dotted_name':
-        return None
-    for subdict in inner_definition['value']:
-        if subdict['type'] == 'name':
-            return subdict['value']
-    return None
+def _get_all_methods(tree: ast.AST) -> Iterator[ast.FunctionDef]:
+    for klass in _get_all_classes(tree):
+        for fun in _get_all_functions(klass):
+            yield fun
 
 
-def _is_classmethod(method: Dict) -> bool:
-    return any([_get_decorator_name(dec) == 'classmethod'
-                for dec in method['decorators']])
+def _get_decorator_names(fun: ast.FunctionDef) -> List[str]:
+    return [x.id for x in fun.decorator_list]
 
 
-def _is_staticmethod(method: Dict) -> bool:
-    return any([_get_decorator_name(dec) == 'staticmethod'
-                for dec in method['decorators']])
+def _is_classmethod(fun: ast.FunctionDef) -> bool:
+    return 'classmethod' in _get_decorator_names(fun)
 
 
-def _get_stripped_method_args(method: Dict) -> List[str]:
-    args = _get_arguments(method['arguments'])
+def _is_staticmethod(fun: ast.FunctionDef) -> bool:
+    return 'staticmethod' in _get_decorator_names(fun)
+
+
+def _get_stripped_method_args(method: ast.FunctionDef) -> List[str]:
+    args = _get_arguments(method)
     if 'cls' in args and _is_classmethod(method):
         args.remove('cls')
     elif 'self' in args and not _is_staticmethod(method):
@@ -87,40 +71,38 @@ def _get_stripped_method_args(method: Dict) -> List[str]:
     return args
 
 
-def get_functions_and_docstrings(fst: Dict) -> List[Tuple]:
+class FunctionDescription(object):
+    """Describes a function or method."""
+
+    def __init__(self, is_method: bool, function: ast.FunctionDef):
+        """Create a new FunctionDescription."""
+        self.is_method = is_method
+        self.function = function
+        self.line_number = function.lineno
+        self.name = function.name
+        if is_method:
+            self.argument_names = _get_stripped_method_args(function)
+        else:
+            self.argument_names = _get_arguments(function)
+        self.has_return = _has_return(function)
+        self.docstring = _get_docstring(function)
+
+
+def get_function_descriptions(
+        ast: ast.AST) -> List[FunctionDescription]:
     """Get function name, args, return presence and docstrings.
 
     This function should be called on the top level of the
     document (for functions), and on classes (for methods.)
     """
-    ret = list()  # type: List[Tuple]
+    ret = list()  # type: List[FunctionDescription]
 
-    functions = get_functions(fst)
-    for function in functions:
-        name = function['name']
-        argnames = _get_arguments(function['arguments'])
-        has_return = _has_return(function['value'])
-        docstring = _get_docstring(function['value'])
-        ret.append((name, argnames, has_return, docstring))
-
-    methods = get_methods_of_classes(fst)
+    methods = set(_get_all_methods(ast))
     for method in methods:
-        name = method['name']
-        argnames = _get_stripped_method_args(method)
-        has_return = _has_return(method['value'])
-        docstring = _get_docstring(method['value'])
-        ret.append((name, argnames, has_return, docstring))
+        ret.append(FunctionDescription(is_method=True, function=method))
+
+    functions = set(_get_all_functions(ast)) - methods
+    for function in functions:
+        ret.append(FunctionDescription(is_method=False, function=function))
 
     return ret
-
-
-def get_fst(program: str) -> List[Dict]:
-    """Get the fst for this program."""
-    red = RedBaron(program)
-    return red.fst()
-
-
-if __name__ == '__main__':
-    program = read_program(sys.argv[1])
-    fst = get_fst(program)
-    print(get_functions_and_docstrings(fst))

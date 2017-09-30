@@ -1,50 +1,47 @@
 """Defines the command line interface for darglint."""
+import ast
 import sys
 from typing import List
 
-from redbaron import RedBaron
-
 from .darglint import (
-    get_functions_and_docstrings,
     read_program,
+    FunctionDescription,
+    get_function_descriptions,
 )
 from .lex import lex
 from .parse import parse_arguments
 
 
 def _print_error_message(
-        procedure_name: str,
-        docstring_arguments: List[str],
-        actual_arguments: List[str]) -> None:
-    print('{}'.format(procedure_name))
-    missing_in_doc = actual_arguments - docstring_arguments
-    missing_in_fun = docstring_arguments - actual_arguments
+        function: FunctionDescription,
+        docstring_arguments: List[str]
+) -> None:
+    print('{}: {}'.format(function.line_number, function.name))
+    docargs = set(docstring_arguments)
+    funargs = set(function.argument_names)
+    missing_in_doc = funargs - docargs
+    missing_in_fun = docargs - funargs
     if len(missing_in_doc) > 0:
         for missing in missing_in_doc:
             print('  - {}'.format(missing))
     if len(missing_in_fun) > 0:
         for missing in missing_in_fun:
             print('  + {}'.format(missing))
-    print()
 
 
 def main():
     """Check the parameters of all functions and methods."""
     program = read_program(sys.argv[1])
-    red = RedBaron(program)
-    functions = get_functions_and_docstrings(red.fst())
-    for name, argnames, has_return, docstring in functions:
-        # We should ignore methods/functions without docstrings.
-        if docstring is None:
+    tree = ast.parse(program)
+    functions = get_function_descriptions(tree)
+    functions.sort(key=lambda x: x.line_number)
+    for function in functions:
+        if function.docstring is None:
             continue
-        docstring_arguments = set(parse_arguments(lex(docstring)))
-        actual_arguments = set(argnames) - {'self'}
+        docstring_arguments = set(parse_arguments(lex(function.docstring)))
+        actual_arguments = set(function.argument_names)
         if len(docstring_arguments) != len(actual_arguments):
-            _print_error_message(
-                name,
-                docstring_arguments,
-                actual_arguments,
-            )
+            _print_error_message(function, docstring_arguments)
 
 
 if __name__ == '__main__':

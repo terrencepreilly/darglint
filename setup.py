@@ -9,9 +9,7 @@ def read_full_documentation(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-requirements = [
-    'redbaron==0.6.3'
-]
+requirements = []
 
 
 setup(
@@ -25,7 +23,7 @@ setup(
     keywords="documentation linter development",
     url="http://github.com/terrencepreilly/darglint",
     packages=find_packages(exclude=('tests', 'docs')),
-    long_description=read_full_documentation('README.rst'),
+    long_description=read_full_documentation('README.md'),
     entry_points={
         'console_scripts': [
             'darglint = darglint.driver:main',
