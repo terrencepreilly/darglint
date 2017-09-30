@@ -25,11 +25,13 @@ darglint serializers.py
 - [x] Function definitions can be checked.
 - [x] Methods definitions of top-level class can be checked.
 - [x] Line number printout for function/method definition.
-- [ ] Syntastic support.
 - [ ] Add type hint integration.
 - [ ] Add support for python versions earlier than 3.6.
 (The typing module is being used, which is the only real
 limiting factor.)
+- [ ] Syntastic support. (Syntastic is not accepting new checkers until
+their next API stabilizes, so this may take some time.)
+- [ ] Add command line interface.
 
 ## Development
 
