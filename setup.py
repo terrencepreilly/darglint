@@ -1,7 +1,8 @@
 """Defines the package, tests, and dependencies."""
 
 import os
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Command
+import subprocess
 
 
 def read_full_documentation(fname):
@@ -10,6 +11,50 @@ def read_full_documentation(fname):
 
 
 requirements = []
+
+
+class PreBuildCommand(Command):
+    """Converts README file."""
+
+    description = 'Converts README.md to README.rst using pandoc.'
+    user_options = []
+
+    def initialize_options(self):
+        self.cwd = None
+
+    def finalize_options(self):
+        self.cwd = os.getcwd()
+
+    def run(self):
+        assert os.getcwd() == self.cwd, 'We must be in the package root.'
+        try:
+            subprocess.run(['pandoc', 'README.md', '-o', 'README.rst'])
+        except Exception:
+            print('Pandoc must be installed to convert README.')
+
+
+class CleanCommand(Command):
+    """Cleans the project.
+
+    - Remove the README.rst file.
+    - Remove the dist directory.
+    - Remove the build directory.
+    """
+
+    description = 'Clean the directory of build artifacts'
+    user_options = []
+
+    def initialize_options(self):
+        self.cwd = None
+
+    def finalize_options(self):
+        self.cwd = os.getcwd()
+
+    def run(self):
+        assert os.getcwd() == self.cwd, 'We must be in the package root.'
+        subprocess.run(['rm', './README.rst'])
+        subprocess.run(['rm', '-rf', './dist'])
+        subprocess.run(['rm', '-rf', './build'])
 
 
 setup(
@@ -40,5 +85,9 @@ setup(
         'Topic :: Software Development :: Quality Assurance',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6',
-    ]
+    ],
+    cmdclass={
+        'prebuild': PreBuildCommand,
+        'clean': CleanCommand,
+    },
 )
