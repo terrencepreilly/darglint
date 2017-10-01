@@ -4,11 +4,23 @@ A limited docstring linter which checks that function/method parameters
 are defined in their docstrings.  *Darglint* expects docstrings to be
 formatted using the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html).
 
-Darglint is in a very early stage, and fails for a lot of things.
+*Darglint* is in a very early stage, and fails for a lot of things.
 Certain features, such as a robust command-line interface, still
 do not exist.
 
 ## Installation
+
+To install *darglint*, use pip.
+
+```
+pip install darglint
+```
+
+Or, clone the repository, `cd` to the directory, and
+
+```
+pip install .
+```
 
 
 ## Usage
@@ -27,11 +39,10 @@ darglint serializers.py
 - [x] Line number printout for function/method definition.
 - [ ] Add type hint integration.
 - [ ] Add support for python versions earlier than 3.6.
-(The typing module is being used, which is the only real
-limiting factor.)
 - [ ] Syntastic support. (Syntastic is not accepting new checkers until
 their next API stabilizes, so this may take some time.)
 - [ ] Add command line interface.
+- [ ] Add multiple options for output.
 
 ## Development
 
