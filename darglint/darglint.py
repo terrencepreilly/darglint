@@ -7,7 +7,15 @@ from typing import (
 
 
 def read_program(filename: str) -> str:
-    """Read a program from a file."""
+    """Read a program from a file.
+
+    Args:
+        filename: The name of the file to read.
+
+    Returns:
+        The program as a single string.
+
+    """
     program = None  # type: str
     with open(filename, 'r') as fin:
         program = fin.read()
@@ -75,7 +83,14 @@ class FunctionDescription(object):
     """Describes a function or method."""
 
     def __init__(self, is_method: bool, function: ast.FunctionDef):
-        """Create a new FunctionDescription."""
+        """Create a new FunctionDescription.
+
+        Args:
+            is_method: True if this is a method. Will attempt to remove
+                self or cls if appropriate.
+            function: The base node of the function.
+
+        """
         self.is_method = is_method
         self.function = function
         self.line_number = function.lineno
@@ -94,6 +109,11 @@ def get_function_descriptions(
 
     This function should be called on the top level of the
     document (for functions), and on classes (for methods.)
+
+    Args:
+        ast: The tree representing the entire program.
+            This should be the direct result of
+
     """
     ret = list()  # type: List[FunctionDescription]
 

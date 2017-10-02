@@ -17,7 +17,13 @@ class Token(object):
     """A token representing anything which can appear in a docstring."""
 
     def __init__(self, value: str, token_type: TokenType):
-        """Create a new Token."""
+        """Create a new Token.
+
+        Args:
+            value: The value of the token. (The actual string.)
+            token_type: The type of token this represents.
+
+        """
         self.value = value
         self.token_type = token_type
 

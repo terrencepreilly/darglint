@@ -21,7 +21,12 @@ def _is_colon(char: str) -> bool:
 
 
 def _is_separator(char: str) -> bool:
-    """Return true if `char` is a separator other than newline or space."""
+    """Return true if `char` is a separator other than newline or space.
+
+    Args:
+        char: The character to check.
+
+    """
     return char.isspace() and not (_is_space(char) or _is_newline(char))
 
 
@@ -40,7 +45,12 @@ def _is_word(char: str) -> bool:
 
 
 def lex(program: str) -> Iterator[List[Token]]:
-    """Create a stream of tokens from the string."""
+    """Create a stream of tokens from the string.
+
+    Args:
+        program: The program to lex, as a string.
+
+    """
     extra = ''  # Extra characters which are pulled but unused from a check.
     peaker = Peaker((x for x in program))  # the stream
     while peaker.has_next():

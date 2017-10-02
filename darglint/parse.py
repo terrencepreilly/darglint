@@ -35,13 +35,23 @@ class ParserException(BaseException):
 
 
 def _expect_not_empty(peaker: Peaker[Token]):
-    """Raise an exception if peaker is empty."""
+    """Raise an exception if peaker is empty.
+
+    Args:
+        peaker: The peaker to check to see if it is empty.
+    """
     if not peaker.has_next():
         raise ParserException('End of stream unexpectedly encountered')
 
 
 def _expect_type(peaker: Peaker[Token], token_type: TokenType):
-    """Raise an exception if peaker's next value isn't the given type."""
+    """Raise an exception if peaker's next value isn't the given type.
+
+    Args:
+        peaker: The peaker to check.  Should have the given type next.
+        token_type: The type we expect to see next.
+
+    """
     if peaker.peak().token_type != token_type:
         raise ParserException('Expected type {}, but was {}.'.format(
             token_type,
@@ -54,14 +64,23 @@ def _is_type(peaker: Peaker[Token], token_type: TokenType) -> bool:
 
 
 def _not(fn: Callable) -> Callable:
-    """Negates a function which returns a boolean."""
+    """Negates a function which returns a boolean.
+
+    Args:
+        fn: A function which returns a boolean.
+
+    """
     def inner(*args, **kwargs):
         return not fn(*args, **kwargs)
     return inner
 
 
 def _token_is(token_type: TokenType) -> Callable:
-    """Return a checker function for a token."""
+    """Return a checker function for a token.
+
+    Args:
+        token_type: The type we wish to have a checker for.
+    """
     def check_type(token: Token) -> bool:
         return token.token_type == token_type
     return check_type
@@ -78,18 +97,31 @@ def _parse_argument(peaker: Peaker, indentation: int) -> str:
     # get the type?
     # get the definition?
     peaker.take_while(_not(_token_is(TokenType.NEWLINE)))
+
+    if not peaker.has_next():
+        # We're at the end of the arguments, there is no return.
+        return arg.value
+
     peaker.next()  # consume the newline.
     indents = peaker.take_while(_token_is(TokenType.INDENT))
     # While we are one indentation in on the Argument.
     while len(indents) >= indentation + 1:
         peaker.take_while(_not(_token_is(TokenType.NEWLINE)))
+        if not peaker.has_next():
+            # We're at the end of the arguments.
+            break
         peaker.next()
         indents = peaker.take_while(_token_is(TokenType.INDENT))
     return arg.value
 
 
 def parse_arguments(tokens: Iterable[Token]) -> Set[str]:
-    """Parse the stream of tokens into a `Docstring`."""
+    """Parse the stream of tokens into a `Docstring`.
+
+    Args:
+        tokens: The tokens which we want to parse.
+
+    """
     peaker = Peaker(tokens)
 
     # Toss away everything up to Args
@@ -109,6 +141,6 @@ def parse_arguments(tokens: Iterable[Token]) -> Set[str]:
 
     # Parse until there is a second newline.
     # (_parse_argument consumes the newline after the arg.)
-    while not _is_type(peaker, TokenType.NEWLINE):
+    while peaker.has_next() and not _is_type(peaker, TokenType.NEWLINE):
         args.add(_parse_argument(peaker, indentation=len(indents)))
     return args

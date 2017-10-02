@@ -38,6 +38,7 @@ def main():
     for function in functions:
         if function.docstring is None:
             continue
+        # NOTE: This line has caused several problems. Consider rewrite.
         docstring_arguments = set(parse_arguments(lex(function.docstring)))
         actual_arguments = set(function.argument_names)
         if len(docstring_arguments) != len(actual_arguments):
