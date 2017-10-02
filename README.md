@@ -34,15 +34,21 @@ darglint serializers.py
 
 ## Features planned and implemented
 
+The below list is all that defines the current roadmap for *darglint*.
+It is roughly sorted in order of importance.
+
 - [x] Function definitions can be checked.
 - [x] Methods definitions of top-level class can be checked.
 - [x] Line number printout for function/method definition.
-- [ ] Add type hint integration.
+- [ ] Add parsing of "Returns" section, and warn if differing from
+function definition.
+- [ ] Add command line interface.
+- [ ] Add multiple options for output.
+- [ ] Add type hint integration.  If an argument has a type hint, then
+the description of the argument, if it has a type, should match that.
 - [ ] Add support for python versions earlier than 3.6.
 - [ ] Syntastic support. (Syntastic is not accepting new checkers until
 their next API stabilizes, so this may take some time.)
-- [ ] Add command line interface.
-- [ ] Add multiple options for output.
 
 ## Development
 
