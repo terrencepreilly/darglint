@@ -10,6 +10,50 @@ from .darglint import (
 )
 from .lex import lex
 from .parse import parse_arguments
+from .errors import (
+    DarglintError,
+    MissingParameterError,
+    ExcessParameterError,
+)
+
+
+class IntegrityChecker(object):
+    """Checks the integrity of the docstring compared to the definition."""
+
+    def __init__(self, function: FunctionDescription):
+        """Create a new checker for the given function and docstring."""
+        self.function = function
+        self.errors = list()  # type: List[DarglintError]
+        self._run_checks()
+
+    def _run_checks(self):
+        self._check_parameters()
+
+    def _check_parameters(self):
+        docstring = self.function.docstring
+        docstring_arguments = set(parse_arguments(lex(docstring)))
+        actual_arguments = set(self.function.argument_names)
+        missing_in_doc = actual_arguments - docstring_arguments
+        for missing in missing_in_doc:
+            self.errors.append(
+                MissingParameterError(self.function.line_number)
+            )
+        missing_in_function = docstring_arguments - actual_arguments
+        for missing in missing_in_function:
+            self.errors.append(
+                ExcessParameterError(self.function.line_number)
+            )
+
+    def __iter__(self):
+        """Get the iterator."""
+        return self
+
+    def __next__(self) -> DarglintError:
+        """Get the next error in the function."""
+        if len(self.errors) > 0:
+            return self.errors.pop()
+        else:
+            raise StopIteration
 
 
 def _print_error_message(
