@@ -52,7 +52,7 @@ def lex(program: str) -> Iterator[List[Token]]:
 
     """
     extra = ''  # Extra characters which are pulled but unused from a check.
-    peaker = Peaker((x for x in program))  # the stream
+    peaker = Peaker((x for x in program or []))  # the stream
     while peaker.has_next():
         # Each of the following conditions must move the stream
         # forward and -- excepting separators -- yield a token.

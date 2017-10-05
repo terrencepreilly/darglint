@@ -30,8 +30,9 @@ def _get_arguments(fn: ast.FunctionDef) -> List[str]:
 
 
 def _has_return(fun: ast.FunctionDef) -> bool:
+    """Return true if the function has a fruitful return."""
     for node in ast.walk(fun):
-        if isinstance(node, ast.Return):
+        if isinstance(node, ast.Return) and node.value is not None:
             return True
     return False
 

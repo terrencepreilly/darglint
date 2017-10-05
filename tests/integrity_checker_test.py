@@ -20,7 +20,8 @@ def function_with_missing_parameter(x):
 '''
         tree = ast.parse(program)
         functions = get_function_descriptions(tree)
-        checker = IntegrityChecker(functions[0])
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
         errors = [error for error in checker]
         self.assertEqual(len(errors), 1)
         self.assertTrue(isinstance(errors[0], MissingParameterError))
@@ -38,7 +39,8 @@ def function_with_excess_parameter():
 '''
         tree = ast.parse(program)
         functions = get_function_descriptions(tree)
-        checker = IntegrityChecker(functions[0])
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
         errors = [error for error in checker]
         self.assertEqual(len(errors), 1)
         self.assertTrue(isinstance(errors[0], ExcessParameterError))
@@ -52,7 +54,8 @@ def function_without_return():
 '''
         tree = ast.parse(program)
         functions = get_function_descriptions(tree)
-        checker = IntegrityChecker(functions[0])
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
         errors = [error for error in checker]
         self.assertEqual(len(errors), 1)
         self.assertTrue(isinstance(errors[0], MissingReturnError))

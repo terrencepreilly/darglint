@@ -63,7 +63,7 @@ def _is_type(peaker: Peaker[Token], token_type: TokenType) -> bool:
     return peaker.peak().token_type == token_type
 
 
-def _not(fn: Callable) -> Callable:
+def _not(*fns) -> Callable:
     """Negates a function which returns a boolean.
 
     Args:
@@ -71,7 +71,7 @@ def _not(fn: Callable) -> Callable:
 
     """
     def inner(*args, **kwargs):
-        return not fn(*args, **kwargs)
+        return not any([fn(*args, **kwargs) for fn in fns])
     return inner
 
 
@@ -89,6 +89,11 @@ def _token_is(token_type: TokenType) -> Callable:
 def _token_is_args(token: Token) -> bool:
     return (token.token_type == TokenType.WORD
             and token.value in ['Args', 'Arguments'])
+
+
+def _token_is_return(token: Token) -> bool:
+    return (token.token_type == TokenType.WORD
+            and token.value in ['Returns'])
 
 
 def _parse_argument(peaker: Peaker, indentation: int) -> str:
@@ -144,3 +149,18 @@ def parse_arguments(tokens: Iterable[Token]) -> Set[str]:
     while peaker.has_next() and not _is_type(peaker, TokenType.NEWLINE):
         args.add(_parse_argument(peaker, indentation=len(indents)))
     return args
+
+
+def parse_return(tokens: Iterable[Token]) -> Set[str]:
+    """Parse the stream of tokens into a `Docstring`.
+
+    Args:
+        tokens: The tokens which we want to parse.
+
+    """
+    peaker = Peaker(tokens)
+    peaker.take_while(_not(_token_is_return))
+    if peaker.has_next():
+        return set(peaker.next().value)
+    else:
+        return set()
