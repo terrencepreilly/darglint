@@ -1,7 +1,6 @@
 """Defines the command line interface for darglint."""
 import ast
 import sys
-from typing import List
 
 from .darglint import (
     read_program,
@@ -11,7 +10,6 @@ from .darglint import (
 from .lex import lex
 from .parse import parse_arguments, parse_return
 from .errors import (
-    DarglintError,
     ExcessParameterError,
     ExcessReturnError,
     MissingParameterError,
@@ -29,7 +27,12 @@ class IntegrityChecker(object):
         self._sorted = True
 
     def run_checks(self, function: FunctionDescription):
-        """Run checks on the given function."""
+        """Run checks on the given function.
+
+        Args:
+            function: A function whose docstring we are verifying.
+
+        """
         self.function = function
         self._check_parameters()
         self._check_return()
@@ -69,7 +72,12 @@ class IntegrityChecker(object):
             self._sorted = True
 
     def get_error_report(self) -> str:
-        """Return a string representation of the errors."""
+        """Return a string representation of the errors.
+
+        Returns:
+            A string representation of the errors.
+
+        """
         if len(self.errors) == 0:
             return ''
         self._sort()
@@ -87,35 +95,6 @@ class IntegrityChecker(object):
             ret.append('  ' + error.message)
         return '\n'.join(ret)
 
-    def __iter__(self):
-        """Get the iterator."""
-        return self
-
-    def __next__(self) -> DarglintError:
-        """Get the next error in the function."""
-        if len(self.errors) > 0:
-            self._sort()
-            return self.errors.pop()
-        else:
-            raise StopIteration
-
-
-def _print_error_message(
-        function: FunctionDescription,
-        docstring_arguments: List[str]
-) -> None:
-    print('{}: {}'.format(function.line_number, function.name))
-    docargs = set(docstring_arguments)
-    funargs = set(function.argument_names)
-    missing_in_doc = funargs - docargs
-    missing_in_fun = docargs - funargs
-    if len(missing_in_doc) > 0:
-        for missing in missing_in_doc:
-            print('  - {}'.format(missing))
-    if len(missing_in_fun) > 0:
-        for missing in missing_in_fun:
-            print('  + {}'.format(missing))
-
 
 def main():
     """Check the parameters of all functions and methods."""
@@ -126,22 +105,6 @@ def main():
     for function in functions:
         checker.run_checks(function)
     print(checker.get_error_report())
-
-
-def oldmain():
-    """Check the parameters of all functions and methods."""
-    program = read_program(sys.argv[1])
-    tree = ast.parse(program)
-    functions = get_function_descriptions(tree)
-    functions.sort(key=lambda x: x.line_number)
-    for function in functions:
-        if function.docstring is None:
-            continue
-        # NOTE: This line has caused several problems. Consider rewrite.
-        docstring_arguments = set(parse_arguments(lex(function.docstring)))
-        actual_arguments = set(function.argument_names)
-        if len(docstring_arguments) != len(actual_arguments):
-            _print_error_message(function, docstring_arguments)
 
 
 if __name__ == '__main__':
