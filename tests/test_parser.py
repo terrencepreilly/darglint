@@ -1,7 +1,10 @@
 from unittest import TestCase
 
 from darglint.lex import lex
-from darglint.parse import parse_arguments
+from darglint.parse import (
+    parse_arguments,
+    parse_yield,
+)
 
 
 class ParserTestCase(TestCase):
@@ -78,3 +81,15 @@ class ParserTestCase(TestCase):
         docstring = '{}'.format(docstring)
         args = parse_arguments(lex(docstring))
         self.assertEqual(args, {'param1', 'param2', 'param3'})
+
+    def test_can_parse_yields(self):
+        docstring = """Some sort of short description.
+
+        A longer description.
+
+        Yields:
+            The number 5. Always.
+
+        """
+        myyield = parse_yield(lex(docstring))
+        self.assertEqual(myyield, {'Yields'})

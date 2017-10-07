@@ -45,6 +45,13 @@ def _has_return(fun: ast.FunctionDef) -> bool:
     return False
 
 
+def _has_yield(fun: ast.FunctionDef) -> bool:
+    for node in ast.walk(fun):
+        if isinstance(node, ast.Yield) or isinstance(node, ast.YieldFrom):
+            return True
+    return False
+
+
 def _get_docstring(fun: ast.AST) -> str:
     return ast.get_docstring(fun)
 
@@ -109,6 +116,7 @@ class FunctionDescription(object):
         else:
             self.argument_names = _get_arguments(function)
         self.has_return = _has_return(function)
+        self.has_yield = _has_yield(function)
         self.docstring = _get_docstring(function)
 
 

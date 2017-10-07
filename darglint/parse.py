@@ -115,6 +115,11 @@ def _token_is_return(token: Token) -> bool:
             and token.value in ['Returns'])
 
 
+def _token_is_yield(token: Token) -> bool:
+    return (token.token_type == TokenType.WORD
+            and token.value in ['Yields'])
+
+
 def _parse_argument(peaker: Peaker, indentation: int) -> str:
     _expect_type(peaker, TokenType.WORD)
     arg = peaker.next()
@@ -187,6 +192,25 @@ def parse_return(tokens: Iterable[Token]) -> Set[str]:
     peaker = Peaker(tokens)
     peaker.take_while(_not(_token_is_return))
     if peaker.has_next():
-        return set(peaker.next().value)
+        return {peaker.next().value}
+    else:
+        return set()
+
+
+def parse_yield(tokens: Iterable[Token]) -> Set[str]:
+    """Parse the stream of tokens in a docstring.
+
+    Args:
+        tokens: The tokens we want to parse.
+
+    Returns:
+        A set containing the return node's yield string,
+        or an empty set (if there is no yield section.)
+
+    """
+    peaker = Peaker(tokens)
+    peaker.take_while(_not(_token_is_yield))
+    if peaker.has_next():
+        return {peaker.next().value}
     else:
         return set()

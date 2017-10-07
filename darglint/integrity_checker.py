@@ -4,12 +4,18 @@ from .darglint import (
     FunctionDescription,
 )
 from .lex import lex
-from .parse import parse_arguments, parse_return
+from .parse import (
+    parse_arguments,
+    parse_return,
+    parse_yield,
+)
 from .errors import (
     ExcessParameterError,
     ExcessReturnError,
+    ExcessYieldError,
     MissingParameterError,
     MissingReturnError,
+    MissingYieldError,
 )
 from .error_report import (
     LowVerbosityErrorReport,
@@ -37,7 +43,25 @@ class IntegrityChecker(object):
         self.function = function
         self._check_parameters()
         self._check_return()
+        self._check_yield()
         self._sorted = False
+
+    def _check_yield(self):
+        docstring = self.function.docstring
+
+        if docstring is None:
+            return
+
+        doc_yield = len(parse_yield(lex(docstring))) > 0
+        fun_yield = self.function.has_yield
+        if fun_yield and not doc_yield:
+            self.errors.append(
+                MissingYieldError(self.function.function)
+            )
+        elif doc_yield and not fun_yield:
+            self.errors.append(
+                ExcessYieldError(self.function.function)
+            )
 
     def _check_return(self):
         docstring = self.function.docstring

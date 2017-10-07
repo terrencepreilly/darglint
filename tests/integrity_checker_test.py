@@ -4,9 +4,11 @@ from unittest import TestCase
 from darglint.integrity_checker import IntegrityChecker
 from darglint.darglint import get_function_descriptions
 from darglint.errors import (
+    ExcessParameterError,
+    ExcessYieldError,
     MissingParameterError,
     MissingReturnError,
-    ExcessParameterError,
+    MissingYieldError,
 )
 
 
@@ -70,3 +72,34 @@ def function_without_docstring(arg1, arg2):
         checker = IntegrityChecker()
         checker.run_checks(functions[0])
         self.assertEqual(len(checker.errors), 0)
+
+    def test_missing_yield_added_to_errors(self):
+        program = '''
+def funtion_with_yield():
+    """This should have a yields section."""
+    yield 3
+'''
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        self.assertEqual(len(checker.errors), 1)
+        self.assertTrue(isinstance(checker.errors[0], MissingYieldError))
+
+    def test_excess_yield_added_to_errors(self):
+        program = '''
+def function_with_yield():
+    """This should not have a yields section.
+
+    Yields:
+        A number.
+
+    """
+    print('Doesnt yield')
+'''
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        self.assertEqual(len(checker.errors), 1)
+        self.assertTrue(isinstance(checker.errors[0], ExcessYieldError))

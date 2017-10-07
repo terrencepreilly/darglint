@@ -78,6 +78,46 @@ class MissingReturnError(DarglintError):
         super(MissingReturnError, self).__init__(function)
 
 
+class MissingYieldError(DarglintError):
+    """Describes when a docstring is missing a yield present in definition."""
+
+    def __init__(self, function: ast.FunctionDef):
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+
+        """
+        self.general_message = 'Missing "Yields" in Docstring'
+        self.message = 'Missing "Yields" in Docstring'
+
+        # We don't need a terse message, because there is only one
+        # instance of this error per function.
+        self.terse_message = ''
+
+        super(MissingYieldError, self).__init__(function)
+
+
+class ExcessYieldError(DarglintError):
+    """Describes when a docstring has a yield not in definition."""
+
+    def __init__(self, function: ast.FunctionDef):
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+
+        """
+        self.general_message = 'Excess "Yields" in Docstring'
+        self.message = 'Excess "Yields" in Docstring'
+
+        # We don't need a terse message, because there is only one
+        # instance of this error per function.
+        self.terse_message = ''
+
+        super(ExcessYieldError, self).__init__(function)
+
+
 class ExcessParameterError(DarglintError):
     """Describes when a docstring contains a parameter not in function."""
 

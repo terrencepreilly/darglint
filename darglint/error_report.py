@@ -170,7 +170,7 @@ class MidVerbosityErrorReport(ErrorReport):
         ret = list()
         returns = list()  # Return statements should come last.
         for general in current_errors:
-            if 'Returns' in general:
+            if 'Returns' in general or 'Yields' in general:
                 returns.append('  {}.'.format(general))
             else:
                 ret.append('  {}: {}'.format(

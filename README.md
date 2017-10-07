@@ -55,7 +55,7 @@ function definition.
 - [x] Add multiple options for output.
 - [ ] Add checks for "Raises" section, like "Args".  Any exceptions raised
 in the body should be documented.
-- [ ] Add checks for "Yields" section, like "Returns".
+- [x] Add checks for "Yields" section, like "Returns".
 - [ ] Add numbers to errors, ability to silence certain errors.  (Use same
 formatting as *pycodestyle*.)
 - [ ] Add TOML configuration file (use same interface as *pydoclint*, etc.)
