@@ -3,6 +3,14 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.0.4]
+
+### Fixed
+
+- Setup script was removing the *README.rst* file, which could not
+  be referenced in the setup script.  So, it wasn't showing up as
+  the long description on pypi.  This should fix that.
+
 ## [0.0.3]
 
 ### Added

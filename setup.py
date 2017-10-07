@@ -6,7 +6,7 @@ import subprocess
 
 
 def read_full_documentation(fname):
-    """Get long documentation from the README.md."""
+    """Get long documentation from the README.rst."""
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
@@ -36,7 +36,6 @@ class PreBuildCommand(Command):
 class CleanCommand(Command):
     """Cleans the project.
 
-    - Remove the README.rst file.
     - Remove the dist directory.
     - Remove the build directory.
     """
@@ -52,14 +51,13 @@ class CleanCommand(Command):
 
     def run(self):
         assert os.getcwd() == self.cwd, 'We must be in the package root.'
-        subprocess.run(['rm', './README.rst'])
         subprocess.run(['rm', '-rf', './dist'])
         subprocess.run(['rm', '-rf', './build'])
 
 
 setup(
     name="darglint",
-    version="0.0.3",
+    version="0.0.4",
     author="Terrence Reilly",
     author_email="terrencepreilly@gmail.com",
     description=("A utility for ensuring Google-style docstrings"
@@ -68,7 +66,7 @@ setup(
     keywords="documentation linter development",
     url="http://github.com/terrencepreilly/darglint",
     packages=find_packages(exclude=('tests', 'docs')),
-    long_description=read_full_documentation('README.md'),
+    long_description=read_full_documentation('README.rst'),
     entry_points={
         'console_scripts': [
             'darglint = darglint.driver:main',
