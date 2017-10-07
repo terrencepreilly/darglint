@@ -1,6 +1,7 @@
 """Defines the command line interface for darglint."""
 import argparse
 import ast
+from typing import List
 
 from .darglint import (
     read_program,
@@ -32,16 +33,34 @@ parser.add_argument(
 # ---------------------- MAIN SCRIPT ---------------------------------
 
 
-def get_headers(filenames):
-    """Get the headers to separate the descriptions."""
+def get_headers(filenames: List[str]) -> List[str]:
+    """Get the headers to separate the descriptions.
+
+    Args:
+        filenames: A list of file names.
+
+    Returns:
+        A list of headers for representing the filename
+        during the error report.
+
+    """
     return [
         ('*' * 20) + ' {} '.format(filename) + ('*' * (40 - len(filename)))
         for filename in filenames
     ]
 
 
-def get_error_report(filename, verbosity):
-    """Get the error report for the given file."""
+def get_error_report(filename: str, verbosity: int) -> str:
+    """Get the error report for the given file.
+
+    Args:
+        filename: The name of the module to check.
+        verbosity: The level of verbosity, in the range [1, 3].
+
+    Returns:
+        An error report for the file.
+
+    """
     program = read_program(filename)
     tree = ast.parse(program)
     functions = get_function_descriptions(tree)

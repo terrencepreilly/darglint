@@ -28,9 +28,19 @@ class Token(object):
         self.token_type = token_type
 
     def __str__(self):
-        """Return readable representation for debugging."""
+        """Return readable representation for debugging.
+
+        Returns:
+            A readable representation for debugging.
+
+        """
         return '<Token {} {}>'.format(self.value, self.token_type)
 
     def __repr__(self):
-        """Return readable representation for debugging."""
+        """Return readable representation for debugging.
+
+        Returns:
+            A readable representation for debugging.
+
+        """
         return str(self)

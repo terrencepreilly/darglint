@@ -28,7 +28,7 @@ class DarglintError(BaseException):
         """Create a new exception with a message and line number.
 
         Args:
-            line_number: The line number to display to the user.
+            function: An ast node for the function.
 
         """
         self.function = function
@@ -41,8 +41,13 @@ class DarglintError(BaseException):
 class ExcessReturnError(DarglintError):
     """Describes when a docstring has a return not in definition."""
 
-    def __init__(self, function):
-        """Instantiate the error's message."""
+    def __init__(self, function: ast.FunctionDef):
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+
+        """
         self.general_message = 'Excess "Returns" in Docstring'
         self.message = 'Excess "Returns" in Docstring'
 
@@ -56,8 +61,13 @@ class ExcessReturnError(DarglintError):
 class MissingReturnError(DarglintError):
     """Describes when a docstring is missing a return from definition."""
 
-    def __init__(self, function):
-        """Instantiate the error's message."""
+    def __init__(self, function: ast.FunctionDef):
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+
+        """
         self.general_message = 'Missing "Returns" in Docstring'
         self.message = 'Missing "Returns" in Docstring'
 
@@ -71,8 +81,14 @@ class MissingReturnError(DarglintError):
 class ExcessParameterError(DarglintError):
     """Describes when a docstring contains a parameter not in function."""
 
-    def __init__(self, function, name):
-        """Instantiate the error's message."""
+    def __init__(self, function: ast.FunctionDef, name: str):
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+            name: The name of the argument that is excess.
+
+        """
         self.general_message = 'Excess parameter(s) in Docstring.'
         self.message = '+ {}'.format(name)
         self.terse_message = name
@@ -82,8 +98,14 @@ class ExcessParameterError(DarglintError):
 class MissingParameterError(DarglintError):
     """Describes when a docstring is missing a parameter in the definition."""
 
-    def __init__(self, function, name):
-        """Instantiate the error's message."""
+    def __init__(self, function: ast.FunctionDef, name: str):
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+            name: The name of the argument that is missing.
+
+        """
         self.general_message = 'Missing parameter(s) in Docstring'
         self.message = '- {}'.format(name)
         self.terse_message = name

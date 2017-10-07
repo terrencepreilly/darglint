@@ -60,6 +60,16 @@ def _expect_type(peaker: Peaker[Token], token_type: TokenType):
 
 
 def _is_type(peaker: Peaker[Token], token_type: TokenType) -> bool:
+    """Tell if the next token in the Peaker is of the given type.
+
+    Args:
+        peaker: A peaker holding tokens.
+        token_type: A TokenType we are looking for.
+
+    Returns:
+        True if the next token in the peaker is of the given type.
+
+    """
     return peaker.peak().token_type == token_type
 
 
@@ -67,7 +77,11 @@ def _not(*fns) -> Callable:
     """Negates a function which returns a boolean.
 
     Args:
-        fn: A function which returns a boolean.
+        fns: Functions which returns a boolean.
+
+    Returns:
+        A function which returns fallse when any of the callables
+        return true, and true will all of the callables return false.
 
     """
     def inner(*args, **kwargs):
@@ -80,6 +94,11 @@ def _token_is(token_type: TokenType) -> Callable:
 
     Args:
         token_type: The type we wish to have a checker for.
+
+    Returns:
+        A function which returns a true if the when supplied
+        a token of the given type.
+
     """
     def check_type(token: Token) -> bool:
         return token.token_type == token_type
@@ -126,6 +145,9 @@ def parse_arguments(tokens: Iterable[Token]) -> Set[str]:
     Args:
         tokens: The tokens which we want to parse.
 
+    Returns:
+        A set of parameters to the function.
+
     """
     peaker = Peaker(tokens)
 
@@ -156,6 +178,10 @@ def parse_return(tokens: Iterable[Token]) -> Set[str]:
 
     Args:
         tokens: The tokens which we want to parse.
+
+    Returns:
+        A set containing the return node's string, or
+        an empty set (if there is no return).
 
     """
     peaker = Peaker(tokens)

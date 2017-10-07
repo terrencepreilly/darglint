@@ -31,7 +31,12 @@ class ErrorReport(object):
 
     @staticmethod
     def new_current_errors() -> Iterable:
-        """Get a new collection to store the errors of the current function."""
+        """Get a new collection to store the errors of the current function.
+
+        Raises:
+            NotImplementError: Always.  Must be overriden.
+
+        """
         raise NotImplemented()
 
     @staticmethod
@@ -43,8 +48,8 @@ class ErrorReport(object):
             current_errors: The collection of DarglintErrors so far.
             error: The error to add to this collection.
 
-        Returns:
-            The updated instance of the collection.
+        Raises:
+            NotImplementError: Always.  Must be overriden.
 
         """
         raise NotImplemented()
@@ -56,8 +61,8 @@ class ErrorReport(object):
         Args:
             current_errors: The collection of DarglintErrors for a function.
 
-        Returns:
-            A list of strings.
+        Raises:
+            NotImplementError: Always.  Must be overriden.
 
         """
         raise NotImplemented()
@@ -124,13 +129,19 @@ class MidVerbosityErrorReport(ErrorReport):
     """
 
     @staticmethod
-    def new_current_errors() -> Dict[str, str]:
-        """Get a new collection to store the errors of the current function."""
+    def new_current_errors() -> Dict[str, List[str]]:
+        """Get a new collection to store the errors of the current function.
+
+        Returns:
+            A dictionary containing the general error message as a key,
+            and a list of terse error messages as a value.
+
+        """
         return defaultdict(list)
 
     @staticmethod
-    def add_to_current_errors(current_errors: Dict[str, str],
-                              error: DarglintError) -> Dict[str, str]:
+    def add_to_current_errors(current_errors: Dict[str, List[str]],
+                              error: DarglintError) -> Dict[str, List[str]]:
         """Add an error to the collection of errors of the current function.
 
         Args:
@@ -145,7 +156,8 @@ class MidVerbosityErrorReport(ErrorReport):
         return current_errors
 
     @staticmethod
-    def current_errors_to_list(current_errors: Dict[str, str]) -> List[str]:
+    def current_errors_to_list(
+            current_errors: Dict[str, List[str]]) -> List[str]:
         """Render the collection of errors for the current function.
 
         Args:
@@ -182,8 +194,13 @@ class LowVerbosityErrorReport(ErrorReport):
     """
 
     @staticmethod
-    def new_current_errors() -> Set:
-        """Get a new collection to store the errors of the current function."""
+    def new_current_errors() -> Set[str]:
+        """Get a new collection to store the errors of the current function.
+
+        Returns:
+            An empty set.
+
+        """
         return set()
 
     @staticmethod
@@ -233,7 +250,12 @@ class HighVerbosityErrorReport(ErrorReport):
 
     @staticmethod
     def new_current_errors() -> List[str]:
-        """Get a new collection to store the errors of the current function."""
+        """Get a new collection to store the errors of the current function.
+
+        Returns:
+            An empty list.
+
+        """
         return list()
 
     @staticmethod

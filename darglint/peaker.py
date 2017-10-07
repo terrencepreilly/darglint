@@ -32,7 +32,15 @@ class Peaker(Generic[T]):
             self.current = self._Empty()
 
     def next(self) -> T:
-        """Get the next letter in the stream, moving it forward."""
+        """Get the next item in the stream, moving it forward.
+
+        Side effects:
+            Moves the stream forward.
+
+        Returns:
+            The next item of type T in the stream.
+
+        """
         if not self.has_next():
             raise StopIteration
         previous = self.current
@@ -43,13 +51,23 @@ class Peaker(Generic[T]):
         return previous
 
     def peak(self) -> T:
-        """Get the next letter in the stream, without moving it forward."""
+        """Get the next letter in the stream, without moving it forward.
+
+        Returns:
+            The next item of type T in the stream.
+
+        """
         if isinstance(self.current, self._Empty):
             return None
         return self.current
 
     def has_next(self) -> bool:
-        """Return true if there are more tokens in the stream."""
+        """Tell whether there are more tokens in the stream.
+
+        Returns:
+            True if there are more tokens, false otherwise.
+
+        """
         return not isinstance(self.current, self._Empty)
 
     def take_while(self, test: Callable) -> List[T]:
@@ -58,6 +76,10 @@ class Peaker(Generic[T]):
         Args:
             test: A function which returns true if we would like to collect
                 the token, or false if we would like to stop.
+
+        Returns:
+            A list of items (of type T), which pass the given test function.
+
         """
         passing_elements = []
         while self.has_next() and test(self.peak()):

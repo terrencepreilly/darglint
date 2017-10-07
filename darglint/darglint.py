@@ -30,7 +30,15 @@ def _get_arguments(fn: ast.FunctionDef) -> List[str]:
 
 
 def _has_return(fun: ast.FunctionDef) -> bool:
-    """Return true if the function has a fruitful return."""
+    """Return true if the function has a fruitful return.
+
+    Args:
+        fun: A function node to check.
+
+    Returns:
+        True if there is a fruitful return, otherwise False.
+
+    """
     for node in ast.walk(fun):
         if isinstance(node, ast.Return) and node.value is not None:
             return True
@@ -114,6 +122,9 @@ def get_function_descriptions(
     Args:
         ast: The tree representing the entire program.
             This should be the direct result of
+
+    Returns:
+        A list of function descriptions fulled from the ast.
 
     """
     ret = list()  # type: List[FunctionDescription]

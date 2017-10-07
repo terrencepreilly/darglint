@@ -41,6 +41,11 @@ class IntegrityChecker(object):
 
     def _check_return(self):
         docstring = self.function.docstring
+
+        # Only check if the docstring is present.
+        if docstring is None:
+            return
+
         doc_return = len(parse_return(lex(docstring))) > 0
         fun_return = self.function.has_return
         if fun_return and not doc_return:
@@ -54,6 +59,11 @@ class IntegrityChecker(object):
 
     def _check_parameters(self):
         docstring = self.function.docstring
+
+        # Only check if the docstring is present.
+        if docstring is None:
+            return
+
         docstring_arguments = set(parse_arguments(lex(docstring)))
         actual_arguments = set(self.function.argument_names)
         missing_in_doc = actual_arguments - docstring_arguments
@@ -74,6 +84,11 @@ class IntegrityChecker(object):
 
     def get_error_report(self, verbosity: int) -> str:
         """Return a string representation of the errors.
+
+        Args:
+            verbosity:
+                The level of verbosity.  Should be an integer
+                in the range [1,3].
 
         Returns:
             A string representation of the errors.

@@ -59,3 +59,14 @@ def function_without_return():
         errors = checker.errors
         self.assertEqual(len(errors), 1)
         self.assertTrue(isinstance(errors[0], MissingReturnError))
+
+    def test_skips_functions_without_docstrings(self):
+        program = '''
+def function_without_docstring(arg1, arg2):
+    return 3
+'''
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        self.assertEqual(len(checker.errors), 0)

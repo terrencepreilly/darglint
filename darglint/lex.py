@@ -21,10 +21,13 @@ def _is_colon(char: str) -> bool:
 
 
 def _is_separator(char: str) -> bool:
-    """Return true if `char` is a separator other than newline or space.
+    """Check whether if `char` is a separator other than newline or space.
 
     Args:
         char: The character to check.
+
+    Returns:
+        true if `char` is a separator other than newline or space.
 
     """
     return char.isspace() and not (_is_space(char) or _is_newline(char))
