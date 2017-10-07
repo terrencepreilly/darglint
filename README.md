@@ -32,6 +32,15 @@ as follows:
 darglint serializers.py
 ```
 
+You can give an optional verbosity setting to *darglint*.  For example,
+
+```
+darglint -v 3 *.py
+```
+
+Would give the most verbose warnings for each python module in the current
+directory.
+
 ## Features planned and implemented
 
 The below list is all that defines the current roadmap for *darglint*.
@@ -40,10 +49,16 @@ It is roughly sorted in order of importance.
 - [x] Function definitions can be checked.
 - [x] Methods definitions of top-level class can be checked.
 - [x] Line number printout for function/method definition.
-- [ ] Add parsing of "Returns" section, and warn if differing from
+- [x] Add parsing of "Returns" section, and warn if differing from
 function definition.
-- [ ] Add command line interface.
-- [ ] Add multiple options for output.
+- [x] Add command line interface.
+- [x] Add multiple options for output.
+- [ ] Add checks for "Raises" section, like "Args".  Any exceptions raised
+in the body should be documented.
+- [ ] Add checks for "Yields" section, like "Returns".
+- [ ] Add numbers to errors, ability to silence certain errors.  (Use same
+formatting as *pycodestyle*.)
+- [ ] Add TOML configuration file (use same interface as *pydoclint*, etc.)
 - [ ] Add type hint integration.  If an argument has a type hint, then
 the description of the argument, if it has a type, should match that.
 - [ ] Add support for python versions earlier than 3.6.

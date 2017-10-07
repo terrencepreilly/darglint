@@ -3,6 +3,27 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.0.3]
+
+### Added
+
+- Command line interface.  There is currently only a single option,
+  verbosity, and a single multi-value argument, files.  Help for
+  the command can be accessed using
+
+    ```
+      darglint -h
+    ```
+
+  Example Usage:
+
+    ```
+      darglint -v 3 darglint/*.py
+    ```
+
+    This runs a documentation check on all of the internal modules
+    for darglint, with a verbosity level of 3 (the highest.)
+
 
 ## [0.0.2]
 
