@@ -1,7 +1,7 @@
 import ast
 from unittest import TestCase
 
-from darglint.driver import IntegrityChecker
+from darglint.integrity_checker import IntegrityChecker
 from darglint.darglint import get_function_descriptions
 from darglint.errors import (
     MissingParameterError,
@@ -22,7 +22,7 @@ def function_with_missing_parameter(x):
         functions = get_function_descriptions(tree)
         checker = IntegrityChecker()
         checker.run_checks(functions[0])
-        errors = [error for error in checker]
+        errors = checker.errors
         self.assertEqual(len(errors), 1)
         self.assertTrue(isinstance(errors[0], MissingParameterError))
 
@@ -41,7 +41,7 @@ def function_with_excess_parameter():
         functions = get_function_descriptions(tree)
         checker = IntegrityChecker()
         checker.run_checks(functions[0])
-        errors = [error for error in checker]
+        errors = checker.errors
         self.assertEqual(len(errors), 1)
         self.assertTrue(isinstance(errors[0], ExcessParameterError))
 
@@ -56,6 +56,6 @@ def function_without_return():
         functions = get_function_descriptions(tree)
         checker = IntegrityChecker()
         checker.run_checks(functions[0])
-        errors = [error for error in checker]
+        errors = checker.errors
         self.assertEqual(len(errors), 1)
         self.assertTrue(isinstance(errors[0], MissingReturnError))
