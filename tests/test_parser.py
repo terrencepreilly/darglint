@@ -4,6 +4,7 @@ from darglint.lex import lex
 from darglint.parse import (
     parse_arguments,
     parse_yield,
+    parse_raises,
 )
 
 
@@ -93,3 +94,13 @@ class ParserTestCase(TestCase):
         """
         myyield = parse_yield(lex(docstring))
         self.assertEqual(myyield, {'Yields'})
+
+    def test_can_parse_raises(self):
+        docstring = """This has a problem.
+
+        Raises:
+            Exception: An exception for generic reasons.
+
+        """
+        raises = parse_raises(lex(docstring))
+        self.assertEqual(raises, {'Exception'})

@@ -120,7 +120,23 @@ def _token_is_yield(token: Token) -> bool:
             and token.value in ['Yields'])
 
 
+def _token_is_raises(token: Token) -> bool:
+    return (token.token_type == TokenType.WORD
+            and token.value in ['Raises'])
+
+
 def _parse_argument(peaker: Peaker, indentation: int) -> str:
+    """Return the name from a section with indentation, a name, and a colon.
+
+    Args:
+        peaker: Contains the tokens to parse.
+        indentation: The number of INDENT tokens before each definition.
+            This should be set by the first argument.
+
+    Returns:
+        The name of the argument.
+
+    """
     _expect_type(peaker, TokenType.WORD)
     arg = peaker.next()
     # get the type?
@@ -214,3 +230,36 @@ def parse_yield(tokens: Iterable[Token]) -> Set[str]:
         return {peaker.next().value}
     else:
         return set()
+
+
+def parse_raises(tokens: Iterable[Token]) -> Set[str]:
+    """Parse the stream of tokens in a docstring for a Raises section.
+
+    Args:
+        tokens: The tokens we want to parse.
+
+    Returns:
+        A set containing "Raises", or an empty set (if there is
+        no raises section.)
+
+    """
+    peaker = Peaker(tokens)
+    peaker.take_while(_not(_token_is_raises))
+
+    # There is no Raises section.
+    if not peaker.has_next():
+        return set()
+
+    _expect_type(peaker, TokenType.WORD)  # Raises
+    peaker.next()
+    _expect_type(peaker, TokenType.COLON)
+    peaker.next()
+    _expect_type(peaker, TokenType.NEWLINE)
+    peaker.next()
+
+    raises = set()
+    indents = peaker.take_while(_token_is(TokenType.INDENT))
+
+    while peaker.has_next() and not _is_type(peaker, TokenType.NEWLINE):
+        raises.add(_parse_argument(peaker, indentation=len(indents)))
+    return raises

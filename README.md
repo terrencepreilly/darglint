@@ -53,7 +53,7 @@ It is roughly sorted in order of importance.
 function definition.
 - [x] Add command line interface.
 - [x] Add multiple options for output.
-- [ ] Add checks for "Raises" section, like "Args".  Any exceptions raised
+- [x] Add checks for "Raises" section, like "Args".  Any exceptions raised
 in the body should be documented.
 - [x] Add checks for "Yields" section, like "Returns".
 - [ ] Add numbers to errors, ability to silence certain errors.  (Use same
@@ -64,6 +64,8 @@ the description of the argument, if it has a type, should match that.
 - [ ] Add support for python versions earlier than 3.6.
 - [ ] Syntastic support. (Syntastic is not accepting new checkers until
 their next API stabilizes, so this may take some time.)
+- [ ] Check super classes of errors/exceptions raised to allow for more
+general descriptions in the interface.
 
 ## Development
 

@@ -150,3 +150,46 @@ class MissingParameterError(DarglintError):
         self.message = '- {}'.format(name)
         self.terse_message = name
         super(MissingParameterError, self).__init__(function)
+
+
+class MissingRaiseError(DarglintError):
+    """Describes when a docstring is missing an exception raised."""
+
+    def __init__(self, function: ast.FunctionDef, name: str):
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+            name: The name of the exception that is missing.
+
+        """
+        self.general_message = 'Missing exception(s) in Raises section'
+        self.message = '-r {}'.format(name)
+        self.terse_message = name
+        self.name = name
+        super(MissingRaiseError, self).__init__(function)
+
+
+class ExcessRaiseError(DarglintError):
+    """Describes when docstring describes an exception not explicitly raised.
+
+    This error should not be included by default.  We assume that the user
+    knows when an underlying function is likely to raise an error.  Of course,
+    we should provide the option, if the user wants to be explicit.  (And
+    catch and reraise an exception.)
+
+    """
+
+    def __init__(self, function: ast.FunctionDef, name: str):
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+            name: The name of the exception that is surplus.
+
+        """
+        self.general_message = 'Excess exception(s) in Raises section'
+        self.message = '-r {}'.format(name)
+        self.terse_message = name
+        self.name = name
+        super(ExcessRaiseError, self).__init__(function)

@@ -8,12 +8,15 @@ from .parse import (
     parse_arguments,
     parse_return,
     parse_yield,
+    parse_raises,
 )
 from .errors import (
     ExcessParameterError,
+    ExcessRaiseError,
     ExcessReturnError,
     ExcessYieldError,
     MissingParameterError,
+    MissingRaiseError,
     MissingReturnError,
     MissingYieldError,
 )
@@ -44,6 +47,7 @@ class IntegrityChecker(object):
         self._check_parameters()
         self._check_return()
         self._check_yield()
+        self._check_raises()
         self._sorted = False
 
     def _check_yield(self):
@@ -99,6 +103,33 @@ class IntegrityChecker(object):
         for missing in missing_in_function:
             self.errors.append(
                 ExcessParameterError(self.function.function, missing)
+            )
+
+    def _check_raises(self):
+        docstring = self.function.docstring
+
+        # Only check if the docstring is present.
+        if docstring is None:
+            return
+
+        docstring_raises = set(parse_raises(lex(docstring)))
+        actual_raises = self.function.raises
+        missing_in_doc = actual_raises - docstring_raises
+        for missing in missing_in_doc:
+            self.errors.append(
+                MissingRaiseError(self.function.function, missing)
+            )
+
+        # TODO: Disable by default.
+        #
+        # Should we even include this?  It seems like the user
+        # would know if this function would be likely to raise
+        # a certain exception from underlying calls.
+        #
+        missing_in_function = docstring_raises - actual_raises
+        for missing in missing_in_function:
+            self.errors.append(
+                ExcessRaiseError(self.function.function, missing)
             )
 
     def _sort(self):

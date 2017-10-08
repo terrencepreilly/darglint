@@ -3,6 +3,7 @@ import ast
 from typing import (
     List,
     Iterator,
+    Set,
 )
 
 
@@ -95,6 +96,30 @@ def _get_stripped_method_args(method: ast.FunctionDef) -> List[str]:
     return args
 
 
+def _get_all_raises(fn: ast.FunctionDef) -> Iterator[ast.Raise]:
+    for node in ast.walk(fn):
+        if isinstance(node, ast.Raise):
+            yield node
+
+
+def _get_exception_name(raises: ast.Raise) -> str:
+    if isinstance(raises.exc, ast.Name):
+        return raises.exc.id
+    elif isinstance(raises.exc, ast.Call):
+        return raises.exc.func.id
+    else:
+        raise Exception('Unexpected type in raises expression: {}'.format(
+            type(raises.exc)
+        ))
+
+
+def _get_exceptions_raised(fn: ast.FunctionDef) -> Set[str]:
+    ret = set()  # type: List[str]
+    for raises in _get_all_raises(fn):
+        ret.add(_get_exception_name(raises))
+    return ret
+
+
 class FunctionDescription(object):
     """Describes a function or method."""
 
@@ -118,6 +143,7 @@ class FunctionDescription(object):
         self.has_return = _has_return(function)
         self.has_yield = _has_yield(function)
         self.docstring = _get_docstring(function)
+        self.raises = _get_exceptions_raised(function)
 
 
 def get_function_descriptions(

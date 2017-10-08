@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Checks for a "Yields" section added.  If a function contains
   either the `yield` or `yield from` keywords, *darglint* will
   expect to find a "Yields" section in the docstring.
+- Checks for a "Raises" section added.  If a function raises an
+  exception, then the raises section should document the exact
+  exception or error raised.  Will also warn if the raises
+  section documents exceptions not explicitly raised in the function
+  or method.  (This feature will be disabled by default.)
+
+  It may be possible to check the super classes of a given error,
+  to make more general descriptions in the raises section.  That would
+  prevent the interface from leaking implementation details.  However,
+  that would entail a good deal more work.  This may be implemented
+  at a later date, but for now, if you're doing that, then you should
+  just disable the checks for exception/error raising.
 
 ## [0.0.4] -- 2017-10-06
 

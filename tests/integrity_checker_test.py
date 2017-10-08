@@ -5,8 +5,10 @@ from darglint.integrity_checker import IntegrityChecker
 from darglint.darglint import get_function_descriptions
 from darglint.errors import (
     ExcessParameterError,
+    ExcessRaiseError,
     ExcessYieldError,
     MissingParameterError,
+    MissingRaiseError,
     MissingReturnError,
     MissingYieldError,
 )
@@ -116,3 +118,46 @@ class IntegrityCheckerTestCase(TestCase):
         checker.run_checks(functions[0])
         self.assertEqual(len(checker.errors), 1)
         self.assertTrue(isinstance(checker.errors[0], MissingYieldError))
+
+    def test_missing_raises_added_to_error(self):
+        program = '\n'.join([
+            'def errorful_function():',
+            '    """Should have a raises section here."""',
+            '    raise AttributeError',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        self.assertEqual(len(checker.errors), 1)
+        error = checker.errors[0]
+        self.assertTrue(isinstance(error, MissingRaiseError))
+        self.assertEqual(error.name, 'AttributeError')
+
+    # TODO: change to add settings.
+    def test_extra_raises_added_to_error(self):
+        program = '\n'.join([
+            'def non_explicitly_errorful_function(x, y):',
+            '    """Should not have a raises section.'
+            '',
+            '    Args:',
+            '        x: The divisor.',
+            '        y: The dividend.',
+            '',
+            '    Raises:',
+            '        ZeroDivisionError: If y is zero.',
+            '',
+            '    Returns:',
+            '        The quotient.',
+            '',
+            '    """',
+            '    return x / y',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        self.assertEqual(len(checker.errors), 1)
+        error = checker.errors[0]
+        self.assertTrue(isinstance(error, ExcessRaiseError))
+        self.assertEqual(error.name, 'ZeroDivisionError')
