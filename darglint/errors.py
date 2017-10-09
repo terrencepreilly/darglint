@@ -3,6 +3,22 @@
 Errors can be anything from being unable to parse a docstring,
 to having docstring arguments out of sync with the function/method
 definition.
+
+Groups of errors:
+    I Interface
+    S Style
+
+    100 Args
+    200 Returns
+    300 Yields
+    400 Raises
+
+These errors are based on the errors and warnings from the
+pycodestyle package.  Interface, here, describes incorrect or incomplete
+documentation.  Style, here, means errors in documentation style.
+So, for instance, missing a parameter in the documentation would be
+I101.
+
 """
 import ast
 
@@ -24,6 +40,10 @@ class DarglintError(BaseException):
     # The normal message should describe this instance of the error.
     message = None
 
+    # A unique human-readable identifier for this type of error.
+    # See the description of error code groups above.
+    error_code = None
+
     def __init__(self, function: ast.FunctionDef):
         """Create a new exception with a message and line number.
 
@@ -32,34 +52,58 @@ class DarglintError(BaseException):
 
         """
         self.function = function
+
+        # The abstract base class syntax was too verbose for this,
+        # and not really justified by the size of the module.
         if (self.message is None
                 or self.terse_message is None
-                or self.general_message is None):
+                or self.general_message is None
+                or self.error_code is None):
             raise NotImplementedError
 
 
-class ExcessReturnError(DarglintError):
-    """Describes when a docstring has a return not in definition."""
+class MissingParameterError(DarglintError):
+    """Describes when a docstring is missing a parameter in the definition."""
 
-    def __init__(self, function: ast.FunctionDef):
+    error_code = 'I101'
+
+    def __init__(self, function: ast.FunctionDef, name: str):
         """Instantiate the error's message.
 
         Args:
             function: An ast node for the function.
+            name: The name of the argument that is missing.
 
         """
-        self.general_message = 'Excess "Returns" in Docstring'
-        self.message = 'Excess "Returns" in Docstring'
+        self.general_message = 'Missing parameter(s) in Docstring'
+        self.message = '- {}'.format(name)
+        self.terse_message = name
+        super(MissingParameterError, self).__init__(function)
 
-        # We don't need a terse message, because there is only one
-        # instance of this error per function.
-        self.terse_message = ''
 
-        super(ExcessReturnError, self).__init__(function)
+class ExcessParameterError(DarglintError):
+    """Describes when a docstring contains a parameter not in function."""
+
+    error_code = 'I102'
+
+    def __init__(self, function: ast.FunctionDef, name: str):
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+            name: The name of the argument that is excess.
+
+        """
+        self.general_message = 'Excess parameter(s) in Docstring.'
+        self.message = '+ {}'.format(name)
+        self.terse_message = name
+        super(ExcessParameterError, self).__init__(function)
 
 
 class MissingReturnError(DarglintError):
     """Describes when a docstring is missing a return from definition."""
+
+    error_code = 'I201'
 
     def __init__(self, function: ast.FunctionDef):
         """Instantiate the error's message.
@@ -78,8 +122,32 @@ class MissingReturnError(DarglintError):
         super(MissingReturnError, self).__init__(function)
 
 
+class ExcessReturnError(DarglintError):
+    """Describes when a docstring has a return not in definition."""
+
+    error_code = 'I202'
+
+    def __init__(self, function: ast.FunctionDef):
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+
+        """
+        self.general_message = 'Excess "Returns" in Docstring'
+        self.message = 'Excess "Returns" in Docstring'
+
+        # We don't need a terse message, because there is only one
+        # instance of this error per function.
+        self.terse_message = ''
+
+        super(ExcessReturnError, self).__init__(function)
+
+
 class MissingYieldError(DarglintError):
     """Describes when a docstring is missing a yield present in definition."""
+
+    error_code = 'I301'
 
     def __init__(self, function: ast.FunctionDef):
         """Instantiate the error's message.
@@ -101,6 +169,8 @@ class MissingYieldError(DarglintError):
 class ExcessYieldError(DarglintError):
     """Describes when a docstring has a yield not in definition."""
 
+    error_code = 'I302'
+
     def __init__(self, function: ast.FunctionDef):
         """Instantiate the error's message.
 
@@ -118,42 +188,10 @@ class ExcessYieldError(DarglintError):
         super(ExcessYieldError, self).__init__(function)
 
 
-class ExcessParameterError(DarglintError):
-    """Describes when a docstring contains a parameter not in function."""
-
-    def __init__(self, function: ast.FunctionDef, name: str):
-        """Instantiate the error's message.
-
-        Args:
-            function: An ast node for the function.
-            name: The name of the argument that is excess.
-
-        """
-        self.general_message = 'Excess parameter(s) in Docstring.'
-        self.message = '+ {}'.format(name)
-        self.terse_message = name
-        super(ExcessParameterError, self).__init__(function)
-
-
-class MissingParameterError(DarglintError):
-    """Describes when a docstring is missing a parameter in the definition."""
-
-    def __init__(self, function: ast.FunctionDef, name: str):
-        """Instantiate the error's message.
-
-        Args:
-            function: An ast node for the function.
-            name: The name of the argument that is missing.
-
-        """
-        self.general_message = 'Missing parameter(s) in Docstring'
-        self.message = '- {}'.format(name)
-        self.terse_message = name
-        super(MissingParameterError, self).__init__(function)
-
-
 class MissingRaiseError(DarglintError):
     """Describes when a docstring is missing an exception raised."""
+
+    error_code = 'I401'
 
     def __init__(self, function: ast.FunctionDef, name: str):
         """Instantiate the error's message.
@@ -179,6 +217,8 @@ class ExcessRaiseError(DarglintError):
     catch and reraise an exception.)
 
     """
+
+    error_code = 'I402'
 
     def __init__(self, function: ast.FunctionDef, name: str):
         """Instantiate the error's message.

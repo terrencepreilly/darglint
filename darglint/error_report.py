@@ -115,6 +115,60 @@ class ErrorReport(object):
         return '\n'.join(ret)
 
 
+class LowVerbosityErrorReport(ErrorReport):
+    """An error report with a moderate amount of verbosity.
+
+    Errors will be rendered as such:
+
+        <linenumber> <function name>
+            <general error message>
+            <general error message>
+            ...
+        ...
+
+    """
+
+    @staticmethod
+    def new_current_errors() -> Set[str]:
+        """Get a new collection to store the errors of the current function.
+
+        Returns:
+            An empty set.
+
+        """
+        return set()
+
+    @staticmethod
+    def add_to_current_errors(current_errors: Set[str],
+                              error: DarglintError) -> Set[str]:
+        """Add an error to the collection of errors of the current function.
+
+        Args:
+            current_errors: The collection of DarglintErrors so far.
+            error: The error to add to this collection.
+
+        Returns:
+            The updated instance of the collection.
+
+        """
+        return current_errors | {
+            '{} {}.'.format(error.error_code, error.general_message)
+        }
+
+    @staticmethod
+    def current_errors_to_list(current_errors: Set[str]) -> List[str]:
+        """Render the collection of errors for the current function.
+
+        Args:
+            current_errors: The collection of DarglintErrors for a function.
+
+        Returns:
+            A list of strings.
+
+        """
+        return sorted(['  {}'.format(x) for x in current_errors])
+
+
 class MidVerbosityErrorReport(ErrorReport):
     """An error report with a moderate amount of verbosity.
 
@@ -152,7 +206,8 @@ class MidVerbosityErrorReport(ErrorReport):
             The updated instance of the collection.
 
         """
-        current_errors[error.general_message].append(error.terse_message)
+        error_class = '{} {}'.format(error.error_code, error.general_message)
+        current_errors[error_class].append(error.terse_message)
         return current_errors
 
     @staticmethod
@@ -178,58 +233,6 @@ class MidVerbosityErrorReport(ErrorReport):
                 ))
         ret.extend(returns)
         return ret
-
-
-class LowVerbosityErrorReport(ErrorReport):
-    """An error report with a moderate amount of verbosity.
-
-    Errors will be rendered as such:
-
-        <linenumber> <function name>
-            <general error message>
-            <general error message>
-            ...
-        ...
-
-    """
-
-    @staticmethod
-    def new_current_errors() -> Set[str]:
-        """Get a new collection to store the errors of the current function.
-
-        Returns:
-            An empty set.
-
-        """
-        return set()
-
-    @staticmethod
-    def add_to_current_errors(current_errors: Set[str],
-                              error: DarglintError) -> Set[str]:
-        """Add an error to the collection of errors of the current function.
-
-        Args:
-            current_errors: The collection of DarglintErrors so far.
-            error: The error to add to this collection.
-
-        Returns:
-            The updated instance of the collection.
-
-        """
-        return current_errors | {error.general_message + '.'}
-
-    @staticmethod
-    def current_errors_to_list(current_errors: Set[str]) -> List[str]:
-        """Render the collection of errors for the current function.
-
-        Args:
-            current_errors: The collection of DarglintErrors for a function.
-
-        Returns:
-            A list of strings.
-
-        """
-        return sorted(['  {}'.format(x) for x in current_errors])
 
 
 class HighVerbosityErrorReport(ErrorReport):
@@ -271,7 +274,7 @@ class HighVerbosityErrorReport(ErrorReport):
             The updated instance of the collection.
 
         """
-        current_errors.append('  {}'.format(error.message))
+        current_errors.append('  ' + error.message)
         return current_errors
 
     @staticmethod
