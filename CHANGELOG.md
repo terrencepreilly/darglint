@@ -22,6 +22,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   that would entail a good deal more work.  This may be implemented
   at a later date, but for now, if you're doing that, then you should
   just disable the checks for exception/error raising.
+- A `Docstring` class. This class now handles all of the parsing for
+  docstrings, and stores the attributes found from the docstring.  It
+  is the docstring corollary `FunctionDescription`.
+
+  It's attributes are either strings (`Docstring.returns_description`,
+  `Docstring.yields_description`, `Docstring.short_description`,
+  `Docstring.long_description`), or dictionaries containing
+  arguments/exceptions and their descriptions (
+  `Docstring.arguments_descriptions`, `Docstring.raises_descriptions`).
 
 ## [0.0.4] -- 2017-10-06
 
