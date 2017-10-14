@@ -5,10 +5,7 @@ from .darglint import (
 )
 from .lex import lex
 from .parse import (
-    parse_arguments,
-    parse_return,
-    parse_yield,
-    parse_raises,
+    Docstring,
 )
 from .errors import (
     ExcessParameterError,
@@ -44,19 +41,16 @@ class IntegrityChecker(object):
 
         """
         self.function = function
-        self._check_parameters()
-        self._check_return()
-        self._check_yield()
-        self._check_raises()
-        self._sorted = False
+        if function.docstring is not None:
+            self.docstring = Docstring(lex(function.docstring))
+            self._check_parameters()
+            self._check_return()
+            self._check_yield()
+            self._check_raises()
+            self._sorted = False
 
     def _check_yield(self):
-        docstring = self.function.docstring
-
-        if docstring is None:
-            return
-
-        doc_yield = len(parse_yield(lex(docstring))) > 0
+        doc_yield = len(self.docstring.yields_description) > 0
         fun_yield = self.function.has_yield
         if fun_yield and not doc_yield:
             self.errors.append(
@@ -68,13 +62,7 @@ class IntegrityChecker(object):
             )
 
     def _check_return(self):
-        docstring = self.function.docstring
-
-        # Only check if the docstring is present.
-        if docstring is None:
-            return
-
-        doc_return = len(parse_return(lex(docstring))) > 0
+        doc_return = len(self.docstring.returns_description) > 0
         fun_return = self.function.has_return
         if fun_return and not doc_return:
             self.errors.append(
@@ -86,13 +74,7 @@ class IntegrityChecker(object):
             )
 
     def _check_parameters(self):
-        docstring = self.function.docstring
-
-        # Only check if the docstring is present.
-        if docstring is None:
-            return
-
-        docstring_arguments = set(parse_arguments(lex(docstring)))
+        docstring_arguments = set(self.docstring.arguments_descriptions.keys())
         actual_arguments = set(self.function.argument_names)
         missing_in_doc = actual_arguments - docstring_arguments
         for missing in missing_in_doc:
@@ -106,13 +88,7 @@ class IntegrityChecker(object):
             )
 
     def _check_raises(self):
-        docstring = self.function.docstring
-
-        # Only check if the docstring is present.
-        if docstring is None:
-            return
-
-        docstring_raises = set(parse_raises(lex(docstring)))
+        docstring_raises = set(self.docstring.raises_descriptions.keys())
         actual_raises = self.function.raises
         missing_in_doc = actual_raises - docstring_raises
         for missing in missing_in_doc:

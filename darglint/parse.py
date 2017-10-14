@@ -1,6 +1,49 @@
-"""Defines the parse function."""
+r"""Defines the parse function.
 
-from typing import Callable, Iterable, Set
+__EBNF for a google-style docstring__:
+
+  <docstring> ::= <empty-short-description>
+              | <full-short-description><long-description><docterm>
+              | <full-short-description>
+                  [<long-description>]
+                  <section>+
+                <docterm>
+  <long-description> ::= <line>+<newline>
+  <short-description> ::= <empty-short-description>|<full-short-description>
+  <full-short-description> ::= <doc-term><line><newline>
+  <empty-short-description> ::= <doc-term><nnline><doc-term>
+  <section> ::= <single-section>|<multi-section>
+  <multi-section> ::= <empty-headline>
+                        (<full-headline>(<indent><line>)*)+
+                        <newline>
+  <single-section> ::= <emtpty-headline>(<indent><line>)+<newline>
+     | <full-headline>(<indent><line>)*<newline>
+  <headline> ::= <empty-headline>|<full-headline>
+  <empty-headline> ::= <keyword><colon><newline>
+  <full-headline> ::= <keyword><colon><space><line>
+  <line> ::= <nnline><newline>
+  <nnline> ::= (<word><space>+)*<word>
+  <keyword> ::= "Args"
+            | "Arguments"
+            | "Returns
+            | "Yields"
+            | "Raises"
+  <word> ::= <content>*
+  <colon> ::= ":"
+  <indent> ::= <space>{4}
+  <space> ::= " "
+  <newline> ::= "\n"
+  <content> ::= A letter, special character, or number.
+  <doc-term> ::= \"\"\"
+
+"""
+
+from itertools import chain
+from typing import (
+    Callable,
+    Dict,
+    Iterable,
+)
 
 from .token import Token, TokenType
 from .peaker import Peaker
@@ -10,38 +53,6 @@ class ParserException(BaseException):
     """The exception raised when there is a parsing problem."""
 
     pass
-
-# Pseudocode
-#
-# A docstring is expected to be in the following format:
-#
-#    <docstring > ::= <doc-term><content><doc-term>
-#        | <doc-term><explanation><newline>
-#              (<explanation-section><newline>)?
-#              <arguments-section>?
-#              (<return-section>|<yield-section>)?
-#          <doc-term>
-#    <yield-section> ::= Yields: <explanation>+<newline>
-#    <return-section> ::= Returns: <explanation>+<newline>
-#    <arguments-section> ::= Args:<newline><argument>+
-#    <argument> ::= <name>: <explanation>[<indent><explanation>]*
-#    <name> ::= \w[\w\d\_]*
-#    <explanation-section> ::= [explanation]+<newline>
-#    <explanation> ::= [<content><newline>]+
-#    <newline> ::= '\n'
-#    <indent> ::= '    '
-#    <content> ::= '\w', '\ ', or special characters
-#    <doc-term > ::= """
-
-
-def _expect_not_empty(peaker: Peaker[Token]):
-    """Raise an exception if peaker is empty.
-
-    Args:
-        peaker: The peaker to check to see if it is empty.
-    """
-    if not peaker.has_next():
-        raise ParserException('End of stream unexpectedly encountered')
 
 
 def _expect_type(peaker: Peaker[Token], token_type: TokenType):
@@ -105,161 +116,187 @@ def _token_is(token_type: TokenType) -> Callable:
     return check_type
 
 
-def _token_is_args(token: Token) -> bool:
-    return (token.token_type == TokenType.WORD
-            and token.value in ['Args', 'Arguments'])
+class Docstring(object):
+    """Represents a google - style docstring."""
 
+    RETURNS = ('Returns',)
+    ARGS = ('Args', 'Arguments')
+    YIELDS = ('Yields',)
+    RAISES = ('Raises',)
+    keywords = tuple(chain(
+        RETURNS,
+        ARGS,
+        YIELDS,
+        RAISES
+    ))
 
-def _token_is_return(token: Token) -> bool:
-    return (token.token_type == TokenType.WORD
-            and token.value in ['Returns'])
+    def __init__(self, tokens: Iterable[Token]):
+        """Create a new docstring from the stream of tokens.
 
+        Args:
+            tokens: A stream of tokens.
 
-def _token_is_yield(token: Token) -> bool:
-    return (token.token_type == TokenType.WORD
-            and token.value in ['Yields'])
+        """
+        self.short_description = ''
+        self.long_description = ''
+        self.arguments_descriptions = dict()  # type: Dict[str, str]
+        self.returns_description = ''
+        self.yields_description = ''
+        self.raises_descriptions = dict()  # type: Dict[str, str]
 
+        self._peaker = Peaker(tokens)
+        self._parse()
 
-def _token_is_raises(token: Token) -> bool:
-    return (token.token_type == TokenType.WORD
-            and token.value in ['Raises'])
+    def _dispatch(self, keyword: str):
+        """Parse the section described by the keyword."""
+        _expect_type(self._peaker, TokenType.COLON)
+        self._peaker.next()
+        if keyword in self.RETURNS:
+            self._parse_return()
+        elif keyword in self.YIELDS:
+            self._parse_yield()
+        elif keyword in self.ARGS:
+            self._parse_arguments()
+        elif keyword in self.RAISES:
+            self._parse_raises()
 
+    def _parse(self):
+        if not self._peaker.has_next():
+            return
+        self._parse_short_description()
 
-def _parse_argument(peaker: Peaker, indentation: int) -> str:
-    """Return the name from a section with indentation, a name, and a colon.
+        if not self._peaker.has_next():
+            return
+        _expect_type(self._peaker, TokenType.NEWLINE)
+        self._peaker.take_while(_token_is(TokenType.NEWLINE))
+        # Expect two newlines
+        _expect_type(self._peaker, TokenType.WORD)
 
-    Args:
-        peaker: Contains the tokens to parse.
-        indentation: The number of INDENT tokens before each definition.
-            This should be set by the first argument.
+        sections_started = False  # True once we encounter Args, Returns, etc.
+        while self._peaker.has_next():
 
-    Returns:
-        The name of the argument.
+            # Could be long description (multiple lines), or section.
+            if not sections_started:
+                word = self._peaker.next().value
+                is_colon = self._peaker.peak().token_type == TokenType.COLON
+                if word in self.keywords and is_colon:
+                    self._dispatch(word)
+            else:
+                _expect_type(self._peaker, TokenType.WORD)
+                self.long_description += ' '.join([
+                    x.value for x in self._peaker.take_while(
+                        _not(_token_is(TokenType.NEWLINE))
+                    )
+                ])
+            self._peaker.take_while(_token_is(TokenType.NEWLINE))
 
-    """
-    _expect_type(peaker, TokenType.WORD)
-    arg = peaker.next()
-    # get the type?
-    # get the definition?
-    peaker.take_while(_not(_token_is(TokenType.NEWLINE)))
+    def _parse_line(self) -> str:
+        """Get all of the text in a line.
 
-    if not peaker.has_next():
-        # We're at the end of the arguments, there is no return.
-        return arg.value
+        Consumes the newline.
 
-    peaker.next()  # consume the newline.
-    indents = peaker.take_while(_token_is(TokenType.INDENT))
-    # While we are one indentation in on the Argument.
-    while len(indents) >= indentation + 1:
-        peaker.take_while(_not(_token_is(TokenType.NEWLINE)))
-        if not peaker.has_next():
-            # We're at the end of the arguments.
-            break
-        peaker.next()
-        indents = peaker.take_while(_token_is(TokenType.INDENT))
-    return arg.value
+        """
+        content = self._peaker.take_while(_not(_token_is(TokenType.NEWLINE)))
+        _expect_type(self.peaker, TokenType.NEWLINE)
+        self.peaker.next()
+        return content
 
+    def _parse_short_description(self):
+        _expect_type(self._peaker, TokenType.WORD)
+        self.short_description = ' '.join([
+            x.value for x in self._peaker.take_while(_token_is(TokenType.WORD))
+        ])
 
-def parse_arguments(tokens: Iterable[Token]) -> Set[str]:
-    """Parse the stream of tokens into a `Docstring`.
+    def _parse_arguments(self):
+        self.arguments_descriptions = self._parse_multi_section()
 
-    Args:
-        tokens: The tokens which we want to parse.
+    def _parse_multi_section(self) -> Dict[str, str]:
+        """Parse a multi - section.
 
-    Returns:
-        A set of parameters to the function.
+        Returns:
+            A dictionary containing the headline as key and the
+            description as a value.
 
-    """
-    peaker = Peaker(tokens)
+        """
+        _expect_type(self._peaker, TokenType.NEWLINE)
+        self._peaker.next()
+        _expect_type(self._peaker, TokenType.INDENT)
 
-    # Toss away everything up to Args
-    peaker.take_while(_not(_token_is_args))
+        descriptions = dict()
+        indents_to_argument = len(self._peaker.take_while(
+            _token_is(TokenType.INDENT)))
 
-    if not peaker.has_next():
-        return set()
+        # Parse the whole section
+        while not _is_type(self._peaker, TokenType.NEWLINE):
+            _expect_type(self._peaker, TokenType.WORD)
+            word = self._peaker.next().value
+            _expect_type(self._peaker, TokenType.COLON)
+            self._peaker.next()
+            current_indents = indents_to_argument + 1
+            word_description = ''
 
-    peaker.next()
-    _expect_type(peaker, TokenType.COLON)
-    peaker.next()
-    _expect_type(peaker, TokenType.NEWLINE)
-    peaker.next()
+            # Parse the subsection
+            while current_indents > indents_to_argument:
+                word_description += ' '.join([
+                    x.value for x in self._peaker.take_while(
+                        _not(_token_is(TokenType.NEWLINE)))])
 
-    args = set()
-    indents = peaker.take_while(_token_is(TokenType.INDENT))
+                # If we're at the end of the docstring, finish the routine.
+                if not self._peaker.has_next():
+                    break
 
-    # Parse until there is a second newline.
-    # (_parse_argument consumes the newline after the arg.)
-    while peaker.has_next() and not _is_type(peaker, TokenType.NEWLINE):
-        args.add(_parse_argument(peaker, indentation=len(indents)))
-    return args
+                self._peaker.next()
+                current_indents = len(self._peaker.take_while(
+                    _token_is(TokenType.INDENT)))
+            descriptions[word] = word_description
 
+            # If this is the last section, end the algorithm.
+            if not self._peaker.has_next():
+                break
 
-def parse_return(tokens: Iterable[Token]) -> Set[str]:
-    """Parse the stream of tokens into a `Docstring`.
+        return descriptions
 
-    Args:
-        tokens: The tokens which we want to parse.
+    def _parse_single_section(self):
+        """Parse a single section."""
+        description = ''
 
-    Returns:
-        A set containing the return node's string, or
-        an empty set (if there is no return).
+        # The text is to the right of the heading.
+        if _is_type(self._peaker, TokenType.WORD):
+            line = self._peaker.take_while(
+                _not(_token_is(TokenType.NEWLINE)))
+            description += ' '.join([x.value for x in line])
+            if not self._peaker.has_next():
+                return
 
-    """
-    peaker = Peaker(tokens)
-    peaker.take_while(_not(_token_is_return))
-    if peaker.has_next():
-        return {peaker.next().value}
-    else:
-        return set()
+        _expect_type(self._peaker, TokenType.NEWLINE)
+        self._peaker.next()
+        indents = None
 
+        # We check for two newlines, because we could have a block below
+        # this one.
+        while not _is_type(self._peaker, TokenType.NEWLINE):
+            new_indents = self._peaker.take_while(_token_is(TokenType.INDENT))
+            if indents is None:
+                indents = len(new_indents)
+            else:
+                # Assert that they should be equal, and display error
+                pass
+            line_tokens = self._peaker.take_while(_not(
+                _token_is(TokenType.NEWLINE)))
+            description += ' '.join([x.value for x in line_tokens])
 
-def parse_yield(tokens: Iterable[Token]) -> Set[str]:
-    """Parse the stream of tokens in a docstring.
+            # If we're at the end of the docstring, finish the routine.
+            if not self._peaker.has_next():
+                break
+            _expect_type(self._peaker, TokenType.NEWLINE)
+            self._peaker.next()
+        return description
 
-    Args:
-        tokens: The tokens we want to parse.
+    def _parse_yield(self):
+        self.yields_description = self._parse_single_section()
 
-    Returns:
-        A set containing the return node's yield string,
-        or an empty set (if there is no yield section.)
+    def _parse_return(self):
+        self.returns_description = self._parse_single_section()
 
-    """
-    peaker = Peaker(tokens)
-    peaker.take_while(_not(_token_is_yield))
-    if peaker.has_next():
-        return {peaker.next().value}
-    else:
-        return set()
-
-
-def parse_raises(tokens: Iterable[Token]) -> Set[str]:
-    """Parse the stream of tokens in a docstring for a Raises section.
-
-    Args:
-        tokens: The tokens we want to parse.
-
-    Returns:
-        A set containing "Raises", or an empty set (if there is
-        no raises section.)
-
-    """
-    peaker = Peaker(tokens)
-    peaker.take_while(_not(_token_is_raises))
-
-    # There is no Raises section.
-    if not peaker.has_next():
-        return set()
-
-    _expect_type(peaker, TokenType.WORD)  # Raises
-    peaker.next()
-    _expect_type(peaker, TokenType.COLON)
-    peaker.next()
-    _expect_type(peaker, TokenType.NEWLINE)
-    peaker.next()
-
-    raises = set()
-    indents = peaker.take_while(_token_is(TokenType.INDENT))
-
-    while peaker.has_next() and not _is_type(peaker, TokenType.NEWLINE):
-        raises.add(_parse_argument(peaker, indentation=len(indents)))
-    return raises
+    def _parse_raises(self):
+        self.raises_descriptions = self._parse_multi_section()

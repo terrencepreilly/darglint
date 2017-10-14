@@ -1,5 +1,5 @@
 import ast
-from unittest import TestCase
+from unittest import TestCase, skip
 
 from darglint.integrity_checker import IntegrityChecker
 from darglint.darglint import get_function_descriptions
@@ -161,3 +161,21 @@ class IntegrityCheckerTestCase(TestCase):
         error = checker.errors[0]
         self.assertTrue(isinstance(error, ExcessRaiseError))
         self.assertEqual(error.name, 'ZeroDivisionError')
+
+    @skip('We are going to change how everything is parsed.')
+    def test_noqa_after_excess_raises(self):
+        program = '\n'.join([
+            'def some_function():',
+            '    """Raise an error.',
+            '',
+            '    Raises:',
+            '        Exception: In all cases.  # noqa: F402',
+            '',
+            '    """',
+            '    pass',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        self.assertEqual(len(checker.errors), 0)

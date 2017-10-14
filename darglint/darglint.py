@@ -121,7 +121,13 @@ def _get_exceptions_raised(fn: ast.FunctionDef) -> Set[str]:
 
 
 class FunctionDescription(object):
-    """Describes a function or method."""
+    """Describes a function or method.
+
+    Whereas a `Docstring` object describes a function's docstring,
+    a `FunctionDescription` describes the function itself.  (What,
+    ideally, the docstring should describe.)
+
+    """
 
     def __init__(self, is_method: bool, function: ast.FunctionDef):
         """Create a new FunctionDescription.
