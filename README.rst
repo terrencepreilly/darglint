@@ -28,6 +28,9 @@ Or, clone the repository, ``cd`` to the directory, and
 Usage
 -----
 
+Command Line use
+~~~~~~~~~~~~~~~~
+
 Given a python source file, ``serializers.py``, you would check the
 docstrings as follows:
 
@@ -44,6 +47,78 @@ You can give an optional verbosity setting to *darglint*. For example,
 Would give the most verbose warnings for each python module in the
 current directory.
 
+Ignoring Errors in a Docstring
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can ignore specific errors in a particular docstring. The syntax is
+much like that of *pycodestyle*, etc. It generally takes the from of:
+
+::
+
+    # noqa: <error> <argument>
+
+Where ``<error>`` is the particular error to ignore (``I402``, or
+``I201`` for example), and ``<argument>`` is what (if anything) the
+ignore statement refers to (if nothing, then it is not specified).
+
+Let us say that we want to ignore a missing return statement in the
+following docstring:
+
+::
+
+    def we_dont_want_a_returns_section():
+      """Returns the value, 3.
+
+      # noqa: I201
+
+      """
+      return 3
+
+We put the ``noqa`` anywhere in the top level of the docstring. However,
+this won't work if we are missing something more specific, like a
+parameter. We may not want to ignore all missing parameters, either,
+just one particular one. For example, we may be writing a function that
+takes a class instance as self. (Say, in a bound *celery* task.) Then we
+would do something like:
+
+::
+
+    def a_bound_function(self, arg1):
+      """Do something interesting.
+
+      Args:
+        arg1: The first argument.
+
+      # noqa: I101 arg1
+
+      """
+      arg1.execute(self)
+
+So, the argument comes to the right of the error.
+
+We may also want to mark excess documentation as being okay. For
+example, we may not want to explicitly catch and raise a
+``ZeroDivisionError``. We could do the following:
+
+::
+
+    def always_raises_exception(x):
+        """Raise a zero division error or type error.o
+
+        Args:
+          x: The argument which could be a number or could not be.
+
+        Raises:
+          ZeroDivisionError: If x is a number.  # noqa: I402
+          TypeError: If x is not a number.  # noqa: I402
+
+        """
+        x / 0
+
+So, in this case, the argument for ``noqa`` is really all the way to the
+left. (Or whatever description we are parsing.) We could also have put
+it on its own line, as ``# noqa: I402 ZeroDivisionError``.
+
 Features planned and implemented
 --------------------------------
 
@@ -57,10 +132,10 @@ It is roughly sorted in order of importance.
    function definition.
 -  [x] Add command line interface.
 -  [x] Add multiple options for output.
--  [ ] Add checks for "Raises" section, like "Args". Any exceptions
+-  [x] Add checks for "Raises" section, like "Args". Any exceptions
    raised in the body should be documented.
--  [ ] Add checks for "Yields" section, like "Returns".
--  [ ] Add numbers to errors, ability to silence certain errors. (Use
+-  [x] Add checks for "Yields" section, like "Returns".
+-  [x] Add numbers to errors, ability to silence certain errors. (Use
    same formatting as *pycodestyle*.)
 -  [ ] Add TOML configuration file (use same interface as *pydoclint*,
    etc.)
@@ -69,6 +144,8 @@ It is roughly sorted in order of importance.
 -  [ ] Add support for python versions earlier than 3.6.
 -  [ ] Syntastic support. (Syntastic is not accepting new checkers until
    their next API stabilizes, so this may take some time.)
+-  [ ] Check super classes of errors/exceptions raised to allow for more
+   general descriptions in the interface.
 
 Development
 -----------
