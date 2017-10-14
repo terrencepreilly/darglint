@@ -20,6 +20,10 @@ def _is_colon(char: str) -> bool:
     return char == ':'
 
 
+def _is_hash(char: str) -> bool:
+    return char == '#'
+
+
 def _is_separator(char: str) -> bool:
     """Check whether if `char` is a separator other than newline or space.
 
@@ -44,6 +48,7 @@ def _is_word(char: str) -> bool:
         _is_colon(char),
         _is_separator(char),
         _is_double_quotation(char),
+        _is_hash(char),
     ])
 
 
@@ -78,6 +83,9 @@ def lex(program: str) -> Iterator[List[Token]]:
                     yield Token('"""', TokenType.DOCTERM)
             else:
                 extra = value
+        elif _is_hash(peaker.peak()):
+            value = peaker.next()
+            yield Token(value, TokenType.HASH)
         else:
             value = ''.join(peaker.take_while(_is_word))
             if extra != '':

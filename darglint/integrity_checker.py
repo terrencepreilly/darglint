@@ -52,11 +52,13 @@ class IntegrityChecker(object):
     def _check_yield(self):
         doc_yield = len(self.docstring.yields_description) > 0
         fun_yield = self.function.has_yield
-        if fun_yield and not doc_yield:
+        ignore_missing = MissingYieldError.error_code in self.docstring.noqa
+        ignore_excess = ExcessYieldError.error_code in self.docstring.noqa
+        if fun_yield and not doc_yield and not ignore_missing:
             self.errors.append(
                 MissingYieldError(self.function.function)
             )
-        elif doc_yield and not fun_yield:
+        elif doc_yield and not fun_yield and not ignore_excess:
             self.errors.append(
                 ExcessYieldError(self.function.function)
             )
@@ -64,11 +66,13 @@ class IntegrityChecker(object):
     def _check_return(self):
         doc_return = len(self.docstring.returns_description) > 0
         fun_return = self.function.has_return
-        if fun_return and not doc_return:
+        ignore_missing = MissingReturnError.error_code in self.docstring.noqa
+        ignore_excess = ExcessReturnError.error_code in self.docstring.noqa
+        if fun_return and not doc_return and not ignore_missing:
             self.errors.append(
                 MissingReturnError(self.function.function)
             )
-        elif doc_return and not fun_return:
+        elif doc_return and not fun_return and not ignore_excess:
             self.errors.append(
                 ExcessReturnError(self.function.function)
             )
@@ -77,20 +81,59 @@ class IntegrityChecker(object):
         docstring_arguments = set(self.docstring.arguments_descriptions.keys())
         actual_arguments = set(self.function.argument_names)
         missing_in_doc = actual_arguments - docstring_arguments
+        missing_in_doc = self._remove_ignored(
+            missing_in_doc,
+            MissingParameterError,
+        )
         for missing in missing_in_doc:
             self.errors.append(
                 MissingParameterError(self.function.function, missing)
             )
+
         missing_in_function = docstring_arguments - actual_arguments
+        missing_in_function = self._remove_ignored(
+            missing_in_function,
+            ExcessParameterError,
+        )
         for missing in missing_in_function:
             self.errors.append(
                 ExcessParameterError(self.function.function, missing)
             )
 
+    def _remove_ignored(self, missing, error):
+        """Remove ignored from missing.
+
+        Args:
+            missing: A set of missing items.
+            error: The error being checked.
+
+        Returns:
+            A set of missing items without those to be ignored.
+
+        """
+        error_code = error.error_code
+
+        # There are no noqa statements
+        if error_code not in self.docstring.noqa:
+            return missing
+
+        # We are to ignore all of this type.
+        if self.docstring.noqa[error_code] is None:
+            return set()
+
+        # We are to ignore specific instances.
+        return missing - set(self.docstring.noqa[error_code])
+
     def _check_raises(self):
         docstring_raises = set(self.docstring.raises_descriptions.keys())
         actual_raises = self.function.raises
         missing_in_doc = actual_raises - docstring_raises
+
+        missing_in_doc = self._remove_ignored(
+            missing_in_doc,
+            MissingRaiseError,
+        )
+
         for missing in missing_in_doc:
             self.errors.append(
                 MissingRaiseError(self.function.function, missing)
@@ -103,6 +146,10 @@ class IntegrityChecker(object):
         # a certain exception from underlying calls.
         #
         missing_in_function = docstring_raises - actual_raises
+        missing_in_function = self._remove_ignored(
+            missing_in_function,
+            ExcessRaiseError,
+        )
         for missing in missing_in_function:
             self.errors.append(
                 ExcessRaiseError(self.function.function, missing)

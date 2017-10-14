@@ -1,9 +1,84 @@
+import ast
 from unittest import TestCase, skip
 
 from darglint.lex import lex
 from darglint.parse import (
     Docstring,
 )
+
+
+class DocstringTestCase(TestCase):
+
+    def test_parse_noqa_for_argument(self):
+        func = '\n'.join([
+            'def my_function():',
+            '    """Has an extra argument, but thats okay.',
+            '',
+            '    Args:',
+            '        arg1: This will be defined very soon.  # noqa: I102',
+            '',
+            '    """',
+            '    print("Not done yet!")',
+        ])
+        doc = ast.get_docstring(ast.parse(func).body[0])
+        self.assertTrue(doc.startswith('Has an extra'))
+        docstring = Docstring(lex(doc))
+        self.assertTrue('arg1' in docstring.arguments_descriptions)
+        self.assertTrue('arg1' in docstring.noqa['I102'])
+
+    def test_parse_noqa_for_global(self):
+        func = '\n'.join([
+            'def my_function():',
+            '    """Ignore missing return.',
+            '',
+            '    # noqa: I201',
+            '',
+            '    """',
+            '    return "This is ignored."',
+        ])
+        doc = ast.get_docstring(ast.parse(func).body[0])
+        docstring = Docstring(lex(doc))
+        self.assertTrue(docstring.noqa['I201'] is None)
+
+    def test_parse_global_noqa_with_target(self):
+        func = '\n'.join([
+            'def my_function(arg1):',
+            '    """Ignore missing argument.',
+            '',
+            '    # noqa: I101 arg1',
+            '',
+            '    """',
+            '    pass',
+        ])
+        doc = ast.get_docstring(ast.parse(func).body[0])
+        docstring = Docstring(lex(doc))
+        self.assertTrue('arg1' in docstring.noqa['I101'])
+
+    def test_parses_long_description(self):
+        func = '\n'.join([
+            'def this_function_has_a_long_description(arg1):',
+            '    """Return the arg, unchanged.',
+            '',
+            '    This function returns the arg, unchanged.  There is',
+            '    no particular reason, but this is a good place to check to ',
+            '    see that long descriptions are being parsed correctly. ',
+            '    If they are, I\'m not sure why.  There is some magic ',
+            '    going on here, in fact.',
+            '',
+            '    Args:',
+            '        arg1: The value returned.',
+            '',
+            '    Returns:',
+            '        The original argument, unchanged.',
+            '',
+            '    """',
+            '    return arg1',
+        ])
+        doc = ast.get_docstring(ast.parse(func).body[0])
+        docstring = Docstring(lex(doc))
+        self.assertTrue(
+            docstring.long_description.startswith('This function returns')
+        )
 
 
 class ParserTestCase(TestCase):

@@ -3,13 +3,14 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.0.5] -- Unreleased
+## [0.0.5] -- 2017-10-14
 
 ### Added
 
 - Checks for a "Yields" section added.  If a function contains
   either the `yield` or `yield from` keywords, *darglint* will
   expect to find a "Yields" section in the docstring.
+
 - Checks for a "Raises" section added.  If a function raises an
   exception, then the raises section should document the exact
   exception or error raised.  Will also warn if the raises
@@ -22,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   that would entail a good deal more work.  This may be implemented
   at a later date, but for now, if you're doing that, then you should
   just disable the checks for exception/error raising.
+
 - A `Docstring` class. This class now handles all of the parsing for
   docstrings, and stores the attributes found from the docstring.  It
   is the docstring corollary `FunctionDescription`.
@@ -31,6 +33,68 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   `Docstring.long_description`), or dictionaries containing
   arguments/exceptions and their descriptions (
   `Docstring.arguments_descriptions`, `Docstring.raises_descriptions`).
+
+- We can now ignore certain errors using `noqa`.  The syntax for
+  `noqa` is very similar to that used for *pycodestyle* and other
+  linters, with the exception that `noqa`, here, can take an argument.
+
+  Let us say that we want to ignore a missing return statement
+  in the following docstring:
+
+    ```
+    def we_dont_want_a_returns_section():
+      """Returns the value, 3.
+
+      # noqa: I201
+
+      """
+      return 3
+    ```
+
+  We put the `noqa` anywhere in the top level of the docstring.
+  However, this won't work if we are missing something more specific,
+  like a parameter.  We may not want to ignore all missing parameters,
+  either, just one particular one.  For example, we may be writing a
+  function that takes a class instance as self. (Say, in a bound *celery*
+  task.) Then we would do something like:
+
+    ```
+    def a_bound_function(self, arg1):
+      """Do something interesting.
+
+      Args:
+        arg1: The first argument.
+
+      # noqa: I101 arg1
+
+      """
+      arg1.execute(self)
+    ```
+
+  So, the argument comes to the right of the error.
+
+  We may also want to mark excess documentation as being okay.  For example,
+  we may not want to explicitly catch and raise a `ZeroDivisionError`.  We
+  could do the following:
+
+    ```
+    def always_raises_exception(x):
+        """Raise a zero division error or type error.o
+
+        Args:
+          x: The argument which could be a number or could not be.
+
+        Raises:
+          ZeroDivisionError: If x is a number.  # noqa: I402
+          TypeError: If x is not a number.  # noqa: I402
+
+        """
+        x / 0
+    ```
+
+  So, in this case, the argument for `noqa` is really all the way to
+  the left.  (Or whatever description we are parsing.)  We could also
+  have put it on its own line, as `# noqa: I402 ZeroDivisionError`.
 
 ## [0.0.4] -- 2017-10-06
 

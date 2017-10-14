@@ -56,6 +56,12 @@ class LexTestCase(TestCase):
         for token in tokens[1:-1]:
             self.assertEqual(token.token_type, TokenType.WORD)
 
+    def test_hash(self):
+        tokens = list(lex('#'))
+        token = tokens[0]
+        self.assertEqual(token.value, '#')
+        self.assertEqual(token.token_type, TokenType.HASH)
+
     def test_extended_docstring(self):
         docstring = '\n'.join([
             '"""The oneline description.',

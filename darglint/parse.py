@@ -133,6 +133,23 @@ class Docstring(object):
     def __init__(self, tokens: Iterable[Token]):
         """Create a new docstring from the stream of tokens.
 
+        Attributes of the class either detail descriptions, or
+        noqa statements (errors to ignore for a given detail.)
+
+        For example, if we wish to ignore an extra member in the
+        raises section, (say, a ZeroDivisionError, because we are
+        doing some division, and we want to allow the error to
+        propagate up), then we would have the key and item
+        `('I402', ['ZeroDivisionError'])` in the noqa dictionary.
+
+        If a noqa statement is for a global member of the docstring
+        (such as the return statement or short description), then
+        the item may be None.  For example, to ignore a missing
+        return, we would have `('I201', None)` in the noqa dictionary.
+
+        Noqa statements should appear either after the section/argument
+        they reference, or at the end of the long description.
+
         Args:
             tokens: A stream of tokens.
 
@@ -143,6 +160,7 @@ class Docstring(object):
         self.returns_description = ''
         self.yields_description = ''
         self.raises_descriptions = dict()  # type: Dict[str, str]
+        self.noqa = dict()  # type: Dict[str, str]
 
         self._peaker = Peaker(tokens)
         self._parse()
@@ -169,46 +187,66 @@ class Docstring(object):
             return
         _expect_type(self._peaker, TokenType.NEWLINE)
         self._peaker.take_while(_token_is(TokenType.NEWLINE))
-        # Expect two newlines
-        _expect_type(self._peaker, TokenType.WORD)
+        # _expect_type(self._peaker, TokenType.WORD)
 
-        sections_started = False  # True once we encounter Args, Returns, etc.
+        is_keyword = self._peaker.peak().value in self.keywords
+        if not is_keyword:
+            self._parse_long_description()
+
         while self._peaker.has_next():
+            is_keyword = self._peaker.peak().value in self.keywords
+            is_hash = self._peaker.peak().token_type == TokenType.HASH
+            is_newline = self._peaker.peak().token_type == TokenType.NEWLINE
+            if is_keyword:
+                keyword = self._peaker.next().value
+                _expect_type(self._peaker, TokenType.COLON)
+                self._dispatch(keyword)
+            elif is_hash:
+                self._parse_possible_noqa(None)
+            elif is_newline:
+                self._peaker.next()
+            else:
+                # ignore -- it's an uknown section type and not a noqa.
+                self._parse_line()
+
+        # while self._peaker.has_next():
+            # If it's a keyword, then sections have been started
+            # If sections haven't started, then
+            #    Add the word to the long description, parse the rest of the
+            #    line.
+            # If sections have started
+            #    If it's a keyword, dispatch
+            #    If it's a hash, then parse noqa and throw away the result
+            #    Otherwise, ignore (unknown section type)
 
             # Could be long description (multiple lines), or section.
-            if not sections_started:
-                word = self._peaker.next().value
-                is_colon = self._peaker.peak().token_type == TokenType.COLON
-                if word in self.keywords and is_colon:
-                    self._dispatch(word)
-            else:
-                _expect_type(self._peaker, TokenType.WORD)
-                self.long_description += ' '.join([
-                    x.value for x in self._peaker.take_while(
-                        _not(_token_is(TokenType.NEWLINE))
-                    )
-                ])
-            self._peaker.take_while(_token_is(TokenType.NEWLINE))
 
-    def _parse_line(self) -> str:
-        """Get all of the text in a line.
-
-        Consumes the newline.
-
-        """
-        content = self._peaker.take_while(_not(_token_is(TokenType.NEWLINE)))
-        _expect_type(self.peaker, TokenType.NEWLINE)
-        self.peaker.next()
-        return content
+#            if not sections_started:
+#                word = self._peaker.next().value
+#                is_colon = self._peaker.peak().token_type == TokenType.COLON
+#                if word in self.keywords and is_colon:
+#                    self._dispatch(word)
+#            else:
+#                _expect_type(self._peaker, TokenType.WORD)
+#                self.long_description += ' '.join([
+#                    x.value for x in self._peaker.take_while(
+#                        _not(_token_is(TokenType.NEWLINE))
+#                    )
+#                ])
+#            self._peaker.take_while(_token_is(TokenType.NEWLINE))
 
     def _parse_short_description(self):
-        _expect_type(self._peaker, TokenType.WORD)
-        self.short_description = ' '.join([
-            x.value for x in self._peaker.take_while(_token_is(TokenType.WORD))
-        ])
+        self.short_description = self._parse_line(None)
 
-    def _parse_arguments(self):
-        self.arguments_descriptions = self._parse_multi_section()
+    def _parse_long_description(self):
+        while self._peaker.has_next():
+            is_keyword = self._peaker.peak().value in self.keywords
+            if is_keyword:
+                return
+            space = ' ' if self.long_description != '' else ''
+            while not self._at_terminal():
+                self.long_description += space + self._parse_line(None)
+            self._peaker.take_while(_token_is(TokenType.NEWLINE))
 
     def _parse_multi_section(self) -> Dict[str, str]:
         """Parse a multi - section.
@@ -237,9 +275,7 @@ class Docstring(object):
 
             # Parse the subsection
             while current_indents > indents_to_argument:
-                word_description += ' '.join([
-                    x.value for x in self._peaker.take_while(
-                        _not(_token_is(TokenType.NEWLINE)))])
+                word_description = self._parse_line(word)
 
                 # If we're at the end of the docstring, finish the routine.
                 if not self._peaker.has_next():
@@ -262,9 +298,7 @@ class Docstring(object):
 
         # The text is to the right of the heading.
         if _is_type(self._peaker, TokenType.WORD):
-            line = self._peaker.take_while(
-                _not(_token_is(TokenType.NEWLINE)))
-            description += ' '.join([x.value for x in line])
+            description += self._parse_line(None)
             if not self._peaker.has_next():
                 return
 
@@ -281,9 +315,7 @@ class Docstring(object):
             else:
                 # Assert that they should be equal, and display error
                 pass
-            line_tokens = self._peaker.take_while(_not(
-                _token_is(TokenType.NEWLINE)))
-            description += ' '.join([x.value for x in line_tokens])
+            description += self._parse_line(None)
 
             # If we're at the end of the docstring, finish the routine.
             if not self._peaker.has_next():
@@ -291,6 +323,102 @@ class Docstring(object):
             _expect_type(self._peaker, TokenType.NEWLINE)
             self._peaker.next()
         return description
+
+    def _at_terminal(self):
+        """Return true if at line terminal: newline or empty."""
+        is_empty = not self._peaker.has_next()
+        if is_empty:
+            return True
+        newline_is_next = _is_type(self._peaker, TokenType.NEWLINE)
+        if newline_is_next:
+            return True
+
+    def _parse_line(self, target) -> str:
+        """Parse up to the newline, returning the string representation.
+
+        Recursively gets the words in the line, up to (but not including)
+        the newline.
+
+        Args:
+            target: If we are parsing an argument description or raises
+                description, target is the argument/exception we are
+                describing.
+
+        Returns:
+            Space-separated values of the tokens up to the newline.
+
+        """
+        if _is_type(self._peaker, TokenType.NEWLINE):
+            return ''
+        elif _is_type(self._peaker, TokenType.HASH):
+            return self._parse_possible_noqa(target)
+
+        word = self._peaker.next().value
+        if self._at_terminal():
+            return word
+        else:
+            return word + ' ' + self._parse_line(target)
+
+    def _parse_possible_noqa(self, target) -> str:
+        """Return the value if it's not noqa, otherwise return blank.
+
+        This should be called when we encounter a hash mark.  If there
+        is a valid noqa after the hash, then it will be added to the noqa
+        dictionary, and a blank string will be returned.  Otherwise, the
+        hash and whatever comes after it will be returned.
+
+        Does not consume the newline.
+
+        Args:
+            target: None if we are at the global scope.  If we are in a
+                section, then it should be the current parameter/error
+                whose description we are parsing.
+
+        Returns:
+            A string which is either blank, or represents the tokens up to
+            the newline.
+
+        """
+        def add_to_errors(error, item):
+            # Target should be none only if it is always a global attribute.
+            if item is None:
+                self.noqa[error_to_ignore] = None
+            else:
+                if error_to_ignore not in self.noqa:
+                    self.noqa[error_to_ignore] = list()
+                self.noqa[error_to_ignore].append(item)
+
+        _expect_type(self._peaker, TokenType.HASH)
+        self._peaker.next()
+
+        if not self._peaker.has_next():
+            return '#'
+
+        # If it's not a noqa statement, then return up to the newline.
+        is_word = self._peaker.peak().token_type == TokenType.WORD
+        is_noqa = False if not is_word else self._peaker.peak().value == 'noqa'
+        if not (is_word and is_noqa):
+            return '# ' + self._parse_line(target)
+
+        self._peaker.next()
+        _expect_type(self._peaker, TokenType.COLON)
+        self._peaker.next()
+        _expect_type(self._peaker, TokenType.WORD)
+        error_to_ignore = self._peaker.next().value
+
+        # If we're at the end of the line, add to errors and return
+        if self._at_terminal():
+            add_to_errors(error_to_ignore, target)
+            return ''
+
+        # Otherwise, we are specifying a target, so grab it, add and return.
+        _expect_type(self._peaker, TokenType.WORD)
+        target = self._peaker.next().value
+        add_to_errors(error_to_ignore, target)
+        return ''
+
+    def _parse_arguments(self):
+        self.arguments_descriptions = self._parse_multi_section()
 
     def _parse_yield(self):
         self.yields_description = self._parse_single_section()

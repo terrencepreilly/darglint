@@ -11,6 +11,7 @@ class TokenType(Enum):
     DOCTERM = 3  # """
     NEWLINE = 4
     INDENT = 5  # Assumed to always be 4 spaces
+    HASH = 6  # A hash mark (for comments/noqa).
 
 
 class Token(object):
