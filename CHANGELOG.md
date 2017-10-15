@@ -3,6 +3,35 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.0.6] -- 2017-10-15
+
+### Added
+
+- Verifies types specified in the docstring against type hints
+  on the function.  Also added `noqa` for these errors.
+
+  For example, if we have a function with a mismatched type,
+  such as:
+
+    ```
+    def mismatched_type(x: int) -> str:
+      """Return the string representation of the number.
+
+      Args:
+        x (float): The float to represent.
+
+      Returns:
+        str: The string representation of the number.
+
+      """
+      return str(x)
+    ```
+
+  Then it would raise a `TypeMismatchError`, since the parameter,
+  `x`, has a type hint of `int`, while the docstring documents
+  it as being of type `float`.  We could prevent this error
+  by either adding `# noqa: I103` or `# noqa: I103 x`.
+
 ## [0.0.5] -- 2017-10-14
 
 ### Added

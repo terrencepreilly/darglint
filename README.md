@@ -134,7 +134,7 @@ in the body should be documented.
 - [x] Add numbers to errors, ability to silence certain errors.  (Use same
 formatting as *pycodestyle*.)
 - [ ] Add TOML configuration file (use same interface as *pydoclint*, etc.)
-- [ ] Add type hint integration.  If an argument has a type hint, then
+- [x] Add type hint integration.  If an argument has a type hint, then
 the description of the argument, if it has a type, should match that.
 - [ ] Add support for python versions earlier than 3.6.
 - [ ] Syntastic support. (Syntastic is not accepting new checkers until
