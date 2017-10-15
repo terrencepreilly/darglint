@@ -52,6 +52,12 @@ class IntegrityChecker(object):
             self._sorted = False
 
     def _check_parameter_types(self):
+        error_code = ParameterTypeMismatchError.error_code
+        noqa_exists = error_code in self.docstring.noqa
+        is_global = noqa_exists and self.docstring.noqa[error_code] is None
+        if noqa_exists and is_global:
+            return
+
         doc_arg_types = list()
         for name in self.function.argument_names:
             if name not in self.docstring.argument_types:
@@ -65,7 +71,9 @@ class IntegrityChecker(object):
         ):
             if expected is None or actual is None:
                 continue
-            if expected != actual:
+            name_has_noqa = noqa_exists and name in self.docstring.noqa[
+                error_code]
+            if not (expected == actual or name_has_noqa):
                 self.errors.append(
                     ParameterTypeMismatchError(
                         self.function.function,

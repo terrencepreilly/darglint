@@ -298,3 +298,40 @@ class IntegrityCheckerTestCase(TestCase):
             '    print(\'Doesnt yield\')',
         ])
         self.has_no_errors(program)
+
+    def test_noqa_for_parameter_type_mismatch(self):
+        program = '\n'.join([
+            'def square_root(x: int) -> float:',
+            '    """Get the square root of the number.',
+            '',
+            '    Args:',
+            '        x (float): The number to root.',
+            '',
+            '    Returns:',
+            '        float: The square root',
+            '',
+            '    # noqa: I103',
+            '',
+            '    """',
+            '    return x ** 0.5',
+        ])
+        self.has_no_errors(program)
+
+    def test_noqa_for_parameter_type_mismatch_by_name(self):
+        program = '\n'.join([
+            'def square_root(x: int, y: int) -> float:',
+            '    """Get the square root of the number.',
+            '',
+            '    Args:',
+            '        x (float): The number to root.',
+            '        y (int): Something else.',
+            '',
+            '    Returns:',
+            '        float: The square root',
+            '',
+            '    # noqa: I103 x',
+            '',
+            '    """',
+            '    return x ** 0.5',
+        ])
+        self.has_no_errors(program)
