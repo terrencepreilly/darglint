@@ -12,6 +12,7 @@ from darglint.errors import (
     MissingReturnError,
     MissingYieldError,
     ParameterTypeMismatchError,
+    ReturnTypeMismatchError,
 )
 
 
@@ -187,6 +188,31 @@ class IntegrityCheckerTestCase(TestCase):
         self.assertEqual(error.expected, 'int')
         self.assertEqual(error.actual, 'float')
 
+    def test_return_type_checked_if_defined_in_docstring_and_function(self):
+        program = '\n'.join([
+            'def update_model(x: dict) -> dict:',
+            '    """Update the model represented by the dictionary.',
+            '',
+            '    Args:',
+            '        x (dict): The dictionary to update.',
+            '',
+            '    Returns:',
+            '        list: The updated dictionary.',
+            '',
+            '    """',
+            '    x.update({"data": 3})',
+            '    return x',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        self.assertEqual(len(checker.errors), 1)
+        error = checker.errors[0]
+        self.assertTrue(isinstance(error, ReturnTypeMismatchError))
+        self.assertEqual(error.expected, 'dict')
+        self.assertEqual(error.actual, 'list')
+
     def has_no_errors(self, program):
         tree = ast.parse(program)
         functions = get_function_descriptions(tree)
@@ -333,5 +359,24 @@ class IntegrityCheckerTestCase(TestCase):
             '',
             '    """',
             '    return x ** 0.5',
+        ])
+        self.has_no_errors(program)
+
+    def test_noqa_for_return_type_mismatch(self):
+        program = '\n'.join([
+            'def update_model(x: dict) -> dict:',
+            '    """Update the model represented by the dictionary.',
+            '',
+            '    Args:',
+            '        x (dict): The dictionary to update.',
+            '',
+            '    Returns:',
+            '        list: The updated dictionary.',
+            '',
+            '    # noqa: I203',
+            '',
+            '    """',
+            '    x.update({"data": 3})',
+            '    return x',
         ])
         self.has_no_errors(program)

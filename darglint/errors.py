@@ -182,6 +182,39 @@ class ExcessReturnError(DarglintError):
         super(ExcessReturnError, self).__init__(function)
 
 
+class ReturnTypeMismatchError(DarglintError):
+    """Describes when a docstring parameter type doesn't match function."""
+
+    error_code = 'I203'
+
+    def __init__(self,
+                 function: ast.FunctionDef,
+                 expected: str,
+                 actual: str):
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+            expected: The type defined in the function.
+            actual: The type described in the docstring.
+
+        """
+        self.general_message = 'Return type mismatch'
+        self.terse_message = ' ~Return: expected {} but was {}'.format(
+            expected,
+            actual,
+        )
+        self.message = (
+            'Return type mismatch: expected {} but was {}'.format(
+                expected,
+                actual,
+            )
+        )
+        self.expected = expected
+        self.actual = actual
+        super(ReturnTypeMismatchError, self).__init__(function)
+
+
 class MissingYieldError(DarglintError):
     """Describes when a docstring is missing a yield present in definition."""
 

@@ -17,6 +17,7 @@ from .errors import (
     MissingReturnError,
     MissingYieldError,
     ParameterTypeMismatchError,
+    ReturnTypeMismatchError,
 )
 from .error_report import (
     LowVerbosityErrorReport,
@@ -47,6 +48,7 @@ class IntegrityChecker(object):
             self._check_parameters()
             self._check_parameter_types()
             self._check_return()
+            self._check_return_type()
             self._check_yield()
             self._check_raises()
             self._sorted = False
@@ -81,6 +83,23 @@ class IntegrityChecker(object):
                         expected=expected,
                         actual=actual,
                     )
+                )
+
+    def _check_return_type(self):
+        error_code = ReturnTypeMismatchError.error_code
+        if error_code in self.docstring.noqa:
+            return
+
+        fun_type = self.function.return_type
+        doc_type = self.docstring.return_type
+        if fun_type is not None and doc_type is not None:
+            if fun_type != doc_type:
+                self.errors.append(
+                    ReturnTypeMismatchError(
+                        self.function.function,
+                        expected=fun_type,
+                        actual=doc_type,
+                    ),
                 )
 
     def _check_yield(self):
