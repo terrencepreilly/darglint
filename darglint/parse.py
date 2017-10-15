@@ -43,6 +43,7 @@ from typing import (
     Callable,
     Dict,
     Iterable,
+    Tuple,
 )
 
 from .token import Token, TokenType
@@ -157,7 +158,9 @@ class Docstring(object):
         self.short_description = ''
         self.long_description = ''
         self.arguments_descriptions = dict()  # type: Dict[str, str]
+        self.argument_types = dict()  # type: Dict[str, str]
         self.returns_description = ''
+        self.return_type = None  # type: str
         self.yields_description = ''
         self.raises_descriptions = dict()  # type: Dict[str, str]
         self.noqa = dict()  # type: Dict[str, str]
@@ -169,6 +172,7 @@ class Docstring(object):
         """Parse the section described by the keyword."""
         _expect_type(self._peaker, TokenType.COLON)
         self._peaker.next()
+
         if keyword in self.RETURNS:
             self._parse_return()
         elif keyword in self.YIELDS:
@@ -207,33 +211,7 @@ class Docstring(object):
                 self._peaker.next()
             else:
                 # ignore -- it's an uknown section type and not a noqa.
-                self._parse_line()
-
-        # while self._peaker.has_next():
-            # If it's a keyword, then sections have been started
-            # If sections haven't started, then
-            #    Add the word to the long description, parse the rest of the
-            #    line.
-            # If sections have started
-            #    If it's a keyword, dispatch
-            #    If it's a hash, then parse noqa and throw away the result
-            #    Otherwise, ignore (unknown section type)
-
-            # Could be long description (multiple lines), or section.
-
-#            if not sections_started:
-#                word = self._peaker.next().value
-#                is_colon = self._peaker.peak().token_type == TokenType.COLON
-#                if word in self.keywords and is_colon:
-#                    self._dispatch(word)
-#            else:
-#                _expect_type(self._peaker, TokenType.WORD)
-#                self.long_description += ' '.join([
-#                    x.value for x in self._peaker.take_while(
-#                        _not(_token_is(TokenType.NEWLINE))
-#                    )
-#                ])
-#            self._peaker.take_while(_token_is(TokenType.NEWLINE))
+                self._parse_line(None)
 
     def _parse_short_description(self):
         self.short_description = self._parse_line(None)
@@ -248,12 +226,12 @@ class Docstring(object):
                 self.long_description += space + self._parse_line(None)
             self._peaker.take_while(_token_is(TokenType.NEWLINE))
 
-    def _parse_multi_section(self) -> Dict[str, str]:
+    def _parse_multi_section(self) -> Dict[str, Tuple[str, str]]:
         """Parse a multi - section.
 
         Returns:
             A dictionary containing the headline as key and the
-            description as a value.
+            type and description as a values (in a tuple).
 
         """
         _expect_type(self._peaker, TokenType.NEWLINE)
@@ -268,8 +246,17 @@ class Docstring(object):
         while not _is_type(self._peaker, TokenType.NEWLINE):
             _expect_type(self._peaker, TokenType.WORD)
             word = self._peaker.next().value
-            _expect_type(self._peaker, TokenType.COLON)
-            self._peaker.next()
+            word_type = None
+            if _is_type(self._peaker, TokenType.COLON):
+                _expect_type(self._peaker, TokenType.COLON)
+                self._peaker.next()
+            elif _is_type(self._peaker, TokenType.WORD):
+                word_type = self._peaker.next().value
+                if not (word_type.startswith('(') and word_type.endswith(')')):
+                    # Raise exception
+                    pass
+                word_type = word_type[1:-1]
+
             current_indents = indents_to_argument + 1
             word_description = ''
 
@@ -284,7 +271,7 @@ class Docstring(object):
                 self._peaker.next()
                 current_indents = len(self._peaker.take_while(
                     _token_is(TokenType.INDENT)))
-            descriptions[word] = word_description
+            descriptions[word] = (word_type, word_description)
 
             # If this is the last section, end the algorithm.
             if not self._peaker.has_next():
@@ -418,7 +405,13 @@ class Docstring(object):
         return ''
 
     def _parse_arguments(self):
-        self.arguments_descriptions = self._parse_multi_section()
+        descriptions = self._parse_multi_section()
+        self.arguments_descriptions = {
+            key: descriptions[key][1] for key in descriptions
+        }
+        self.argument_types = {
+            key: descriptions[key][0] for key in descriptions
+        }
 
     def _parse_yield(self):
         self.yields_description = self._parse_single_section()
@@ -426,5 +419,21 @@ class Docstring(object):
     def _parse_return(self):
         self.returns_description = self._parse_single_section()
 
+        # Attempt to remove the return type, if any.
+        try:
+            colon_index = self.returns_description.index(':')
+            up_to_colon = self.returns_description[:colon_index].strip()
+            spaces = up_to_colon.count(' ')
+            colon_after_first_word = spaces == 0
+            if colon_after_first_word:
+                self.return_type = up_to_colon
+                self.returns_description = self.returns_description[
+                    colon_index + 2:]
+        except ValueError:
+            # There was no colon, and, hence, no return type.
+            pass
+
     def _parse_raises(self):
-        self.raises_descriptions = self._parse_multi_section()
+        self.raises_descriptions = {
+            key: value[1] for key, value in self._parse_multi_section().items()
+        }

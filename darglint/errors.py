@@ -94,10 +94,48 @@ class ExcessParameterError(DarglintError):
             name: The name of the argument that is excess.
 
         """
-        self.general_message = 'Excess parameter(s) in Docstring.'
+        self.general_message = 'Excess parameter(s) in Docstring'
         self.message = '+ {}'.format(name)
         self.terse_message = name
         super(ExcessParameterError, self).__init__(function)
+
+
+class ParameterTypeMismatchError(DarglintError):
+    """Describes when a docstring parameter type doesn't match function."""
+
+    error_code = 'I103'
+
+    def __init__(self,
+                 function: ast.FunctionDef,
+                 name: str,
+                 expected: str,
+                 actual: str):
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+            name: The name of the parameter.
+            expected: The type defined in the function.
+            actual: The type described in the docstring.
+
+        """
+        self.general_message = 'Parameter type mismatch'
+        self.terse_message = ' ~{}: expected {} but was {}'.format(
+            name,
+            expected,
+            actual,
+        )
+        self.message = (
+            'Parameter type mismatch for "{}": expected {} but was {}'.format(
+                name,
+                expected,
+                actual,
+            )
+        )
+        self.name = name
+        self.expected = expected
+        self.actual = actual
+        super(ParameterTypeMismatchError, self).__init__(function)
 
 
 class MissingReturnError(DarglintError):

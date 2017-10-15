@@ -16,6 +16,7 @@ from .errors import (
     MissingRaiseError,
     MissingReturnError,
     MissingYieldError,
+    ParameterTypeMismatchError,
 )
 from .error_report import (
     LowVerbosityErrorReport,
@@ -44,10 +45,35 @@ class IntegrityChecker(object):
         if function.docstring is not None:
             self.docstring = Docstring(lex(function.docstring))
             self._check_parameters()
+            self._check_parameter_types()
             self._check_return()
             self._check_yield()
             self._check_raises()
             self._sorted = False
+
+    def _check_parameter_types(self):
+        doc_arg_types = list()
+        for name in self.function.argument_names:
+            if name not in self.docstring.argument_types:
+                doc_arg_types.append(None)
+            else:
+                doc_arg_types.append(self.docstring.argument_types[name])
+        for name, expected, actual in zip(
+                self.function.argument_names,
+                self.function.argument_types,
+                doc_arg_types,
+        ):
+            if expected is None or actual is None:
+                continue
+            if expected != actual:
+                self.errors.append(
+                    ParameterTypeMismatchError(
+                        self.function.function,
+                        name=name,
+                        expected=expected,
+                        actual=actual,
+                    )
+                )
 
     def _check_yield(self):
         doc_yield = len(self.docstring.yields_description) > 0

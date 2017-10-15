@@ -73,3 +73,39 @@ class GetFunctionsAndDocstrings(TestCase):
         tree = ast.parse(program)
         function = get_function_descriptions(tree)[0]
         self.assertEqual(function.raises, {'ZeroDivisionError'})
+
+    def test_extracts_type_hints_for_arguments(self):
+        program = '\n'.join([
+            'def square_root(x: int) -> float:',
+            '    return x ** 0.5',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        self.assertEqual(function.argument_types, ['int'])
+
+    def test_argument_types_are_non_if_not_specified(self):
+        program = '\n'.join([
+            'def square_root(x):',
+            '    return x ** 0.5',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        self.assertEqual(function.argument_types, [None])
+
+    def test_extracts_return_type(self):
+        program = '\n'.join([
+            'def square_root(x: int) -> float:',
+            '    return x ** 0.5',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        self.assertEqual(function.return_type, 'float')
+
+    def test_return_type_non_if_not_specified(self):
+        program = '\n'.join([
+            'def square_root(x):',
+            '    return x ** 0.5',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        self.assertEqual(function.return_type, None)

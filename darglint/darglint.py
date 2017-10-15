@@ -4,6 +4,7 @@ from typing import (
     List,
     Iterator,
     Set,
+    Tuple,
 )
 
 
@@ -23,11 +24,16 @@ def read_program(filename: str) -> str:
     return program
 
 
-def _get_arguments(fn: ast.FunctionDef) -> List[str]:
-    ret = list()  # type: List[str]
+def _get_arguments(fn: ast.FunctionDef) -> Tuple[List[str], List[str]]:
+    arguments = list()  # type: List[str]
+    types = list()  # type: List[str]
     for arg in fn.args.args:
-        ret.append(arg.arg)
-    return ret
+        arguments.append(arg.arg)
+        if arg.annotation is not None:
+            types.append(arg.annotation.id)
+        else:
+            types.append(None)
+    return arguments, types
 
 
 def _has_return(fun: ast.FunctionDef) -> bool:
@@ -88,12 +94,14 @@ def _is_staticmethod(fun: ast.FunctionDef) -> bool:
 
 
 def _get_stripped_method_args(method: ast.FunctionDef) -> List[str]:
-    args = _get_arguments(method)
+    args, types = _get_arguments(method)
     if 'cls' in args and _is_classmethod(method):
         args.remove('cls')
+        types.pop(0)
     elif 'self' in args and not _is_staticmethod(method):
         args.remove('self')
-    return args
+        types.pop(0)
+    return args, types
 
 
 def _get_all_raises(fn: ast.FunctionDef) -> Iterator[ast.Raise]:
@@ -120,6 +128,12 @@ def _get_exceptions_raised(fn: ast.FunctionDef) -> Set[str]:
     return ret
 
 
+def _get_return_type(fn: ast.FunctionDef) -> str:
+    if fn.returns is None:
+        return None
+    return fn.returns.id
+
+
 class FunctionDescription(object):
     """Describes a function or method.
 
@@ -143,10 +157,13 @@ class FunctionDescription(object):
         self.line_number = function.lineno
         self.name = function.name
         if is_method:
-            self.argument_names = _get_stripped_method_args(function)
+            self.argument_names, self.argument_types = (
+                _get_stripped_method_args(function)
+            )
         else:
-            self.argument_names = _get_arguments(function)
+            self.argument_names, self.argument_types = _get_arguments(function)
         self.has_return = _has_return(function)
+        self.return_type = _get_return_type(function)
         self.has_yield = _has_yield(function)
         self.docstring = _get_docstring(function)
         self.raises = _get_exceptions_raised(function)

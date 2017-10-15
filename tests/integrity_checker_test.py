@@ -11,6 +11,7 @@ from darglint.errors import (
     MissingRaiseError,
     MissingReturnError,
     MissingYieldError,
+    ParameterTypeMismatchError,
 )
 
 
@@ -161,6 +162,30 @@ class IntegrityCheckerTestCase(TestCase):
         error = checker.errors[0]
         self.assertTrue(isinstance(error, ExcessRaiseError))
         self.assertEqual(error.name, 'ZeroDivisionError')
+
+    def test_arg_types_checked_if_in_both_docstring_and_function(self):
+        program = '\n'.join([
+            'def square_root(x: int) -> float:',
+            '    """Get the square root of the number.',
+            '',
+            '    Args:',
+            '        x (float): The number to root.',
+            '',
+            '    Returns:',
+            '        float: The square root',
+            '',
+            '    """',
+            '    return x ** 0.5',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        self.assertEqual(len(checker.errors), 1)
+        error = checker.errors[0]
+        self.assertTrue(isinstance(error, ParameterTypeMismatchError))
+        self.assertEqual(error.expected, 'int')
+        self.assertEqual(error.actual, 'float')
 
     def has_no_errors(self, program):
         tree = ast.parse(program)
