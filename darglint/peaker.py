@@ -37,6 +37,9 @@ class Peaker(Generic[T]):
         Side effects:
             Moves the stream forward.
 
+        Raises:
+            StopIteration: If there are no more items in the stream.
+
         Returns:
             The next item of type T in the stream.
 

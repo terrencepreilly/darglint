@@ -34,10 +34,10 @@ class ErrorReport(object):
         """Get a new collection to store the errors of the current function.
 
         Raises:
-            NotImplementError: Always.  Must be overriden.
+            NotImplementedError: Always.  Must be overriden.
 
         """
-        raise NotImplemented()
+        raise NotImplementedError
 
     @staticmethod
     def add_to_current_errors(current_errors: Iterable,
@@ -49,10 +49,10 @@ class ErrorReport(object):
             error: The error to add to this collection.
 
         Raises:
-            NotImplementError: Always.  Must be overriden.
+            NotImplementedError: Always.  Must be overriden.
 
         """
-        raise NotImplemented()
+        raise NotImplementedError
 
     @staticmethod
     def current_errors_to_list(current_errors: Iterable) -> List[str]:
@@ -62,10 +62,10 @@ class ErrorReport(object):
             current_errors: The collection of DarglintErrors for a function.
 
         Raises:
-            NotImplementError: Always.  Must be overriden.
+            NotImplementedError: Always.  Must be overriden.
 
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def _sort(self):
         self.errors.sort(key=lambda x: x.function.lineno)

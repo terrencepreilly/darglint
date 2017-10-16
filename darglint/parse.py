@@ -63,6 +63,10 @@ def _expect_type(peaker: Peaker[Token], token_type: TokenType):
         peaker: The peaker to check.  Should have the given type next.
         token_type: The type we expect to see next.
 
+    Raises:
+        ParserException: If the next token in the Peaker is not of the
+            expected type.
+
     """
     if peaker.peak().token_type != token_type:
         raise ParserException('Expected type {}, but was {}.'.format(
@@ -89,7 +93,7 @@ def _not(*fns) -> Callable:
     """Negates a function which returns a boolean.
 
     Args:
-        fns: Functions which returns a boolean.
+        *fns: Functions which returns a boolean.
 
     Returns:
         A function which returns fallse when any of the callables
@@ -169,7 +173,14 @@ class Docstring(object):
         self._parse()
 
     def _dispatch(self, keyword: str):
-        """Parse the section described by the keyword."""
+        """Parse the section described by the keyword.
+
+        Args:
+            keyword: The word which starts this section.
+
+        # noqa: I401 Exception
+
+        """
         _expect_type(self._peaker, TokenType.COLON)
         self._peaker.next()
 
@@ -181,6 +192,10 @@ class Docstring(object):
             self._parse_arguments()
         elif keyword in self.RAISES:
             self._parse_raises()
+        else:
+            raise Exception('Unexpected section keyword "{}"'.format(
+                keyword
+            ))
 
     def _parse(self):
         if not self._peaker.has_next():
@@ -279,8 +294,13 @@ class Docstring(object):
 
         return descriptions
 
-    def _parse_single_section(self):
-        """Parse a single section."""
+    def _parse_single_section(self) -> str:
+        """Parse a single section.
+
+        Returns:
+            The string parsed, which represents a single section.
+
+        """
         description = ''
 
         # The text is to the right of the heading.
@@ -311,8 +331,14 @@ class Docstring(object):
             self._peaker.next()
         return description
 
-    def _at_terminal(self):
-        """Return true if at line terminal: newline or empty."""
+    def _at_terminal(self) -> bool:
+        """Return true if at line terminal: newline or empty.
+
+        Returns:
+            True if we are at a newline or there are more tokens;
+                false otherwise.
+
+        """
         is_empty = not self._peaker.has_next()
         if is_empty:
             return True

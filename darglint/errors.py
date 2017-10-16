@@ -47,6 +47,10 @@ class DarglintError(BaseException):
     def __init__(self, function: ast.FunctionDef):
         """Create a new exception with a message and line number.
 
+        Raises:
+            NotImplementedError: If the required methods in this
+                base class have not been implemented.
+
         Args:
             function: An ast node for the function.
 

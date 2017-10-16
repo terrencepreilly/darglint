@@ -58,6 +58,9 @@ def lex(program: str) -> Iterator[List[Token]]:
     Args:
         program: The program to lex, as a string.
 
+    Yields:
+        Tokens lexed from the string.
+
     """
     extra = ''  # Extra characters which are pulled but unused from a check.
     peaker = Peaker((x for x in program or []))  # the stream
