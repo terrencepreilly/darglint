@@ -29,7 +29,7 @@ def _get_arguments(fn: ast.FunctionDef) -> Tuple[List[str], List[str]]:
     types = list()  # type: List[str]
     for arg in fn.args.args:
         arguments.append(arg.arg)
-        if arg.annotation is not None:
+        if arg.annotation is not None and hasattr(arg.annotation, 'id'):
             types.append(arg.annotation.id)
         else:
             types.append(None)
@@ -129,9 +129,9 @@ def _get_exceptions_raised(fn: ast.FunctionDef) -> Set[str]:
 
 
 def _get_return_type(fn: ast.FunctionDef) -> str:
-    if fn.returns is None:
-        return None
-    return fn.returns.id
+    if fn.returns is not None and hasattr(fn.returns, 'id'):
+        return fn.returns.id
+    return None
 
 
 class FunctionDescription(object):
