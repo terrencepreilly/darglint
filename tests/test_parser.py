@@ -199,3 +199,18 @@ class DocstringTestCase(TestCase):
         ])
         doc = Docstring(lex(docstring))
         self.assertEqual(doc.return_type, 'Decimal')
+
+    def test_star_arguments_parsed(self):
+        docstring = '\n'.join([
+            'Negates a function which returns a boolean.',
+            '',
+            'Args:',
+            '    *fns (int): Functions which returns a boolean.',
+            '',
+            'Returns:',
+            '    int: A function which returns fallse when any of the'
+            '        callables return true, and true will all of the ',
+            '        callables return false.',
+        ])
+        doc = Docstring(lex(docstring))
+        self.assertTrue('*fns' in doc.arguments_descriptions)

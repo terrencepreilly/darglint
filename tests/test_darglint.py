@@ -109,3 +109,12 @@ class GetFunctionsAndDocstrings(TestCase):
         tree = ast.parse(program)
         function = get_function_descriptions(tree)[0]
         self.assertEqual(function.return_type, None)
+
+    def test_star_arguments_retain_stars(self):
+        program = '\n'.join([
+            'def xsum(*nums: List[int]) -> int:',
+            '    return sum(nums)'
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        self.assertEqual(function.argument_names, ['*nums'])

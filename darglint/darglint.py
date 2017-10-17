@@ -27,12 +27,26 @@ def read_program(filename: str) -> str:
 def _get_arguments(fn: ast.FunctionDef) -> Tuple[List[str], List[str]]:
     arguments = list()  # type: List[str]
     types = list()  # type: List[str]
-    for arg in fn.args.args:
-        arguments.append(arg.arg)
+
+    def add_arg_by_name(name, arg):
+        arguments.append(name)
         if arg.annotation is not None and hasattr(arg.annotation, 'id'):
             types.append(arg.annotation.id)
         else:
             types.append(None)
+
+    for arg in fn.args.args:
+        add_arg_by_name(arg.arg, arg)
+
+    # Handle single-star arguments.
+    if fn.args.vararg is not None:
+        name = '*' + fn.args.vararg.arg
+        add_arg_by_name(name, fn.args.vararg)
+
+    if fn.args.kwarg is not None:
+        name = '**' + fn.args.kwarg.arg
+        add_arg_by_name(name, fn.args.kwarg)
+
     return arguments, types
 
 
