@@ -133,6 +133,8 @@ in the body should be documented.
 - [x] Add checks for "Yields" section, like "Returns".
 - [x] Add numbers to errors, ability to silence certain errors.  (Use same
 formatting as *pycodestyle*.)
+- [ ] Take an argument which supports a formatting string for the error
+message.  That way, anyone can specify their own format.
 - [ ] Add TOML configuration file (use same interface as *pydoclint*, etc.)
 - [x] Add type hint integration.  If an argument has a type hint, then
 the description of the argument, if it has a type, should match that.

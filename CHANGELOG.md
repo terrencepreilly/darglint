@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Fixed star arguments not being treated correctly.
 
+### Changed
+
+- Simplified error messages.
+
+  There are now only two verbosity levels, 1 and 2.  I've kept it as an
+  integer argument so that, in the future, we can add other levels if
+  necessary.  The default level, now, is 1.  At that level, the error
+  message is something like:
+
+    <filename>:<function>:<linenumber>: <error-code>: <message>
+
+  Where message is an abbreviated version. (It uses symbols primarily.
+  For example "- word" denotes a missing parameter in a docstring.  "+
+  word" denotes an extra parameter in the docstring.
+
+  Using a level 2 verbosity also prints out the general error message.
+  (This describes what the error is.  So, if level 1 is too cryptic, we
+  can switch to level 2.)  This will look like:
+
+    <filename>:<function>:<linenumber>: <error-code>: <description>: <message>
+
+  This gets pretty long, so that's why it's not the default.
+
+
 ## [0.0.6] -- 2017-10-15
 
 ### Added
