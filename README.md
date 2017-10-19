@@ -38,11 +38,12 @@ darglint serializers.py
 You can give an optional verbosity setting to *darglint*.  For example,
 
 ```
-darglint -v 3 *.py
+darglint -v 2 *.py
 ```
 
-Would give the most verbose warnings for each python module in the current
-directory.
+Would give a description of the error along with information as to this
+specific instance.  The default verbosity is 1, which gives the filename,
+function name, line number, error code, and some general hints.
 
 ### Ignoring Errors in a Docstring
 
