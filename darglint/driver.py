@@ -1,7 +1,6 @@
 """Defines the command line interface for darglint."""
 import argparse
 import ast
-from typing import List
 
 from .darglint import (
     read_program,
@@ -16,9 +15,9 @@ parser = argparse.ArgumentParser(description='Check docstring validity.')
 parser.add_argument(
     '--verbosity',
     '-v',
-    default=2,
+    default=1,
     type=int,
-    choices=[1, 2, 3],
+    choices=[1, 2],
     help='The level of verbosity.',
 )
 parser.add_argument(
@@ -31,23 +30,6 @@ parser.add_argument(
 )
 
 # ---------------------- MAIN SCRIPT ---------------------------------
-
-
-def get_headers(filenames: List[str]) -> List[str]:
-    """Get the headers to separate the descriptions.
-
-    Args:
-        filenames: A list of file names.
-
-    Returns:
-        A list of headers for representing the filename
-        during the error report.
-
-    """
-    return [
-        ('*' * 20) + ' {} '.format(filename) + ('*' * (40 - len(filename)))
-        for filename in filenames
-    ]
 
 
 def get_error_report(filename: str, verbosity: int) -> str:
@@ -67,7 +49,7 @@ def get_error_report(filename: str, verbosity: int) -> str:
     checker = IntegrityChecker()
     for function in functions:
         checker.run_checks(function)
-    return checker.get_error_report(verbosity)
+    return checker.get_error_report(verbosity, filename)
 
 
 def main():
@@ -79,13 +61,9 @@ def main():
     args = parser.parse_args()
     files = [x for x in args.files if x.endswith('.py')]
     verbosity = args.verbosity
-    headers = get_headers(files)
-    for filename, header in zip(files, headers):
-        # if there are errors, then display the header
-        # and the errors, otherwise don't display anything.
+    for filename in files:
         error_report = get_error_report(filename, verbosity)
         if len(error_report) > 0:
-            print(header)
             print(error_report + '\n')
 
 

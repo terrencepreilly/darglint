@@ -26,6 +26,11 @@ import ast
 class DarglintError(BaseException):
     """The base error class for any darglint error."""
 
+    # The shortest error message possible.  Should use abbreviated
+    # symbols.  Can be combined with the general message to give
+    # a more in-depth message.
+    terse_message = None
+
     # General messages should be general in nature. (They are used
     # at the lowest verbosity setting.)  They should be about
     # the nature of the error, and not about this particular instance.
@@ -33,16 +38,35 @@ class DarglintError(BaseException):
     # instances -- the terse message -- after it.)
     general_message = None
 
-    # Terse messages should be able to be combined with the general
-    # message to give hints as to this particular instance.
-    terse_message = None
-
-    # The normal message should describe this instance of the error.
-    message = None
-
     # A unique human-readable identifier for this type of error.
     # See the description of error code groups above.
     error_code = None
+
+    def message(self, verbosity: int=1) -> str:
+        """Get the message for this error, according to the verbosity.
+
+        Args:
+            verbosity: An integer in the set {1,2}, where 1 is a more
+                terse message, and 2 includes a general description.
+
+        Raises:
+            Exception: If the verbosity level is not recognized.
+
+        Returns:
+            An error message.
+
+        """
+        if verbosity == 1:
+            return '{}: {}'.format(self.error_code, self.terse_message)
+        elif verbosity == 2:
+            return '{}: {}: {}'.format(
+                self.error_code,
+                self.general_message,
+                self.terse_message,
+            )
+        else:
+            raise Exception('Unrecognized verbosity setting, {}.'.format(
+                verbosity))
 
     def __init__(self, function: ast.FunctionDef):
         """Create a new exception with a message and line number.
@@ -59,8 +83,7 @@ class DarglintError(BaseException):
 
         # The abstract base class syntax was too verbose for this,
         # and not really justified by the size of the module.
-        if (self.message is None
-                or self.terse_message is None
+        if (self.terse_message is None
                 or self.general_message is None
                 or self.error_code is None):
             raise NotImplementedError
@@ -80,8 +103,7 @@ class MissingParameterError(DarglintError):
 
         """
         self.general_message = 'Missing parameter(s) in Docstring'
-        self.message = '- {}'.format(name)
-        self.terse_message = name
+        self.terse_message = '- {}'.format(name)
         super(MissingParameterError, self).__init__(function)
 
 
@@ -99,8 +121,7 @@ class ExcessParameterError(DarglintError):
 
         """
         self.general_message = 'Excess parameter(s) in Docstring'
-        self.message = '+ {}'.format(name)
-        self.terse_message = name
+        self.terse_message = '+ {}'.format(name)
         super(ExcessParameterError, self).__init__(function)
 
 
@@ -129,13 +150,6 @@ class ParameterTypeMismatchError(DarglintError):
             expected,
             actual,
         )
-        self.message = (
-            'Parameter type mismatch for "{}": expected {} but was {}'.format(
-                name,
-                expected,
-                actual,
-            )
-        )
         self.name = name
         self.expected = expected
         self.actual = actual
@@ -155,11 +169,7 @@ class MissingReturnError(DarglintError):
 
         """
         self.general_message = 'Missing "Returns" in Docstring'
-        self.message = 'Missing "Returns" in Docstring'
-
-        # We don't need a terse message, because there is only one
-        # instance of this error per function.
-        self.terse_message = ''
+        self.terse_message = '- return'
 
         super(MissingReturnError, self).__init__(function)
 
@@ -177,11 +187,7 @@ class ExcessReturnError(DarglintError):
 
         """
         self.general_message = 'Excess "Returns" in Docstring'
-        self.message = 'Excess "Returns" in Docstring'
-
-        # We don't need a terse message, because there is only one
-        # instance of this error per function.
-        self.terse_message = ''
+        self.terse_message = '+ return'
 
         super(ExcessReturnError, self).__init__(function)
 
@@ -208,12 +214,6 @@ class ReturnTypeMismatchError(DarglintError):
             expected,
             actual,
         )
-        self.message = (
-            'Return type mismatch: expected {} but was {}'.format(
-                expected,
-                actual,
-            )
-        )
         self.expected = expected
         self.actual = actual
         super(ReturnTypeMismatchError, self).__init__(function)
@@ -232,11 +232,7 @@ class MissingYieldError(DarglintError):
 
         """
         self.general_message = 'Missing "Yields" in Docstring'
-        self.message = 'Missing "Yields" in Docstring'
-
-        # We don't need a terse message, because there is only one
-        # instance of this error per function.
-        self.terse_message = ''
+        self.terse_message = '- yield'
 
         super(MissingYieldError, self).__init__(function)
 
@@ -254,11 +250,7 @@ class ExcessYieldError(DarglintError):
 
         """
         self.general_message = 'Excess "Yields" in Docstring'
-        self.message = 'Excess "Yields" in Docstring'
-
-        # We don't need a terse message, because there is only one
-        # instance of this error per function.
-        self.terse_message = ''
+        self.terse_message = '+ yield'
 
         super(ExcessYieldError, self).__init__(function)
 
@@ -277,8 +269,7 @@ class MissingRaiseError(DarglintError):
 
         """
         self.general_message = 'Missing exception(s) in Raises section'
-        self.message = '-r {}'.format(name)
-        self.terse_message = name
+        self.terse_message = '-r {}'.format(name)
         self.name = name
         super(MissingRaiseError, self).__init__(function)
 
@@ -304,7 +295,6 @@ class ExcessRaiseError(DarglintError):
 
         """
         self.general_message = 'Excess exception(s) in Raises section'
-        self.message = '-r {}'.format(name)
-        self.terse_message = name
+        self.terse_message = '+r {}'.format(name)
         self.name = name
         super(ExcessRaiseError, self).__init__(function)

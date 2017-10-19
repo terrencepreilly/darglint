@@ -20,9 +20,7 @@ from .errors import (
     ReturnTypeMismatchError,
 )
 from .error_report import (
-    LowVerbosityErrorReport,
-    MidVerbosityErrorReport,
-    HighVerbosityErrorReport,
+    ErrorReport,
 )
 
 
@@ -213,7 +211,7 @@ class IntegrityChecker(object):
             self.errors.sort(key=lambda x: x.function.lineno)
             self._sorted = True
 
-    def get_error_report(self, verbosity: int) -> str:
+    def get_error_report(self, verbosity: int, filename: str) -> str:
         """Return a string representation of the errors.
 
         Args:
@@ -225,11 +223,8 @@ class IntegrityChecker(object):
             A string representation of the errors.
 
         """
-        error_report = None
-        if verbosity <= 1:
-            error_report = LowVerbosityErrorReport(self.errors)
-        elif verbosity == 2:
-            error_report = MidVerbosityErrorReport(self.errors)
-        else:
-            error_report = HighVerbosityErrorReport(self.errors)
-        return str(error_report)
+        return str(ErrorReport(
+            errors=self.errors,
+            filename=filename,
+            verbosity=verbosity,
+        ))
