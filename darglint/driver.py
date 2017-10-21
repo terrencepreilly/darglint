@@ -7,6 +7,10 @@ from .darglint import (
     get_function_descriptions,
 )
 from .integrity_checker import IntegrityChecker
+from .config import (
+    Configuration,
+    get_config,
+)
 
 
 # ---------------------- ARGUMENT PARSER -----------------------------
@@ -32,7 +36,10 @@ parser.add_argument(
 # ---------------------- MAIN SCRIPT ---------------------------------
 
 
-def get_error_report(filename: str, verbosity: int) -> str:
+def get_error_report(filename: str,
+                     verbosity: int,
+                     config: Configuration,
+                     ) -> str:
     """Get the error report for the given file.
 
     Args:
@@ -46,7 +53,7 @@ def get_error_report(filename: str, verbosity: int) -> str:
     program = read_program(filename)
     tree = ast.parse(program)
     functions = get_function_descriptions(tree)
-    checker = IntegrityChecker()
+    checker = IntegrityChecker(config)
     for function in functions:
         checker.run_checks(function)
     return checker.get_error_report(verbosity, filename)
@@ -58,12 +65,13 @@ def main():
     Called as a script when setup.py is installed.
 
     """
+    config = get_config()
     args = parser.parse_args()
     files = [x for x in args.files if x.endswith('.py')]
     verbosity = args.verbosity
     for filename in files:
-        error_report = get_error_report(filename, verbosity)
-        if len(error_report) > 0:
+        error_report = get_error_report(filename, verbosity, config)
+        if error_report:
             print(error_report + '\n')
 
 

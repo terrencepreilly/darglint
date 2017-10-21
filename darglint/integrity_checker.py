@@ -1,5 +1,7 @@
 """Defines IntegrityChecker."""
 
+from typing import Set
+
 from .darglint import (
     FunctionDescription,
 )
@@ -8,6 +10,7 @@ from .parse import (
     Docstring,
 )
 from .errors import (
+    DarglintError,
     ExcessParameterError,
     ExcessRaiseError,
     ExcessReturnError,
@@ -22,16 +25,19 @@ from .errors import (
 from .error_report import (
     ErrorReport,
 )
+from .config import Configuration
 
 
 class IntegrityChecker(object):
     """Checks the integrity of the docstring compared to the definition."""
 
-    def __init__(self):
+    def __init__(self, config: Configuration = Configuration(ignore=[])):
         """Create a new checker for the given function and docstring."""
         self.function = None  # type: FunctionDescription
         self.errors = list()  # type: List[DarglintError]
         self._sorted = True
+        self.config = config
+        self.docstring = ''
 
     def run_checks(self, function: FunctionDescription):
         """Run checks on the given function.
@@ -53,10 +59,11 @@ class IntegrityChecker(object):
 
     def _check_parameter_types(self):
         error_code = ParameterTypeMismatchError.error_code
-        noqa_exists = error_code in self.docstring.noqa
-        is_global = noqa_exists and self.docstring.noqa[error_code] is None
-        if noqa_exists and is_global:
+        if self._ignore_error(ParameterTypeMismatchError):
             return
+#        is_global = noqa_exists and self.docstring.noqa[error_code] is None
+#        if noqa_exists and is_global:
+#            return
 
         doc_arg_types = list()
         for name in self.function.argument_names:
@@ -71,6 +78,7 @@ class IntegrityChecker(object):
         ):
             if expected is None or actual is None:
                 continue
+            noqa_exists = error_code in self.docstring.noqa
             name_has_noqa = noqa_exists and name in self.docstring.noqa[
                 error_code]
             if not (expected == actual or name_has_noqa):
@@ -85,8 +93,11 @@ class IntegrityChecker(object):
 
     def _check_return_type(self):
         error_code = ReturnTypeMismatchError.error_code
-        if error_code in self.docstring.noqa:
+
+        if self._ignore_error(ReturnTypeMismatchError):
             return
+#         if error_code in self.docstring.noqa:
+#             return
 
         fun_type = self.function.return_type
         doc_type = self.docstring.return_type
@@ -103,8 +114,10 @@ class IntegrityChecker(object):
     def _check_yield(self):
         doc_yield = len(self.docstring.yields_description) > 0
         fun_yield = self.function.has_yield
-        ignore_missing = MissingYieldError.error_code in self.docstring.noqa
-        ignore_excess = ExcessYieldError.error_code in self.docstring.noqa
+        ignore_missing = self._ignore_error(MissingYieldError)
+        ignore_excess = self._ignore_error(ExcessYieldError)
+#        ignore_missing = MissingYieldError.error_code in self.docstring.noqa
+#        ignore_excess = ExcessYieldError.error_code in self.docstring.noqa
         if fun_yield and not doc_yield and not ignore_missing:
             self.errors.append(
                 MissingYieldError(self.function.function)
@@ -117,8 +130,10 @@ class IntegrityChecker(object):
     def _check_return(self):
         doc_return = len(self.docstring.returns_description) > 0
         fun_return = self.function.has_return
-        ignore_missing = MissingReturnError.error_code in self.docstring.noqa
-        ignore_excess = ExcessReturnError.error_code in self.docstring.noqa
+        ignore_missing = self._ignore_error(MissingReturnError)
+        ignore_excess = self._ignore_error(ExcessReturnError)
+#        ignore_missing = MissingReturnError.error_code in self.docstring.noqa
+#        ignore_excess = ExcessReturnError.error_code in self.docstring.noqa
         if fun_return and not doc_return and not ignore_missing:
             self.errors.append(
                 MissingReturnError(self.function.function)
@@ -151,7 +166,27 @@ class IntegrityChecker(object):
                 ExcessParameterError(self.function.function, missing)
             )
 
-    def _remove_ignored(self, missing, error):
+    def _ignore_error(self, error: DarglintError) -> bool:
+        """Return true if we should ignore this error.
+
+        Args:
+            error_code: The error code of the error we might be
+                ignoring.
+
+        Returns:
+            True if we should ignore all instances of this error,
+            otherwise false.
+
+        """
+        error_code = error.error_code
+        if error_code in self.config.ignore:
+            return True
+        inline_error = error_code in self.docstring.noqa
+        if inline_error and self.docstring.noqa[error_code] is None:
+            return True
+        return False
+
+    def _remove_ignored(self, missing, error) -> Set:
         """Remove ignored from missing.
 
         Args:
@@ -164,13 +199,14 @@ class IntegrityChecker(object):
         """
         error_code = error.error_code
 
-        # There are no noqa statements
-        if error_code not in self.docstring.noqa:
-            return missing
-
-        # We are to ignore all of this type.
-        if self.docstring.noqa[error_code] is None:
+        # Ignore globally
+        if self._ignore_error(error):
             return set()
+
+        # There are no noqa statements
+        inline_ignore = error_code in self.docstring.noqa
+        if not inline_ignore:
+            return missing
 
         # We are to ignore specific instances.
         return missing - set(self.docstring.noqa[error_code])
