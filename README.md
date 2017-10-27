@@ -1,12 +1,17 @@
 # Darglint
 
-A limited docstring linter which checks that function/method parameters
-are defined in their docstrings.  *Darglint* expects docstrings to be
-formatted using the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html).
+A functional docstring linter which checks whether a docstring's
+description matches the actual function/method implementation.
+*Darglint* expects docstrings to be formatted using the
+[Google Python Style Guide](https://google.github.io/styleguide/pyguide.html).
 
-*Darglint* is in a very early stage, and fails for a lot of things.
-Certain features, such as a robust command-line interface, still
-do not exist.
+*Darglint* is in a very early stage, and may fail for a lot of things.
+See the **Features planned** section for an idea of where
+the project is going.
+
+Feel free to submit an issue/pull request if you spot a problem or
+would like a feature in *darglint*.
+
 
 ## Installation
 
@@ -26,13 +31,13 @@ pip install .
 
 *darglint* can be configured using a configuration file.  The configuration
 file must be named either *.darglint*, *setup.cfg*, or *tox.ini*.  It must
-also have a section starting the section header, `[darglint]`.
+also have a section starting with the section header, `[darglint]`.
 Finally, the configuration file must be located either in the directory
-*darglint* is called from, or from a parent directory of the current working
+*darglint* is called from, or from a parent directory of that working
 directory.
 
 Currently, the configuration file only allows us to ignore errors.
-For example, if we would like to ignore the `ExcessRaiseError` (because
+For example, if we would like to ignore `ExcessRaiseError`s (because
 we know that an underlying function will raise an exception), then we
 would add its error code to a file named *.darglint*:
 
@@ -143,35 +148,26 @@ So, in this case, the argument for `noqa` is really all the way to
 the left.  (Or whatever description we are parsing.)  We could also
 have put it on its own line, as `# noqa: I402 ZeroDivisionError`.
 
-## Features planned and implemented
+## Features planned.
 
 The below list is all that defines the current roadmap for *darglint*.
-It is roughly sorted in order of importance.
+It is roughly sorted in order of importance.  To see the most
+recently implemented features, see the *CHANGELOG*.
 
-- [x] Function definitions can be checked.
-- [x] Methods definitions of top-level class can be checked.
-- [x] Line number printout for function/method definition.
-- [x] Add parsing of "Returns" section, and warn if differing from
-function definition.
-- [x] Add command line interface.
-- [x] Add multiple options for output.
-- [x] Add checks for "Raises" section, like "Args".  Any exceptions raised
-in the body should be documented.
-- [x] Add checks for "Yields" section, like "Returns".
-- [x] Add numbers to errors, ability to silence certain errors.  (Use same
-formatting as *pycodestyle*.)
+- [ ] ALE support.
 - [ ] Take an argument which supports a formatting string for the error
 message.  That way, anyone can specify their own format.
-- [ ] Add TOML configuration file (use same interface as *pydoclint*, etc.)
-- [x] Add type hint integration.  If an argument has a type hint, then
-the description of the argument, if it has a type, should match that.
+- [ ] Optional checking for docstring style compliance.
+- [ ] Robust logging for errors caused/encountered by *darglint*.
 - [ ] Add support for python versions earlier than 3.6.
 - [ ] Syntastic support. (Syntastic is not accepting new checkers until
 their next API stabilizes, so this may take some time.)
 - [ ] Check super classes of errors/exceptions raised to allow for more
 general descriptions in the interface.
 
-## Development
+## Development and Contributions
+
+### Development Setup
 
 Install `darglint`. First, clone the repository:
 
@@ -201,4 +197,12 @@ and run
 pytest
 ```
 
-Contributions welcome.
+This project tries to conform by the styles imposed by `pycodestyle`
+and `pydocstyle`, as well as by `darglint` itself.
+
+### Contribution
+
+If you would like to tackle an issue or feature, email me or comment on the
+issue to make sure it isn't already being worked on.  Contributions will
+be accepted through pull requests.  New features should include unit tests,
+and, of course, properly formatted documentation.
