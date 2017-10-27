@@ -26,11 +26,12 @@ pip install .
 
 *darglint* can be configured using a configuration file.  The configuration
 file must be named either *.darglint*, *setup.cfg*, or *tox.ini*.  It must
-also have a section starting `[darglint]`.  The configuration file must
-also be located either in the directory *darglint* is called from, or
-from a parent directory of that.
+also have a section starting the section header, `[darglint]`.
+Finally, the configuration file must be located either in the directory
+*darglint* is called from, or from a parent directory of the current working
+directory.
 
-Currently, the configuration file allows us to only ignore certain errors.
+Currently, the configuration file only allows us to ignore errors.
 For example, if we would like to ignore the `ExcessRaiseError` (because
 we know that an underlying function will raise an exception), then we
 would add its error code to a file named *.darglint*:
@@ -46,8 +47,6 @@ We can ignore multiple errors by using a comma-separated list:
 [darglint]
 ignore=I402,I103
 ```
-
-Would ignore the `ExcessRaiseError` and the `ParameterTypeMismatchError`.
 
 
 ## Usage
