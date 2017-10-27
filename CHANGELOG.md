@@ -3,6 +3,32 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.0.8]
+
+### Added
+
+- Added configuration files.  Configuration files use the normal Python
+  `configparser` and TOML format.  Configuration files for *darglint*
+  should have one of the following names:
+
+  - `.darglint`
+  - `setup.cfg`
+  - `tox.ini`
+
+  In addition, the settings for *darglint* must be in a section described
+  by `[darglint]`.  The configuration takes a single key, `ignore`,
+  and a list of error codes to ignore as a value.  For example, if we
+  would like to ignore the errors "I101" and "I102", then we would
+  could write the following section in our *tox.ini* file:
+
+```
+  [darglint]
+  ignore=I101,I102
+```
+
+  *darglint* will look for a config file stating at the current directory
+  and working its way up to the root directory.
+
 ## [0.0.7]
 
 ### Fixed
