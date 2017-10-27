@@ -4,6 +4,10 @@ from collections import namedtuple
 import configparser
 import os
 
+from typing import (
+    Iterable,
+)
+
 POSSIBLE_CONFIG_FILENAMES = (
     '.darglint',
     'setup.cfg',
@@ -35,6 +39,48 @@ def load_config_file(filename) -> Configuration:
     return Configuration(ignore=ignore)
 
 
+def walk_path() -> Iterable[str]:
+    """Yield directories from the current to root.
+
+    Yields:
+        The current directory, then its parent, etc. all
+        the way up to root.
+
+    """
+    cwd = os.getcwd()
+    yield cwd
+    prev = cwd
+    next_path = os.path.dirname(cwd)
+
+    # Assumes that os.path.dirname will give the root path back
+    # when given the root path.
+    while prev != next_path:
+        yield next_path
+        prev = next_path
+        next_path = os.path.dirname(next_path)
+
+
+def find_config_file_in_path(path: str) -> str:
+    """Return the config path, if it is correct, or None.
+
+    Args:
+        path: The path to check.
+
+    Returns:
+        The fully qualified path to the config file, if it is
+        in this directory, otherwise none.
+
+    """
+    filenames = os.listdir(path)
+    for filename in filenames:
+        if filename in POSSIBLE_CONFIG_FILENAMES:
+            config = configparser.ConfigParser()
+            fully_qualified_path = os.path.join(path, filename)
+            config.read(fully_qualified_path)
+            if 'darglint' in config.sections():
+                return fully_qualified_path
+
+
 def find_config_file() -> str:
     """Return the location of the config file.
 
@@ -44,11 +90,10 @@ def find_config_file() -> str:
 
     """
     # Check the current directory
-    cwd_files = os.listdir()
-    for possible_filename in POSSIBLE_CONFIG_FILENAMES:
-        if possible_filename in cwd_files:
-            return possible_filename
-    return None
+    for path in walk_path():
+        possible_config_filename = find_config_file_in_path(path)
+        if possible_config_filename is not None:
+            return possible_config_filename
 
 
 def get_config() -> Configuration:
