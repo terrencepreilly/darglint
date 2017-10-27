@@ -2,11 +2,18 @@
 
 from collections import namedtuple
 import configparser
+import logging
 import os
 
 from typing import (
     Iterable,
 )
+
+# TODO: Configure this logger and allow the user to specify
+# the whether they want warnings.
+#
+# All warnings will be printed at the ERROR level.
+logger = logging.getLogger('darglint')
 
 POSSIBLE_CONFIG_FILENAMES = (
     '.darglint',
@@ -76,9 +83,14 @@ def find_config_file_in_path(path: str) -> str:
         if filename in POSSIBLE_CONFIG_FILENAMES:
             config = configparser.ConfigParser()
             fully_qualified_path = os.path.join(path, filename)
-            config.read(fully_qualified_path)
-            if 'darglint' in config.sections():
-                return fully_qualified_path
+            try:
+                config.read(fully_qualified_path)
+                if 'darglint' in config.sections():
+                    return fully_qualified_path
+            except configparser.ParsingError:
+                logger.error('Unable to parse file {}'.format(
+                    fully_qualified_path
+                ))
 
 
 def find_config_file() -> str:
