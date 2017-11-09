@@ -3,6 +3,33 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.0.9]
+
+### Added
+
+- `GenericSyntaxError` for any `ParserException`s which are raised when
+  parsing. Ideally, we would add the offset for the lines in the
+  docstring so that we could get a more accurate indication of where the
+  actual error occurred. (This would be useful for when we integrate with
+  ALE or Syntastic or something.)
+- `get_logger()` function to the config file.  This will help us to get a
+  fully configured logger.  It'll also be a nice way to request a preconfigured
+  logger (say, "darglint.parser" or something if we want to log from the
+  parser.)  Then we could parse the same configuration to every logger.
+- Added check for bare raises.  For example, if we had a function such as:
+
+```
+def do_something_dangerous():
+    try:
+        dangerous_action()
+    except CertainDoom:
+        raise
+```
+
+  This would previously caused an error.  Now, no checks are made for it.
+  A "TODO" was left in the code as a reminder that we could handle this better
+  in the future.
+
 ## [0.0.8]
 
 ### Added
