@@ -78,9 +78,9 @@ class FindConfigFileInPathTestCase(TestCase):
 
         config_parser.read = read_file
 
-        find_config_file_in_path('asonteusantoheusnth')
+        find_config_file_in_path('./')
 
         self.assertEqual(
             set(contents_checked),
-            set(POSSIBLE_CONFIG_FILENAMES)
+            {'./' + x for x in POSSIBLE_CONFIG_FILENAMES}
         )
