@@ -21,6 +21,7 @@ class ErrorReport(object):
 
         Args:
             errors: A list of DarglintError instances.
+            filename: The name of the file the error came from.
             verbosity: A number in the set, {1, 2}, representing low
                 and high verbosity.
 

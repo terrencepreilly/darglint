@@ -36,7 +36,16 @@ class IntegrityChecker(object):
     def __init__(self,
                  config: Configuration = Configuration(ignore=[]),
                  raise_errors: bool = False):
-        """Create a new checker for the given function and docstring."""
+        """Create a new checker for the given function and docstring.
+
+        Args:
+            config: The configuration object for this checker.  Will
+                determine which errors to show, etc.
+            raise_errors: If true, we will allow ParserExceptions to
+                propagate, crashing darglint.  This is mostly useful
+                for development.
+
+        """
         self.function = None  # type: FunctionDescription
         self.errors = list()  # type: List[DarglintError]
         self._sorted = True
@@ -185,8 +194,7 @@ class IntegrityChecker(object):
         """Return true if we should ignore this error.
 
         Args:
-            error_code: The error code of the error we might be
-                ignoring.
+            error: The error we might be ignoring.
 
         Returns:
             True if we should ignore all instances of this error,
@@ -266,9 +274,9 @@ class IntegrityChecker(object):
         """Return a string representation of the errors.
 
         Args:
-            verbosity:
-                The level of verbosity.  Should be an integer
+            verbosity: The level of verbosity.  Should be an integer
                 in the range [1,3].
+            filename: The filename of where the error occurred.
 
         Returns:
             A string representation of the errors.

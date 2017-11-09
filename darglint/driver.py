@@ -54,6 +54,11 @@ def get_error_report(filename: str,
     Args:
         filename: The name of the module to check.
         verbosity: The level of verbosity, in the range [1, 3].
+        config: The configuration for the error report.
+        raise_errors_for_syntax: True if we want parser errors
+            to propagate up (crashing darglint.)  This is useful
+            if we are developing on darglint -- we can get the stack
+            trace and know exactly where darglint failed.
 
     Returns:
         An error report for the file.
