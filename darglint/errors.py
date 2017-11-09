@@ -89,6 +89,25 @@ class DarglintError(BaseException):
             raise NotImplementedError
 
 
+class GenericSyntaxError(DarglintError):
+    """Describes that something went wrong in parsing the docstring."""
+
+    error_code = 'S001'
+
+    def __init__(self, function: ast.FunctionDef, message: str):
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+            message: The parser error's message.
+
+        """
+        self.general_message = 'Syntax error'
+        self.terse_message = 's {}'.format(message)
+
+        super(GenericSyntaxError, self).__init__(function)
+
+
 class MissingParameterError(DarglintError):
     """Describes when a docstring is missing a parameter in the definition."""
 

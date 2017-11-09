@@ -25,6 +25,14 @@ parser.add_argument(
     help='The level of verbosity.',
 )
 parser.add_argument(
+    '--raise-syntax',
+    action='store_true',
+    help=(
+        'When a docstring is incorrectly formatted, raise an exception '
+        'rather than storing the error.'
+    ),
+)
+parser.add_argument(
     'files',
     nargs='+',
     help=(
@@ -39,6 +47,7 @@ parser.add_argument(
 def get_error_report(filename: str,
                      verbosity: int,
                      config: Configuration,
+                     raise_errors_for_syntax: bool
                      ) -> str:
     """Get the error report for the given file.
 
@@ -53,7 +62,10 @@ def get_error_report(filename: str,
     program = read_program(filename)
     tree = ast.parse(program)
     functions = get_function_descriptions(tree)
-    checker = IntegrityChecker(config)
+    checker = IntegrityChecker(
+        config,
+        raise_errors=raise_errors_for_syntax,
+    )
     for function in functions:
         checker.run_checks(function)
     return checker.get_error_report(verbosity, filename)
@@ -68,9 +80,15 @@ def main():
     config = get_config()
     args = parser.parse_args()
     files = [x for x in args.files if x.endswith('.py')]
+    raise_errors_for_syntax = args.raise_syntax
     verbosity = args.verbosity
     for filename in files:
-        error_report = get_error_report(filename, verbosity, config)
+        error_report = get_error_report(
+            filename,
+            verbosity,
+            config,
+            raise_errors_for_syntax
+        )
         if error_report:
             print(error_report + '\n')
 

@@ -8,6 +8,7 @@ from .darglint import (
 from .lex import lex
 from .parse import (
     Docstring,
+    ParserException,
 )
 from .errors import (
     DarglintError,
@@ -15,6 +16,7 @@ from .errors import (
     ExcessRaiseError,
     ExcessReturnError,
     ExcessYieldError,
+    GenericSyntaxError,
     MissingParameterError,
     MissingRaiseError,
     MissingReturnError,
@@ -31,13 +33,16 @@ from .config import Configuration
 class IntegrityChecker(object):
     """Checks the integrity of the docstring compared to the definition."""
 
-    def __init__(self, config: Configuration = Configuration(ignore=[])):
+    def __init__(self,
+                 config: Configuration = Configuration(ignore=[]),
+                 raise_errors: bool = False):
         """Create a new checker for the given function and docstring."""
         self.function = None  # type: FunctionDescription
         self.errors = list()  # type: List[DarglintError]
         self._sorted = True
         self.config = config
         self.docstring = ''
+        self.raise_errors = raise_errors
 
     def run_checks(self, function: FunctionDescription):
         """Run checks on the given function.
@@ -48,14 +53,24 @@ class IntegrityChecker(object):
         """
         self.function = function
         if function.docstring is not None:
-            self.docstring = Docstring(lex(function.docstring))
-            self._check_parameters()
-            self._check_parameter_types()
-            self._check_return()
-            self._check_return_type()
-            self._check_yield()
-            self._check_raises()
-            self._sorted = False
+            try:
+                self.docstring = Docstring(lex(function.docstring))
+                self._check_parameters()
+                self._check_parameter_types()
+                self._check_return()
+                self._check_return_type()
+                self._check_yield()
+                self._check_raises()
+                self._sorted = False
+            except ParserException as exception:
+                if self.raise_errors:
+                    raise
+                self.errors.append(
+                    GenericSyntaxError(
+                        self.function.function,
+                        message=str(exception),
+                    ),
+                )
 
     def _check_parameter_types(self):
         error_code = ParameterTypeMismatchError.error_code

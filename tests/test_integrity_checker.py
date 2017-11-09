@@ -7,6 +7,7 @@ from darglint.errors import (
     ExcessParameterError,
     ExcessRaiseError,
     ExcessYieldError,
+    GenericSyntaxError,
     MissingParameterError,
     MissingRaiseError,
     MissingReturnError,
@@ -14,6 +15,7 @@ from darglint.errors import (
     ParameterTypeMismatchError,
     ReturnTypeMismatchError,
 )
+from darglint.parse import ParserException
 
 
 class IntegrityCheckerTestCase(TestCase):
@@ -380,3 +382,33 @@ class IntegrityCheckerTestCase(TestCase):
             '    return x',
         ])
         self.has_no_errors(program)
+
+    def test_incorrect_syntax_raises_exception_optionally(self):
+        # example taken from https://github.com/deezer/html-linter
+        program = '\n'.join([
+            'def lint(html, exclude=None):',
+            '    """Lints and HTML5 file.',
+            '',
+            '    Args:',
+            '      html: str the contents of the file.',
+            '      exclude: optional iterable with the Message classes',
+            '               to be ommited from the output.',
+            '    """',
+            '    exclude = exclude or []',
+            '    messages = [m.__unicode__() for m in HTML5Linter(html',
+            '        ).messages',
+            '                if not isinstance(m, tuple(exclude))]',
+            '    return \'\\n\'.join(messages)',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker(raise_errors=True)
+
+        with self.assertRaises(ParserException):
+            checker.run_checks(functions[0])
+
+        # The default is to not raise exceptions.
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertTrue(isinstance(errors[0], GenericSyntaxError))
