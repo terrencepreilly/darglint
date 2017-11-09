@@ -76,6 +76,17 @@ Would give a description of the error along with information as to this
 specific instance.  The default verbosity is 1, which gives the filename,
 function name, line number, error code, and some general hints.
 
+*darglint* is particularly useful when combined with the utility, `find`.
+This allows us to check all of the files in our project at once.  For example,
+when eating my own dogfood (as I tend to do), I invoke *darglint* as follows:
+
+```
+find . -name "*.py" -exec darglint {} \;
+```
+
+Where I'm searching all files ending in ".py" recursively from the
+current directory, and calling *darglint* on each one in turn.
+
 ### Ignoring Errors in a Docstring
 
 You can ignore specific errors in a particular docstring.  The syntax
