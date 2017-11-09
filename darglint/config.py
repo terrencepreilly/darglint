@@ -120,3 +120,13 @@ def get_config() -> Configuration:
     if filename is None:
         return Configuration(ignore=list())
     return load_config_file(filename)
+
+
+def get_logger() -> logging.Logger:
+    """Get the default logger for darglint.
+
+    Returns:
+        The default logger for darglint.
+
+    """
+    return logger

@@ -80,7 +80,7 @@ def main():
     config = get_config()
     args = parser.parse_args()
     files = [x for x in args.files if x.endswith('.py')]
-    raise_errors_for_syntax = args.raise_syntax
+    raise_errors_for_syntax = args.raise_syntax or False
     verbosity = args.verbosity
     for filename in files:
         error_report = get_error_report(

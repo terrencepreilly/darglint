@@ -7,6 +7,11 @@ from typing import (
     Tuple,
 )
 
+from .config import get_logger
+
+
+logger = get_logger()
+
 
 def read_program(filename: str) -> str:
     """Read a program from a file.
@@ -138,6 +143,10 @@ def _get_exception_name(raises: ast.Raise) -> str:
 def _get_exceptions_raised(fn: ast.FunctionDef) -> Set[str]:
     ret = set()  # type: List[str]
     for raises in _get_all_raises(fn):
+        # TODO: Handle this?
+        # There is a bare raise in the function, no type given.
+        if raises.exc is None:
+            continue
         ret.add(_get_exception_name(raises))
     return ret
 
@@ -180,7 +189,14 @@ class FunctionDescription(object):
         self.return_type = _get_return_type(function)
         self.has_yield = _has_yield(function)
         self.docstring = _get_docstring(function)
-        self.raises = _get_exceptions_raised(function)
+        try:
+            self.raises = _get_exceptions_raised(function)
+        except Exception as ex:
+            logger.error('{}: {}'.format(
+                self.name,
+                ex,
+            ))
+            raise
 
 
 def get_function_descriptions(
