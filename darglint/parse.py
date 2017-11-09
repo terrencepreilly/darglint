@@ -56,23 +56,33 @@ class ParserException(BaseException):
     pass
 
 
-def _expect_type(peaker: Peaker[Token], token_type: TokenType):
+def _expect_type(peaker: Peaker[Token], expected_type: TokenType):
     """Raise an exception if peaker's next value isn't the given type.
 
     Args:
         peaker: The peaker to check.  Should have the given type next.
-        token_type: The type we expect to see next.
+        expected_type: The type we expect to see next.
 
     Raises:
         ParserException: If the next token in the Peaker is not of the
             expected type.
 
     """
-    if peaker.peak().token_type != token_type:
-        raise ParserException('Expected type {}, but was {}.'.format(
-            token_type,
-            peaker.peak().token_type,
-        ))
+    actual_type = peaker.peak().token_type
+    if actual_type != expected_type:
+        msg = ''
+        if actual_type == TokenType.WORD:
+            msg = 'Exected type {}, but was {}: "{}"'.format(
+                expected_type,
+                actual_type,
+                peaker.peak().value,
+            )
+        else:
+            msg = 'Expected type {}, but was {}.'.format(
+                expected_type,
+                actual_type,
+            )
+        raise ParserException(msg)
 
 
 def _is_type(peaker: Peaker[Token], token_type: TokenType) -> bool:
