@@ -101,7 +101,22 @@ def _get_all_methods(tree: ast.AST) -> Iterator[ast.FunctionDef]:
 
 
 def _get_decorator_names(fun: ast.FunctionDef) -> List[str]:
-    return [x.id for x in fun.decorator_list]
+    """Get decorator names from the function.
+
+    Args:
+        fun: The function whose decorators we are getting.
+
+    Returns:
+        The names of the decorators. Does not include setters and
+        getters.
+
+    """
+    ret = list()
+    for decorator in fun.decorator_list:
+        # Attributes (setters and getters) won't have an id.
+        if hasattr(decorator, 'id'):
+            ret.append(decorator.id)
+    return ret
 
 
 def _is_classmethod(fun: ast.FunctionDef) -> bool:

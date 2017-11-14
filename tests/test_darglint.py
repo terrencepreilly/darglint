@@ -47,6 +47,22 @@ class GetFunctionsAndDocstrings(TestCase):
         function = get_function_descriptions(tree)[0]
         self.assertEqual(function.argument_names, ['arg1'])
 
+    def test_setters_and_getters_treated_like_normal_methods(self):
+        program = '\n'.join([
+            'class SomeClass(object):',
+            '',
+            '    @property',
+            '    def name(self):',
+            '        return "Gerald"',
+            '',
+            '    @name.setter',
+            '    def name(self, value):',
+            '        pass',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[1]
+        self.assertEqual(function.argument_names, ['value'])
+
     def test_tells_if_not_fruitful(self):
         program = '\n'.join([
             'def baren_function(arg):',
