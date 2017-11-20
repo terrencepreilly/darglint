@@ -202,7 +202,7 @@ class DocstringTestCase(TestCase):
 
     def test_star_arguments_parsed(self):
         docstring = '\n'.join([
-            'Negates a function which returns a boolean.',
+            'Negate a function which returns a boolean.',
             '',
             'Args:',
             '    *fns (int): Functions which returns a boolean.',
@@ -214,3 +214,11 @@ class DocstringTestCase(TestCase):
         ])
         doc = Docstring(lex(docstring))
         self.assertTrue('*fns' in doc.arguments_descriptions)
+
+    def test_doesnt_choke_on_missing_newline_for_returns(self):
+        docstring = '\n'.join([
+            'Serilaize a label object.',
+            '',
+            'Returns: Valid JSON.',
+        ])
+        doc = Docstring(lex(docstring))

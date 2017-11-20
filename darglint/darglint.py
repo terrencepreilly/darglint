@@ -148,7 +148,15 @@ def _get_exception_name(raises: ast.Raise) -> str:
     if isinstance(raises.exc, ast.Name):
         return raises.exc.id
     elif isinstance(raises.exc, ast.Call):
-        return raises.exc.func.id
+        if hasattr(raises.exc.func, 'id'):
+            return raises.exc.func.id
+        elif hasattr(raises.exc.func, 'attr'):
+            return raises.exc.func.attr
+        else:
+            logger.error(
+                'Raises function call has neither id nor attr.'
+                'has only: %s' % str(dir(raises.ecx.func))
+            )
     else:
         raise Exception('Unexpected type in raises expression: {}'.format(
             type(raises.exc)

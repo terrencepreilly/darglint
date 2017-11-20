@@ -46,8 +46,11 @@ from typing import (
     Tuple,
 )
 
+from .config import get_logger
 from .token import Token, TokenType
 from .peaker import Peaker
+
+logger = get_logger()
 
 
 class ParserException(BaseException):
@@ -317,7 +320,7 @@ class Docstring(object):
         if _is_type(self._peaker, TokenType.WORD):
             description += self._parse_line(None)
             if not self._peaker.has_next():
-                return
+                return description
 
         _expect_type(self._peaker, TokenType.NEWLINE)
         self._peaker.next()
@@ -454,6 +457,12 @@ class Docstring(object):
 
     def _parse_return(self):
         self.returns_description = self._parse_single_section()
+
+        if self.returns_description is None:
+            logger.error(
+                'Error while parsing returns section for docstring '
+                'beginning "%s..."' % self.short_description[:30]
+            )
 
         # Attempt to remove the return type, if any.
         try:

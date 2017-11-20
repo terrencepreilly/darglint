@@ -86,6 +86,20 @@ class GetFunctionsAndDocstrings(TestCase):
         function = get_function_descriptions(tree)[0]
         self.assertEqual(function.raises, {'ZeroDivisionError'})
 
+    def test_raise_with_fully_qualified_name(self):
+        program = '\n'.join([
+            'from rest_framework import serializers',
+            'class ProblematicSerializer(serializers.Serializer):',
+            '    def create(self, validated_data):',
+            '        try:',
+            '            validated_data["should be here"]',
+            '        except Exception as e:',
+            '            raise serializers.ValidationError(e)',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        self.assertEqual(function.raises, {'ValidationError'})
+
     def test_extracts_type_hints_for_arguments(self):
         program = '\n'.join([
             'def square_root(x: int) -> float:',
