@@ -127,7 +127,8 @@ def _is_staticmethod(fun: ast.FunctionDef) -> bool:
     return 'staticmethod' in _get_decorator_names(fun)
 
 
-def _get_stripped_method_args(method: ast.FunctionDef) -> List[str]:
+def _get_stripped_method_args(
+        method: ast.FunctionDef) -> Tuple[List[str], List[str]]:
     args, types = _get_arguments(method)
     if 'cls' in args and _is_classmethod(method):
         args.remove('cls')
@@ -161,10 +162,11 @@ def _get_exception_name(raises: ast.Raise) -> str:
         raise Exception('Unexpected type in raises expression: {}'.format(
             type(raises.exc)
         ))
+    return ''
 
 
 def _get_exceptions_raised(fn: ast.FunctionDef) -> Set[str]:
-    ret = set()  # type: List[str]
+    ret = set()  # type: Set[str]
     for raises in _get_all_raises(fn):
         # TODO: Handle this?
         # There is a bare raise in the function, no type given.
@@ -189,7 +191,7 @@ class FunctionDescription(object):
 
     """
 
-    def __init__(self, is_method: bool, function: ast.FunctionDef):
+    def __init__(self, is_method: bool, function: ast.FunctionDef) -> None:
         """Create a new FunctionDescription.
 
         Args:

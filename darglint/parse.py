@@ -148,7 +148,7 @@ class Docstring(object):
         RAISES
     ))
 
-    def __init__(self, tokens: Iterable[Token]):
+    def __init__(self, tokens: Iterable[Token]) -> None:
         """Create a new docstring from the stream of tokens.
 
         Attributes of the class either detail descriptions, or

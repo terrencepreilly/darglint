@@ -1,6 +1,9 @@
 """Defines IntegrityChecker."""
 
-from typing import Set
+from typing import (
+    List,
+    Set,
+)
 
 from .darglint import (
     FunctionDescription,
@@ -35,7 +38,7 @@ class IntegrityChecker(object):
 
     def __init__(self,
                  config: Configuration = Configuration(ignore=[]),
-                 raise_errors: bool = False):
+                 raise_errors: bool = False) -> None:
         """Create a new checker for the given function and docstring.
 
         Args:
@@ -50,7 +53,7 @@ class IntegrityChecker(object):
         self.errors = list()  # type: List[DarglintError]
         self._sorted = True
         self.config = config
-        self.docstring = ''
+        self.docstring = None  # type: Docstring
         self.raise_errors = raise_errors
 
     def run_checks(self, function: FunctionDescription):
