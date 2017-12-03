@@ -58,7 +58,7 @@ class CleanCommand(Command):
 
 setup(
     name="darglint",
-    version="0.1.0",
+    version="0.1.1",
     author="Terrence Reilly",
     author_email="terrencepreilly@gmail.com",
     description=("A utility for ensuring Google-style docstrings"
