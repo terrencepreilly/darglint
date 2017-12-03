@@ -2,7 +2,7 @@ import ast
 from unittest import TestCase
 
 from darglint.integrity_checker import IntegrityChecker
-from darglint.darglint import get_function_descriptions
+from darglint.function_description import get_function_descriptions
 from darglint.errors import (
     ExcessParameterError,
     ExcessRaiseError,

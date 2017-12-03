@@ -2,7 +2,7 @@
 import argparse
 import ast
 
-from .darglint import (
+from .function_description import (
     read_program,
     get_function_descriptions,
 )

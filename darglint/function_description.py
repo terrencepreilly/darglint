@@ -217,35 +217,33 @@ class FunctionDescription(object):
         try:
             self.raises = _get_exceptions_raised(function)
         except Exception as ex:
-            logger.error('{}: {}'.format(
-                self.name,
-                ex,
-            ))
+            msg = '{}: {}'.format(self.name, ex)
+            logger.error(msg)
             raise
 
 
 def get_function_descriptions(
-        ast: ast.AST) -> List[FunctionDescription]:
+        program: ast.AST) -> List[FunctionDescription]:
     """Get function name, args, return presence and docstrings.
 
     This function should be called on the top level of the
     document (for functions), and on classes (for methods.)
 
     Args:
-        ast: The tree representing the entire program.
+        program: The tree representing the entire program.
             This should be the direct result of
 
     Returns:
-        A list of function descriptions fulled from the ast.
+        A list of function descriptions pulled from the ast.
 
     """
     ret = list()  # type: List[FunctionDescription]
 
-    methods = set(_get_all_methods(ast))
+    methods = set(_get_all_methods(program))
     for method in methods:
         ret.append(FunctionDescription(is_method=True, function=method))
 
-    functions = set(_get_all_functions(ast)) - methods
+    functions = set(_get_all_functions(program)) - methods
     for function in functions:
         ret.append(FunctionDescription(is_method=False, function=function))
 

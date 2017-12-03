@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fixed a couple of type errors.  Typing is either going to be removed
   or moved to a different format to allow for < Python3.6.
 
+### Changed
+
+- Renamed "darglint.py" to a more appropriate name: "function_description.py".
+
 ## [0.0.9]
 
 ### Added

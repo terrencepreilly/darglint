@@ -1,6 +1,6 @@
 import ast
 from unittest import TestCase
-from darglint.darglint import get_function_descriptions
+from darglint.function_description import get_function_descriptions
 
 
 class GetFunctionsAndDocstrings(TestCase):

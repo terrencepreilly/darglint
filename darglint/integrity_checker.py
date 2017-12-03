@@ -5,7 +5,7 @@ from typing import (
     Set,
 )
 
-from .darglint import (
+from .function_description import (
     FunctionDescription,
 )
 from .lex import lex
