@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Fixed a couple of type errors.  Typing is either going to be removed
   or moved to a different format to allow for < Python3.6.
+- Previously, returns in inner functions would raise errors for missing
+  returns sections in the docstring, even if (for example), the parent
+  function yielded values.  For example:
+
+```
+def walk(root):
+    """Walk the tree, yielding active nodes.
+
+    Args:
+        root: The root of the tree.
+
+    Yields:
+        Active nodes.
+    
+    """
+    def skip(node):
+        return node.inactive
+    queue = deque()
+    queue.append(root)
+    while len(queue) > 0:
+        curr = queue.pop()
+        if skip(curr):
+            continue
+        yield curr
+        queue.extend(curr.children)
+```
+
+  This function previously would have raised a missing return error
+  (I201), and would have required a noqa.  That is no longer the case.
 
 ### Changed
 

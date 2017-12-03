@@ -1,8 +1,10 @@
 """A linter for docstrings following the google docstring format."""
 import ast
+from collections import deque
 from typing import (
-    List,
+    Callable,
     Iterator,
+    List,
     Set,
     Tuple,
 )
@@ -54,6 +56,32 @@ def _get_arguments(fn: ast.FunctionDef) -> Tuple[List[str], List[str]]:
 
     return arguments, types
 
+def _walk(fun: ast.FunctionDef, skip: Callable) -> Iterator[ast.AST]:
+    """Walk through the nodes in this function, skipping as necessary.
+
+    ast.walk goes through nodes in an arbitrary order, and doesn't
+    allow you to skip an entire branch (as far as I know.)  This
+    function will perform an in-order breadth-first traversal, and will
+    skip unnecessary branches.
+
+    Args:
+        fun: The function to walk.
+        skip: A function which returns True if we should skip the current
+            node and all of its children.
+
+    Yields:
+        Children of the function and the function itself.
+
+    """
+    queue = deque() # type: deque
+    queue.appendleft(fun)
+    while len(queue) > 0:
+        curr = queue.pop()
+        if skip(curr):
+            continue
+        if hasattr(curr, 'body'):
+            queue.extendleft(curr.body)
+        yield curr
 
 def _has_return(fun: ast.FunctionDef) -> bool:
     """Return true if the function has a fruitful return.
@@ -65,7 +93,10 @@ def _has_return(fun: ast.FunctionDef) -> bool:
         True if there is a fruitful return, otherwise False.
 
     """
-    for node in ast.walk(fun):
+    def skip(f):
+        return f != fun and isinstance(f, ast.FunctionDef)
+
+    for node in _walk(fun, skip):
         if isinstance(node, ast.Return) and node.value is not None:
             return True
     return False

@@ -68,6 +68,18 @@ class GetFunctionsAndDocstrings(TestCase):
         function = get_function_descriptions(tree)[0]
         self.assertFalse(function.has_return)
 
+    def test_doesnt_mistake_inner_function_return_for_fruitful(self):
+        program = '\n'.join([
+            'def baren_function(arg):',
+            '   def get_pi():',
+            '       return 3.14',
+            '   if arg * get_pi < 30:',
+            '       raise Exception("Bad multiplier!")',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        self.assertFalse(function.has_return)
+
     def test_no_docstring_is_okay(self):
         program = '\n'.join([
             'def undocumented_function():',
