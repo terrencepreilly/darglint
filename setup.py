@@ -38,6 +38,7 @@ class CleanCommand(Command):
 
     - Remove the dist directory.
     - Remove the build directory.
+
     """
 
     description = 'Clean the directory of build artifacts'
@@ -57,7 +58,7 @@ class CleanCommand(Command):
 
 setup(
     name="darglint",
-    version="0.0.8",
+    version="0.1.0",
     author="Terrence Reilly",
     author_email="terrencepreilly@gmail.com",
     description=("A utility for ensuring Google-style docstrings"

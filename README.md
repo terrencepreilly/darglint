@@ -5,9 +5,8 @@ description matches the actual function/method implementation.
 *Darglint* expects docstrings to be formatted using the
 [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html).
 
-*Darglint* is in a very early stage, and may fail for a lot of things.
-See the **Features planned** section for an idea of where
-the project is going.
+*Darglint* is still in an early stage, and may fail for some things.
+See the **Roadmap** section for an idea of where the project is going.
 
 Feel free to submit an issue/pull request if you spot a problem or
 would like a feature in *darglint*.
@@ -159,18 +158,26 @@ So, in this case, the argument for `noqa` is really all the way to
 the left.  (Or whatever description we are parsing.)  We could also
 have put it on its own line, as `# noqa: I402 ZeroDivisionError`.
 
-## Features planned.
+## Roadmap
+The below list is the current roadmap for *darglint*.  For each
+version number, it specifies which features will be added.
+To see the most recently implemented features, see the *CHANGELOG*.
 
-The below list is all that defines the current roadmap for *darglint*.
-It is roughly sorted in order of importance.  To see the most
-recently implemented features, see the *CHANGELOG*.
-
-- [ ] ALE support.
+### 0.3
 - [ ] Take an argument which supports a formatting string for the error
 message.  That way, anyone can specify their own format.
-- [ ] Optional checking for docstring style compliance.
+
+### 1.0
 - [ ] Robust logging for errors caused/encountered by *darglint*.
 - [ ] Add support for python versions earlier than 3.6.
+- [ ] Add more specific line numbers in error messages.
+- [ ] Add style errors and suggestions.
+
+
+### Other features
+I haven't decided when to add the below features.
+
+- [ ] ALE support.
 - [ ] Syntastic support. (Syntastic is not accepting new checkers until
 their next API stabilizes, so this may take some time.)
 - [ ] Check super classes of errors/exceptions raised to allow for more

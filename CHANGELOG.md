@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
+- Made error handling more robust.  If darglint is unable to parse, now,
+  it will display an error message for that function.  This error message
+  is taken from the assert statements in the parser, or is a general
+  message.  This, at least, prevents an ugly stack trace and provides a
+  model for how to handle style errors in the future.
 - Fixed a couple of type errors.  Typing is either going to be removed
   or moved to a different format to allow for < Python3.6.
 - Previously, returns in inner functions would raise errors for missing
