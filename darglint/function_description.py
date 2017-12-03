@@ -56,6 +56,7 @@ def _get_arguments(fn: ast.FunctionDef) -> Tuple[List[str], List[str]]:
 
     return arguments, types
 
+
 def _walk(fun: ast.FunctionDef, skip: Callable) -> Iterator[ast.AST]:
     """Walk through the nodes in this function, skipping as necessary.
 
@@ -73,7 +74,7 @@ def _walk(fun: ast.FunctionDef, skip: Callable) -> Iterator[ast.AST]:
         Children of the function and the function itself.
 
     """
-    queue = deque() # type: deque
+    queue = deque()  # type: deque
     queue.appendleft(fun)
     while len(queue) > 0:
         curr = queue.pop()
@@ -82,6 +83,7 @@ def _walk(fun: ast.FunctionDef, skip: Callable) -> Iterator[ast.AST]:
         if hasattr(curr, 'body'):
             queue.extendleft(curr.body)
         yield curr
+
 
 def _has_return(fun: ast.FunctionDef) -> bool:
     """Return true if the function has a fruitful return.
