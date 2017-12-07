@@ -60,7 +60,9 @@ class ParserException(BaseException):
     pass
 
 
-def _expect_type(peaker: Peaker[Token], expected_type: TokenType):
+def _expect_type(peaker: Peaker[Token],
+                 expected_type: TokenType,
+                 hint:str=''):
     """Raise an exception if peaker's next value isn't the given type.
 
     Args:
@@ -82,10 +84,14 @@ def _expect_type(peaker: Peaker[Token], expected_type: TokenType):
                 peaker.peak().value,
             )
         else:
-            msg = 'Expected type {}, but was {}.'.format(
+            msg = 'Expected type {}, but was {}'.format(
                 expected_type,
                 actual_type,
             )
+        if hint != '':
+            msg = msg + ': ' + hint
+        else:
+            msg = msg + '.'
         raise ParserException(msg)
 
 
@@ -98,8 +104,12 @@ def _is_type(peaker: Peaker[Token], token_type: TokenType) -> bool:
 
     Returns:
         True if the next token in the peaker is of the given type.
+        False if the token type doesn't match, or if there is no
+        more content in the peaker.
 
     """
+    if not peaker.has_next():
+        return False
     return peaker.peak().token_type == token_type
 
 
@@ -287,7 +297,12 @@ class Docstring(object):
                     pass
                 word_type = word_type[1:-1]
                 # There should be a colon immediately after the type.
-                _expect_type(self._peaker, TokenType.COLON)
+                _expect_type(
+                    self._peaker,
+                    TokenType.COLON,
+                    hint='You are either missing a colon or have '
+                    'underindented the second line of a description.'
+                )
 
             current_indents = indents_to_argument + 1
             word_description = ''
@@ -298,6 +313,13 @@ class Docstring(object):
             # description, exits when indented for argument, there are
             # no more items, or there is an extra newline.
             while current_indents > indents_to_argument:
+                at_eof = not self._peaker.has_next()
+                at_newline = _is_type(self._peaker, TokenType.NEWLINE)
+                if at_eof or at_newline:
+                    raise ParserException(
+                        'Expected description of "{}", but found '
+                        'none.'.format(word)
+                    )
                 word_description = self._parse_line(word)
 
                 # If we're at the end of the docstring, finish the routine.

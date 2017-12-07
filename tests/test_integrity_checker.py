@@ -441,3 +441,26 @@ class IntegrityCheckerTestCase(TestCase):
         checker.run_checks(functions[0])
         errors = checker.errors
         self.assertTrue(isinstance(errors[0], GenericSyntaxError))
+
+    def test_throws_assertion_if_no_content_after_colon(self):
+        program = '\n'.join([
+            'def hello_world(name):',
+            '    """Tell the person hello.',
+            '',
+            '    Args:',
+            '        name:',
+            '',
+            '    """',
+            '    print("Hello, {}".format(name))',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker(raise_errors=True)
+
+        with self.assertRaises(ParserException):
+            checker.run_checks(functions[0])
+
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertTrue(isinstance(errors[0], GenericSyntaxError))

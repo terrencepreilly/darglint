@@ -55,6 +55,30 @@ def walk(root):
 - `ParserException` is thrown if there is no colon after the type annotation
   or argument/exception in the description.
 
+  For example, the following function would raise the `ParserException`:
+
+```
+def hello(name):
+    """Say hello to the person.
+
+    Args:
+        name: The name of the person to
+	whom we are saying hello.
+
+    """
+    print('hello, {}'.format(name))
+```
+
+- Added optional hint to the function `_expect_type` in `darglint/parse.py`.
+  This will be displayed after the default message.  We'll have to add
+  an option for hints in the configuration, and show or hide them accordingly.
+
+- Added check to ensure that a description exists after an item in the
+  argument descriptions or exception descriptions (or any multi-section).
+  At some point, this should probably be optional, but it is currently
+  raises a `ParserException` (which is too general to really want to
+  exclude.)
+
 ## [0.0.9]
 
 ### Added
