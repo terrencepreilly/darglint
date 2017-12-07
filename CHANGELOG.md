@@ -231,7 +231,7 @@ def do_something_dangerous():
 
     ```
     def we_dont_want_a_returns_section():
-      """Returns the value, 3.
+      """Return the value, 3.
 
       # noqa: I201
 
