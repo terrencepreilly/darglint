@@ -412,3 +412,32 @@ class IntegrityCheckerTestCase(TestCase):
         checker.run_checks(functions[0])
         errors = checker.errors
         self.assertTrue(isinstance(errors[0], GenericSyntaxError))
+
+    def test_throws_assertion_if_no_colon_in_parameter_line(self):
+        program = '\n'.join([
+            'def hash_integer(value):',
+            '    """Return the hash value of an integer.',
+            '',
+            '    Args:',
+            '        value: The integer that we want',
+            # This line should cause an error because it is at the
+            # level for parameter identifiers.
+            '        to make a hashed value of.',
+            '',
+            '    Returns:',
+            '        The hashed value.',
+            '',
+            '    """',
+            '    return value % 7',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker(raise_errors=True)
+
+        with self.assertRaises(ParserException):
+            checker.run_checks(functions[0])
+
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertTrue(isinstance(errors[0], GenericSyntaxError))

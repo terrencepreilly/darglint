@@ -50,6 +50,11 @@ def walk(root):
 
 - Renamed "darglint.py" to a more appropriate name: "function_description.py".
 
+### Added
+
+- `ParserException` is thrown if there is no colon after the type annotation
+  or argument/exception in the description.
+
 ## [0.0.9]
 
 ### Added

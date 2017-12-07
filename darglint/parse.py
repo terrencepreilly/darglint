@@ -19,10 +19,11 @@ __EBNF for a google-style docstring__:
   <single-section> ::= <emtpty-headline>(<indent><line>)+<newline>
      | <full-headline>(<indent><line>)*<newline>
   <headline> ::= <empty-headline>|<full-headline>
-  <empty-headline> ::= <keyword><colon><newline>
-  <full-headline> ::= <keyword><colon><space><line>
+  <empty-headline> ::= <keyword>(<space><type>)?<colon><newline>
+  <full-headline> ::= <keyword>(<space><type>)?<colon><space><line>
   <line> ::= <nnline><newline>
   <nnline> ::= (<word><space>+)*<word>
+  <type> = \(word\)
   <keyword> ::= "Args"
             | "Arguments"
             | "Returns
@@ -42,7 +43,7 @@ from itertools import chain
 from typing import (
     Callable,
     Dict,
-    Iterable,
+    Iterator,
     Tuple,
 )
 
@@ -148,7 +149,7 @@ class Docstring(object):
         RAISES
     ))
 
-    def __init__(self, tokens: Iterable[Token]) -> None:
+    def __init__(self, tokens: Iterator[Token]) -> None:
         """Create a new docstring from the stream of tokens.
 
         Attributes of the class either detail descriptions, or
@@ -182,7 +183,7 @@ class Docstring(object):
         self.raises_descriptions = dict()  # type: Dict[str, str]
         self.noqa = dict()  # type: Dict[str, str]
 
-        self._peaker = Peaker(tokens)
+        self._peaker = Peaker(tokens) # type: Peaker[Token]
         self._parse()
 
     def _dispatch(self, keyword: str):
@@ -255,7 +256,7 @@ class Docstring(object):
             self._peaker.take_while(_token_is(TokenType.NEWLINE))
 
     def _parse_multi_section(self) -> Dict[str, Tuple[str, str]]:
-        """Parse a multi - section.
+        """Parse a multi-section.
 
         Returns:
             A dictionary containing the headline as key and the
@@ -273,22 +274,29 @@ class Docstring(object):
         # Parse the whole section
         while not _is_type(self._peaker, TokenType.NEWLINE):
             _expect_type(self._peaker, TokenType.WORD)
-            word = self._peaker.next().value
-            word_type = None
+            word = self._peaker.next().value # The word being described.
+            word_type = None # The type annotation for the word.
             if _is_type(self._peaker, TokenType.COLON):
                 _expect_type(self._peaker, TokenType.COLON)
                 self._peaker.next()
+                encountered_colon = True
             elif _is_type(self._peaker, TokenType.WORD):
                 word_type = self._peaker.next().value
                 if not (word_type.startswith('(') and word_type.endswith(')')):
-                    # Raise exception
+                    # Raise exception (this should be a type.)
                     pass
                 word_type = word_type[1:-1]
+                # There should be a colon immediately after the type.
+                _expect_type(self._peaker, TokenType.COLON)
 
             current_indents = indents_to_argument + 1
             word_description = ''
 
             # Parse the subsection
+            #
+            # Entered when _peaker points to the first word in the
+            # description, exits when indented for argument, there are
+            # no more items, or there is an extra newline.
             while current_indents > indents_to_argument:
                 word_description = self._parse_line(word)
 
@@ -358,6 +366,7 @@ class Docstring(object):
         newline_is_next = _is_type(self._peaker, TokenType.NEWLINE)
         if newline_is_next:
             return True
+        return False
 
     def _parse_line(self, target) -> str:
         """Parse up to the newline, returning the string representation.

@@ -6,6 +6,7 @@ from typing import (
     Iterator,
     List,
     TypeVar,
+    Union,
 )
 
 
@@ -16,9 +17,9 @@ class Peaker(Generic[T]):
     """A stream transformer allowing us to peak ahead."""
 
     class _Empty(object):
-        pass
+        value = None
 
-    def __init__(self, stream: Iterator[T]):
+    def __init__(self, stream: Iterator[T]) -> None:
         """Create a new peaker.
 
         Args:
@@ -27,7 +28,7 @@ class Peaker(Generic[T]):
         """
         self.stream = stream
         try:
-            self.current = next(stream)
+            self.current = next(stream) # type: Union[T, Peaker._Empty]
         except StopIteration:
             self.current = self._Empty()
 
@@ -46,7 +47,7 @@ class Peaker(Generic[T]):
         """
         if not self.has_next():
             raise StopIteration
-        previous = self.current
+        previous = self.current  # type: T
         try:
             self.current = next(self.stream)
         except StopIteration:
@@ -84,7 +85,7 @@ class Peaker(Generic[T]):
             A list of items (of type T), which pass the given test function.
 
         """
-        passing_elements = []
+        passing_elements = [] # type: List[T]
         while self.has_next() and test(self.peak()):
             passing_elements.append(self.next())
         return passing_elements
