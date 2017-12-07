@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Previously, returns in inner functions would raise errors for missing
   returns sections in the docstring, even if (for example), the parent
   function yielded values.  For example:
+- Broken tests were fixed. (The `ast` module does not return functions
+  in any particular order, but tests were relying on a specific order.)
 
 ```
 def walk(root):

@@ -77,7 +77,10 @@ class GetFunctionsAndDocstrings(TestCase):
             '       raise Exception("Bad multiplier!")',
         ])
         tree = ast.parse(program)
-        function = get_function_descriptions(tree)[0]
+        function = [
+            f for f in get_function_descriptions(tree)
+            if f.name == 'baren_function'
+        ][0]
         self.assertFalse(function.has_return)
 
     def test_no_docstring_is_okay(self):
