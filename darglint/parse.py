@@ -45,11 +45,16 @@ from typing import (
     Dict,
     Iterator,
     Tuple,
+    Type,
 )
 
 from .config import get_logger
 from .token import Token, TokenType
 from .peaker import Peaker
+from .errors import (
+    GenericSyntaxError,
+    EmptyDescriptionError,
+)
 
 logger = get_logger()
 
@@ -57,7 +62,17 @@ logger = get_logger()
 class ParserException(BaseException):
     """The exception raised when there is a parsing problem."""
 
-    pass
+    def __init__(self, msg: str = '', style_error: Type=GenericSyntaxError) -> None:
+        """Create a new ParserException.
+
+        Args:
+            msg: The message this error should display.
+            style_error: If style errors are supported, then this
+                is the type of style error.
+
+        """
+        super(ParserException, self).__init__(msg)
+        self.style_error = style_error
 
 
 def _expect_type(peaker: Peaker[Token],
@@ -318,7 +333,8 @@ class Docstring(object):
                 if at_eof or at_newline:
                     raise ParserException(
                         'Expected description of "{}", but found '
-                        'none.'.format(word)
+                        'none.'.format(word),
+                        style_error=EmptyDescriptionError,
                     )
                 word_description = self._parse_line(word)
 

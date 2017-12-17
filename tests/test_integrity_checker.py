@@ -4,6 +4,7 @@ from unittest import TestCase
 from darglint.integrity_checker import IntegrityChecker
 from darglint.function_description import get_function_descriptions
 from darglint.errors import (
+    EmptyDescriptionError,
     ExcessParameterError,
     ExcessRaiseError,
     ExcessYieldError,
@@ -463,4 +464,5 @@ class IntegrityCheckerTestCase(TestCase):
         checker = IntegrityChecker()
         checker.run_checks(functions[0])
         errors = checker.errors
-        self.assertTrue(isinstance(errors[0], GenericSyntaxError))
+#        self.assertTrue(isinstance(errors[0], GenericSyntaxError))
+        self.assertTrue(isinstance(errors[0], EmptyDescriptionError))

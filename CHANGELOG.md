@@ -5,6 +5,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.1.1]
 
+### Added
+
+- Added a mechanism for raising more specific style errors from the
+  parser.  Unfortunately, the parser does not have access to the
+  functions whose docstrings are being parsed.  (These two halves are
+  put together in the `IntegrityChecker`.)  The parser cannot raise
+  specific error messages, then, since it can't access the function.
+  So, currently, the `ParserException` takes an optional, more
+  specific error, which can be created by the `IntegrityChecker`.
+
 ### Fixed
 
 - Fixed broken unit test.

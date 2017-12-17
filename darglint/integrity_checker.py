@@ -78,7 +78,7 @@ class IntegrityChecker(object):
                 if self.raise_errors:
                     raise
                 self.errors.append(
-                    GenericSyntaxError(
+                    exception.style_error(
                         self.function.function,
                         message=str(exception),
                     ),

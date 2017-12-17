@@ -108,6 +108,25 @@ class GenericSyntaxError(DarglintError):
         super(GenericSyntaxError, self).__init__(function)
 
 
+class EmptyDescriptionError(DarglintError):
+    """Describes when an argument/exception lacks a description."""
+
+    error_code = 'S002'
+
+    def __init__(self, function: ast.FunctionDef, message: str) -> None:
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+            message: The parser error's message.
+
+        """
+        self.general_message = 'Empty description'
+        self.terse_message = 'e {}'.format(message)
+
+        super(EmptyDescriptionError, self).__init__(function)
+
+
 class MissingParameterError(DarglintError):
     """Describes when a docstring is missing a parameter in the definition."""
 
