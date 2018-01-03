@@ -3,6 +3,31 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.1.2]
+
+### Added
+
+- Allow global noqa statements in docstring.  If we have a docstring
+  which we would like to ignore (say, because it has a different
+  format), then we can ignore it either by adding "# noqa" or
+  "# noqa: \*" to it.
+
+  For example, the following program would raise an exception that
+  there is a missing "Returns" section:
+
+```
+def is_palindrome(word):
+    """True if the word is a palindrome.
+
+    # noqa
+
+    """
+    return word == word[::-1]
+```
+
+  However, since there is a global noqa statement, all errors are
+  ignored.
+
 ## [0.1.1]
 
 ### Added

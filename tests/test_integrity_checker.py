@@ -221,7 +221,13 @@ class IntegrityCheckerTestCase(TestCase):
         functions = get_function_descriptions(tree)
         checker = IntegrityChecker()
         checker.run_checks(functions[0])
-        self.assertEqual(len(checker.errors), 0)
+        self.assertEqual(
+            len(checker.errors),
+            0,
+            'Expected there to be no errors, but there were {}'.format(
+                len(checker.errors)
+            )
+        )
 
     def test_noqa_after_excess_raises(self):
         program = '\n'.join([
@@ -464,5 +470,28 @@ class IntegrityCheckerTestCase(TestCase):
         checker = IntegrityChecker()
         checker.run_checks(functions[0])
         errors = checker.errors
-#        self.assertTrue(isinstance(errors[0], GenericSyntaxError))
         self.assertTrue(isinstance(errors[0], EmptyDescriptionError))
+
+    def test_bare_noqa(self):
+        program = '\n'.join([
+            'def is_palindrome(word):',
+            '    """Return True if is palindrome.',
+            '',
+            '    # noqa',
+            '',
+            '    """',
+            '    return word == word[::-1]',
+        ])
+        self.has_no_errors(program)
+
+    def test_global_noqa(self):
+        program = '\n'.join([
+            'def is_palindrome(word):',
+            '    """Return True if is palindrome.',
+            '',
+            '    # noqa: *',
+            '',
+            '    """',
+            '    return word == word[::-1]',
+        ])
+        self.has_no_errors(program)

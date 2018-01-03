@@ -1,7 +1,6 @@
 """Defines IntegrityChecker."""
 
 from typing import (
-    List,
     Set,
 )
 
@@ -19,7 +18,6 @@ from .errors import (
     ExcessRaiseError,
     ExcessReturnError,
     ExcessYieldError,
-    GenericSyntaxError,
     MissingParameterError,
     MissingRaiseError,
     MissingReturnError,
@@ -67,6 +65,8 @@ class IntegrityChecker(object):
         if function.docstring is not None:
             try:
                 self.docstring = Docstring(lex(function.docstring))
+                if self.docstring.ignore_all:
+                    return
                 self._check_parameters()
                 self._check_parameter_types()
                 self._check_return()
@@ -88,9 +88,6 @@ class IntegrityChecker(object):
         error_code = ParameterTypeMismatchError.error_code
         if self._ignore_error(ParameterTypeMismatchError):
             return
-#        is_global = noqa_exists and self.docstring.noqa[error_code] is None
-#        if noqa_exists and is_global:
-#            return
 
         doc_arg_types = list()
         for name in self.function.argument_names:
@@ -119,12 +116,8 @@ class IntegrityChecker(object):
                 )
 
     def _check_return_type(self):
-        error_code = ReturnTypeMismatchError.error_code
-
         if self._ignore_error(ReturnTypeMismatchError):
             return
-#         if error_code in self.docstring.noqa:
-#             return
 
         fun_type = self.function.return_type
         doc_type = self.docstring.return_type
@@ -143,8 +136,6 @@ class IntegrityChecker(object):
         fun_yield = self.function.has_yield
         ignore_missing = self._ignore_error(MissingYieldError)
         ignore_excess = self._ignore_error(ExcessYieldError)
-#        ignore_missing = MissingYieldError.error_code in self.docstring.noqa
-#        ignore_excess = ExcessYieldError.error_code in self.docstring.noqa
         if fun_yield and not doc_yield and not ignore_missing:
             self.errors.append(
                 MissingYieldError(self.function.function)
@@ -159,8 +150,6 @@ class IntegrityChecker(object):
         fun_return = self.function.has_return
         ignore_missing = self._ignore_error(MissingReturnError)
         ignore_excess = self._ignore_error(ExcessReturnError)
-#        ignore_missing = MissingReturnError.error_code in self.docstring.noqa
-#        ignore_excess = ExcessReturnError.error_code in self.docstring.noqa
         if fun_return and not doc_return and not ignore_missing:
             self.errors.append(
                 MissingReturnError(self.function.function)

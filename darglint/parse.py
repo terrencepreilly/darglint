@@ -62,7 +62,10 @@ logger = get_logger()
 class ParserException(BaseException):
     """The exception raised when there is a parsing problem."""
 
-    def __init__(self, msg: str = '', style_error: Type=GenericSyntaxError) -> None:
+    def __init__(self,
+                 msg: str = '',
+                 style_error: Type=GenericSyntaxError
+                 ) -> None:
         """Create a new ParserException.
 
         Args:
@@ -77,7 +80,7 @@ class ParserException(BaseException):
 
 def _expect_type(peaker: Peaker[Token],
                  expected_type: TokenType,
-                 hint:str=''):
+                 hint: str=''):
     """Raise an exception if peaker's next value isn't the given type.
 
     Args:
@@ -190,6 +193,9 @@ class Docstring(object):
         (such as the return statement or short description), then
         the item may be None.  For example, to ignore a missing
         return, we would have `('I201', None)` in the noqa dictionary.
+        If the noqa statement is bare (that is, it has no colon after
+        it), then all errors are suppressed. This is also the case if
+        the target is "*".
 
         Noqa statements should appear either after the section/argument
         they reference, or at the end of the long description.
@@ -208,8 +214,20 @@ class Docstring(object):
         self.raises_descriptions = dict()  # type: Dict[str, str]
         self.noqa = dict()  # type: Dict[str, str]
 
-        self._peaker = Peaker(tokens) # type: Peaker[Token]
+        self._peaker = Peaker(tokens)  # type: Peaker[Token]
         self._parse()
+
+    @property
+    def ignore_all(self):
+        """Return whether we should ignore everything in the docstring.
+
+        This happens when there is a bare noqa in the docstring, or
+        there is "# noqa: *" in the docstring.
+
+        Retuns: True if we should ignore everything, otherwise false.
+
+        """
+        return '*' in self.noqa
 
     def _dispatch(self, keyword: str):
         """Parse the section described by the keyword.
@@ -299,12 +317,11 @@ class Docstring(object):
         # Parse the whole section
         while not _is_type(self._peaker, TokenType.NEWLINE):
             _expect_type(self._peaker, TokenType.WORD)
-            word = self._peaker.next().value # The word being described.
-            word_type = None # The type annotation for the word.
+            word = self._peaker.next().value  # The word being described.
+            word_type = None  # The type annotation for the word.
             if _is_type(self._peaker, TokenType.COLON):
                 _expect_type(self._peaker, TokenType.COLON)
                 self._peaker.next()
-                encountered_colon = True
             elif _is_type(self._peaker, TokenType.WORD):
                 word_type = self._peaker.next().value
                 if not (word_type.startswith('(') and word_type.endswith(')')):
@@ -455,11 +472,11 @@ class Docstring(object):
         def add_to_errors(error, item):
             # Target should be none only if it is always a global attribute.
             if item is None:
-                self.noqa[error_to_ignore] = None
+                self.noqa[error] = None
             else:
-                if error_to_ignore not in self.noqa:
-                    self.noqa[error_to_ignore] = list()
-                self.noqa[error_to_ignore].append(item)
+                if error not in self.noqa:
+                    self.noqa[error] = list()
+                self.noqa[error].append(item)
 
         _expect_type(self._peaker, TokenType.HASH)
         self._peaker.next()
@@ -468,12 +485,22 @@ class Docstring(object):
             return '#'
 
         # If it's not a noqa statement, then return up to the newline.
-        is_word = self._peaker.peak().token_type == TokenType.WORD
-        is_noqa = False if not is_word else self._peaker.peak().value == 'noqa'
-        if not (is_word and is_noqa):
+        is_word = _is_type(self._peaker, TokenType.WORD)
+        is_noqa = is_word and self._peaker.peak().value == 'noqa'
+        if not is_noqa:
             return '# ' + self._parse_line(target)
 
         self._peaker.next()
+
+        # There's no colon, so it's a global statement.
+        if not self._peaker.has_next():
+            add_to_errors('*', None)
+            return ''
+        if not _is_type(self._peaker, TokenType.COLON):
+            add_to_errors('*', None)
+            self._peaker.next()
+            return ''
+
         _expect_type(self._peaker, TokenType.COLON)
         self._peaker.next()
         _expect_type(self._peaker, TokenType.WORD)

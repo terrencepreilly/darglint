@@ -221,4 +221,12 @@ class DocstringTestCase(TestCase):
             '',
             'Returns: Valid JSON.',
         ])
-        doc = Docstring(lex(docstring))
+        Docstring(lex(docstring))
+
+    def test_bare_noqa_can_be_parsed(self):
+        docstring = '\n'.join([
+            'The first line may have something, but others are missing.',
+            '',
+            '# noqa'
+        ])
+        Docstring(lex(docstring))
