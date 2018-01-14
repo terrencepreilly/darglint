@@ -75,8 +75,8 @@ setup(
     },
     install_requires=requirements,
     setup_requires=requirements,
-    tests_require=['pytest'] + requirements,
-    python_requires='>=3.6',
+    tests_require=['pytest', 'tox'] + requirements,
+    python_requires='>=3.5',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
@@ -84,6 +84,7 @@ setup(
         'Topic :: Software Development :: Quality Assurance',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.5',
     ],
     cmdclass={
         'prebuild': PreBuildCommand,

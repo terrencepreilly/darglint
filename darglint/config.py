@@ -5,9 +5,6 @@ import configparser
 import logging
 import os
 
-from typing import (
-    Iterable,
-)
 
 # TODO: Configure this logger and allow the user to specify
 # the whether they want warnings.
@@ -25,7 +22,7 @@ POSSIBLE_CONFIG_FILENAMES = (
 Configuration = namedtuple('Configuration', 'ignore')
 
 
-def load_config_file(filename) -> Configuration:
+def load_config_file(filename): # type: (str) -> Configuration
     """Load the config file located at the filename.
 
     Args:
@@ -46,7 +43,7 @@ def load_config_file(filename) -> Configuration:
     return Configuration(ignore=ignore)
 
 
-def walk_path() -> Iterable[str]:
+def walk_path(): # type: () -> Iterable[str]
     """Yield directories from the current to root.
 
     Yields:
@@ -67,7 +64,7 @@ def walk_path() -> Iterable[str]:
         next_path = os.path.dirname(next_path)
 
 
-def find_config_file_in_path(path: str) -> str:
+def find_config_file_in_path(path): # type: (str) -> str
     """Return the config path, if it is correct, or None.
 
     Args:
@@ -91,9 +88,10 @@ def find_config_file_in_path(path: str) -> str:
                 logger.error('Unable to parse file {}'.format(
                     fully_qualified_path
                 ))
+    return None
 
 
-def find_config_file() -> str:
+def find_config_file(): # type: () -> str
     """Return the location of the config file.
 
     Returns:
@@ -106,9 +104,10 @@ def find_config_file() -> str:
         possible_config_filename = find_config_file_in_path(path)
         if possible_config_filename is not None:
             return possible_config_filename
+    return None
 
 
-def get_config() -> Configuration:
+def get_config(): # type: () -> Configuration
     """Locate the configuration file and return its Configuration.
 
     Returns:
@@ -122,7 +121,7 @@ def get_config() -> Configuration:
     return load_config_file(filename)
 
 
-def get_logger() -> logging.Logger:
+def get_logger(): # type: () -> logging.Loger
     """Get the default logger for darglint.
 
     Returns:

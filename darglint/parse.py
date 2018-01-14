@@ -44,6 +44,7 @@ from typing import (
     Callable,
     Dict,
     Iterator,
+    Iterable,
     Tuple,
     Type,
 )
@@ -62,10 +63,8 @@ logger = get_logger()
 class ParserException(BaseException):
     """The exception raised when there is a parsing problem."""
 
-    def __init__(self,
-                 msg: str = '',
-                 style_error: Type=GenericSyntaxError
-                 ) -> None:
+    def __init__(self, msg='', style_error=GenericSyntaxError):
+        # type: (str, Type) -> None
         """Create a new ParserException.
 
         Args:
@@ -78,9 +77,8 @@ class ParserException(BaseException):
         self.style_error = style_error
 
 
-def _expect_type(peaker: Peaker[Token],
-                 expected_type: TokenType,
-                 hint: str=''):
+def _expect_type(peaker, expected_type, hint=''):
+    # type: (Peaker[Token], TokenType, str) -> None
     """Raise an exception if peaker's next value isn't the given type.
 
     Args:
@@ -113,7 +111,8 @@ def _expect_type(peaker: Peaker[Token],
         raise ParserException(msg)
 
 
-def _is_type(peaker: Peaker[Token], token_type: TokenType) -> bool:
+def _is_type(peaker, token_type):
+    # type: (Peaker[Token], TokenType) -> bool
     """Tell if the next token in the Peaker is of the given type.
 
     Args:
@@ -131,7 +130,8 @@ def _is_type(peaker: Peaker[Token], token_type: TokenType) -> bool:
     return peaker.peak().token_type == token_type
 
 
-def _not(*fns) -> Callable:
+def _not(*fns):
+    # type: (Iterable[Callable]) -> Callable
     """Negates a function which returns a boolean.
 
     Args:
@@ -147,7 +147,8 @@ def _not(*fns) -> Callable:
     return inner
 
 
-def _token_is(token_type: TokenType) -> Callable:
+def _token_is(token_type):
+    # type: (TokenType) -> Callable
     """Return a checker function for a token.
 
     Args:
@@ -177,7 +178,8 @@ class Docstring(object):
         RAISES
     ))
 
-    def __init__(self, tokens: Iterator[Token]) -> None:
+    def __init__(self, tokens):
+        # type: (Iterator[Token]) -> None
         """Create a new docstring from the stream of tokens.
 
         Attributes of the class either detail descriptions, or
@@ -219,6 +221,7 @@ class Docstring(object):
 
     @property
     def ignore_all(self):
+        # type: () -> bool
         """Return whether we should ignore everything in the docstring.
 
         This happens when there is a bare noqa in the docstring, or
@@ -229,7 +232,8 @@ class Docstring(object):
         """
         return '*' in self.noqa
 
-    def _dispatch(self, keyword: str):
+    def _dispatch(self, keyword):
+        # type: (str) -> None
         """Parse the section described by the keyword.
 
         Args:
@@ -255,6 +259,7 @@ class Docstring(object):
             ))
 
     def _parse(self):
+        # type: () -> None
         if not self._peaker.has_next():
             return
         self._parse_short_description()
@@ -286,9 +291,11 @@ class Docstring(object):
                 self._parse_line(None)
 
     def _parse_short_description(self):
+        # type: () -> None
         self.short_description = self._parse_line(None)
 
     def _parse_long_description(self):
+        # type: () -> None
         while self._peaker.has_next():
             is_keyword = self._peaker.peak().value in self.keywords
             if is_keyword:
@@ -298,7 +305,8 @@ class Docstring(object):
                 self.long_description += space + self._parse_line(None)
             self._peaker.take_while(_token_is(TokenType.NEWLINE))
 
-    def _parse_multi_section(self) -> Dict[str, Tuple[str, str]]:
+    def _parse_multi_section(self):
+        # type: () -> Dict[str, Tuple[str, str]]
         """Parse a multi-section.
 
         Returns:
@@ -370,7 +378,8 @@ class Docstring(object):
 
         return descriptions
 
-    def _parse_single_section(self) -> str:
+    def _parse_single_section(self):
+        # type: () -> str
         """Parse a single section.
 
         Returns:
@@ -407,7 +416,8 @@ class Docstring(object):
             self._peaker.next()
         return description
 
-    def _at_terminal(self) -> bool:
+    def _at_terminal(self):
+        # type: () -> bool
         """Return true if at line terminal: newline or empty.
 
         Returns:
@@ -423,7 +433,8 @@ class Docstring(object):
             return True
         return False
 
-    def _parse_line(self, target) -> str:
+    def _parse_line(self, target):
+        # type: (Token) -> str
         """Parse up to the newline, returning the string representation.
 
         Recursively gets the words in the line, up to (but not including)
@@ -449,7 +460,8 @@ class Docstring(object):
         else:
             return word + ' ' + self._parse_line(target)
 
-    def _parse_possible_noqa(self, target) -> str:
+    def _parse_possible_noqa(self, target):
+        # type: (Token) -> str
         """Return the value if it's not noqa, otherwise return blank.
 
         This should be called when we encounter a hash mark.  If there
@@ -518,6 +530,7 @@ class Docstring(object):
         return ''
 
     def _parse_arguments(self):
+        # type: () -> None
         descriptions = self._parse_multi_section()
         self.arguments_descriptions = {
             key: descriptions[key][1] for key in descriptions
@@ -527,9 +540,11 @@ class Docstring(object):
         }
 
     def _parse_yield(self):
+        # type: () -> None
         self.yields_description = self._parse_single_section()
 
     def _parse_return(self):
+        # type: () -> None
         self.returns_description = self._parse_single_section()
 
         if self.returns_description is None:
@@ -553,6 +568,7 @@ class Docstring(object):
             pass
 
     def _parse_raises(self):
+        # type: () -> None
         self.raises_descriptions = {
             key: value[1] for key, value in self._parse_multi_section().items()
         }

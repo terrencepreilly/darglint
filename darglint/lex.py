@@ -8,23 +8,28 @@ from .peaker import Peaker
 from .token import Token, TokenType
 
 
-def _is_space(char: str) -> bool:
+def _is_space(char):
+    # type: (str) -> bool
     return char == ' '
 
 
-def _is_newline(char: str) -> bool:
+def _is_newline(char):
+    # type: (str) -> bool
     return char == '\n'
 
 
-def _is_colon(char: str) -> bool:
+def _is_colon(char):
+    # type: (str) -> bool
     return char == ':'
 
 
-def _is_hash(char: str) -> bool:
+def _is_hash(char):
+    # type: (str) -> bool
     return char == '#'
 
 
-def _is_separator(char: str) -> bool:
+def _is_separator(char):
+    # type: (str) -> bool
     """Check whether if `char` is a separator other than newline or space.
 
     Args:
@@ -37,11 +42,13 @@ def _is_separator(char: str) -> bool:
     return char.isspace() and not (_is_space(char) or _is_newline(char))
 
 
-def _is_double_quotation(char: str) -> bool:
+def _is_double_quotation(char):
+    # type: (str) -> bool
     return char == '"'
 
 
-def _is_word(char: str) -> bool:
+def _is_word(char):
+    # type: (str) -> bool
     return not any([
         _is_space(char),
         _is_newline(char),
@@ -52,7 +59,8 @@ def _is_word(char: str) -> bool:
     ])
 
 
-def lex(program: str) -> Iterator[List[Token]]:
+def lex(program):
+    # type: (str) -> Iterator[Token]
     """Create a stream of tokens from the string.
 
     Args:

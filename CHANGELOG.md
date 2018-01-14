@@ -3,6 +3,21 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.2.0]
+
+### Added
+
+- Added support for Python3.5.  Probably earlier versions of Python
+  can also be supported, but they need to be tested, first.
+
+- Added *tox* script for running tests against all environments.
+  To run the tests, make sure the test dependencies are installed,
+  and run
+
+```
+tox
+```
+
 ## [0.1.2]
 
 ### Added

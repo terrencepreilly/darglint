@@ -1,6 +1,7 @@
 """Defines IntegrityChecker."""
 
 from typing import (
+    List,
     Set,
 )
 
@@ -34,9 +35,8 @@ from .config import Configuration
 class IntegrityChecker(object):
     """Checks the integrity of the docstring compared to the definition."""
 
-    def __init__(self,
-                 config: Configuration = Configuration(ignore=[]),
-                 raise_errors: bool = False) -> None:
+    def __init__(self, config=Configuration(ignore=[]), raise_errors=False):
+        # type: (Configuration, bool) -> None
         """Create a new checker for the given function and docstring.
 
         Args:
@@ -54,7 +54,8 @@ class IntegrityChecker(object):
         self.docstring = None  # type: Docstring
         self.raise_errors = raise_errors
 
-    def run_checks(self, function: FunctionDescription):
+    def run_checks(self, function):
+        # type: (FunctionDescription) -> None
         """Run checks on the given function.
 
         Args:
@@ -85,6 +86,7 @@ class IntegrityChecker(object):
                 )
 
     def _check_parameter_types(self):
+        # type: () -> None
         error_code = ParameterTypeMismatchError.error_code
         if self._ignore_error(ParameterTypeMismatchError):
             return
@@ -116,6 +118,7 @@ class IntegrityChecker(object):
                 )
 
     def _check_return_type(self):
+        # type: () -> None
         if self._ignore_error(ReturnTypeMismatchError):
             return
 
@@ -132,6 +135,7 @@ class IntegrityChecker(object):
                 )
 
     def _check_yield(self):
+        # type: () -> None
         doc_yield = len(self.docstring.yields_description) > 0
         fun_yield = self.function.has_yield
         ignore_missing = self._ignore_error(MissingYieldError)
@@ -146,6 +150,7 @@ class IntegrityChecker(object):
             )
 
     def _check_return(self):
+        # type: () -> None
         doc_return = len(self.docstring.returns_description) > 0
         fun_return = self.function.has_return
         ignore_missing = self._ignore_error(MissingReturnError)
@@ -160,6 +165,7 @@ class IntegrityChecker(object):
             )
 
     def _check_parameters(self):
+        # type: () -> None
         docstring_arguments = set(self.docstring.arguments_descriptions.keys())
         actual_arguments = set(self.function.argument_names)
         missing_in_doc = actual_arguments - docstring_arguments
@@ -182,7 +188,8 @@ class IntegrityChecker(object):
                 ExcessParameterError(self.function.function, missing)
             )
 
-    def _ignore_error(self, error: DarglintError) -> bool:
+    def _ignore_error(self, error):
+        # type: (DarglintError) -> bool
         """Return true if we should ignore this error.
 
         Args:
@@ -201,7 +208,8 @@ class IntegrityChecker(object):
             return True
         return False
 
-    def _remove_ignored(self, missing, error) -> Set:
+    def _remove_ignored(self, missing, error):
+        # type: (Set, DarglintError) -> Set
         """Remove ignored from missing.
 
         Args:
@@ -227,6 +235,7 @@ class IntegrityChecker(object):
         return missing - set(self.docstring.noqa[error_code])
 
     def _check_raises(self):
+        # type: () -> None
         docstring_raises = set(self.docstring.raises_descriptions.keys())
         actual_raises = self.function.raises
         missing_in_doc = actual_raises - docstring_raises
@@ -258,11 +267,13 @@ class IntegrityChecker(object):
             )
 
     def _sort(self):
+        # type: () -> None
         if not self._sorted:
             self.errors.sort(key=lambda x: x.function.lineno)
             self._sorted = True
 
-    def get_error_report(self, verbosity: int, filename: str) -> str:
+    def get_error_report(self, verbosity, filename):
+        # type: (int, str) -> str
         """Return a string representation of the errors.
 
         Args:

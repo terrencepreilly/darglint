@@ -19,7 +19,8 @@ class Peaker(Generic[T]):
     class _Empty(object):
         value = None
 
-    def __init__(self, stream: Iterator[T]) -> None:
+    def __init__(self, stream):
+        # type: (Iterator[T]) -> None
         """Create a new peaker.
 
         Args:
@@ -32,7 +33,8 @@ class Peaker(Generic[T]):
         except StopIteration:
             self.current = self._Empty()
 
-    def next(self) -> T:
+    def next(self):
+        # type: () -> T
         """Get the next item in the stream, moving it forward.
 
         Side effects:
@@ -54,7 +56,8 @@ class Peaker(Generic[T]):
             self.current = self._Empty()
         return previous
 
-    def peak(self) -> T:
+    def peak(self):
+        # type: () -> T
         """Get the next letter in the stream, without moving it forward.
 
         Returns:
@@ -65,7 +68,8 @@ class Peaker(Generic[T]):
             return None
         return self.current
 
-    def has_next(self) -> bool:
+    def has_next(self):
+        # type: () -> bool
         """Tell whether there are more tokens in the stream.
 
         Returns:
@@ -74,7 +78,8 @@ class Peaker(Generic[T]):
         """
         return not isinstance(self.current, self._Empty)
 
-    def take_while(self, test: Callable) -> List[T]:
+    def take_while(self, test):
+        # type: (Callable) -> List[T]
         """Return elements from the stream while they pass the test.
 
         Args:

@@ -13,10 +13,8 @@ from .errors import DarglintError
 class ErrorReport(object):
     """Reports the errors for the given run."""
 
-    def __init__(self,
-                 errors: List[DarglintError],
-                 filename: str,
-                 verbosity: int=2):
+    def __init__(self, errors, filename, verbosity=2):
+        # type: (List[DarglintError], str, int) -> None
         """Create a new error report.
 
         Args:
@@ -32,10 +30,11 @@ class ErrorReport(object):
         self.error_dict = self._group_errors_by_function()
 
     def _sort(self):
+        # type: () -> None
         self.errors.sort(key=lambda x: x.function.lineno)
 
-    def _group_errors_by_function(
-            self) -> Dict[ast.FunctionDef, DarglintError]:
+    def _group_errors_by_function(self):
+        # type: () -> Dict[ast.FunctionDef, List[DarglintError]]
         """Sort the current errors by function, and put into an OrderedDict.
 
         Returns:
@@ -43,7 +42,7 @@ class ErrorReport(object):
 
         """
         self._sort()
-        error_dict = OrderedDict()
+        error_dict = OrderedDict() # type: Dict[ast.FunctionDef, List[DarglintError]]
         current = None  # The current function
         for error in self.errors:
             if current != error.function:
@@ -52,7 +51,7 @@ class ErrorReport(object):
             error_dict[current].append(error)
         return error_dict
 
-    def _get_error_description(self, error) -> str:
+    def _get_error_description(self, error): # type: (DarglintError) -> str
         """Get the error description.
 
         Args:
@@ -69,7 +68,7 @@ class ErrorReport(object):
             error.message(verbosity=self.verbosity),
         )
 
-    def __str__(self) -> str:
+    def __str__(self): # type: () -> str
         """Return a string representation of this error report.
 
         Returns:

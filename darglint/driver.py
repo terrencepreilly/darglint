@@ -44,11 +44,8 @@ parser.add_argument(
 # ---------------------- MAIN SCRIPT ---------------------------------
 
 
-def get_error_report(filename: str,
-                     verbosity: int,
-                     config: Configuration,
-                     raise_errors_for_syntax: bool
-                     ) -> str:
+def get_error_report(filename, verbosity, config, raise_errors_for_syntax):
+    # type: (str, int, Configuration, bool) -> str
     """Get the error report for the given file.
 
     Args:
@@ -77,6 +74,7 @@ def get_error_report(filename: str,
 
 
 def main():
+    # type: () -> None
     """Run darglint.
 
     Called as a script when setup.py is installed.

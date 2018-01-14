@@ -15,7 +15,7 @@ from .config import get_logger
 logger = get_logger()
 
 
-def read_program(filename: str) -> str:
+def read_program(filename): # type: (str) -> str
     """Read a program from a file.
 
     Args:
@@ -31,7 +31,8 @@ def read_program(filename: str) -> str:
     return program
 
 
-def _get_arguments(fn: ast.FunctionDef) -> Tuple[List[str], List[str]]:
+def _get_arguments(fn):
+    # type: (ast.FunctionDef) -> Tuple[List[str], List[str]]
     arguments = list()  # type: List[str]
     types = list()  # type: List[str]
 
@@ -57,7 +58,8 @@ def _get_arguments(fn: ast.FunctionDef) -> Tuple[List[str], List[str]]:
     return arguments, types
 
 
-def _walk(fun: ast.FunctionDef, skip: Callable) -> Iterator[ast.AST]:
+def _walk(fun, skip):
+    # type: (ast.FunctionDef, Callable) -> Iterator[ast.AST]
     """Walk through the nodes in this function, skipping as necessary.
 
     ast.walk goes through nodes in an arbitrary order, and doesn't
@@ -85,7 +87,8 @@ def _walk(fun: ast.FunctionDef, skip: Callable) -> Iterator[ast.AST]:
         yield curr
 
 
-def _has_return(fun: ast.FunctionDef) -> bool:
+def _has_return(fun):
+    # type: (ast.FunctionDef) -> bool
     """Return true if the function has a fruitful return.
 
     Args:
@@ -104,36 +107,36 @@ def _has_return(fun: ast.FunctionDef) -> bool:
     return False
 
 
-def _has_yield(fun: ast.FunctionDef) -> bool:
+def _has_yield(fun): # type: (ast.FunctionDef) -> bool
     for node in ast.walk(fun):
         if isinstance(node, ast.Yield) or isinstance(node, ast.YieldFrom):
             return True
     return False
 
 
-def _get_docstring(fun: ast.AST) -> str:
+def _get_docstring(fun): # type: (ast.AST) -> str
     return ast.get_docstring(fun)
 
 
-def _get_all_functions(tree: ast.AST) -> Iterator[ast.FunctionDef]:
+def _get_all_functions(tree): # type: (ast.AST) -> Iterator[ast.FunctionDef]
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
             yield node
 
 
-def _get_all_classes(tree: ast.AST) -> Iterator[ast.ClassDef]:
+def _get_all_classes(tree): # type: (ast.AST) -> Iterator[ast.ClassDef]
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef):
             yield node
 
 
-def _get_all_methods(tree: ast.AST) -> Iterator[ast.FunctionDef]:
+def _get_all_methods(tree): # type: (ast.AST) -> Iterator[ast.FunctionDef]
     for klass in _get_all_classes(tree):
         for fun in _get_all_functions(klass):
             yield fun
 
 
-def _get_decorator_names(fun: ast.FunctionDef) -> List[str]:
+def _get_decorator_names(fun): # type: (ast.FunctionDef) -> List[str]
     """Get decorator names from the function.
 
     Args:
@@ -152,16 +155,16 @@ def _get_decorator_names(fun: ast.FunctionDef) -> List[str]:
     return ret
 
 
-def _is_classmethod(fun: ast.FunctionDef) -> bool:
+def _is_classmethod(fun): # type: (ast.FunctionDef) -> bool
     return 'classmethod' in _get_decorator_names(fun)
 
 
-def _is_staticmethod(fun: ast.FunctionDef) -> bool:
+def _is_staticmethod(fun): # type: (ast.FunctionDef) -> bool
     return 'staticmethod' in _get_decorator_names(fun)
 
 
-def _get_stripped_method_args(
-        method: ast.FunctionDef) -> Tuple[List[str], List[str]]:
+def _get_stripped_method_args(method):
+    # type: (ast.FunctionDef) -> Tuple[List[str], List[str]]
     args, types = _get_arguments(method)
     if 'cls' in args and _is_classmethod(method):
         args.remove('cls')
@@ -172,13 +175,14 @@ def _get_stripped_method_args(
     return args, types
 
 
-def _get_all_raises(fn: ast.FunctionDef) -> Iterator[ast.Raise]:
+def _get_all_raises(fn):
+    # type: (ast.FunctionDef) -> Iterator[ast.Raise]
     for node in ast.walk(fn):
         if isinstance(node, ast.Raise):
             yield node
 
 
-def _get_exception_name(raises: ast.Raise) -> str:
+def _get_exception_name(raises): # type: (ast.Raise) -> str
     if isinstance(raises.exc, ast.Name):
         return raises.exc.id
     elif isinstance(raises.exc, ast.Call):
@@ -198,7 +202,7 @@ def _get_exception_name(raises: ast.Raise) -> str:
     return ''
 
 
-def _get_exceptions_raised(fn: ast.FunctionDef) -> Set[str]:
+def _get_exceptions_raised(fn): # type: (ast.FunctionDef) -> Set[str]
     ret = set()  # type: Set[str]
     for raises in _get_all_raises(fn):
         # TODO: Handle this?
@@ -209,7 +213,7 @@ def _get_exceptions_raised(fn: ast.FunctionDef) -> Set[str]:
     return ret
 
 
-def _get_return_type(fn: ast.FunctionDef) -> str:
+def _get_return_type(fn): # type: (ast.FunctionDef) -> str
     if fn.returns is not None and hasattr(fn.returns, 'id'):
         return fn.returns.id
     return None
@@ -224,7 +228,8 @@ class FunctionDescription(object):
 
     """
 
-    def __init__(self, is_method: bool, function: ast.FunctionDef) -> None:
+    def __init__(self, is_method, function):
+        # type: (bool, ast.FunctionDef) -> None
         """Create a new FunctionDescription.
 
         Args:
@@ -255,8 +260,8 @@ class FunctionDescription(object):
             raise
 
 
-def get_function_descriptions(
-        program: ast.AST) -> List[FunctionDescription]:
+def get_function_descriptions(program):
+    # type: (ast.AST) -> List[FunctionDescription]
     """Get function name, args, return presence and docstrings.
 
     This function should be called on the top level of the

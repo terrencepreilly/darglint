@@ -42,7 +42,7 @@ class DarglintError(BaseException):
     # See the description of error code groups above.
     error_code = None  # type: str
 
-    def message(self, verbosity: int=1) -> str:
+    def message(self, verbosity=1): # type: (int) -> str
         """Get the message for this error, according to the verbosity.
 
         Args:
@@ -68,7 +68,8 @@ class DarglintError(BaseException):
             raise Exception('Unrecognized verbosity setting, {}.'.format(
                 verbosity))
 
-    def __init__(self, function: ast.FunctionDef) -> None:
+    def __init__(self, function):
+        # type: (ast.FunctionDef) -> None
         """Create a new exception with a message and line number.
 
         Raises:
@@ -94,7 +95,8 @@ class GenericSyntaxError(DarglintError):
 
     error_code = 'S001'
 
-    def __init__(self, function: ast.FunctionDef, message: str) -> None:
+    def __init__(self, function, message):
+        # type: (ast.FunctionDef, str) -> None
         """Instantiate the error's message.
 
         Args:
@@ -113,7 +115,8 @@ class EmptyDescriptionError(DarglintError):
 
     error_code = 'S002'
 
-    def __init__(self, function: ast.FunctionDef, message: str) -> None:
+    def __init__(self, function, message):
+        # type: (ast.FunctionDef, str) -> None
         """Instantiate the error's message.
 
         Args:
@@ -132,7 +135,8 @@ class MissingParameterError(DarglintError):
 
     error_code = 'I101'
 
-    def __init__(self, function: ast.FunctionDef, name: str) -> None:
+    def __init__(self, function, name):
+        # type: (ast.FunctionDef, str) -> None
         """Instantiate the error's message.
 
         Args:
@@ -150,7 +154,8 @@ class ExcessParameterError(DarglintError):
 
     error_code = 'I102'
 
-    def __init__(self, function: ast.FunctionDef, name: str) -> None:
+    def __init__(self, function, name):
+        # type: (ast.FunctionDef, str) -> None
         """Instantiate the error's message.
 
         Args:
@@ -168,11 +173,8 @@ class ParameterTypeMismatchError(DarglintError):
 
     error_code = 'I103'
 
-    def __init__(self,
-                 function: ast.FunctionDef,
-                 name: str,
-                 expected: str,
-                 actual: str) -> None:
+    def __init__(self, function, name, expected, actual):
+        # type: (ast.FunctionDef, str, str, str) -> None
         """Instantiate the error's message.
 
         Args:
@@ -199,7 +201,7 @@ class MissingReturnError(DarglintError):
 
     error_code = 'I201'
 
-    def __init__(self, function: ast.FunctionDef) -> None:
+    def __init__(self, function): # type: (ast.FunctionDef) -> None
         """Instantiate the error's message.
 
         Args:
@@ -217,7 +219,7 @@ class ExcessReturnError(DarglintError):
 
     error_code = 'I202'
 
-    def __init__(self, function: ast.FunctionDef) -> None:
+    def __init__(self, function): # type: (ast.FunctionDef) -> None
         """Instantiate the error's message.
 
         Args:
@@ -235,10 +237,8 @@ class ReturnTypeMismatchError(DarglintError):
 
     error_code = 'I203'
 
-    def __init__(self,
-                 function: ast.FunctionDef,
-                 expected: str,
-                 actual: str) -> None:
+    def __init__(self, function, expected, actual):
+        # type: (ast.FunctionDef, str, str) -> None
         """Instantiate the error's message.
 
         Args:
@@ -262,7 +262,7 @@ class MissingYieldError(DarglintError):
 
     error_code = 'I301'
 
-    def __init__(self, function: ast.FunctionDef) -> None:
+    def __init__(self, function): # type: (ast.FunctionDef) -> None
         """Instantiate the error's message.
 
         Args:
@@ -280,7 +280,8 @@ class ExcessYieldError(DarglintError):
 
     error_code = 'I302'
 
-    def __init__(self, function: ast.FunctionDef) -> None:
+    def __init__(self, function):
+        # type: (ast.FunctionDef) -> None
         """Instantiate the error's message.
 
         Args:
@@ -298,7 +299,8 @@ class MissingRaiseError(DarglintError):
 
     error_code = 'I401'
 
-    def __init__(self, function: ast.FunctionDef, name: str) -> None:
+    def __init__(self, function, name):
+        # type: (ast.FunctionDef, str) -> None
         """Instantiate the error's message.
 
         Args:
@@ -324,7 +326,8 @@ class ExcessRaiseError(DarglintError):
 
     error_code = 'I402'
 
-    def __init__(self, function: ast.FunctionDef, name: str) -> None:
+    def __init__(self, function, name):
+        # type: (ast.FunctionDef, str) -> None
         """Instantiate the error's message.
 
         Args:
