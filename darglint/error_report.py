@@ -13,8 +13,14 @@ from .errors import DarglintError
 class ErrorReport(object):
     """Reports the errors for the given run."""
 
-    def __init__(self, errors, filename, verbosity=2):
-        # type: (List[DarglintError], str, int) -> None
+    def __init__(
+            self,
+            errors,
+            filename,
+            verbosity=2,
+            message_template='{path}:{obj}:{line}: {msg_id}: {msg}',
+        ):
+        # type: (List[DarglintError], str, int, str) -> None
         """Create a new error report.
 
         Args:
@@ -28,6 +34,7 @@ class ErrorReport(object):
         self.verbosity = verbosity
         self.errors = errors
         self.error_dict = self._group_errors_by_function()
+        self.message_template = message_template
 
     def _sort(self):
         # type: () -> None
@@ -61,11 +68,12 @@ class ErrorReport(object):
             A string representing the error.
 
         """
-        return '{}:{}:{}: {}'.format(
-            self.filename,
-            error.function.name,
-            error.function.lineno,
-            error.message(verbosity=self.verbosity),
+        return self.message_template.format(
+            msg_id=error.error_code,
+            msg=error.message(verbosity=self.verbosity),
+            path=self.filename,
+            obj=error.function.name,
+            line=error.function.lineno,
         )
 
     def __str__(self): # type: () -> str

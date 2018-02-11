@@ -3,6 +3,17 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.2.1]
+
+### Added
+
+- Message templates for error reports based on Pylint's syntax.
+  The message template uses a normal Python format string with
+  named arguments.  For example, the default format string
+  for an error message is '{path}:{obj}:{line}: {msg_id}: {msg}'.
+
+  This is passed to the linter by *TBD*.
+
 ## [0.2.0]
 
 ### Added

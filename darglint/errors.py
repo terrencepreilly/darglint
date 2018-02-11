@@ -57,10 +57,9 @@ class DarglintError(BaseException):
 
         """
         if verbosity == 1:
-            return '{}: {}'.format(self.error_code, self.terse_message)
+            return '{}'.format(self.terse_message)
         elif verbosity == 2:
-            return '{}: {}: {}'.format(
-                self.error_code,
+            return '{}: {}'.format(
                 self.general_message,
                 self.terse_message,
             )
