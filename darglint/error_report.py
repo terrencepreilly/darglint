@@ -18,7 +18,7 @@ class ErrorReport(object):
             errors,
             filename,
             verbosity=2,
-            message_template='{path}:{obj}:{line}: {msg_id}: {msg}',
+            message_template=None,
         ):
         # type: (List[DarglintError], str, int, str) -> None
         """Create a new error report.
@@ -28,13 +28,19 @@ class ErrorReport(object):
             filename: The name of the file the error came from.
             verbosity: A number in the set, {1, 2}, representing low
                 and high verbosity.
+            message_template: A python format string for specifying
+                how the string representation of this ErrorReport
+                should appear.
 
         """
         self.filename = filename
         self.verbosity = verbosity
         self.errors = errors
         self.error_dict = self._group_errors_by_function()
-        self.message_template = message_template
+        if message_template is None:
+            self.message_template = '{path}:{obj}:{line}: {msg_id}: {msg}'
+        else:
+            self.message_template = message_template
 
     def _sort(self):
         # type: () -> None

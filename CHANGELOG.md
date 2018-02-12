@@ -3,7 +3,7 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.2.1]
+## [0.3.0] - 2018-02-11
 
 ### Added
 
@@ -12,7 +12,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   named arguments.  For example, the default format string
   for an error message is '{path}:{obj}:{line}: {msg_id}: {msg}'.
 
-  This is passed to the linter by *TBD*.
+  This is passed to the linter by a command-line argument.
+  For example, to get only the path, line number, and error code,
+  we could pass something like the following:
+
+```
+darglint -m "{path}:{line} -> {msg_id}" *.py
+```
 
 ## [0.2.0]
 

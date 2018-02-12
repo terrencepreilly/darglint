@@ -84,6 +84,7 @@ def _expect_type(peaker, expected_type, hint=''):
     Args:
         peaker: The peaker to check.  Should have the given type next.
         expected_type: The type we expect to see next.
+        hint: An optional message describing how to fix the error.
 
     Raises:
         ParserException: If the next token in the Peaker is not of the
@@ -227,7 +228,7 @@ class Docstring(object):
         This happens when there is a bare noqa in the docstring, or
         there is "# noqa: *" in the docstring.
 
-        Retuns: True if we should ignore everything, otherwise false.
+        Returns: True if we should ignore everything, otherwise false.
 
         """
         return '*' in self.noqa
@@ -308,6 +309,10 @@ class Docstring(object):
     def _parse_multi_section(self):
         # type: () -> Dict[str, Tuple[str, str]]
         """Parse a multi-section.
+
+        Raises:
+            ParserException: If the parser was unable to parse
+                the docstring and raised an exception.
 
         Returns:
             A dictionary containing the headline as key and the

@@ -77,6 +77,24 @@ Would give a description of the error along with information as to this
 specific instance. The default verbosity is 1, which gives the filename,
 function name, line number, error code, and some general hints.
 
+To use an arbitrary error format, you can pass a message template, which
+is a python format string. For example, if we pass the message template
+
+::
+
+    darglint -m "{path}:{line} -> {msg_id}" darglint/driver.py
+
+Then we would get back error messages like
+
+::
+
+    darglint/driver.py :61 -> I101
+
+The following attributes can be passed to the format string: - *line*:
+The line number, - *msg*: The error message, - *msg\_id*: The error
+code, - *obj*: The function/method name, - *path*: The relative file
+path.
+
 *darglint* is particularly useful when combined with the utility,
 ``find``. This allows us to check all of the files in our project at
 once. For example, when eating my own dogfood (as I tend to do), I
@@ -171,7 +189,7 @@ recently implemented features, see the *CHANGELOG*.
 0.3
 ~~~
 
--  [ ] Take an argument which supports a formatting string for the error
+-  [x] Take an argument which supports a formatting string for the error
    message. That way, anyone can specify their own format.
 
 1.0
