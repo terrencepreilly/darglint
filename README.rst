@@ -37,10 +37,11 @@ configuration file must be named either *.darglint*, *setup.cfg*, or
 in the directory *darglint* is called from, or from a parent directory
 of that working directory.
 
-Currently, the configuration file only allows us to ignore errors. For
-example, if we would like to ignore ``ExcessRaiseError``\ s (because we
-know that an underlying function will raise an exception), then we would
-add its error code to a file named *.darglint*:
+Currently, the configuration file only allows us to ignore errors and
+specify message templates. For example, if we would like to ignore
+``ExcessRaiseError``\ s (because we know that an underlying function
+will raise an exception), then we would add its error code to a file
+named *.darglint*:
 
 ::
 
@@ -53,6 +54,15 @@ We can ignore multiple errors by using a comma-separated list:
 
     [darglint]
     ignore=I402,I103
+
+If we would like to specify a message template, we may do so as follows:
+
+::
+
+    [darglint]
+    message_template={msg_id}@{path}:{line}
+
+Which will produce a message such as "I102@driver.py:72".
 
 Usage
 -----
@@ -94,6 +104,9 @@ The following attributes can be passed to the format string: - *line*:
 The line number, - *msg*: The error message, - *msg\_id*: The error
 code, - *obj*: The function/method name, - *path*: The relative file
 path.
+
+The message template can also be specified in the configuration file as
+the value ``message_template``.
 
 *darglint* is particularly useful when combined with the utility,
 ``find``. This allows us to check all of the files in our project at

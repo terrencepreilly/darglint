@@ -35,7 +35,10 @@ from .config import Configuration
 class IntegrityChecker(object):
     """Checks the integrity of the docstring compared to the definition."""
 
-    def __init__(self, config=Configuration(ignore=[]), raise_errors=False):
+    def __init__(self,
+                 config=Configuration(ignore=[], message_template=None),
+                 raise_errors=False
+                 ):
         # type: (Configuration, bool) -> None
         """Create a new checker for the given function and docstring.
 
@@ -291,5 +294,5 @@ class IntegrityChecker(object):
             errors=self.errors,
             filename=filename,
             verbosity=verbosity,
-            message_template=message_template,
+            message_template=message_template or self.config.message_template,
         ))

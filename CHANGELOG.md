@@ -20,6 +20,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 darglint -m "{path}:{line} -> {msg_id}" *.py
 ```
 
+  This value can also be specified in the configuration file
+  as the value, `message_template`.  For example, the above
+  template could have been specified in the configuration
+  as
+
+```
+[darglint]
+message_template={path}:{line} -> {msg_id}
+```
+
 ## [0.2.0]
 
 ### Added

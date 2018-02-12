@@ -5,6 +5,8 @@ import configparser
 import logging
 import os
 
+from typing import Iterable
+
 
 # TODO: Configure this logger and allow the user to specify
 # the whether they want warnings.
@@ -19,7 +21,7 @@ POSSIBLE_CONFIG_FILENAMES = (
 )
 
 # ignore: List[str] -- A list of error codes to ignore.
-Configuration = namedtuple('Configuration', 'ignore')
+Configuration = namedtuple('Configuration', 'ignore message_template')
 
 
 def load_config_file(filename): # type: (str) -> Configuration
@@ -35,12 +37,15 @@ def load_config_file(filename): # type: (str) -> Configuration
     config = configparser.ConfigParser()
     config.read(filename)
     ignore = list()
+    message_template = None
     if 'darglint' in config.sections():
         if 'ignore' in config['darglint']:
             errors = config['darglint']['ignore']
             for error in errors.split(','):
                 ignore.append(error.strip())
-    return Configuration(ignore=ignore)
+        if 'message_template' in config['darglint']:
+            message_template = config['darglint']['message_template']
+    return Configuration(ignore=ignore, message_template=message_template)
 
 
 def walk_path(): # type: () -> Iterable[str]
@@ -117,7 +122,7 @@ def get_config(): # type: () -> Configuration
     """
     filename = find_config_file()
     if filename is None:
-        return Configuration(ignore=list())
+        return Configuration(ignore=list(), message_template=None)
     return load_config_file(filename)
 
 
