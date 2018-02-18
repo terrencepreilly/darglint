@@ -72,35 +72,37 @@ def lex(program):
     """
     extra = ''  # Extra characters which are pulled but unused from a check.
     peaker = Peaker((x for x in program or []))  # the stream
+    line_number = 0
     while peaker.has_next():
         # Each of the following conditions must move the stream
         # forward and -- excepting separators -- yield a token.
         if _is_space(peaker.peak()):
             spaces = ''.join(peaker.take_while(_is_space))
             for _ in range(len(spaces) // 4):
-                yield Token(' ' * 4, TokenType.INDENT)
+                yield Token(' ' * 4, TokenType.INDENT, line_number)
         elif _is_newline(peaker.peak()):
             value = peaker.next()
-            yield Token(value, TokenType.NEWLINE)
+            yield Token(value, TokenType.NEWLINE, line_number)
+            line_number += 1
         elif _is_colon(peaker.peak()):
             value = peaker.next()
-            yield Token(value, TokenType.COLON)
+            yield Token(value, TokenType.COLON, line_number)
         elif _is_separator(peaker.peak()):
             peaker.take_while(_is_separator)
         elif _is_double_quotation(peaker.peak()):
             value = ''.join(peaker.take_while(_is_double_quotation))
             if len(value) >= 3:
                 for _ in range(len(value) // 3):
-                    yield Token('"""', TokenType.DOCTERM)
+                    yield Token('"""', TokenType.DOCTERM, line_number)
             else:
                 extra = value
         elif _is_hash(peaker.peak()):
             value = peaker.next()
-            yield Token(value, TokenType.HASH)
+            yield Token(value, TokenType.HASH, line_number)
         else:
             value = ''.join(peaker.take_while(_is_word))
             if extra != '':
                 value = extra + value
                 extra = ''
             assert len(value) > 0, "There should be non-special characters."
-            yield Token(value, TokenType.WORD)
+            yield Token(value, TokenType.WORD, line_number)
