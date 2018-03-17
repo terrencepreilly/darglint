@@ -29,12 +29,11 @@ __EBNF for a google-style docstring__:
             | "Returns
             | "Yields"
             | "Raises"
-  <word> ::= <content>*
+  <word> ::= [^\ \n\:\"\#\t]+
   <colon> ::= ":"
   <indent> ::= <space>{4}
   <space> ::= " "
   <newline> ::= "\n"
-  <content> ::= A letter, special character, or number.
   <doc-term> ::= \"\"\"
 
 """
