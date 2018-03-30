@@ -14,16 +14,18 @@ class NodeType(Enum):
     DOCSTRING = 0
     SUMMARY = 1
     DESCRIPTION = 2
+    TYPE = 10
+    LINE = 11
 
     # Terminals
     KEYWORD = 3
     WORD = 4
-    INDENT = 5
+    COLON = 5
     RETURNS = 6
     ARGUMENTS = 7
     YIELDS = 8
     RAISES = 9
-
+    INDENT = 12
 
 class Node(object):
     """A node in a docstring AST."""

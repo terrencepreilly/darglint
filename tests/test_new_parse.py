@@ -11,7 +11,10 @@ from darglint.lex import (
 )
 from darglint.new_parse import (
     parse_keyword,
-    parse_indent,
+    parse_colon,
+    parse_word,
+    parse_type,
+    parse_line,
 )
 from darglint.peaker import (
     Peaker
@@ -20,7 +23,13 @@ from darglint.parse import ParserException
 
 
 class NewParserTestCase(TestCase):
-    """Tests for developing a new parser."""
+    """Tests for developing a new parser.
+    
+    The final tree will not have any whitespace (indents or
+    newlines).  However, it will use these tokens while
+    parsing.
+
+    """
 
     def test_parse_keyword(self):
         """Make sure we can parse keywords."""
@@ -47,16 +56,142 @@ class NewParserTestCase(TestCase):
             with self.assertRaises(ParserException):
                 parse_keyword(Peaker(lex(word)))
 
-    def test_parse_indent(self):
-        """Make sure we can correctly parse indents."""
-        node = parse_indent(Peaker(lex(' '*4)))
+    def test_parse_colon(self):
+        """Make sure we can parse colons."""
+        node = parse_colon(Peaker(lex(':')))
+        self.assertEqual(
+            node.node_type, NodeType.COLON
+        )
+
+    def test_parse_word(self):
+        """Make sure we can parse a word."""
+        node = parse_word(Peaker(lex('joHwI\'')))
         self.assertEqual(
             node.node_type,
-            NodeType.INDENT,
+            NodeType.WORD,
         )
         self.assertEqual(
             node.value,
-            ' ' * 4,
+            'joHwI\'',
         )
+
+    def test_parse_primitive_type(self):
+        """Make sure we can parse a primitive type like int or str."""
+        node = parse_type(Peaker(lex('(int)')))
+        self.assertEqual(
+            node.node_type,
+            NodeType.TYPE,
+        )
+        self.assertEqual(
+            node.value,
+            '(int)',
+        )
+
+    def test_must_have_parentheses_around_without_spaces(self):
+        """Make sure the type has to start with ( and end with )."""
         with self.assertRaises(ParserException):
-            parse_keyword(Peaker(lex('a')))
+            parse_type(Peaker(lex('(int')))
+        with self.assertRaises(ParserException):
+            parse_type(Peaker(lex('int)')))
+        with self.assertRaises(ParserException):
+            parse_type(Peaker(lex('( int )')))
+
+
+    def test_parse_empty_line(self):
+        """Make sure we can parse a line with just an indent."""
+        node = parse_line(Peaker(lex(' '*4 + '\n')))
+        self.assertEqual(
+            node.node_type,
+            NodeType.LINE,
+        )
+        child_types = [x.node_type for x in node.walk()]
+        self.assertEqual(
+            child_types,
+            [NodeType.INDENT, NodeType.LINE],
+        )
+
+    def test_parse_line_with_words(self):
+        """Make sure we can parse a line with words."""
+        node = parse_line(Peaker(lex(
+            '    this is a line with words\n'
+        )))
+        self.assertEqual(
+            node.node_type,
+            NodeType.LINE,
+        )
+        child_types = [x.node_type for x in node.walk()]
+        self.assertEqual(
+            child_types,
+            [
+                NodeType.INDENT,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.LINE,
+            ]
+        )
+
+    def test_parse_line_with_multiple_indents(self):
+        """Make sure code snippets are okay."""
+        node = parse_line(Peaker(lex(
+            '        word.\n'
+        )))
+        self.assertEqual(
+            node.node_type,
+            NodeType.LINE,
+        )
+        child_types = [x.node_type for x in node.walk()]
+        self.assertEqual(
+            child_types,
+            [
+                NodeType.INDENT,
+                NodeType.INDENT,
+                NodeType.WORD,
+                NodeType.LINE,
+            ]
+        )
+
+    def test_parse_line_with_colons(self):
+        """Make sure lines with colons can be parsed."""
+        node = parse_line(Peaker(lex(
+            '    ::\n'
+        )))
+        self.assertEqual(
+            node.node_type,
+            NodeType.LINE,
+        )
+        child_types = [x.node_type for x in node.walk()]
+        self.assertEqual(
+            child_types,
+            [
+                NodeType.INDENT,
+                NodeType.COLON,
+                NodeType.COLON,
+                NodeType.LINE,
+            ]
+        )
+
+    def test_parse_line_which_looks_like_definition(self):
+        """Make sure a line which looks like a definition can be parsed."""
+        node = parse_line(Peaker(lex(
+            '    Returns: Some value.\n'
+        )))
+        self.assertEqual(
+            node.node_type,
+            NodeType.LINE,
+        )
+        child_types = [x.node_type for x in node.walk()]
+        self.assertEqual(
+            child_types,
+            [
+                NodeType.INDENT,
+                NodeType.RETURNS,
+                NodeType.COLON,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.LINE,
+            ]
+        )
