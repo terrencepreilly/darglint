@@ -16,6 +16,10 @@ class NodeType(Enum):
     DESCRIPTION = 2
     TYPE = 10
     LINE = 11
+    SECTION_HEAD = 13
+    SECTION_SIMPLE_BODY = 14
+    SECTION_COMPOUND_BODY = 15
+    SECTION = 16
 
     # Terminals
     KEYWORD = 3

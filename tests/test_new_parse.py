@@ -15,6 +15,8 @@ from darglint.new_parse import (
     parse_word,
     parse_type,
     parse_line,
+    parse_line_with_type,
+    parse_simple_section,
 )
 from darglint.peaker import (
     Peaker
@@ -84,7 +86,19 @@ class NewParserTestCase(TestCase):
         )
         self.assertEqual(
             node.value,
-            '(int)',
+            'int',
+        )
+
+    def test_parse_type_with_colon(self):
+        """Parse a type using the colon syntax."""
+        node = parse_type(Peaker(lex('str:')))
+        self.assertEqual(
+            node.node_type,
+            NodeType.TYPE,
+        )
+        self.assertEqual(
+            node.value,
+            'str',
         )
 
     def test_must_have_parentheses_around_without_spaces(self):
@@ -195,3 +209,134 @@ class NewParserTestCase(TestCase):
                 NodeType.LINE,
             ]
         )
+
+    def test_parse_returns_section(self):
+        """Make sure can parse returns section."""
+        node = parse_simple_section(Peaker(lex(
+            '    Returns:\n'
+            '        A meaningful value.\n'
+            '\n'
+        )))
+        self.assertEqual(
+            node.node_type,
+            NodeType.SECTION,
+        )
+        child_types = [x.node_type for x in node.walk()]
+        self.assertEqual(
+            child_types,
+            [
+                NodeType.INDENT,
+                NodeType.RETURNS,
+                NodeType.COLON,
+                NodeType.SECTION_HEAD,
+                NodeType.INDENT,
+                NodeType.INDENT,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.LINE,
+                NodeType.SECTION_SIMPLE_BODY,
+                NodeType.SECTION,
+            ]
+        )
+
+    def test_parse_line_with_type(self):
+        """Make sure we can parse a line when it starts with a type.
+
+        (Really, we should just equip the Peaker to allow constant 2
+        lookahead -- the grammar requires it and this is just a workaround.)
+        
+        """
+        node = parse_line_with_type(Peaker(lex(
+            '        int: the square of something.\n'
+        )))
+        self.assertEqual(
+            node.node_type,
+            NodeType.LINE,
+        )
+        child_types = [x.node_type for x in node.walk()]
+        self.assertEqual(
+            child_types,
+            [
+                NodeType.INDENT,
+                NodeType.INDENT,
+                NodeType.TYPE,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.LINE,
+            ]
+        )
+
+    def test_parse_returns_section_with_type(self):
+        """Make sure the returns section can have a type."""
+        node = parse_simple_section(Peaker(lex(
+            '    Returns:\n'
+            '        int: The square of something.\n'
+            '\n'
+        )))
+        self.assertEqual(
+            node.node_type,
+            NodeType.SECTION,
+        )
+        child_types = [x.node_type for x in node.walk()]
+        self.assertEqual(
+            child_types,
+            [
+                NodeType.INDENT,
+                NodeType.RETURNS,
+                NodeType.COLON,
+                NodeType.SECTION_HEAD,
+                NodeType.INDENT,
+                NodeType.INDENT,
+                NodeType.TYPE,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.LINE,
+                NodeType.SECTION_SIMPLE_BODY,
+                NodeType.SECTION,
+            ]
+        )
+
+    def test_parse_yields_section(self):
+        """Make sure we can parse a yields section."""
+        node = parse_simple_section(Peaker(lex(
+            '    Yields:\n'
+            '        Nodes in a stream.\n'
+            '\n'
+        )))
+        self.assertEqual(
+            node.node_type,
+            NodeType.SECTION,
+        )
+        child_types = [x.node_type for x in node.walk()]
+        self.assertEqual(
+            child_types,
+            [
+                NodeType.INDENT,
+                NodeType.YIELDS,
+                NodeType.COLON,
+                NodeType.SECTION_HEAD,
+                NodeType.INDENT,
+                NodeType.INDENT,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.LINE,
+                NodeType.SECTION_SIMPLE_BODY,
+                NodeType.SECTION,
+            ]
+        )
+
+    def test_parse_simple_section_cannot_start_with_args(self):
+        """Make sure the simple section starts with return or yield."""
+        with self.assertRaises(ParserException):
+            parse_simple_section(Peaker(lex(
+                '    Args:\n'
+                '        Not a simple section.\n'
+                '\n'
+            )))
