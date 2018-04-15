@@ -46,6 +46,14 @@ def _is_double_quotation(char):
     # type: (str) -> bool
     return char == '"'
 
+def _is_lparen(char):
+    # type: (str) -> bool
+    return char == '('
+
+def _is_rparen(char):
+    # type: (str) -> bool
+    return char == ')'
+
 
 def _is_word(char):
     # type: (str) -> bool
@@ -56,6 +64,8 @@ def _is_word(char):
         _is_separator(char),
         _is_double_quotation(char),
         _is_hash(char),
+        _is_lparen(char),
+        _is_rparen(char),
     ])
 
 
@@ -99,6 +109,12 @@ def lex(program):
         elif _is_hash(peaker.peak()):
             value = peaker.next()
             yield Token(value, TokenType.HASH, line_number)
+        elif _is_lparen(peaker.peak()):
+            value = peaker.next()
+            yield Token(value, TokenType.LPAREN, line_number)
+        elif _is_rparen(peaker.peak()):
+            value = peaker.next()
+            yield Token(value, TokenType.RPAREN, line_number)
         else:
             value = ''.join(peaker.take_while(_is_word))
             if extra != '':

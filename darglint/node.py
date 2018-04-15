@@ -33,6 +33,8 @@ class NodeType(Enum):
     YIELDS = 8
     RAISES = 9
     INDENT = 12
+    LPAREN = 20
+    RPAREN = 21
 
 class Node(object):
     """A node in a docstring AST."""

@@ -35,9 +35,11 @@ __EBNF for a google-style docstring__:
   <item-name> ::= <word><type>?
   <item-definition> ::= <line>+
   <line> ::= [<word><colon><indent><keyword>]*<newline>
-  <type> ::= "(" <word> ")"
+  <type> ::= <lparen><word><rparen>
            | <word><colon>
 
+  <lparen> ::= "("
+  <rparen> ::= ")"
   <keyword> ::= "Args"
             | "Arguments"
             | "Returns
@@ -148,27 +150,69 @@ def parse_word(peaker):
         value=peaker.next().value
     )
 
-def parse_type(peaker):
+def parse_lparen(peaker):
     # type: (Peaker[Token]) -> Node
-    AssertNotEmpty(peaker, 'parse type')
+    AssertNotEmpty(peaker, 'parse left parenthesis')
     Assert(
-        _is(TokenType.WORD, peaker.peak()),
-        'Unable to parse type: expected {} but received {}'.format(
-            TokenType.WORD, peaker.peak().token_type
+        _is(TokenType.LPAREN, peaker.peak()),
+        'Unable to parse left parenthesis: expected {} '
+        'but received {}'.format(
+            TokenType.LPAREN, peaker.peak().token_type
         )
     )
-    value = peaker.next().value
-    if value.startswith('('):
+    return Node(
+        node_type=NodeType.LPAREN,
+        value=peaker.next().value,
+    )
+
+def parse_rparen(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse right parenthesis')
+    Assert(
+        _is(TokenType.RPAREN, peaker.peak()),
+        'Unable to parse right parenthesis: expected {} '
+        'but received {}'.format(
+            TokenType.RPAREN, peaker.peak().token_type
+        )
+    )
+    return Node(
+        node_type=NodeType.RPAREN,
+        value=peaker.next().value,
+    )
+
+
+def parse_parenthetical_type(peaker):
+    # type: (Peaker[Token]) -> Node
+    children = [parse_lparen(peaker)]
+    i = 1
+    while i > 0:
         Assert(
-            value.endswith(')'),
-            'Expected type to begin with "(" and end with ")"'
+            peaker.has_next(),
+            'Encountered end of stream while parsing '
+            'parenthetical type. Ended with {}'.format(
+                [x.value for x in children]
+            )
         )
-        return Node(
-            node_type=NodeType.TYPE,
-            value=value[1:-1],
-        )
+        if _is(TokenType.LPAREN, peaker.peak()):
+            i += 1
+            children.append(parse_lparen(peaker))
+        elif _is(TokenType.RPAREN, peaker.peak()):
+            i -= 1
+            children.append(parse_rparen(peaker))
+        else:
+            children.append(parse_word(peaker))
+    return Node(
+        node_type=NodeType.TYPE,
+        children=children,
+    )
+
+def parse_type(peaker):
+    # type: (Peaker[Token]) -> Node
+    if _is(TokenType.LPAREN, peaker.peak()):
+        return parse_parenthetical_type(peaker)
     else:
         AssertNotEmpty(peaker, 'parse type')
+        node = parse_word(peaker)
         Assert(
             _is(TokenType.COLON, peaker.peak()),
             'Expected type to have "(" and ")" around it or '
@@ -177,7 +221,7 @@ def parse_type(peaker):
         peaker.next() # Toss the colon
         return Node(
             node_type=NodeType.TYPE,
-            value=value,
+            children=[node],
         )
 
 
@@ -406,9 +450,15 @@ def parse_item_definition(peaker):
 def parse_item(peaker):
     children = [
         parse_item_name(peaker),
+    ]
+
+    if _is(TokenType.LPAREN, peaker.peak()):
+        children.append(parse_type(peaker))
+
+    children.extend([
         parse_colon(peaker),
         parse_item_definition(peaker),
-    ]
+    ])
     return Node(
         NodeType.ITEM,
         children=children,

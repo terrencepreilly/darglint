@@ -92,3 +92,27 @@ class LexTestCase(TestCase):
         self.assertEqual(tokens[10].token_type, TokenType.COLON)
         self.assertEqual(tokens[11].token_type, TokenType.NEWLINE)
         self.assertEqual(tokens[12].token_type, TokenType.INDENT)
+
+    def test_parenthesis_in_types(self):
+        """Make sure paretheses are their own token."""
+        string = '())('
+        tokens = list(lex(string))
+        token_types = [x.token_type for x in tokens]
+        self.assertEqual(
+            token_types,
+            [
+                TokenType.LPAREN,
+                TokenType.RPAREN,
+                TokenType.RPAREN,
+                TokenType.LPAREN,
+            ]
+        )
+
+    def test_parse_parenthesis_in_word(self):
+        """Make sure parentheses are separators."""
+        string = 'a('
+        tokens = list(lex(string))
+        self.assertEqual(
+            [x.token_type for x in tokens],
+            [TokenType.WORD, TokenType.LPAREN]
+        )

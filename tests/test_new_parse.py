@@ -85,8 +85,29 @@ class NewParserTestCase(TestCase):
             NodeType.TYPE,
         )
         self.assertEqual(
-            node.value,
+            node.children[1].value,
             'int',
+        )
+
+    def test_parse_composite_type(self):
+        """Make sure we can parse a type declaration with multiple items.
+
+        These items should form a comma-separated list, and be enclosed in
+        parentheses.
+
+        """
+        node = parse_type(Peaker(lex('(int, optional)')))
+        self.assertEqual(
+            node.node_type,
+            NodeType.TYPE,
+        )
+        self.assertEqual(
+            node.children[1].value,
+            'int,',
+        )
+        self.assertEqual(
+            node.children[2].value,
+            'optional',
         )
 
     def test_parse_type_with_colon(self):
@@ -97,18 +118,18 @@ class NewParserTestCase(TestCase):
             NodeType.TYPE,
         )
         self.assertEqual(
-            node.value,
+            node.children[0].value,
             'str',
         )
 
-    def test_must_have_parentheses_around_without_spaces(self):
+    def test_must_have_parentheses_around(self):
         """Make sure the type has to start with ( and end with )."""
         with self.assertRaises(ParserException):
             parse_type(Peaker(lex('(int')))
         with self.assertRaises(ParserException):
             parse_type(Peaker(lex('int)')))
         with self.assertRaises(ParserException):
-            parse_type(Peaker(lex('( int )')))
+            parse_type(Peaker(lex('( int (')))
 
     def test_parse_line_without_indent(self):
         """Make sure lines don't need to have indents."""
@@ -253,12 +274,7 @@ class NewParserTestCase(TestCase):
         )
 
     def test_parse_line_with_type(self):
-        """Make sure we can parse a line when it starts with a type.
-
-        (Really, we should just equip the Peaker to allow constant 2
-        lookahead -- the grammar requires it and this is just a workaround.)
-        
-        """
+        """Make sure we can parse a line when it starts with a type."""
         node = parse_line_with_type(Peaker(lex(
             '        int: the square of something.\n'
         )))
@@ -272,6 +288,7 @@ class NewParserTestCase(TestCase):
             [
                 NodeType.INDENT,
                 NodeType.INDENT,
+                NodeType.WORD,
                 NodeType.TYPE,
                 NodeType.WORD,
                 NodeType.WORD,
@@ -302,6 +319,7 @@ class NewParserTestCase(TestCase):
                 NodeType.SECTION_HEAD,
                 NodeType.INDENT,
                 NodeType.INDENT,
+                NodeType.WORD,
                 NodeType.TYPE,
                 NodeType.WORD,
                 NodeType.WORD,
@@ -364,12 +382,16 @@ class NewParserTestCase(TestCase):
             NodeType.ITEM,
         )
         child_types = [x.node_type for x in node.walk()]
+        print(child_types)
         self.assertEqual(
             child_types,
             [
                 NodeType.WORD,
-                NodeType.TYPE,
                 NodeType.ITEM_NAME,
+                NodeType.LPAREN,
+                NodeType.WORD,
+                NodeType.RPAREN,
+                NodeType.TYPE,
                 NodeType.COLON,
                 NodeType.WORD,
                 NodeType.WORD,
