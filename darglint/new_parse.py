@@ -11,7 +11,7 @@ __EBNF for a google-style docstring__:
   <head-line> ::= <indent>
                     [<word><colon><indent>]
                     [<word><colon><indent><keyword>]*<newline>
-  
+
   <sections> ::= <arguments-section>?
                    <raises-section>?
                    (<yields-section>|<returns-section>)?
@@ -29,12 +29,12 @@ __EBNF for a google-style docstring__:
   <section-head> ::= <indent><keyword><colon><newline>
   <section-simple-body> ::=
     <indent><type>?[<word><colon><indent><keyword>]*<newline>
-    (<indent><line>)*
-  <section-compound-body> ::= <indent>{2}<word><type>?<colon>
-                               [<word><colon><keyword>]*<newline>
-                               (<indent>{2}<line>)*
-  <line> ::= <indent>
-                [<word><colon><indent><keyword>]*<newline>
+    (<indent><indent><line>)*
+  <section-compound-body> ::= (<indent>{2}<item>)+
+  <item> ::= <item-name><colon><item-definition>
+  <item-name> ::= <word><type>?
+  <item-definition> ::= <line>+
+  <line> ::= [<word><colon><indent><keyword>]*<newline>
   <type> ::= "(" <word> ")"
            | <word><colon>
 
@@ -49,7 +49,7 @@ __EBNF for a google-style docstring__:
   <newline> ::= "\n"
 
 """
-from typing import Set # noqa
+from typing import Set  # noqa
 
 from .parse import ParserException
 from .peaker import Peaker  # noqa
@@ -198,9 +198,7 @@ def parse_indent(peaker):
 def parse_line(peaker, with_type=False):
     # type: (Peaker[Token], bool) -> Node
     AssertNotEmpty(peaker, 'parse line')
-    children = [
-        parse_indent(peaker)
-    ]
+    children = list()
 
     # Get the first node, which may be a type description.
     if with_type and _is(TokenType.WORD, peaker.peak()):
@@ -352,6 +350,7 @@ def parse_section_simple_body(peaker):
         parse_line_with_type(peaker),
     ]
     while not _is(TokenType.NEWLINE, peaker.peak()):
+        children.append(parse_indent(peaker))
         children.append(parse_line(peaker))
     return Node(
         NodeType.SECTION_SIMPLE_BODY,
@@ -367,5 +366,50 @@ def parse_simple_section(peaker):
     ]
     return Node(
         NodeType.SECTION,
+        children=children,
+    )
+
+
+def parse_item_name(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse item')
+    children = [
+        parse_word(peaker),
+    ]
+    if peaker.has_next() and _is(TokenType.WORD, peaker.peak()):
+        value = peaker.peak().value
+        if value.startswith('(') and value.endswith(')'):
+            children.append(parse_type(peaker))
+    return Node(
+        NodeType.ITEM_NAME,
+        children=children,
+    )
+
+def parse_item_definition(peaker):
+    # type: (Peaker[Token]) -> Node
+
+    def _is_indent(i):
+        token = peaker.peak(lookahead=i)
+        return token is not None and _is(TokenType.INDENT, token)
+
+    AssertNotEmpty(peaker, 'parse item definition')
+    children = [
+        parse_line(peaker),
+    ]
+    while _is_indent(1) and _is_indent(2) and _is_indent(3):
+        children.append(parse_line(peaker))
+    return Node(
+        NodeType.ITEM_DEFINITION,
+        children=children,
+    )
+
+def parse_item(peaker):
+    children = [
+        parse_item_name(peaker),
+        parse_colon(peaker),
+        parse_item_definition(peaker),
+    ]
+    return Node(
+        NodeType.ITEM,
         children=children,
     )

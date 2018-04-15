@@ -52,3 +52,14 @@ class PeakerTestCase(TestCase):
     def test_passing_none_to_peaker_marks_empty(self):
         peaker = Peaker((x for x in []))
         self.assertFalse(peaker.has_next())
+
+    def test_peaker_can_have_n_lookahead(self):
+        peaker = Peaker((x for x in 'abcd'), lookahead=3)
+        self.assertEqual(peaker.peak(lookahead=1), 'a')
+        self.assertEqual(peaker.peak(lookahead=2), 'b')
+        self.assertEqual(peaker.peak(lookahead=3), 'c')
+
+    def test_cannot_peak_beyond_specified_lookahead(self):
+        peaker = Peaker((x for x in 'abcd'), lookahead=1)
+        with self.assertRaises(Exception):
+            peaker.peak(lookahead=3)

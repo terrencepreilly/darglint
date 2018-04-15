@@ -3,7 +3,6 @@
 from unittest import TestCase
 
 from darglint.node import (
-    Node,
     NodeType,
 )
 from darglint.lex import (
@@ -17,6 +16,7 @@ from darglint.new_parse import (
     parse_line,
     parse_line_with_type,
     parse_simple_section,
+    parse_item,
 )
 from darglint.peaker import (
     Peaker
@@ -26,7 +26,7 @@ from darglint.parse import ParserException
 
 class NewParserTestCase(TestCase):
     """Tests for developing a new parser.
-    
+
     The final tree will not have any whitespace (indents or
     newlines).  However, it will use these tokens while
     parsing.
@@ -110,6 +110,18 @@ class NewParserTestCase(TestCase):
         with self.assertRaises(ParserException):
             parse_type(Peaker(lex('( int )')))
 
+    def test_parse_line_without_indent(self):
+        """Make sure lines don't need to have indents."""
+        node = parse_line(Peaker(lex('word word\n')))
+        self.assertEqual(
+            node.node_type,
+            NodeType.LINE,
+        )
+        child_types = [x.node_type for x in node.walk()]
+        self.assertEqual(
+            child_types,
+            [NodeType.WORD, NodeType.WORD, NodeType.LINE],
+        )
 
     def test_parse_empty_line(self):
         """Make sure we can parse a line with just an indent."""
@@ -340,3 +352,36 @@ class NewParserTestCase(TestCase):
                 '        Not a simple section.\n'
                 '\n'
             )))
+
+    def test_parse_item(self):
+        """Make sure we can parse the parts of a compound section."""
+        node = parse_item(Peaker(lex(
+            'x (int): The first number\n'
+            '            to add\n'
+        ), lookahead=3))
+        self.assertEqual(
+            node.node_type,
+            NodeType.ITEM,
+        )
+        child_types = [x.node_type for x in node.walk()]
+        self.assertEqual(
+            child_types,
+            [
+                NodeType.WORD,
+                NodeType.TYPE,
+                NodeType.ITEM_NAME,
+                NodeType.COLON,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.LINE,
+                NodeType.INDENT,
+                NodeType.INDENT,
+                NodeType.INDENT,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.LINE,
+                NodeType.ITEM_DEFINITION,
+                NodeType.ITEM,
+            ]
+        )

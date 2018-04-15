@@ -20,6 +20,9 @@ class NodeType(Enum):
     SECTION_SIMPLE_BODY = 14
     SECTION_COMPOUND_BODY = 15
     SECTION = 16
+    ITEM_NAME = 17
+    ITEM_DEFINITION = 18
+    ITEM = 19
 
     # Terminals
     KEYWORD = 3

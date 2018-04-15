@@ -1,4 +1,5 @@
 """Describes Peaker, a stream transformer for peaking ahead."""
+from collections import deque
 
 from typing import (
     Callable,
@@ -7,6 +8,7 @@ from typing import (
     List,
     TypeVar,
     Union,
+    Deque
 )
 
 
@@ -19,19 +21,42 @@ class Peaker(Generic[T]):
     class _Empty(object):
         value = None
 
-    def __init__(self, stream):
-        # type: (Iterator[T]) -> None
+    def __init__(self, stream, lookahead=1):
+        # type: (Iterator[T], int) -> None
         """Create a new peaker.
 
         Args:
             stream: An iterator of T objects, which may be empty.
+            lookahead: The amount of lookahead this should allow
+                in the stream.
 
         """
         self.stream = stream
-        try:
-            self.current = next(stream) # type: Union[T, Peaker._Empty]
-        except StopIteration:
-            self.current = self._Empty()
+        self.buffer = deque() # type: Deque[T]
+        self.lookahead = lookahead
+        self._buffer_to(lookahead)
+
+    def _buffer_to(self, amount):
+        """Extend the internal buffer to the given amount.
+
+        Only adds items up to that amount, and while there
+        are items to add.
+
+        Args:
+            amount: The length to make the buffer.
+        
+        """
+        if amount > self.lookahead:
+            raise Exception(
+                'Cannot extend buffer to {}: beyond buffer lookahead {}'.format(
+                    amount, self.lookahead
+                )
+            )
+        while len(self.buffer) < amount:
+            try:
+                self.buffer.appendleft(next(self.stream))
+            except StopIteration:
+                break
 
     def next(self):
         # type: () -> T
@@ -47,26 +72,34 @@ class Peaker(Generic[T]):
             The next item of type T in the stream.
 
         """
-        if not self.has_next():
+        if len(self.buffer) == 0:
             raise StopIteration
-        previous = self.current  # type: T
-        try:
-            self.current = next(self.stream)
-        except StopIteration:
-            self.current = self._Empty()
+        previous = self.buffer.pop()
+        self._buffer_to(self.lookahead)
         return previous
 
-    def peak(self):
-        # type: () -> T
+    def peak(self, lookahead=1):
+        # type: (int) -> T
         """Get the next letter in the stream, without moving it forward.
+
+        Args:
+            lookahead: The amount of tokens to look ahead in
+                the buffer.
 
         Returns:
             The next item of type T in the stream.
 
         """
-        if isinstance(self.current, self._Empty):
+        if lookahead > self.lookahead:
+            raise Exception(
+                'Cannot peak to {}: beyond buffer lookahead {}'.format(
+                    lookahead, self.lookahead
+                )
+            )
+        if lookahead > len(self.buffer):
             return None
-        return self.current
+        index = len(self.buffer) - lookahead
+        return self.buffer[index]
 
     def has_next(self):
         # type: () -> bool
@@ -76,7 +109,7 @@ class Peaker(Generic[T]):
             True if there are more tokens, false otherwise.
 
         """
-        return not isinstance(self.current, self._Empty)
+        return len(self.buffer) > 0
 
     def take_while(self, test):
         # type: (Callable) -> List[T]
