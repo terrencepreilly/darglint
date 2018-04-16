@@ -30,12 +30,12 @@ __EBNF for a google-style docstring__:
   <section-simple-body> ::=
     <indent><type>?[<word><colon><indent><keyword>]*<newline>
     (<indent><indent><line>)*
-  <section-compound-body> ::= (<indent>{2}<item>)+
-  <item> ::= <item-name><colon><item-definition>
+  <section-compound-body> ::= <item>+
+  <item> ::= <indent>{2}<item-name><colon><item-definition>
   <item-name> ::= <word><type>?
   <item-definition> ::= <line>+
   <line> ::= [<word><colon><indent><keyword>]*<newline>
-  <type> ::= <lparen><word><rparen>
+  <type> ::= <lparen><word>+<rparen>
            | <word><colon>
 
   <lparen> ::= "("
@@ -185,7 +185,8 @@ def parse_parenthetical_type(peaker):
     # type: (Peaker[Token]) -> Node
     children = [parse_lparen(peaker)]
     i = 1
-    while i > 0:
+    encountered_word = False
+    while peaker.has_next() and i > 0:
         Assert(
             peaker.has_next(),
             'Encountered end of stream while parsing '
@@ -200,7 +201,16 @@ def parse_parenthetical_type(peaker):
             i -= 1
             children.append(parse_rparen(peaker))
         else:
+            encountered_word = True
             children.append(parse_word(peaker))
+    Assert(
+        i == 0,
+        'Mismatched parentheses in parenthetical type.'
+    )
+    Assert(
+        encountered_word,
+        'Parenthetical type must contain at least one word.'
+    )
     return Node(
         node_type=NodeType.TYPE,
         children=children,
@@ -272,6 +282,10 @@ def parse_line(peaker, with_type=False):
             children.append(parse_indent(peaker))
         elif _is(TokenType.COLON, next_child):
             children.append(parse_colon(peaker))
+        elif _is(TokenType.LPAREN, next_child):
+            children.append(parse_lparen(peaker))
+        elif _is(TokenType.RPAREN, next_child):
+            children.append(parse_rparen(peaker))
         else:
             raise Exception(
                 'Failed to parse line: invalid token type {}'.format(
@@ -393,7 +407,7 @@ def parse_section_simple_body(peaker):
     children = [
         parse_line_with_type(peaker),
     ]
-    while not _is(TokenType.NEWLINE, peaker.peak()):
+    while peaker.has_next() and not _is(TokenType.NEWLINE, peaker.peak()):
         children.append(parse_indent(peaker))
         children.append(parse_line(peaker))
     return Node(
@@ -408,10 +422,29 @@ def parse_simple_section(peaker):
         parse_section_head(peaker, expecting={'Returns', 'Yields'}),
         parse_section_simple_body(peaker),
     ]
+    Assert(
+        peaker.has_next() and _is(TokenType.NEWLINE, peaker.peak()),
+        'Expected newline after section.'
+    )
+    peaker.next() # Discard newline.
     return Node(
         NodeType.SECTION,
         children=children,
     )
+
+
+def parse_yields(peaker):
+    # type: {Peaker[Token]) -> None
+    node = parse_simple_section(peaker)
+    node.node_type = NodeType.YIELDS_SECTION
+    return node
+
+
+def parse_returns(peaker):
+    # type: (Peaker[Token]) -> None
+    node = parse_simple_section(peaker)
+    node.node_type = NodeType.RETURNS_SECTION
+    return node
 
 
 def parse_item_name(peaker):
@@ -448,7 +481,10 @@ def parse_item_definition(peaker):
     )
 
 def parse_item(peaker):
+    # type: (Peaker[Token]) -> Node
     children = [
+        parse_indent(peaker),
+        parse_indent(peaker),
         parse_item_name(peaker),
     ]
 
@@ -461,5 +497,137 @@ def parse_item(peaker):
     ])
     return Node(
         NodeType.ITEM,
+        children=children,
+    )
+
+
+def parse_section_compound_body(peaker):
+    children = [
+        parse_item(peaker),
+    ]
+    while peaker.has_next() and not _is(TokenType.NEWLINE, peaker.peak()):
+        children.append(parse_item(peaker))
+
+    return Node(
+        node_type=NodeType.SECTION_COMPOUND_BODY,
+        children=children,
+    )
+
+
+def parse_compound_section(peaker):
+    # type: (Peaker[Token]) -> Node
+    children = [
+        parse_section_head(peaker, expecting={'Args', 'Arguments', 'Raises'}),
+        parse_section_compound_body(peaker),
+    ]
+    Assert(
+        peaker.has_next() and _is(TokenType.NEWLINE, peaker.peak()),
+        'Expected newline after section body.',
+    )
+    peaker.next() # discard newline.
+
+    return Node(
+        node_type=NodeType.SECTION,
+        children=children,
+    )
+
+
+def parse_args(peaker):
+    # type: (Peaker[Token]) -> Node
+    node = parse_compound_section(peaker)
+    node.node_type = NodeType.ARGS_SECTION
+    return node
+
+
+def parse_raises(peaker):
+    # type: (Peaker[Token]) -> Node
+    node = parse_compound_section(peaker)
+    node.node_type = NodeType.RAISES_SECTION
+    return node
+
+
+def parse_short_description(peaker):
+    # type: (Peaker[Token]) -> Node
+    children = [
+        parse_line(peaker),
+    ]
+    return Node(
+        node_type=NodeType.SHORT_DESCRIPTION,
+        children=children,
+    )
+
+def parse_long_description(peaker):
+    # type: (Peaker[Token]) -> Node
+    children = [
+        parse_line(peaker),
+    ]
+    while (peaker.has_next()
+            and peaker.peak(lookahead=2) is not None
+            and peaker.peak(lookahead=2).value not in KEYWORDS):
+        children.append(parse_line(peaker))
+
+    # TODO: Test if this is necessary.
+    if peaker.has_next() and peaker.peak(lookahead=2) is None:
+        children.append(parse_line(peaker))
+
+    return Node(
+        node_type=NodeType.LONG_DESCRIPTION,
+        children=children,
+    )
+
+def parse_description(peaker):
+    # type: (Peaker[Token]) -> Node
+    children = [
+        parse_short_description(peaker),
+    ]
+    if peaker.has_next():
+        children.append(parse_long_description(peaker))
+    return Node(
+        node_type=NodeType.DESCRIPTION,
+        children=children,
+    )
+
+
+def parse(peaker):
+    # type: (Peaker[Token]) -> Node
+    """Parse the docstring.
+
+    Args:
+        peaker: A Peaker filled with the lexed tokens of the
+            docstring.
+
+    Raises:
+        ParserException: If there is anything malformed with
+            the docstring, or if anything goes wrong with parsing.
+
+    Returns:
+        The parsed docstring as an AST.
+
+    """
+    keyword_parse_lookup = {
+        'Args': parse_args,
+        'Arguments': parse_args,
+        'Returns': parse_returns,
+        'Yields': parse_yields,
+        'Raises': parse_raises,
+    }
+    children = [
+        parse_description(peaker)
+    ]
+    while peaker.has_next():
+        two_ahead = peaker.peak(lookahead=2)
+        if two_ahead is None:
+            parse_line(peaker) # Throw away final newline.
+            break
+        if two_ahead.value in keyword_parse_lookup:
+            children.append(
+                keyword_parse_lookup[two_ahead.value](peaker)
+            )
+        else:
+            children.append(
+                parse_long_description(peaker)
+            )
+    return Node(
+        node_type=NodeType.DOCSTRING,
         children=children,
     )

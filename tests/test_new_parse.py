@@ -16,7 +16,15 @@ from darglint.new_parse import (
     parse_line,
     parse_line_with_type,
     parse_simple_section,
+    parse_yields,
+    parse_returns,
     parse_item,
+    parse_compound_section,
+    parse_args,
+    parse_raises,
+    parse_description,
+    parse_short_description,
+    parse,
 )
 from darglint.peaker import (
     Peaker
@@ -89,7 +97,12 @@ class NewParserTestCase(TestCase):
             'int',
         )
 
-    def test_parse_composite_type(self):
+    def test_type_cannot_by_empty(self):
+        """Make sure that if we have a type it cannot be empty."""
+        with self.assertRaises(ParserException):
+            parse_type(Peaker(lex('()')))
+
+    def test_parse_compound_type(self):
         """Make sure we can parse a type declaration with multiple items.
 
         These items should form a comma-separated list, and be enclosed in
@@ -179,6 +192,16 @@ class NewParserTestCase(TestCase):
                 NodeType.WORD,
                 NodeType.LINE,
             ]
+        )
+
+    def test_parse_line_with_parentheses(self):
+        """Make sure lines can have parentheses in them."""
+        node= parse_line(Peaker(lex(
+            'This is a (parenthis-containing) line.\n'
+        )))
+        self.assertEqual(
+            node.node_type,
+            NodeType.LINE,
         )
 
     def test_parse_line_with_multiple_indents(self):
@@ -374,7 +397,7 @@ class NewParserTestCase(TestCase):
     def test_parse_item(self):
         """Make sure we can parse the parts of a compound section."""
         node = parse_item(Peaker(lex(
-            'x (int): The first number\n'
+            '        x (int): The first number\n'
             '            to add\n'
         ), lookahead=3))
         self.assertEqual(
@@ -382,10 +405,11 @@ class NewParserTestCase(TestCase):
             NodeType.ITEM,
         )
         child_types = [x.node_type for x in node.walk()]
-        print(child_types)
         self.assertEqual(
             child_types,
             [
+                NodeType.INDENT,
+                NodeType.INDENT,
                 NodeType.WORD,
                 NodeType.ITEM_NAME,
                 NodeType.LPAREN,
@@ -407,3 +431,226 @@ class NewParserTestCase(TestCase):
                 NodeType.ITEM,
             ]
         )
+
+    def test_parse_compound(self):
+        """Make sure we can parse a compound section."""
+        node = parse_compound_section(Peaker(lex('\n'.join([
+            '    Args:',
+            '        x: X.',
+            '        y: Y1.',
+            '            Y2.',
+            '        z (int, optional): Z.',
+            '\n'
+        ])), lookahead=3))
+        self.assertEqual(node.node_type, NodeType.SECTION)
+        body = node.children[1]
+        self.assertEqual(
+            body.node_type,
+            NodeType.SECTION_COMPOUND_BODY,
+        )
+        self.assertEqual(
+            len(body.children),
+            3,
+        )
+        self.assertEqual(
+            body.children[0].node_type,
+            NodeType.ITEM,
+        )
+
+    def test_parse_args(self):
+        """Make sure we can parse an args section."""
+        node = parse_args(Peaker(lex('\n'.join([
+            '    Args:',
+            '        x: the item.',
+            '\n',
+        ])), lookahead=3))
+        self.assertEqual(node.node_type, NodeType.ARGS_SECTION)
+
+    def test_parse_raises(self):
+        """Make sure we can parse the exceptions section."""
+        node = parse_raises(Peaker(lex(
+            '    Raises:\n'
+            '        ArrayIndexOutOfBounds: When the array index\n'
+            '            is out of bounds.\n'
+            '\n'
+        ), lookahead=3))
+        self.assertEqual(
+            node.node_type,
+            NodeType.RAISES_SECTION,
+        )
+
+    def test_parse_yields(self):
+        node = parse_yields(Peaker(lex(
+            '    Yields:\n'
+            '        The total amount of information.\n'
+            '\n'
+        ), lookahead=3))
+        self.assertEqual(
+            node.node_type,
+            NodeType.YIELDS_SECTION,
+        )
+
+    def test_parse_returns(self):
+        node = parse_returns(Peaker(lex(
+            '    Returns:\n'
+            '        A number of different\n'
+            '        people, even species.\n'
+            '\n'
+        ), lookahead=3))
+        self.assertEqual(
+            node.node_type,
+            NodeType.RETURNS_SECTION,
+        )
+
+    def test_parse_short_description(self):
+        """Make sure we can parse the first line in the docstring."""
+        node = parse_short_description(Peaker(lex(
+            'This is a short description.\n'
+        ), lookahead=3))
+        child_types = [x.node_type for x in node.walk()]
+        self.assertEqual(
+            child_types,
+            [
+                NodeType.WORD,
+            ] * 5 + [
+                NodeType.LINE,
+                NodeType.SHORT_DESCRIPTION,
+            ]
+        )
+
+    def test_parse_whole_description(self):
+        """Make sure we can handle descriptions of multiple lines."""
+        node = parse_description(Peaker(lex(
+            'Short description\n'
+            '\n'
+            '    Long : (description)\n'
+            '\n'
+            '        <code></code>\n'
+            '\n'
+        ), lookahead=3))
+        child_types = [x.node_type for x in node.walk()]
+        print('\n'.join([str(x) for x in child_types]))
+        self.assertEqual(
+            child_types,
+            [
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.LINE,
+                NodeType.SHORT_DESCRIPTION,
+                NodeType.LINE,
+                NodeType.INDENT,
+                NodeType.WORD,
+                NodeType.COLON,
+                NodeType.LPAREN,
+                NodeType.WORD,
+                NodeType.RPAREN,
+                NodeType.LINE,
+                NodeType.LINE,
+                NodeType.INDENT,
+                NodeType.INDENT,
+                NodeType.WORD,
+                NodeType.LINE,
+                NodeType.LINE,
+                NodeType.LONG_DESCRIPTION,
+                NodeType.DESCRIPTION,
+            ]
+        )
+
+    def test_description_ends_with_sections(self):
+        """Make sure the description section doesn't eat everything."""
+        peaker = Peaker(lex(
+            'Short description.\n'
+            '\n'
+            '    Long Description.\n'
+            '\n'
+            '    Returns:\n'
+            '        Nothing!\n'
+            '\n'
+        ), lookahead=3)
+        parse_description(peaker)
+        self.assertTrue(
+            peaker.has_next()
+        )
+        node = parse_returns(peaker)
+        self.assertEqual(
+            node.node_type,
+            NodeType.RETURNS_SECTION,
+        )
+
+
+    def test_long_description_can_come_between_sections(self):
+        """Make sure non-standard parts are treated as descriptions."""
+        node = parse(Peaker(lex('\n'.join([
+            'Double the number.',
+            '',
+            '    Args:',
+            '        x: The only argument..',
+            '',
+            '    Requires:',
+            '        Some kind of setup.',
+            '',
+        ])), lookahead=3))
+        self.assertEqual(
+            node.node_type,
+            NodeType.DOCSTRING,
+        )
+        print(
+            '\n'.join([str(x.node_type) for x in node.children])
+        )
+        self.assertEqual(
+            node.children[2].node_type,
+            NodeType.LONG_DESCRIPTION,
+        )
+
+    def test_parses_all_section_types(self):
+        """Make sure all section types can be parsed."""
+        node = parse(Peaker(lex('\n'.join([
+            'Short description.',
+            '',
+            '    Long Description.',
+            '',
+            '    Args:',
+            '        x: The first argument with',
+            '            two lines.',
+            '        y: The second argument.',
+            '',
+            '    Raises:',
+            '        SomethingException: Randomly.',
+            '',
+            '    Non-Standard:'
+            '        Everything about this.',
+            '',
+            '    Yields:',
+            '        Values to analyze.',
+            '\n',
+        ])), lookahead=3))
+        child_types = [x.node_type for x in node.children]
+        print('\n'.join([str(x) for x in child_types]))
+        self.assertEqual(
+            child_types,
+            [
+                NodeType.DESCRIPTION,
+                NodeType.ARGS_SECTION,
+                NodeType.RAISES_SECTION,
+                NodeType.LONG_DESCRIPTION,
+                NodeType.YIELDS_SECTION,
+            ]
+        )
+
+#   <docstring> ::= <short-description>
+#                 | <short-description><newline>
+#                     <long-description>*
+#                     <sections>*
+#
+#   <short-description> ::= <word>[<word><colon><keyword>]*
+#   <long-description>  ::= <head-line>+
+#   <head-line> ::= <indent>
+#                     [<word><colon><indent>]
+#                     [<word><colon><indent><keyword>]*<newline>
+#
+#   <sections> ::= <arguments-section>?
+#                    <raises-section>?
+#                    (<yields-section>|<returns-section>)?
+#                | <raises-section>?
+#                    <arguments-section>?
+#                    (yields-section>|<returns-section>)?

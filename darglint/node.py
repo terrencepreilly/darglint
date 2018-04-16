@@ -14,6 +14,7 @@ class NodeType(Enum):
     DOCSTRING = 0
     SUMMARY = 1
     DESCRIPTION = 2
+    SHORT_DESCRIPTION = 26
     TYPE = 10
     LINE = 11
     SECTION_HEAD = 13
@@ -23,6 +24,11 @@ class NodeType(Enum):
     ITEM_NAME = 17
     ITEM_DEFINITION = 18
     ITEM = 19
+    ARGS_SECTION = 22
+    RAISES_SECTION = 23
+    RETURNS_SECTION = 24
+    YIELDS_SECTION = 25
+    LONG_DESCRIPTION = 27
 
     # Terminals
     KEYWORD = 3
@@ -36,6 +42,7 @@ class NodeType(Enum):
     LPAREN = 20
     RPAREN = 21
 
+ 
 class Node(object):
     """A node in a docstring AST."""
 
