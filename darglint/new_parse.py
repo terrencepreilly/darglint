@@ -6,11 +6,12 @@ __EBNF for a google-style docstring__:
                     <long-description>*
                     <sections>*
 
-  <short-description> ::= <word>[<word><colon><keyword>]*
+  <short-description> ::= <word>[<hash><noqa><word><colon><keyword>]*
   <long-description>  ::= <head-line>+
   <head-line> ::= <indent>
                     [<word><colon><indent>]
-                    [<word><colon><indent><keyword>]*<newline>
+                    [<word><colon><indent><keyword>]*
+                    <noqa-statement>?<newline>
 
   <sections> ::= <arguments-section>?
                    <raises-section>?
@@ -34,10 +35,16 @@ __EBNF for a google-style docstring__:
   <item> ::= <indent>{2}<item-name><colon><item-definition>
   <item-name> ::= <word><type>?
   <item-definition> ::= <line>+
-  <line> ::= [<word><colon><indent><keyword>]*<newline>
+  <line> ::= [<word><hash><colon><indent><keyword>]*<noqa-statement>?<newline>
   <type> ::= <lparen><word>+<rparen>
            | <word><colon>
 
+  <noqa-statement> ::= <noqa-head>(<colon><noqa-body>)?
+  <noqa-head> ::= <hash><word>
+  <noqa-body> ::= <word><list>?
+  <list> ::= <word>["," <word>]*
+
+  <hash> ::= "#"
   <lparen> ::= "("
   <rparen> ::= ")"
   <keyword> ::= "Args"
@@ -46,7 +53,7 @@ __EBNF for a google-style docstring__:
             | "Yields"
             | "Raises"
   <indent>  ::= " "{4}
-  <word>    ::= [^\ \n\:\"\#\t]+
+  <word>    ::= [^\ \n\:\"\t]+
   <colon>   ::= ":"
   <newline> ::= "\n"
 
@@ -147,6 +154,21 @@ def parse_word(peaker):
     )
     return Node(
         node_type=NodeType.WORD,
+        value=peaker.next().value
+    )
+
+
+def parse_hash(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse hash')
+    Assert(
+        _is(TokenType.HASH, peaker.peak()),
+        'Unable to parse hash: expected {} but received {}'.format(
+            TokenType.HASH, peaker.peak().token_type
+        )
+    )
+    return Node(
+        node_type=NodeType.HASH,
         value=peaker.next().value
     )
 
@@ -286,6 +308,8 @@ def parse_line(peaker, with_type=False):
             children.append(parse_lparen(peaker))
         elif _is(TokenType.RPAREN, next_child):
             children.append(parse_rparen(peaker))
+        elif _is(TokenType.HASH, next_child):
+            children.append(parse_noqa(peaker))
         else:
             raise Exception(
                 'Failed to parse line: invalid token type {}'.format(
@@ -584,6 +608,75 @@ def parse_description(peaker):
         children.append(parse_long_description(peaker))
     return Node(
         node_type=NodeType.DESCRIPTION,
+        children=children,
+    )
+
+
+def parse_noqa_head(peaker):
+    # type: (Peaker[Token]) -> Node
+    children = [
+        parse_hash(peaker),
+    ]
+    word = parse_word(peaker)
+    Assert(
+        word.value == 'noqa',
+        'Failed to parse noqa statement. '
+        'Expected "# noqa" but received "# {}"'.format(
+            word.value,
+        )
+    )
+    children.append(word)
+    return Node(
+        node_type=NodeType.NOQA_HEAD,
+        children=children,
+    )
+
+
+def parse_list(peaker):
+    # type: (Peaker[Token]) -> Node
+    prev = parse_word(peaker)
+    children = [prev]
+    while (prev.value.endswith(',')
+            and peaker.has_next()
+            and _is(TokenType.WORD, peaker.peak())):
+        prev = parse_word(peaker)
+        children.append(prev)
+    return Node(
+        node_type=NodeType.LIST,
+        children=children
+    )
+
+def parse_noqa_body(peaker):
+    # type: (Peaker[Token]) -> Node
+    children = [parse_word(peaker)]
+    Assert(
+        peaker.has_next(),
+        'Unexpectedly reached end of stream while parsing noqa body.'
+    )
+    if _is(TokenType.WORD, peaker.peak()):
+        children.append(parse_list(peaker))
+    return Node(
+        node_type=NodeType.NOQA_BODY,
+        children=children,
+    )
+
+
+def parse_noqa(peaker):
+    # type: (Peaker[Token]) -> Node
+    children = [
+        parse_noqa_head(peaker),
+    ]
+    if not _is(TokenType.NEWLINE, peaker.peak()):
+        children.extend([
+            parse_colon(peaker),
+            parse_noqa_body(peaker),
+        ])
+    Assert(
+        peaker.has_next() and _is(TokenType.NEWLINE, peaker.peak()),
+        'Expected newline after noqa.'
+    )
+    return Node(
+        node_type=NodeType.NOQA,
         children=children,
     )
 

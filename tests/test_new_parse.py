@@ -24,6 +24,7 @@ from darglint.new_parse import (
     parse_raises,
     parse_description,
     parse_short_description,
+    parse_noqa,
     parse,
 )
 from darglint.peaker import (
@@ -637,20 +638,81 @@ class NewParserTestCase(TestCase):
             ]
         )
 
-#   <docstring> ::= <short-description>
-#                 | <short-description><newline>
-#                     <long-description>*
-#                     <sections>*
-#
-#   <short-description> ::= <word>[<word><colon><keyword>]*
-#   <long-description>  ::= <head-line>+
-#   <head-line> ::= <indent>
-#                     [<word><colon><indent>]
-#                     [<word><colon><indent><keyword>]*<newline>
-#
-#   <sections> ::= <arguments-section>?
-#                    <raises-section>?
-#                    (<yields-section>|<returns-section>)?
-#                | <raises-section>?
-#                    <arguments-section>?
-#                    (yields-section>|<returns-section>)?
+    def test_parse_bare_noqa_statement(self):
+        """Make sure we can parse noqa statements."""
+        node = parse_noqa(Peaker(lex('# noqa\n')))
+        self.assertEqual(
+            [x.node_type for x in node.walk()],
+            [
+                NodeType.HASH,
+                NodeType.WORD,
+                NodeType.NOQA_HEAD,
+                NodeType.NOQA
+            ]
+        )
+
+    def test_parse_noqa_with_target(self):
+        """Make sure we can target a specific error message."""
+        node = parse_noqa(Peaker(lex('# noqa: I203\n')))
+        self.assertEqual(
+            [x.node_type for x in node.walk()],
+            [
+                NodeType.HASH,
+                NodeType.WORD,
+                NodeType.NOQA_HEAD,
+                NodeType.COLON,
+                NodeType.WORD,
+                NodeType.NOQA_BODY,
+                NodeType.NOQA,
+            ],
+        )
+
+    def test_parse_noqa_with_target_and_argument(self):
+        """Make sure we can target specific args in a noqa."""
+        node = parse_noqa(Peaker(lex('# noqa: I101 arg1, arg2\n')))
+        self.assertEqual(
+            [x.node_type for x in node.walk()],
+            [
+                NodeType.HASH,
+                NodeType.WORD,
+                NodeType.NOQA_HEAD,
+                NodeType.COLON,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.LIST,
+                NodeType.NOQA_BODY,
+                NodeType.NOQA,
+            ]
+        )
+
+    def test_parse_inline_noqa_statements(self):
+        """Make sure we can parse noqa statements."""
+        node = parse_line(Peaker(lex('Something something.  # noqa: I201\n')))
+        child_types = [x.node_type for x in node.walk()]
+        self.assertEqual(
+            child_types,
+            [
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.HASH,
+                NodeType.WORD,
+                NodeType.NOQA_HEAD,
+                NodeType.COLON,
+                NodeType.WORD,
+                NodeType.NOQA_BODY,
+                NodeType.NOQA,
+                NodeType.LINE,
+            ]
+        )
+
+    def test_parse_long_description_with_nqa(self):
+        """Make sure noqas can appear in a global scope."""
+        node = parse(Peaker(lex('\n'.join([
+            'Short description can\'t have a noqa.'
+            ''
+            '    But a long description can.'
+            ''
+            '    # noqa: I101 arg1'
+            '\n'
+        ])), lookahead=3))

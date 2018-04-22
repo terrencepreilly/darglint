@@ -29,6 +29,10 @@ class NodeType(Enum):
     RETURNS_SECTION = 24
     YIELDS_SECTION = 25
     LONG_DESCRIPTION = 27
+    NOQA = 28
+    LIST = 29
+    NOQA_HEAD = 30
+    NOQA_BODY = 31
 
     # Terminals
     KEYWORD = 3
@@ -41,6 +45,7 @@ class NodeType(Enum):
     INDENT = 12
     LPAREN = 20
     RPAREN = 21
+    HASH = 32
 
  
 class Node(object):
