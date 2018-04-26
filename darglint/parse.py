@@ -1,62 +1,79 @@
-r"""Defines the parse function.
-
+r"""
 __EBNF for a google-style docstring__:
 
-  <docstring> ::= <empty-short-description>
-              | <full-short-description><long-description><docterm>
-              | <full-short-description>
-                  [<long-description>]
-                  <section>+
-                <docterm>
-  <long-description> ::= <line>+<newline>
-  <short-description> ::= <empty-short-description>|<full-short-description>
-  <full-short-description> ::= <doc-term><line><newline>
-  <empty-short-description> ::= <doc-term><nnline><doc-term>
-  <section> ::= <single-section>|<multi-section>
-  <multi-section> ::= <empty-headline>
-                        (<full-headline>(<indent><line>)*)+
-                        <newline>
-  <single-section> ::= <emtpty-headline>(<indent><line>)+<newline>
-     | <full-headline>(<indent><line>)*<newline>
-  <headline> ::= <empty-headline>|<full-headline>
-  <empty-headline> ::= <keyword>(<space><type>)?<colon><newline>
-  <full-headline> ::= <keyword>(<space><type>)?<colon><space><line>
-  <line> ::= <nnline><newline>
-  <nnline> ::= (<word><space>+)*<word>
-  <type> = \(word\)
+  <docstring> ::= <short-description>
+                | <short-description><newline>
+                    <long-description>*
+                    <sections>*
+
+  <short-description> ::= <word>[<hash><noqa><word><colon><keyword>]*
+  <long-description>  ::= <head-line>+
+  <head-line> ::= <indent>
+                    [<word><colon><indent>]
+                    [<word><colon><indent><keyword>]*
+                    <noqa>?<newline>
+
+  <sections> ::= <arguments-section>?
+                   <raises-section>?
+                   (<yields-section>|<returns-section>)?
+               | <raises-section>?
+                   <arguments-section>?
+                   (yields-section>|<returns-section>)?
+
+  <arguments-section> ::= <section-compound>
+  <raises-section> ::= <section-compound>
+  <yields-section> ::= <section-simple>
+  <returns-section> ::= <section-simple>
+
+  <section-simple> ::= <section-head><section-simple-body>
+  <section-compound> ::= <section-head><section-compound-body>
+  <section-head> ::= <indent><keyword><colon><newline>
+  <section-simple-body> ::=
+    <indent><type>?[<word><colon><indent><keyword>]*<newline>
+    (<indent><indent><line>)*
+  <section-compound-body> ::= <item>+
+  <item> ::= <indent>{2}<item-name><colon><item-definition>
+  <item-name> ::= <word><type>?
+  <item-definition> ::= <line>+
+  <line> ::= [<word><hash><colon><indent><keyword>]*<noqa>?<newline>
+  <type> ::= <lparen><word>+<rparen>
+           | <word><colon>
+
+  <noqa> ::= <noqa-head>(<colon><noqa-body>)?
+  <noqa-head> ::= <hash><word>
+  <noqa-body> ::= <word><list>?
+  <list> ::= <word>["," <word>]*
+
+  <hash> ::= "#"
+  <lparen> ::= "("
+  <rparen> ::= ")"
   <keyword> ::= "Args"
             | "Arguments"
             | "Returns
             | "Yields"
             | "Raises"
-  <word> ::= [^\ \n\:\"\#\t]+
-  <colon> ::= ":"
-  <indent> ::= <space>{4}
-  <space> ::= " "
+  <indent>  ::= " "{4}
+  <word>    ::= [^\ \n\:\"\t]+
+  <colon>   ::= ":"
   <newline> ::= "\n"
-  <doc-term> ::= \"\"\"
 
 """
+from typing import Set  # noqa
 
-from itertools import chain
-from typing import (
-    Callable,
-    Dict,
-    Iterator,
-    Iterable,
-    Tuple,
-    Type,
-)
-
-from .config import get_logger
-from .token import Token, TokenType
-from .peaker import Peaker
+from .peaker import Peaker  # noqa
+from .token import Token, TokenType  # noqa
+from .node import Node, NodeType
 from .errors import (
     GenericSyntaxError,
-    EmptyDescriptionError,
 )
 
-logger = get_logger()
+KEYWORDS = {
+    'Args': NodeType.ARGUMENTS,
+    'Arguments': NodeType.ARGUMENTS,
+    'Returns': NodeType.RETURNS,
+    'Yields': NodeType.YIELDS,
+    'Raises': NodeType.RAISES,
+}
 
 
 class ParserException(BaseException):
@@ -76,503 +93,679 @@ class ParserException(BaseException):
         self.style_error = style_error
 
 
-def _expect_type(peaker, expected_type, hint=''):
-    # type: (Peaker[Token], TokenType, str) -> None
-    """Raise an exception if peaker's next value isn't the given type.
-
-    Args:
-        peaker: The peaker to check.  Should have the given type next.
-        expected_type: The type we expect to see next.
-        hint: An optional message describing how to fix the error.
-
-    Raises:
-        ParserException: If the next token in the Peaker is not of the
-            expected type.
-
-    """
-    actual_type = peaker.peak().token_type
-    if actual_type != expected_type:
-        msg = ''
-        if actual_type == TokenType.WORD:
-            msg = 'Exected type {}, but was {}: "{}"'.format(
-                expected_type,
-                actual_type,
-                peaker.peak().value,
-            )
-        else:
-            msg = 'Expected type {}, but was {}'.format(
-                expected_type,
-                actual_type,
-            )
-        if hint != '':
-            msg = msg + ': ' + hint
-        else:
-            msg = msg + '.'
+def Assert(expr, msg):
+    # type: (bool, str) -> None
+    """Assert that the expression is True."""
+    if not expr:
         raise ParserException(msg)
 
 
-def _is_type(peaker, token_type):
-    # type: (Peaker[Token], TokenType) -> bool
-    """Tell if the next token in the Peaker is of the given type.
+def AssertNotEmpty(peaker, context):
+    # type: (Peaker, str) -> None
+    """Raise a parser exception if the next item is empty.
 
     Args:
-        peaker: A peaker holding tokens.
-        token_type: A TokenType we are looking for.
-
-    Returns:
-        True if the next token in the peaker is of the given type.
-        False if the token type doesn't match, or if there is no
-        more content in the peaker.
+        peaker: The Peaker which should not be empty.
+        context: A verb in the gerund form which describes
+            our current actions.
 
     """
     if not peaker.has_next():
-        return False
-    return peaker.peak().token_type == token_type
+        raise ParserException(
+            'Unable to {}: stream was unexpectedly empty.'.format(
+                context
+            )     
+        )
+
+def _is(expected_type, token):
+    # type: (TokenType, Token) -> bool
+    return token.token_type == expected_type
 
 
-def _not(*fns):
-    # type: (Iterable[Callable]) -> Callable
-    """Negates a function which returns a boolean.
-
-    Args:
-        *fns: Functions which returns a boolean.
-
-    Returns:
-        A function which returns fallse when any of the callables
-        return true, and true will all of the callables return false.
-
-    """
-    def inner(*args, **kwargs):
-        return not any([fn(*args, **kwargs) for fn in fns])
-    return inner
-
-
-def _token_is(token_type):
-    # type: (TokenType) -> Callable
-    """Return a checker function for a token.
+def parse_keyword(peaker):
+    # type: (Peaker[Token]) -> Node
+    """Parse a keyword.
 
     Args:
-        token_type: The type we wish to have a checker for.
+        peaker: A stream of tokens from lexing a docstring.
 
     Returns:
-        A function which returns a true if the when supplied
-        a token of the given type.
-
+        A Node with Keyword NodeType.
+    
     """
-    def check_type(token: Token) -> bool:
-        return token.token_type == token_type
-    return check_type
-
-
-class Docstring(object):
-    """Represents a google - style docstring."""
-
-    RETURNS = ('Returns',)
-    ARGS = ('Args', 'Arguments')
-    YIELDS = ('Yields',)
-    RAISES = ('Raises',)
-    keywords = tuple(chain(
-        RETURNS,
-        ARGS,
-        YIELDS,
-        RAISES
-    ))
-
-    def __init__(self, tokens):
-        # type: (Iterator[Token]) -> None
-        """Create a new docstring from the stream of tokens.
-
-        Attributes of the class either detail descriptions, or
-        noqa statements (errors to ignore for a given detail.)
-
-        For example, if we wish to ignore an extra member in the
-        raises section, (say, a ZeroDivisionError, because we are
-        doing some division, and we want to allow the error to
-        propagate up), then we would have the key and item
-        `('I402', ['ZeroDivisionError'])` in the noqa dictionary.
-
-        If a noqa statement is for a global member of the docstring
-        (such as the return statement or short description), then
-        the item may be None.  For example, to ignore a missing
-        return, we would have `('I201', None)` in the noqa dictionary.
-        If the noqa statement is bare (that is, it has no colon after
-        it), then all errors are suppressed. This is also the case if
-        the target is "*".
-
-        Noqa statements should appear either after the section/argument
-        they reference, or at the end of the long description.
-
-        Args:
-            tokens: A stream of tokens.
-
-        """
-        self.short_description = ''
-        self.long_description = ''
-        self.arguments_descriptions = dict()  # type: Dict[str, str]
-        self.argument_types = dict()  # type: Dict[str, str]
-        self.returns_description = ''
-        self.return_type = None  # type: str
-        self.yields_description = ''
-        self.raises_descriptions = dict()  # type: Dict[str, str]
-        self.noqa = dict()  # type: Dict[str, str]
-
-        self._peaker = Peaker(tokens)  # type: Peaker[Token]
-        self._parse()
-
-    @property
-    def ignore_all(self):
-        # type: () -> bool
-        """Return whether we should ignore everything in the docstring.
-
-        This happens when there is a bare noqa in the docstring, or
-        there is "# noqa: *" in the docstring.
-
-        Returns: True if we should ignore everything, otherwise false.
-
-        """
-        return '*' in self.noqa
-
-    def _dispatch(self, keyword):
-        # type: (str) -> None
-        """Parse the section described by the keyword.
-
-        Args:
-            keyword: The word which starts this section.
-
-        # noqa: I401 Exception
-
-        """
-        _expect_type(self._peaker, TokenType.COLON)
-        self._peaker.next()
-
-        if keyword in self.RETURNS:
-            self._parse_return()
-        elif keyword in self.YIELDS:
-            self._parse_yield()
-        elif keyword in self.ARGS:
-            self._parse_arguments()
-        elif keyword in self.RAISES:
-            self._parse_raises()
-        else:
-            raise Exception('Unexpected section keyword "{}"'.format(
-                keyword
-            ))
-
-    def _parse(self):
-        # type: () -> None
-        if not self._peaker.has_next():
-            return
-        self._parse_short_description()
-
-        if not self._peaker.has_next():
-            return
-        _expect_type(self._peaker, TokenType.NEWLINE)
-        self._peaker.take_while(_token_is(TokenType.NEWLINE))
-        # _expect_type(self._peaker, TokenType.WORD)
-
-        is_keyword = self._peaker.peak().value in self.keywords
-        if not is_keyword:
-            self._parse_long_description()
-
-        while self._peaker.has_next():
-            is_keyword = self._peaker.peak().value in self.keywords
-            is_hash = self._peaker.peak().token_type == TokenType.HASH
-            is_newline = self._peaker.peak().token_type == TokenType.NEWLINE
-            if is_keyword:
-                keyword = self._peaker.next().value
-                _expect_type(self._peaker, TokenType.COLON)
-                self._dispatch(keyword)
-            elif is_hash:
-                self._parse_possible_noqa(None)
-            elif is_newline:
-                self._peaker.next()
-            else:
-                # ignore -- it's an uknown section type and not a noqa.
-                self._parse_line(None)
-
-    def _parse_short_description(self):
-        # type: () -> None
-        self.short_description = self._parse_line(None)
-
-    def _parse_long_description(self):
-        # type: () -> None
-        while self._peaker.has_next():
-            is_keyword = self._peaker.peak().value in self.keywords
-            if is_keyword:
-                return
-            space = ' ' if self.long_description != '' else ''
-            while not self._at_terminal():
-                self.long_description += space + self._parse_line(None)
-            self._peaker.take_while(_token_is(TokenType.NEWLINE))
-
-    def _parse_multi_section(self):
-        # type: () -> Dict[str, Tuple[str, str]]
-        """Parse a multi-section.
-
-        Raises:
-            ParserException: If the parser was unable to parse
-                the docstring and raised an exception.
-
-        Returns:
-            A dictionary containing the headline as key and the
-            type and description as a values (in a tuple).
-
-        """
-        _expect_type(self._peaker, TokenType.NEWLINE)
-        self._peaker.next()
-        _expect_type(self._peaker, TokenType.INDENT)
-
-        descriptions = dict()
-        indents_to_argument = len(self._peaker.take_while(
-            _token_is(TokenType.INDENT)))
-
-        # Parse the whole section
-        while not _is_type(self._peaker, TokenType.NEWLINE):
-            _expect_type(self._peaker, TokenType.WORD)
-            word = self._peaker.next().value  # The word being described.
-            word_type = None  # The type annotation for the word.
-            if _is_type(self._peaker, TokenType.COLON):
-                _expect_type(self._peaker, TokenType.COLON)
-                self._peaker.next()
-            elif _is_type(self._peaker, TokenType.WORD):
-                word_type = self._peaker.next().value
-                if not (word_type.startswith('(') and word_type.endswith(')')):
-                    # Raise exception (this should be a type.)
-                    pass
-                word_type = word_type[1:-1]
-                # There should be a colon immediately after the type.
-                _expect_type(
-                    self._peaker,
-                    TokenType.COLON,
-                    hint='You are either missing a colon or have '
-                    'underindented the second line of a description.'
-                )
-
-            current_indents = indents_to_argument + 1
-            word_description = ''
-
-            # Parse the subsection
-            #
-            # Entered when _peaker points to the first word in the
-            # description, exits when indented for argument, there are
-            # no more items, or there is an extra newline.
-            while current_indents > indents_to_argument:
-                at_eof = not self._peaker.has_next()
-                at_newline = _is_type(self._peaker, TokenType.NEWLINE)
-                if at_eof or at_newline:
-                    raise ParserException(
-                        'Expected description of "{}", but found '
-                        'none.'.format(word),
-                        style_error=EmptyDescriptionError,
-                    )
-                word_description = self._parse_line(word)
-
-                # If we're at the end of the docstring, finish the routine.
-                if not self._peaker.has_next():
-                    break
-
-                self._peaker.next()
-                current_indents = len(self._peaker.take_while(
-                    _token_is(TokenType.INDENT)))
-            descriptions[word] = (word_type, word_description)
-
-            # If this is the last section, end the algorithm.
-            if not self._peaker.has_next():
-                break
-
-        return descriptions
-
-    def _parse_single_section(self):
-        # type: () -> str
-        """Parse a single section.
-
-        Returns:
-            The string parsed, which represents a single section.
-
-        """
-        description = ''
-
-        # The text is to the right of the heading.
-        if _is_type(self._peaker, TokenType.WORD):
-            description += self._parse_line(None)
-            if not self._peaker.has_next():
-                return description
-
-        _expect_type(self._peaker, TokenType.NEWLINE)
-        self._peaker.next()
-        indents = None
-
-        # We check for two newlines, because we could have a block below
-        # this one.
-        while not _is_type(self._peaker, TokenType.NEWLINE):
-            new_indents = self._peaker.take_while(_token_is(TokenType.INDENT))
-            if indents is None:
-                indents = len(new_indents)
-            else:
-                # Assert that they should be equal, and display error
-                pass
-            description += self._parse_line(None)
-
-            # If we're at the end of the docstring, finish the routine.
-            if not self._peaker.has_next():
-                break
-            _expect_type(self._peaker, TokenType.NEWLINE)
-            self._peaker.next()
-        return description
-
-    def _at_terminal(self):
-        # type: () -> bool
-        """Return true if at line terminal: newline or empty.
-
-        Returns:
-            True if we are at a newline or there are more tokens;
-                false otherwise.
-
-        """
-        is_empty = not self._peaker.has_next()
-        if is_empty:
-            return True
-        newline_is_next = _is_type(self._peaker, TokenType.NEWLINE)
-        if newline_is_next:
-            return True
-        return False
-
-    def _parse_line(self, target):
-        # type: (Token) -> str
-        """Parse up to the newline, returning the string representation.
-
-        Recursively gets the words in the line, up to (but not including)
-        the newline.
-
-        Args:
-            target: If we are parsing an argument description or raises
-                description, target is the argument/exception we are
-                describing.
-
-        Returns:
-            Space-separated values of the tokens up to the newline.
-
-        """
-        if _is_type(self._peaker, TokenType.NEWLINE):
-            return ''
-        elif _is_type(self._peaker, TokenType.HASH):
-            return self._parse_possible_noqa(target)
-
-        word = self._peaker.next().value
-        if self._at_terminal():
-            return word
-        else:
-            return word + ' ' + self._parse_line(target)
-
-    def _parse_possible_noqa(self, target):
-        # type: (Token) -> str
-        """Return the value if it's not noqa, otherwise return blank.
-
-        This should be called when we encounter a hash mark.  If there
-        is a valid noqa after the hash, then it will be added to the noqa
-        dictionary, and a blank string will be returned.  Otherwise, the
-        hash and whatever comes after it will be returned.
-
-        Does not consume the newline.
-
-        Args:
-            target: None if we are at the global scope.  If we are in a
-                section, then it should be the current parameter/error
-                whose description we are parsing.
-
-        Returns:
-            A string which is either blank, or represents the tokens up to
-            the newline.
-
-        """
-        def add_to_errors(error, item):
-            # Target should be none only if it is always a global attribute.
-            if item is None:
-                self.noqa[error] = None
-            else:
-                if error not in self.noqa:
-                    self.noqa[error] = list()
-                self.noqa[error].append(item)
-
-        _expect_type(self._peaker, TokenType.HASH)
-        self._peaker.next()
-
-        if not self._peaker.has_next():
-            return '#'
-
-        # If it's not a noqa statement, then return up to the newline.
-        is_word = _is_type(self._peaker, TokenType.WORD)
-        is_noqa = is_word and self._peaker.peak().value == 'noqa'
-        if not is_noqa:
-            return '# ' + self._parse_line(target)
-
-        self._peaker.next()
-
-        # There's no colon, so it's a global statement.
-        if not self._peaker.has_next():
-            add_to_errors('*', None)
-            return ''
-        if not _is_type(self._peaker, TokenType.COLON):
-            add_to_errors('*', None)
-            self._peaker.next()
-            return ''
-
-        _expect_type(self._peaker, TokenType.COLON)
-        self._peaker.next()
-        _expect_type(self._peaker, TokenType.WORD)
-        error_to_ignore = self._peaker.next().value
-
-        # If we're at the end of the line, add to errors and return
-        if self._at_terminal():
-            add_to_errors(error_to_ignore, target)
-            return ''
-
-        # Otherwise, we are specifying a target, so grab it, add and return.
-        _expect_type(self._peaker, TokenType.WORD)
-        target = self._peaker.next().value
-        add_to_errors(error_to_ignore, target)
-        return ''
-
-    def _parse_arguments(self):
-        # type: () -> None
-        descriptions = self._parse_multi_section()
-        self.arguments_descriptions = {
-            key: descriptions[key][1] for key in descriptions
-        }
-        self.argument_types = {
-            key: descriptions[key][0] for key in descriptions
-        }
-
-    def _parse_yield(self):
-        # type: () -> None
-        self.yields_description = self._parse_single_section()
-
-    def _parse_return(self):
-        # type: () -> None
-        self.returns_description = self._parse_single_section()
-
-        if self.returns_description is None:
-            logger.error(
-                'Error while parsing returns section for docstring '
-                'beginning "%s..."' % self.short_description[:30]
+    AssertNotEmpty(peaker, 'parse keyword')
+    Assert(
+        _is(TokenType.WORD, peaker.peak()),
+        'Unable to parse keyword: expected {} but received {}'.format(
+            TokenType.WORD, peaker.peak().token_type
+        )
+    )
+    Assert(
+        peaker.peak().value in KEYWORDS,
+        'Unable to parse keyword: "{}" is not a keyword'.format(
+            peaker.peak().token_type
+        ),
+    )
+    token = peaker.next()
+    return Node(KEYWORDS[token.value], value=token.value)
+
+def parse_colon(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse colon')
+    Assert(
+        _is(TokenType.COLON, peaker.peak()),
+        'Unable to parse colon: expected {} but received {}'.format(
+            TokenType.COLON, peaker.peak().token_type
+        )
+    )
+    return Node(
+        node_type=NodeType.COLON,
+        value=peaker.next().value
+    )
+
+def parse_word(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse word')
+    Assert(
+        _is(TokenType.WORD, peaker.peak()),
+        'Unable to parse word: expected {} but received {}'.format(
+            TokenType.WORD, peaker.peak().token_type
+        )
+    )
+    return Node(
+        node_type=NodeType.WORD,
+        value=peaker.next().value
+    )
+
+
+def parse_hash(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse hash')
+    Assert(
+        _is(TokenType.HASH, peaker.peak()),
+        'Unable to parse hash: expected {} but received {}'.format(
+            TokenType.HASH, peaker.peak().token_type
+        )
+    )
+    return Node(
+        node_type=NodeType.HASH,
+        value=peaker.next().value
+    )
+
+def parse_lparen(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse left parenthesis')
+    Assert(
+        _is(TokenType.LPAREN, peaker.peak()),
+        'Unable to parse left parenthesis: expected {} '
+        'but received {}'.format(
+            TokenType.LPAREN, peaker.peak().token_type
+        )
+    )
+    return Node(
+        node_type=NodeType.LPAREN,
+        value=peaker.next().value,
+    )
+
+def parse_rparen(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse right parenthesis')
+    Assert(
+        _is(TokenType.RPAREN, peaker.peak()),
+        'Unable to parse right parenthesis: expected {} '
+        'but received {}'.format(
+            TokenType.RPAREN, peaker.peak().token_type
+        )
+    )
+    return Node(
+        node_type=NodeType.RPAREN,
+        value=peaker.next().value,
+    )
+
+
+def parse_parenthetical_type(peaker):
+    # type: (Peaker[Token]) -> Node
+    children = [parse_lparen(peaker)]
+    i = 1
+    encountered_word = False
+    while peaker.has_next() and i > 0:
+        Assert(
+            peaker.has_next(),
+            'Encountered end of stream while parsing '
+            'parenthetical type. Ended with {}'.format(
+                [x.value for x in children]
             )
+        )
+        if _is(TokenType.LPAREN, peaker.peak()):
+            i += 1
+            children.append(parse_lparen(peaker))
+        elif _is(TokenType.RPAREN, peaker.peak()):
+            i -= 1
+            children.append(parse_rparen(peaker))
+        else:
+            encountered_word = True
+            children.append(parse_word(peaker))
+    Assert(
+        i == 0,
+        'Mismatched parentheses in parenthetical type.'
+    )
+    Assert(
+        encountered_word,
+        'Parenthetical type must contain at least one word.'
+    )
+    return Node(
+        node_type=NodeType.TYPE,
+        children=children,
+    )
 
-        # Attempt to remove the return type, if any.
-        try:
-            colon_index = self.returns_description.index(':')
-            up_to_colon = self.returns_description[:colon_index].strip()
-            spaces = up_to_colon.count(' ')
-            colon_after_first_word = spaces == 0
-            if colon_after_first_word:
-                self.return_type = up_to_colon
-                self.returns_description = self.returns_description[
-                    colon_index + 2:]
-        except ValueError:
-            # There was no colon, and, hence, no return type.
-            pass
+def parse_type(peaker):
+    # type: (Peaker[Token]) -> Node
+    if _is(TokenType.LPAREN, peaker.peak()):
+        return parse_parenthetical_type(peaker)
+    else:
+        AssertNotEmpty(peaker, 'parse type')
+        node = parse_word(peaker)
+        Assert(
+            _is(TokenType.COLON, peaker.peak()),
+            'Expected type to have "(" and ")" around it or '
+            'end in colon.'
+        )
+        peaker.next() # Toss the colon
+        return Node(
+            node_type=NodeType.TYPE,
+            children=[node],
+        )
 
-    def _parse_raises(self):
-        # type: () -> None
-        self.raises_descriptions = {
-            key: value[1] for key, value in self._parse_multi_section().items()
-        }
+
+def parse_indent(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse indent')
+    Assert(
+        _is(TokenType.INDENT, peaker.peak()),
+        'Unable to parse indent: expected {} but received {}'.format(
+            TokenType.INDENT, peaker.peak().token_type
+        )
+    )
+    return Node(
+        node_type=NodeType.INDENT,
+        value=peaker.next().value,
+    )
+
+def parse_line(peaker, with_type=False):
+    # type: (Peaker[Token], bool) -> Node
+    AssertNotEmpty(peaker, 'parse line')
+    children = list()
+
+    # Get the first node, which may be a type description.
+    if with_type and _is(TokenType.WORD, peaker.peak()):
+        next_value = peaker.next()
+        if next_value.value.startswith('(') and next_value.value.endswith(')'):
+            first_node = parse_type(
+                Peaker((x for x in [next_value]))
+            )
+        elif _is(TokenType.COLON, peaker.peak()):
+            first_node = parse_type(
+                Peaker((x for x in [next_value, peaker.next()]))
+            )
+        else:
+            first_node = parse_word(
+                Peaker((x for x in [next_value]))
+            )
+        children.append(first_node)
+
+    # Get the remaining nodes in the line, up to the newline.
+    while not peaker.peak().token_type == TokenType.NEWLINE:
+        next_child = peaker.peak()
+        if _is(TokenType.WORD, next_child) and next_child.value in KEYWORDS:
+            children.append(parse_keyword(peaker))
+        elif _is(TokenType.WORD, next_child):
+            children.append(parse_word(peaker))
+        elif _is(TokenType.INDENT, next_child):
+            children.append(parse_indent(peaker))
+        elif _is(TokenType.COLON, next_child):
+            children.append(parse_colon(peaker))
+        elif _is(TokenType.LPAREN, next_child):
+            children.append(parse_lparen(peaker))
+        elif _is(TokenType.RPAREN, next_child):
+            children.append(parse_rparen(peaker))
+        elif _is(TokenType.HASH, next_child):
+            children.append(parse_noqa(peaker))
+        else:
+            raise Exception(
+                'Failed to parse line: invalid token type {}'.format(
+                    next_child.token_type
+                )
+            )
+    AssertNotEmpty(peaker, 'parse line end')
+    peaker.next() # Throw away newline.
+    return Node(
+        NodeType.LINE,
+        children=children,
+    )
+
+# NOTE: If Peaker ever allows 2-constant look-ahead, then change
+# this to call to the `parse_line(peaker)` function to prevent
+# drift between these two functions.
+def parse_line_with_type(peaker):
+    # type: (Peaker[Token]) -> Node
+    """Parse a line which begins with a type description.
+
+    Such lines occur at the start of the yields and returns
+    sections.
+
+    Args:
+        peaker: A stream of tokens.
+
+    Returns:
+        A line node.
+    
+    """
+    AssertNotEmpty(peaker, 'parse line')
+    children = [
+        parse_indent(peaker),
+        parse_indent(peaker)
+    ]
+
+    # Get the first node, which may be a type description.
+    if _is(TokenType.WORD, peaker.peak()):
+        next_value = peaker.next()
+        if next_value.value.startswith('(') and next_value.value.endswith(')'):
+            first_node = parse_type(
+                Peaker((x for x in [next_value]))
+            )
+        elif _is(TokenType.COLON, peaker.peak()):
+            first_node = parse_type(
+                Peaker((x for x in [next_value, peaker.next()]))
+            )
+        else:
+            first_node = parse_word(
+                Peaker((x for x in [next_value]))
+            )
+        children.append(first_node)
+
+    # Get the remaining nodes in the line, up to the newline.
+    while not peaker.peak().token_type == TokenType.NEWLINE:
+        next_child = peaker.peak()
+        if _is(TokenType.WORD, next_child) and next_child.value in KEYWORDS:
+            children.append(parse_keyword(peaker))
+        elif _is(TokenType.WORD, next_child):
+            children.append(parse_word(peaker))
+        elif _is(TokenType.INDENT, next_child):
+            children.append(parse_indent(peaker))
+        elif _is(TokenType.COLON, next_child):
+            children.append(parse_colon(peaker))
+        else:
+            raise Exception(
+                'Failed to parse line: invalid token type {}'.format(
+                    next_child.token_type
+                )
+            )
+    AssertNotEmpty(peaker, 'parse line end')
+    peaker.next() # Throw away newline.
+    return Node(
+        NodeType.LINE,
+        children=children,
+    )
+
+def parse_section_head(peaker, expecting=set()):
+    # type: (Peaker[Token], Set[str]) -> Node
+    AssertNotEmpty(peaker, 'parse section head')
+    Assert(
+        _is(TokenType.INDENT, peaker.peak()),
+        'Failed to parse section head: expected '
+        '{} but encountered {}'.format(
+            TokenType.INDENT,
+            peaker.peak().token_type,
+        )
+    )
+    children = [
+        parse_indent(peaker),
+    ]
+    # TODO: This error message is too generic; try to make it more specific.
+    Assert(
+        peaker.peak().value in expecting,
+        'Expected section head to start with one of {}'.format(
+            expecting,
+        )
+    )
+    children.append(parse_keyword(peaker))
+    children.append(parse_colon(peaker))
+    Assert(
+        _is(TokenType.NEWLINE, peaker.peak()),
+        'Failed to parse section head: expected '
+        'it to end with {} but encountered {}'.format(
+            TokenType.NEWLINE,
+            peaker.peak().token_type,
+        )
+    )
+    peaker.next()
+    return Node(
+        NodeType.SECTION_HEAD,
+        children=children,
+    )
+
+
+def parse_section_simple_body(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse section body')
+    children = [
+        parse_line_with_type(peaker),
+    ]
+    while peaker.has_next() and not _is(TokenType.NEWLINE, peaker.peak()):
+        children.append(parse_indent(peaker))
+        children.append(parse_line(peaker))
+    return Node(
+        NodeType.SECTION_SIMPLE_BODY,
+        children=children,
+    )
+
+def parse_simple_section(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse section')
+    children = [
+        parse_section_head(peaker, expecting={'Returns', 'Yields'}),
+        parse_section_simple_body(peaker),
+    ]
+    Assert(
+        peaker.has_next() and _is(TokenType.NEWLINE, peaker.peak()),
+        'Expected newline after section.'
+    )
+    peaker.next() # Discard newline.
+    return Node(
+        NodeType.SECTION,
+        children=children,
+    )
+
+
+def parse_yields(peaker):
+    # type: {Peaker[Token]) -> None
+    node = parse_simple_section(peaker)
+    node.node_type = NodeType.YIELDS_SECTION
+    return node
+
+
+def parse_returns(peaker):
+    # type: (Peaker[Token]) -> None
+    node = parse_simple_section(peaker)
+    node.node_type = NodeType.RETURNS_SECTION
+    return node
+
+
+def parse_item_name(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse item')
+    children = [
+        parse_word(peaker),
+    ]
+    if peaker.has_next() and _is(TokenType.WORD, peaker.peak()):
+        value = peaker.peak().value
+        if value.startswith('(') and value.endswith(')'):
+            children.append(parse_type(peaker))
+    return Node(
+        NodeType.ITEM_NAME,
+        children=children,
+    )
+
+def parse_item_definition(peaker):
+    # type: (Peaker[Token]) -> Node
+
+    def _is_indent(i):
+        token = peaker.peak(lookahead=i)
+        return token is not None and _is(TokenType.INDENT, token)
+
+    AssertNotEmpty(peaker, 'parse item definition')
+    children = [
+        parse_line(peaker),
+    ]
+    while _is_indent(1) and _is_indent(2) and _is_indent(3):
+        children.append(parse_line(peaker))
+    return Node(
+        NodeType.ITEM_DEFINITION,
+        children=children,
+    )
+
+def parse_item(peaker):
+    # type: (Peaker[Token]) -> Node
+    children = [
+        parse_indent(peaker),
+        parse_indent(peaker),
+        parse_item_name(peaker),
+    ]
+
+    if _is(TokenType.LPAREN, peaker.peak()):
+        children.append(parse_type(peaker))
+
+    children.extend([
+        parse_colon(peaker),
+        parse_item_definition(peaker),
+    ])
+    return Node(
+        NodeType.ITEM,
+        children=children,
+    )
+
+
+def parse_section_compound_body(peaker):
+    children = [
+        parse_item(peaker),
+    ]
+    while peaker.has_next() and not _is(TokenType.NEWLINE, peaker.peak()):
+        children.append(parse_item(peaker))
+
+    return Node(
+        node_type=NodeType.SECTION_COMPOUND_BODY,
+        children=children,
+    )
+
+
+def parse_compound_section(peaker):
+    # type: (Peaker[Token]) -> Node
+    children = [
+        parse_section_head(peaker, expecting={'Args', 'Arguments', 'Raises'}),
+        parse_section_compound_body(peaker),
+    ]
+    Assert(
+        peaker.has_next() and _is(TokenType.NEWLINE, peaker.peak()),
+        'Expected newline after section body.',
+    )
+    peaker.next() # discard newline.
+
+    return Node(
+        node_type=NodeType.SECTION,
+        children=children,
+    )
+
+
+def parse_args(peaker):
+    # type: (Peaker[Token]) -> Node
+    node = parse_compound_section(peaker)
+    node.node_type = NodeType.ARGS_SECTION
+    return node
+
+
+def parse_raises(peaker):
+    # type: (Peaker[Token]) -> Node
+    node = parse_compound_section(peaker)
+    node.node_type = NodeType.RAISES_SECTION
+    return node
+
+
+def parse_short_description(peaker):
+    # type: (Peaker[Token]) -> Node
+#    children = [
+#        parse_line(peaker),
+#    ]
+    children = list()
+    while peaker.has_next() and not _is(TokenType.NEWLINE, peaker.peak()):
+        next_child = peaker.peak()
+        if _is(TokenType.WORD, next_child) and next_child.value in KEYWORDS:
+            children.append(parse_keyword(peaker))
+        elif _is(TokenType.WORD, next_child):
+            children.append(parse_word(peaker))
+        elif _is(TokenType.INDENT, next_child):
+            children.append(parse_indent(peaker))
+        elif _is(TokenType.COLON, next_child):
+            children.append(parse_colon(peaker))
+        elif _is(TokenType.LPAREN, next_child):
+            children.append(parse_lparen(peaker))
+        elif _is(TokenType.RPAREN, next_child):
+            children.append(parse_rparen(peaker))
+        elif _is(TokenType.HASH, next_child):
+            children.append(parse_noqa(peaker))
+        else:
+            raise Exception(
+                'Failed to parse line: invalid token type {}'.format(
+                    next_child.token_type
+                )
+            )
+        if peaker.has_next() and _is(TokenType.NEWLINE, peaker.peak()):
+            peaker.next() # Eat the newline.
+    return Node(
+        node_type=NodeType.SHORT_DESCRIPTION,
+        children=children,
+    )
+
+def parse_long_description(peaker):
+    # type: (Peaker[Token]) -> Node
+    children = [
+        parse_line(peaker),
+    ]
+    while (peaker.has_next()
+            and peaker.peak(lookahead=2) is not None
+            and peaker.peak(lookahead=2).value not in KEYWORDS):
+        children.append(parse_line(peaker))
+
+    # TODO: Test if this is necessary.
+    if peaker.has_next() and peaker.peak(lookahead=2) is None:
+        children.append(parse_line(peaker))
+
+    return Node(
+        node_type=NodeType.LONG_DESCRIPTION,
+        children=children,
+    )
+
+def parse_description(peaker):
+    # type: (Peaker[Token]) -> Node
+    children = [
+        parse_short_description(peaker),
+    ]
+    if peaker.has_next():
+        children.append(parse_long_description(peaker))
+    return Node(
+        node_type=NodeType.DESCRIPTION,
+        children=children,
+    )
+
+
+def parse_noqa_head(peaker):
+    # type: (Peaker[Token]) -> Node
+    children = [
+        parse_hash(peaker),
+    ]
+    word = parse_word(peaker)
+    Assert(
+        word.value == 'noqa',
+        'Failed to parse noqa statement. '
+        'Expected "# noqa" but received "# {}"'.format(
+            word.value,
+        )
+    )
+    children.append(word)
+    return Node(
+        node_type=NodeType.NOQA_HEAD,
+        children=children,
+    )
+
+
+def parse_list(peaker):
+    # type: (Peaker[Token]) -> Node
+    prev = parse_word(peaker)
+    children = [prev]
+    while (prev.value.endswith(',')
+            and peaker.has_next()
+            and _is(TokenType.WORD, peaker.peak())):
+        prev = parse_word(peaker)
+        children.append(prev)
+    return Node(
+        node_type=NodeType.LIST,
+        children=children
+    )
+
+def parse_noqa_body(peaker):
+    # type: (Peaker[Token]) -> Node
+    children = [parse_word(peaker)]
+    Assert(
+        peaker.has_next(),
+        'Unexpectedly reached end of stream while parsing noqa body.'
+    )
+    if _is(TokenType.WORD, peaker.peak()):
+        children.append(parse_list(peaker))
+    return Node(
+        node_type=NodeType.NOQA_BODY,
+        children=children,
+    )
+
+
+def parse_noqa(peaker):
+    # type: (Peaker[Token]) -> Node
+    children = [
+        parse_noqa_head(peaker),
+    ]
+    if not _is(TokenType.NEWLINE, peaker.peak()):
+        children.extend([
+            parse_colon(peaker),
+            parse_noqa_body(peaker),
+        ])
+    Assert(
+        peaker.has_next() and _is(TokenType.NEWLINE, peaker.peak()),
+        'Expected newline after noqa.'
+    )
+    return Node(
+        node_type=NodeType.NOQA,
+        children=children,
+    )
+
+
+def parse(peaker):
+    # type: (Peaker[Token]) -> Node
+    """Parse the docstring.
+
+    Args:
+        peaker: A Peaker filled with the lexed tokens of the
+            docstring.
+
+    Raises:
+        ParserException: If there is anything malformed with
+            the docstring, or if anything goes wrong with parsing.
+
+    Returns:
+        The parsed docstring as an AST.
+
+    """
+    keyword_parse_lookup = {
+        'Args': parse_args,
+        'Arguments': parse_args,
+        'Returns': parse_returns,
+        'Yields': parse_yields,
+        'Raises': parse_raises,
+    }
+    children = [
+        parse_description(peaker)
+    ]
+    while peaker.has_next():
+        two_ahead = peaker.peak(lookahead=2)
+        if two_ahead is None:
+            parse_line(peaker) # Throw away final newline.
+            break
+        if two_ahead.value in keyword_parse_lookup:
+            children.append(
+                keyword_parse_lookup[two_ahead.value](peaker)
+            )
+        else:
+            children.append(
+                parse_long_description(peaker)
+            )
+    return Node(
+        node_type=NodeType.DOCSTRING,
+        children=children,
+    )

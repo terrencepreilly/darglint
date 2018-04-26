@@ -8,7 +8,7 @@ from darglint.node import (
 from darglint.lex import (
     lex
 )
-from darglint.new_parse import (
+from darglint.parse import (
     parse_keyword,
     parse_colon,
     parse_word,
@@ -514,7 +514,6 @@ class NewParserTestCase(TestCase):
             [
                 NodeType.WORD,
             ] * 5 + [
-                NodeType.LINE,
                 NodeType.SHORT_DESCRIPTION,
             ]
         )
@@ -536,7 +535,6 @@ class NewParserTestCase(TestCase):
             [
                 NodeType.WORD,
                 NodeType.WORD,
-                NodeType.LINE,
                 NodeType.SHORT_DESCRIPTION,
                 NodeType.LINE,
                 NodeType.INDENT,

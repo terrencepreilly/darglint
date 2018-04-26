@@ -2,7 +2,7 @@ import ast
 from unittest import TestCase
 
 from darglint.lex import lex
-from darglint.parse import (
+from darglint.old_parse import (
     Docstring,
 )
 

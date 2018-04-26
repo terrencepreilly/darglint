@@ -1,8 +1,11 @@
 """Defines a node for the docstring AST."""
 
+from collections import deque
+
 from enum import Enum
 from typing import (
     Any,
+    Deque,
     List,
     Iterator,
 )
@@ -51,11 +54,33 @@ class NodeType(Enum):
 class Node(object):
     """A node in a docstring AST."""
 
-    def __init__(self, node_type, value=None, children=[]):
+    def __init__(self, node_type, value=None, children=None):
         # type: (NodeType, Any, List[Node]) -> None
         self.node_type = node_type
         self.value = value
-        self.children = children
+        self.children = children or list()
+
+    @property
+    def is_leaf(self):
+        """Tell whether this node is a leaf.
+
+        Returns:
+            True if this node is a leaf.
+
+        """
+        return self.node_type in {
+            NodeType.KEYWORD,
+            NodeType.WORD,
+            NodeType.COLON,
+            NodeType.RETURNS,
+            NodeType.ARGUMENTS,
+            NodeType.YIELDS,
+            NodeType.RAISES,
+            NodeType.INDENT,
+            NodeType.LPAREN,
+            NodeType.RPAREN,
+            NodeType.HASH,
+        }
 
     def walk(self):
         # type: () -> Iterator[Node]
@@ -69,3 +94,21 @@ class Node(object):
         for child in self.children:
             yield from child.walk()
         yield self
+
+    def breadth_first_walk(self, leaves=True):
+        # type: (bool) -> Iterator[Node]
+        """Iterate over the nodes in the tree using Breadth First Traversal.
+
+        A breadth-first traversal will be much faster when identifying
+        sections.
+
+        """
+        queue = deque() # type: Deque[Node]
+        queue.appendleft(self)
+        while queue:
+            curr = queue.pop()
+            yield curr
+            queue.extendleft([
+                child for child in curr.children
+                if leaves or not child.is_leaf
+            ])

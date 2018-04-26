@@ -9,7 +9,7 @@ from .function_description import (
     FunctionDescription,
 )
 from .lex import lex
-from .parse import (
+from .old_parse import (
     Docstring,
     ParserException,
 )
