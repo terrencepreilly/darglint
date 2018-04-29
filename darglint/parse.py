@@ -262,19 +262,19 @@ def parse_type(peaker):
     # type: (Peaker[Token]) -> Node
     if _is(TokenType.LPAREN, peaker.peak()):
         return parse_parenthetical_type(peaker)
-    else:
-        AssertNotEmpty(peaker, 'parse type')
-        node = parse_word(peaker)
-        Assert(
-            _is(TokenType.COLON, peaker.peak()),
-            'Expected type to have "(" and ")" around it or '
-            'end in colon.'
-        )
-        peaker.next() # Toss the colon
-        return Node(
-            node_type=NodeType.TYPE,
-            children=[node],
-        )
+
+    AssertNotEmpty(peaker, 'parse type')
+    node = parse_word(peaker)
+    Assert(
+        _is(TokenType.COLON, peaker.peak()),
+        'Expected type to have "(" and ")" around it or '
+        'end in colon.'
+    )
+    peaker.next() # Toss the colon
+    return Node(
+        node_type=NodeType.TYPE,
+        children=[node],
+    )
 
 
 def parse_indent(peaker):
@@ -314,7 +314,7 @@ def parse_line(peaker, with_type=False):
         children.append(first_node)
 
     # Get the remaining nodes in the line, up to the newline.
-    while not peaker.peak().token_type == TokenType.NEWLINE:
+    while peaker.has_next() and not peaker.peak().token_type == TokenType.NEWLINE:
         next_child = peaker.peak()
         if _is(TokenType.WORD, next_child) and next_child.value in KEYWORDS:
             children.append(parse_keyword(peaker))
@@ -497,10 +497,8 @@ def parse_item_name(peaker):
     children = [
         parse_word(peaker),
     ]
-    if peaker.has_next() and _is(TokenType.WORD, peaker.peak()):
-        value = peaker.peak().value
-        if value.startswith('(') and value.endswith(')'):
-            children.append(parse_type(peaker))
+    if peaker.has_next() and not _is(TokenType.COLON, peaker.peak()):
+        children.append(parse_type(peaker))
     return Node(
         NodeType.ITEM_NAME,
         children=children,

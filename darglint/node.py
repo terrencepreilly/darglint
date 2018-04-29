@@ -61,6 +61,16 @@ class Node(object):
         self.children = children or list()
 
     @property
+    def is_keyword(self):
+        return self.node_type in {
+            NodeType.KEYWORD,
+            NodeType.RETURNS,
+            NodeType.ARGUMENTS,
+            NodeType.YIELDS,
+            NodeType.RAISES,
+        }
+
+    @property
     def is_leaf(self):
         """Tell whether this node is a leaf.
 
@@ -112,3 +122,45 @@ class Node(object):
                 child for child in curr.children
                 if leaves or not child.is_leaf
             ])
+
+    def reconstruct_string(self):
+        # type: () -> str
+        """Attempt to reconstruct how the node looked before.
+
+        Unfortunately, with how the parser works, we can't do this
+        perfectly.  Nor would it likely be worthwhile. For example, if
+        there are extra spaces (not in multiples of 4), then they will
+        not be represented.
+
+        If the parser ever changes, this will likely have to change.
+        Which is fine, because it's gross anyway.
+
+        Returns:
+            Something close to the original string.
+
+        """
+        lines = [[]] # type: List[List[str]]
+        keyword = None
+        for child in self.walk():
+            if child.node_type == NodeType.INDENT:
+                # When joined, it will have 4 spaces.
+                lines[-1].append(' '*3)
+            elif child.node_type == NodeType.COLON:
+                # Remove the space before the colon. (This is more common.)
+                if keyword:
+                    lines[-1].append(keyword + ':')
+                    keyword = None
+                    lines.append(list())
+                elif lines[-1]:
+                    lines[-1][-1] += ':'
+                else:
+                    lines[-1].append(child.value)
+            elif child.is_keyword:
+                # Keywords always have colons after them, so wait for
+                # the colon.
+                keyword = child.value
+            elif child.is_leaf:
+                lines[-1].append(child.value)
+            elif child.node_type == NodeType.LINE:
+                lines.append(list())
+        return '\n'.join([' '.join(line) for line in lines])
