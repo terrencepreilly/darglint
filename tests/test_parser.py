@@ -1,8 +1,11 @@
 import ast
-from unittest import TestCase
+from unittest import TestCase, skip
 
-from darglint.lex import lex
-from darglint.old_parse import (
+# from darglint.lex import lex
+# from darglint.old_parse import (
+#     Docstring,
+# )
+from darglint.docstring import (
     Docstring,
 )
 
@@ -25,10 +28,12 @@ class DocstringTestCase(TestCase):
         ])
         doc = ast.get_docstring(ast.parse(func).body[0])
         self.assertTrue(doc.startswith('Has an extra'))
-        docstring = Docstring(lex(doc))
-        self.assertTrue('arg1' in docstring.arguments_descriptions)
-        self.assertTrue('arg1' in docstring.noqa['I102'])
+        docstring = Docstring(doc)
+        self.assertTrue('arg1' in docstring.arguments_description)
+        noqas = docstring.get_noqas()
+        self.assertTrue('arg1' in noqas['I102'])
 
+    @skip('Not ready.')
     def test_parse_noqa_for_global(self):
         func = '\n'.join([
             'def my_function():',
@@ -40,9 +45,10 @@ class DocstringTestCase(TestCase):
             '    return "This is ignored."',
         ])
         doc = ast.get_docstring(ast.parse(func).body[0])
-        docstring = Docstring(lex(doc))
+        docstring = Docstring(doc)
         self.assertTrue(docstring.noqa['I201'] is None)
 
+    @skip('Not ready.')
     def test_parse_global_noqa_with_target(self):
         func = '\n'.join([
             'def my_function(arg1):',
@@ -54,9 +60,10 @@ class DocstringTestCase(TestCase):
             '    pass',
         ])
         doc = ast.get_docstring(ast.parse(func).body[0])
-        docstring = Docstring(lex(doc))
+        docstring = Docstring(doc)
         self.assertTrue('arg1' in docstring.noqa['I101'])
 
+    @skip('Not ready.')
     def test_parses_long_description(self):
         func = '\n'.join([
             'def this_function_has_a_long_description(arg1):',
@@ -78,11 +85,12 @@ class DocstringTestCase(TestCase):
             '    return arg1',
         ])
         doc = ast.get_docstring(ast.parse(func).body[0])
-        docstring = Docstring(lex(doc))
+        docstring = Docstring(doc)
         self.assertTrue(
             docstring.long_description.startswith('This function returns')
         )
 
+    @skip('Not ready.')
     def test_arguments_extracted_when_extant(self):
         docstring = '\n'.join([
             'Example function with types documented in the docstring.',
@@ -101,11 +109,12 @@ class DocstringTestCase(TestCase):
             '.. _PEP 484:',
             '    https://www.python.org/dev/peps/pep-0484/',
         ])
-        doc = Docstring(lex(docstring))
+        doc = Docstring(docstring)
 
         self.assertTrue('param1' in doc.arguments_descriptions)
         self.assertTrue('param2' in doc.arguments_descriptions)
 
+    @skip('Not ready.')
     def test_arguments_with_multiple_lines(self):
         docstring = '\n'.join([
             'This is an example of a module level function.',
@@ -129,10 +138,11 @@ class DocstringTestCase(TestCase):
             'Returns:',
             '    bool: True if successful, False otherwise.',
         ])
-        doc = Docstring(lex(docstring))
+        doc = Docstring(docstring)
         for arg in 'param1', 'param2', '*args', '**kwargs':
             self.assertTrue(arg in doc.arguments_descriptions)
 
+    @skip('Not ready.')
     def test_arguments_are_last(self):
         docstring = '\n'.join([
             'Example of docstring on the __init__ method.',
@@ -152,10 +162,11 @@ class DocstringTestCase(TestCase):
             '        lines are supported.',
             '    param3 (list(str)): Description of `param3`.',
         ])
-        doc = Docstring(lex(docstring))
+        doc = Docstring(docstring)
         for arg in ['param1', 'param2', 'param3']:
             self.assertTrue(arg in doc.arguments_descriptions)
 
+    @skip('Not ready.')
     def test_can_parse_yields(self):
         docstring = '\n'.join([
             'Some sort of short description.',
@@ -165,9 +176,10 @@ class DocstringTestCase(TestCase):
             'Yields:',
             '    The number 5. Always.',
         ])
-        doc = Docstring(lex(docstring))
+        doc = Docstring(docstring)
         self.assertTrue(len(doc.yields_description) > 0)
 
+    @skip('Not ready.')
     def test_can_parse_raises(self):
         docstring = '\n'.join([
             'This has a problem.',
@@ -175,9 +187,10 @@ class DocstringTestCase(TestCase):
             'Raises:',
             '    Exception: An exception for generic reasons.',
         ])
-        doc = Docstring(lex(docstring))
+        doc = Docstring(docstring)
         self.assertTrue('Exception' in doc.raises_descriptions)
 
+    @skip('Not ready.')
     def test_argument_types_can_be_parsed(self):
         docstring = '\n'.join([
             'This docstring contains types for its arguments.',
@@ -186,10 +199,11 @@ class DocstringTestCase(TestCase):
             '    x (int): The first number.',
             '    y (float): The second number.',
         ])
-        doc = Docstring(lex(docstring))
+        doc = Docstring(docstring)
         self.assertEqual(doc.argument_types['x'], 'int')
         self.assertEqual(doc.argument_types['y'], 'float')
 
+    @skip('Not ready.')
     def test_can_parse_return_type(self):
         docstring = '\n'.join([
             'Return an approximation of pi.',
@@ -197,9 +211,10 @@ class DocstringTestCase(TestCase):
             'Returns:',
             '    Decimal: An approximation of pi.',
         ])
-        doc = Docstring(lex(docstring))
+        doc = Docstring(docstring)
         self.assertEqual(doc.return_type, 'Decimal')
 
+    @skip('Not ready.')
     def test_star_arguments_parsed(self):
         docstring = '\n'.join([
             'Negate a function which returns a boolean.',
@@ -212,21 +227,23 @@ class DocstringTestCase(TestCase):
             '        callables return true, and true will all of the ',
             '        callables return false.',
         ])
-        doc = Docstring(lex(docstring))
+        doc = Docstring(docstring)
         self.assertTrue('*fns' in doc.arguments_descriptions)
 
+    @skip('Not ready.')
     def test_doesnt_choke_on_missing_newline_for_returns(self):
         docstring = '\n'.join([
             'Serilaize a label object.',
             '',
             'Returns: Valid JSON.',
         ])
-        Docstring(lex(docstring))
+        Docstring(docstring)
 
+    @skip('Not ready.')
     def test_bare_noqa_can_be_parsed(self):
         docstring = '\n'.join([
             'The first line may have something, but others are missing.',
             '',
             '# noqa'
         ])
-        Docstring(lex(docstring))
+        Docstring(docstring)

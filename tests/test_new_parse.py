@@ -270,8 +270,8 @@ class NewParserTestCase(TestCase):
     def test_parse_returns_section(self):
         """Make sure can parse returns section."""
         node = parse_simple_section(Peaker(lex(
-            '    Returns:\n'
-            '        A meaningful value.\n'
+            'Returns:\n'
+            '    A meaningful value.\n'
             '\n'
         )))
         self.assertEqual(
@@ -282,11 +282,9 @@ class NewParserTestCase(TestCase):
         self.assertEqual(
             child_types,
             [
-                NodeType.INDENT,
                 NodeType.RETURNS,
                 NodeType.COLON,
                 NodeType.SECTION_HEAD,
-                NodeType.INDENT,
                 NodeType.INDENT,
                 NodeType.WORD,
                 NodeType.WORD,
@@ -300,7 +298,7 @@ class NewParserTestCase(TestCase):
     def test_parse_line_with_type(self):
         """Make sure we can parse a line when it starts with a type."""
         node = parse_line_with_type(Peaker(lex(
-            '        int: the square of something.\n'
+            '    int: the square of something.\n'
         )))
         self.assertEqual(
             node.node_type,
@@ -310,7 +308,6 @@ class NewParserTestCase(TestCase):
         self.assertEqual(
             child_types,
             [
-                NodeType.INDENT,
                 NodeType.INDENT,
                 NodeType.WORD,
                 NodeType.TYPE,
@@ -325,8 +322,8 @@ class NewParserTestCase(TestCase):
     def test_parse_returns_section_with_type(self):
         """Make sure the returns section can have a type."""
         node = parse_simple_section(Peaker(lex(
-            '    Returns:\n'
-            '        int: The square of something.\n'
+            'Returns:\n'
+            '    int: The square of something.\n'
             '\n'
         )))
         self.assertEqual(
@@ -337,11 +334,9 @@ class NewParserTestCase(TestCase):
         self.assertEqual(
             child_types,
             [
-                NodeType.INDENT,
                 NodeType.RETURNS,
                 NodeType.COLON,
                 NodeType.SECTION_HEAD,
-                NodeType.INDENT,
                 NodeType.INDENT,
                 NodeType.WORD,
                 NodeType.TYPE,
@@ -358,8 +353,8 @@ class NewParserTestCase(TestCase):
     def test_parse_yields_section(self):
         """Make sure we can parse a yields section."""
         node = parse_simple_section(Peaker(lex(
-            '    Yields:\n'
-            '        Nodes in a stream.\n'
+            'Yields:\n'
+            '    Nodes in a stream.\n'
             '\n'
         )))
         self.assertEqual(
@@ -370,11 +365,9 @@ class NewParserTestCase(TestCase):
         self.assertEqual(
             child_types,
             [
-                NodeType.INDENT,
                 NodeType.YIELDS,
                 NodeType.COLON,
                 NodeType.SECTION_HEAD,
-                NodeType.INDENT,
                 NodeType.INDENT,
                 NodeType.WORD,
                 NodeType.WORD,
@@ -390,16 +383,16 @@ class NewParserTestCase(TestCase):
         """Make sure the simple section starts with return or yield."""
         with self.assertRaises(ParserException):
             parse_simple_section(Peaker(lex(
-                '    Args:\n'
-                '        Not a simple section.\n'
+                'Args:\n'
+                '    Not a simple section.\n'
                 '\n'
             )))
 
     def test_parse_item(self):
         """Make sure we can parse the parts of a compound section."""
         node = parse_item(Peaker(lex(
-            '        x (int): The first number\n'
-            '            to add\n'
+            '    x (int): The first number\n'
+            '        to add\n'
         ), lookahead=3))
         self.assertEqual(
             node.node_type,
@@ -409,7 +402,6 @@ class NewParserTestCase(TestCase):
         self.assertEqual(
             child_types,
             [
-                NodeType.INDENT,
                 NodeType.INDENT,
                 NodeType.WORD,
                 NodeType.LPAREN,
@@ -424,7 +416,6 @@ class NewParserTestCase(TestCase):
                 NodeType.LINE,
                 NodeType.INDENT,
                 NodeType.INDENT,
-                NodeType.INDENT,
                 NodeType.WORD,
                 NodeType.WORD,
                 NodeType.LINE,
@@ -436,11 +427,11 @@ class NewParserTestCase(TestCase):
     def test_parse_compound(self):
         """Make sure we can parse a compound section."""
         node = parse_compound_section(Peaker(lex('\n'.join([
-            '    Args:',
-            '        x: X.',
-            '        y: Y1.',
-            '            Y2.',
-            '        z (int, optional): Z.',
+            'Args:',
+            '    x: X.',
+            '    y: Y1.',
+            '        Y2.',
+            '    z (int, optional): Z.',
             '\n'
         ])), lookahead=3))
         self.assertEqual(node.node_type, NodeType.SECTION)
@@ -461,8 +452,8 @@ class NewParserTestCase(TestCase):
     def test_parse_args(self):
         """Make sure we can parse an args section."""
         node = parse_args(Peaker(lex('\n'.join([
-            '    Args:',
-            '        x: the item.',
+            'Args:',
+            '    x: the item.',
             '\n',
         ])), lookahead=3))
         self.assertEqual(node.node_type, NodeType.ARGS_SECTION)
@@ -470,9 +461,9 @@ class NewParserTestCase(TestCase):
     def test_parse_raises(self):
         """Make sure we can parse the exceptions section."""
         node = parse_raises(Peaker(lex(
-            '    Raises:\n'
-            '        ArrayIndexOutOfBounds: When the array index\n'
-            '            is out of bounds.\n'
+            'Raises:\n'
+            '    ArrayIndexOutOfBounds: When the array index\n'
+            '        is out of bounds.\n'
             '\n'
         ), lookahead=3))
         self.assertEqual(
@@ -482,8 +473,8 @@ class NewParserTestCase(TestCase):
 
     def test_parse_yields(self):
         node = parse_yields(Peaker(lex(
-            '    Yields:\n'
-            '        The total amount of information.\n'
+            'Yields:\n'
+            '    The total amount of information.\n'
             '\n'
         ), lookahead=3))
         self.assertEqual(
@@ -493,9 +484,9 @@ class NewParserTestCase(TestCase):
 
     def test_parse_returns(self):
         node = parse_returns(Peaker(lex(
-            '    Returns:\n'
-            '        A number of different\n'
-            '        people, even species.\n'
+            'Returns:\n'
+            '    A number of different\n'
+            '    people, even species.\n'
             '\n'
         ), lookahead=3))
         self.assertEqual(
@@ -523,9 +514,9 @@ class NewParserTestCase(TestCase):
         node = parse_description(Peaker(lex(
             'Short description\n'
             '\n'
-            '    Long : (description)\n'
+            'Long : (description)\n'
             '\n'
-            '        <code></code>\n'
+            '    <code></code>\n'
             '\n'
         ), lookahead=3))
         child_types = [x.node_type for x in node.walk()]
@@ -537,7 +528,6 @@ class NewParserTestCase(TestCase):
                 NodeType.WORD,
                 NodeType.SHORT_DESCRIPTION,
                 NodeType.LINE,
-                NodeType.INDENT,
                 NodeType.WORD,
                 NodeType.COLON,
                 NodeType.LPAREN,
@@ -545,7 +535,6 @@ class NewParserTestCase(TestCase):
                 NodeType.RPAREN,
                 NodeType.LINE,
                 NodeType.LINE,
-                NodeType.INDENT,
                 NodeType.INDENT,
                 NodeType.WORD,
                 NodeType.LINE,
@@ -560,10 +549,10 @@ class NewParserTestCase(TestCase):
         peaker = Peaker(lex(
             'Short description.\n'
             '\n'
-            '    Long Description.\n'
+            'Long Description.\n'
             '\n'
-            '    Returns:\n'
-            '        Nothing!\n'
+            'Returns:\n'
+            '    Nothing!\n'
             '\n'
         ), lookahead=3)
         parse_description(peaker)
@@ -582,11 +571,11 @@ class NewParserTestCase(TestCase):
         node = parse(Peaker(lex('\n'.join([
             'Double the number.',
             '',
-            '    Args:',
-            '        x: The only argument..',
+            'Args:',
+            '    x: The only argument..',
             '',
-            '    Requires:',
-            '        Some kind of setup.',
+            'Requires:',
+            '    Some kind of setup.',
             '',
         ])), lookahead=3))
         self.assertEqual(
@@ -606,25 +595,24 @@ class NewParserTestCase(TestCase):
         node = parse(Peaker(lex('\n'.join([
             'Short description.',
             '',
-            '    Long Description.',
+            'Long Description.',
             '',
-            '    Args:',
-            '        x: The first argument with',
-            '            two lines.',
-            '        y: The second argument.',
+            'Args:',
+            '    x: The first argument with',
+            '        two lines.',
+            '    y: The second argument.',
             '',
-            '    Raises:',
-            '        SomethingException: Randomly.',
+            'Raises:',
+            '    SomethingException: Randomly.',
             '',
-            '    Non-Standard:'
-            '        Everything about this.',
+            'Non-Standard:'
+            '    Everything about this.',
             '',
-            '    Yields:',
-            '        Values to analyze.',
+            'Yields:',
+            '    Values to analyze.',
             '\n',
         ])), lookahead=3))
         child_types = [x.node_type for x in node.children]
-        print('\n'.join([str(x) for x in child_types]))
         self.assertEqual(
             child_types,
             [
@@ -704,13 +692,13 @@ class NewParserTestCase(TestCase):
             ]
         )
 
-    def test_parse_long_description_with_nqa(self):
+    def test_parse_long_description_with_noqa(self):
         """Make sure noqas can appear in a global scope."""
         node = parse(Peaker(lex('\n'.join([
             'Short description can\'t have a noqa.'
             ''
-            '    But a long description can.'
+            'But a long description can.'
             ''
-            '    # noqa: I101 arg1'
+            '# noqa: I101 arg1'
             '\n'
         ])), lookahead=3))

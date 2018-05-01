@@ -114,7 +114,7 @@ def AssertNotEmpty(peaker, context):
         raise ParserException(
             'Unable to {}: stream was unexpectedly empty.'.format(
                 context
-            )     
+            )
         )
 
 def _is(expected_type, token):
@@ -131,7 +131,7 @@ def parse_keyword(peaker):
 
     Returns:
         A Node with Keyword NodeType.
-    
+
     """
     AssertNotEmpty(peaker, 'parse keyword')
     Assert(
@@ -336,8 +336,8 @@ def parse_line(peaker, with_type=False):
                     next_child.token_type
                 )
             )
-    AssertNotEmpty(peaker, 'parse line end')
-    peaker.next() # Throw away newline.
+    if peaker.has_next():
+        peaker.next() # Throw away newline.
     return Node(
         NodeType.LINE,
         children=children,
@@ -358,7 +358,7 @@ def parse_line_with_type(peaker):
 
     Returns:
         A line node.
-    
+
     """
     AssertNotEmpty(peaker, 'parse line')
     children = [
@@ -562,11 +562,15 @@ def parse_compound_section(peaker):
         parse_section_head(peaker, expecting={'Args', 'Arguments', 'Raises'}),
         parse_section_compound_body(peaker),
     ]
-    Assert(
-        peaker.has_next() and _is(TokenType.NEWLINE, peaker.peak()),
-        'Expected newline after section body.',
-    )
-    peaker.next() # discard newline.
+    if peaker.has_next():
+        Assert(
+            _is(TokenType.NEWLINE, peaker.peak()),
+            'Expected {} after compound section but received {}'.format(
+                TokenType.NEWLINE,
+                peaker.peak().token_type
+            )
+        )
+        peaker.next() # discard newline.
 
     return Node(
         node_type=NodeType.SECTION,
@@ -590,9 +594,6 @@ def parse_raises(peaker):
 
 def parse_short_description(peaker):
     # type: (Peaker[Token]) -> Node
-#    children = [
-#        parse_line(peaker),
-#    ]
     children = list()
     while peaker.has_next() and not _is(TokenType.NEWLINE, peaker.peak()):
         next_child = peaker.peak()
@@ -692,11 +693,7 @@ def parse_list(peaker):
 def parse_noqa_body(peaker):
     # type: (Peaker[Token]) -> Node
     children = [parse_word(peaker)]
-    Assert(
-        peaker.has_next(),
-        'Unexpectedly reached end of stream while parsing noqa body.'
-    )
-    if _is(TokenType.WORD, peaker.peak()):
+    if peaker.has_next() and _is(TokenType.WORD, peaker.peak()):
         children.append(parse_list(peaker))
     return Node(
         node_type=NodeType.NOQA_BODY,
@@ -714,10 +711,6 @@ def parse_noqa(peaker):
             parse_colon(peaker),
             parse_noqa_body(peaker),
         ])
-    Assert(
-        peaker.has_next() and _is(TokenType.NEWLINE, peaker.peak()),
-        'Expected newline after noqa.'
-    )
     return Node(
         node_type=NodeType.NOQA,
         children=children,

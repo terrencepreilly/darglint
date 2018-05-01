@@ -5,20 +5,34 @@ from typing import (
     Dict,
     List,
     Set,
+    Union,
 )
 from .node import (
     Node,
     NodeType,
 )
+from .parse import parse
+from .lex import lex
+from .peaker import Peaker
 
 
 class Docstring(object):
     """The docstring class interprets the AST of a docstring."""
 
     def __init__(self, root):
-        # type: (Node) -> None
-        """Create a new docstring from the AST."""
-        self.root = root
+        # type: (Union[Node, str]) -> None
+        """Create a new docstring from the AST.
+
+        Args:
+            root: The root of the AST, or the docstring
+                (as a string.)  If it is a string, the
+                string will be parsed.
+
+        """
+        if isinstance(root, Node):
+            self.root = root
+        else:
+            self.root = parse(Peaker(lex(root), lookahead=3))
         self._lookup = self._discover()
 
     def _discover(self):
