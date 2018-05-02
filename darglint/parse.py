@@ -58,7 +58,10 @@ __EBNF for a google-style docstring__:
   <newline> ::= "\n"
 
 """
-from typing import Set  # noqa
+from typing import (
+    List,
+    Set,
+)# noqa
 
 from .peaker import Peaker  # noqa
 from .token import Token, TokenType  # noqa
@@ -226,9 +229,9 @@ def parse_rparen(peaker):
 def parse_parenthetical_type(peaker):
     # type: (Peaker[Token]) -> Node
     children = [parse_lparen(peaker)]
-    i = 1
+    parentheses_count = 1
     encountered_word = False
-    while peaker.has_next() and i > 0:
+    while peaker.has_next() and parentheses_count > 0:
         Assert(
             peaker.has_next(),
             'Encountered end of stream while parsing '
@@ -237,16 +240,18 @@ def parse_parenthetical_type(peaker):
             )
         )
         if _is(TokenType.LPAREN, peaker.peak()):
-            i += 1
+            parentheses_count += 1
             children.append(parse_lparen(peaker))
         elif _is(TokenType.RPAREN, peaker.peak()):
-            i -= 1
+            parentheses_count -= 1
             children.append(parse_rparen(peaker))
+        elif _is(TokenType.COLON, peaker.peak()):
+            children.append(parse_colon(peaker))
         else:
             encountered_word = True
             children.append(parse_word(peaker))
     Assert(
-        i == 0,
+        parentheses_count == 0,
         'Mismatched parentheses in parenthetical type.'
     )
     Assert(
@@ -383,7 +388,8 @@ def parse_line_with_type(peaker):
         children.append(first_node)
 
     # Get the remaining nodes in the line, up to the newline.
-    while not peaker.peak().token_type == TokenType.NEWLINE:
+    while (peaker.has_next()
+            and not peaker.peak().token_type == TokenType.NEWLINE):
         next_child = peaker.peak()
         if _is(TokenType.WORD, next_child) and next_child.value in KEYWORDS:
             children.append(parse_keyword(peaker))
@@ -399,8 +405,8 @@ def parse_line_with_type(peaker):
                     next_child.token_type
                 )
             )
-    AssertNotEmpty(peaker, 'parse line end')
-    peaker.next() # Throw away newline.
+#    AssertNotEmpty(peaker, 'parse line end')
+#    peaker.next() # Throw away newline.
     return Node(
         NodeType.LINE,
         children=children,
@@ -457,11 +463,12 @@ def parse_simple_section(peaker):
         parse_section_head(peaker, expecting={'Returns', 'Yields'}),
         parse_section_simple_body(peaker),
     ]
-    Assert(
-        peaker.has_next() and _is(TokenType.NEWLINE, peaker.peak()),
-        'Expected newline after section.'
-    )
-    peaker.next() # Discard newline.
+    if peaker.has_next():
+        Assert(
+            _is(TokenType.NEWLINE, peaker.peak()),
+            'Expected newline after section.'
+        )
+        peaker.next() # Discard newline.
     return Node(
         NodeType.SECTION,
         children=children,
@@ -690,7 +697,7 @@ def parse_noqa(peaker):
     children = [
         parse_noqa_head(peaker),
     ]
-    if not _is(TokenType.NEWLINE, peaker.peak()):
+    if peaker.has_next() and not _is(TokenType.NEWLINE, peaker.peak()):
         children.extend([
             parse_colon(peaker),
             parse_noqa_body(peaker),

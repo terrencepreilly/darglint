@@ -606,7 +606,6 @@ class NewParserTestCase(TestCase):
             '',
             'Yields:',
             '    Values to analyze.',
-            '\n',
         ])), lookahead=3))
         child_types = [x.node_type for x in node.children]
         self.assertEqual(
