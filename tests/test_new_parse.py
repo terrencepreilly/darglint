@@ -520,7 +520,6 @@ class NewParserTestCase(TestCase):
             '\n'
         ), lookahead=3))
         child_types = [x.node_type for x in node.walk()]
-        print('\n'.join([str(x) for x in child_types]))
         self.assertEqual(
             child_types,
             [
@@ -581,9 +580,6 @@ class NewParserTestCase(TestCase):
         self.assertEqual(
             node.node_type,
             NodeType.DOCSTRING,
-        )
-        print(
-            '\n'.join([str(x.node_type) for x in node.children])
         )
         self.assertEqual(
             node.children[2].node_type,

@@ -27,12 +27,12 @@ __EBNF for a google-style docstring__:
 
   <section-simple> ::= <section-head><section-simple-body>
   <section-compound> ::= <section-head><section-compound-body>
-  <section-head> ::= <indent><keyword><colon><newline>
+  <section-head> ::= <keyword><colon><newline>
   <section-simple-body> ::=
     <indent><type>?[<word><colon><indent><keyword>]*<newline>
     (<indent><indent><line>)*
   <section-compound-body> ::= <item>+
-  <item> ::= <indent>{2}<item-name><colon><item-definition>
+  <item> ::= <indent><item-name><colon><item-definition>
   <item-name> ::= <word><type>?
   <item-definition> ::= <line>+
   <line> ::= [<word><hash><colon><indent><keyword>]*<noqa>?<newline>
@@ -363,7 +363,6 @@ def parse_line_with_type(peaker):
     AssertNotEmpty(peaker, 'parse line')
     children = [
         parse_indent(peaker),
-        parse_indent(peaker)
     ]
 
     # Get the first node, which may be a type description.
@@ -410,26 +409,18 @@ def parse_line_with_type(peaker):
 def parse_section_head(peaker, expecting=set()):
     # type: (Peaker[Token], Set[str]) -> Node
     AssertNotEmpty(peaker, 'parse section head')
-    Assert(
-        _is(TokenType.INDENT, peaker.peak()),
-        'Failed to parse section head: expected '
-        '{} but encountered {}'.format(
-            TokenType.INDENT,
-            peaker.peak().token_type,
-        )
-    )
-    children = [
-        parse_indent(peaker),
-    ]
+    children = list() # type: List[Node]
     # TODO: This error message is too generic; try to make it more specific.
     Assert(
         peaker.peak().value in expecting,
-        'Expected section head to start with one of {}'.format(
+        'Expected section head to start with one of {} but was {}'.format(
             expecting,
+            repr(peaker.peak().value),
         )
     )
     children.append(parse_keyword(peaker))
     children.append(parse_colon(peaker))
+    # TODO: Allow a noqa here.
     Assert(
         _is(TokenType.NEWLINE, peaker.peak()),
         'Failed to parse section head: expected '
@@ -478,14 +469,14 @@ def parse_simple_section(peaker):
 
 
 def parse_yields(peaker):
-    # type: {Peaker[Token]) -> None
+    # type: (Peaker[Token]) -> Node
     node = parse_simple_section(peaker)
     node.node_type = NodeType.YIELDS_SECTION
     return node
 
 
 def parse_returns(peaker):
-    # type: (Peaker[Token]) -> None
+    # type: (Peaker[Token]) -> Node
     node = parse_simple_section(peaker)
     node.node_type = NodeType.RETURNS_SECTION
     return node
@@ -515,7 +506,7 @@ def parse_item_definition(peaker):
     children = [
         parse_line(peaker),
     ]
-    while _is_indent(1) and _is_indent(2) and _is_indent(3):
+    while _is_indent(1) and _is_indent(2):
         children.append(parse_line(peaker))
     return Node(
         NodeType.ITEM_DEFINITION,
@@ -525,7 +516,6 @@ def parse_item_definition(peaker):
 def parse_item(peaker):
     # type: (Peaker[Token]) -> Node
     children = [
-        parse_indent(peaker),
         parse_indent(peaker),
         parse_item_name(peaker),
     ]
@@ -629,13 +619,7 @@ def parse_long_description(peaker):
     children = [
         parse_line(peaker),
     ]
-    while (peaker.has_next()
-            and peaker.peak(lookahead=2) is not None
-            and peaker.peak(lookahead=2).value not in KEYWORDS):
-        children.append(parse_line(peaker))
-
-    # TODO: Test if this is necessary.
-    if peaker.has_next() and peaker.peak(lookahead=2) is None:
+    while peaker.has_next() and peaker.peak().value not in KEYWORDS:
         children.append(parse_line(peaker))
 
     return Node(
@@ -744,18 +728,27 @@ def parse(peaker):
         parse_description(peaker)
     ]
     while peaker.has_next():
-        two_ahead = peaker.peak(lookahead=2)
-        if two_ahead is None:
-            parse_line(peaker) # Throw away final newline.
-            break
-        if two_ahead.value in keyword_parse_lookup:
+        next_value = peaker.peak().value
+        if next_value in keyword_parse_lookup:
             children.append(
-                keyword_parse_lookup[two_ahead.value](peaker)
+                keyword_parse_lookup[next_value](peaker)
             )
         else:
             children.append(
                 parse_long_description(peaker)
             )
+#        two_ahead = peaker.peak(lookahead=2)
+#        if two_ahead is None:
+#            parse_line(peaker) # Throw away final newline.
+#            break
+#        if two_ahead.value in keyword_parse_lookup:
+#            children.append(
+#                keyword_parse_lookup[two_ahead.value](peaker)
+#            )
+#        else:
+#            children.append(
+#                parse_long_description(peaker)
+#            )
     return Node(
         node_type=NodeType.DOCSTRING,
         children=children,
