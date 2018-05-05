@@ -1,7 +1,6 @@
 import ast
 from unittest import (
     TestCase,
-    skip,
 )
 
 from darglint.integrity_checker import IntegrityChecker
@@ -456,7 +455,6 @@ class IntegrityCheckerTestCase(TestCase):
         errors = checker.errors
         self.assertTrue(isinstance(errors[0], GenericSyntaxError))
 
-    @skip('Refactor syntax errors to add functions after init.')
     def test_throws_assertion_if_no_content_after_colon(self):
         program = '\n'.join([
             'def hello_world(name):',

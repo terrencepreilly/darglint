@@ -98,14 +98,17 @@ class ParserException(BaseException):
         self.style_error = style_error
 
 
-def Assert(expr, msg, Error=ParserException):
+def Assert(expr, msg, style_error=None):
     # type: (bool, str) -> None
     """Assert that the expression is True."""
     if not expr:
-        raise Error(msg)
+        if style_error:
+            raise ParserException(msg, style_error=style_error)
+        else:
+            raise ParserException(msg)
 
 
-def AssertNotEmpty(peaker, context, Error=ParserException):
+def AssertNotEmpty(peaker, context, style_error=None):
     # type: (Peaker, str) -> None
     """Raise a parser exception if the next item is empty.
 
@@ -116,11 +119,19 @@ def AssertNotEmpty(peaker, context, Error=ParserException):
 
     """
     if not peaker.has_next():
-        raise Error(
-            'Unable to {}: stream was unexpectedly empty.'.format(
-                context
+        if style_error:
+            raise ParserException(
+                'Unable to {}: stream was unexpectedly empty.'.format(
+                    context
+                ),
+                style_error=style_error,
             )
-        )
+        else:
+            raise ParserException(
+                'Unable to {}: stream was unexpectedly empty.'.format(
+                    context,
+                )
+            )
 
 def _is(expected_type, token):
     # type: (TokenType, Token) -> bool
@@ -514,6 +525,7 @@ def parse_item_definition(peaker):
     AssertNotEmpty(
         peaker,
         'parse item definition',
+        style_error=EmptyDescriptionError
     )
     children = [
         parse_line(peaker),

@@ -115,7 +115,7 @@ invoke *darglint* as follows:
 
 ::
 
-    find . -name "*.py" -exec darglint {} \;
+    find . -name "*.py" | xargs darglint
 
 Where I'm searching all files ending in ".py" recursively from the
 current directory, and calling *darglint* on each one in turn.

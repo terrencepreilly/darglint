@@ -3,6 +3,14 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2018-05-05
+
+### Changed
+
+- Change the parser to a recursive descent parser.  This allows
+  greater precision and flexibility.  It will also make it possible
+  to capture and pass along line numbers.
+
 ## [0.3.1] - 2018-02-11
 
 ### Added

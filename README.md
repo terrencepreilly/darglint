@@ -115,7 +115,7 @@ This allows us to check all of the files in our project at once.  For example,
 when eating my own dogfood (as I tend to do), I invoke *darglint* as follows:
 
 ```
-find . -name "*.py" -exec darglint {} \;
+find . -name "*.py" | xargs darglint
 ```
 
 Where I'm searching all files ending in ".py" recursively from the

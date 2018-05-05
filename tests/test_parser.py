@@ -1,10 +1,6 @@
 import ast
 from unittest import TestCase, skip
 
-# from darglint.lex import lex
-# from darglint.old_parse import (
-#     Docstring,
-# )
 from darglint.docstring import (
     Docstring,
 )
