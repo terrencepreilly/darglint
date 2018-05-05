@@ -43,6 +43,66 @@ class Docstring(object):
             lookup[node.node_type].append(node)
         return lookup
 
+    def has_short_description(self):
+        """Tell if the docstring has a short description.
+
+        Returns:
+            True if the docstring has a short description.
+
+        """
+        # type: () -> bool
+        return NodeType.SHORT_DESCRIPTION in self._lookup
+
+    def has_long_description(self):
+        """Tell if the docstring has a long description.
+
+        Returns:
+            True if the docstring has a long description.
+
+        """
+        # type: () -> bool
+        return NodeType.LONG_DESCRIPTION in self._lookup
+
+    def has_args_section(self):
+        """Tell if the docstring has a args section.
+
+        Returns:
+            True if the docstring has a args section.
+
+        """
+        # type: () -> bool
+        return NodeType.ARGS_SECTION in self._lookup
+
+    def has_raises_section(self):
+        """Tell if the docstring has a has raises section.
+
+        Returns:
+            True if the docstring has a has raises section.
+
+        """
+        # type: () -> bool
+        return NodeType.RAISES_SECTION in self._lookup
+
+    def has_yields_section(self):
+        """Tell if the docstring has a has yields section.
+
+        Returns:
+            True if the docstring has a has yields section.
+
+        """
+        # type: () -> bool
+        return NodeType.YIELDS_SECTION in self._lookup
+
+    def has_returns_section(self):
+        """Tell if the docstring has a has returns section.
+
+        Returns:
+            True if the docstring has a has returns section.
+
+        """
+        # type: () -> bool
+        return NodeType.RETURNS_SECTION in self._lookup
+
     def get_return_type(self):
         # type: () -> str
         """Get the return type specified by the docstring, if any.

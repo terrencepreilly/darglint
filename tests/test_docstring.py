@@ -53,7 +53,7 @@ class DocstringMethodTest(TestCase):
         docstring = Docstring(root)
         self.assertEqual(
             docstring.long_description,
-            '\nLong description should be contiguous.\n'
+            'Long description should be contiguous.\n'
         )
 
     def test_get_arguments_description(self):
@@ -203,3 +203,46 @@ class DocstringMethodTest(TestCase):
                 'I201': ['x', 'y'],
             },
         )
+
+    def test_has_section(self):
+        """Make sure the docstring can tell if it has the given sections."""
+        has_everything_root = parse(Peaker(lex('\n'.join([
+            'Short decscription.',
+            '',
+            'Long description.',
+            '',
+            'Args:',
+            '    x: Some value.',
+            '',
+            'Raises:',
+            '    IntegrityError: Sometimes.',
+            '',
+            'Yields:',
+            '    The occasional value.',
+            '',
+            'Returns:',
+            '    When it completes.',
+        ])), lookahead=3))
+        docstring = Docstring(has_everything_root)
+        self.assertTrue(all([
+            docstring.has_short_description(),
+            docstring.has_long_description(),
+            docstring.has_args_section(),
+            docstring.has_raises_section(),
+            docstring.has_yields_section(),
+            docstring.has_returns_section(),
+        ]))
+        has_only_short_description = parse(Peaker(lex('\n'.join([
+            'Short description'
+        ])), lookahead=3))
+        docstring = Docstring(has_only_short_description)
+        self.assertTrue(
+            docstring.has_short_description(),
+        )
+        self.assertFalse(any([
+            docstring.has_long_description(),
+            docstring.has_args_section(),
+            docstring.has_raises_section(),
+            docstring.has_yields_section(),
+            docstring.has_returns_section(),
+        ]))

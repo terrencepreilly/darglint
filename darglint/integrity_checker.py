@@ -8,10 +8,11 @@ from typing import (
 from .function_description import (
     FunctionDescription,
 )
-from .lex import lex
-from .old_parse import (
-    Docstring,
+from .parse import (
     ParserException,
+)
+from .docstring import (
+    Docstring,
 )
 from .errors import (
     DarglintError,
@@ -68,7 +69,7 @@ class IntegrityChecker(object):
         self.function = function
         if function.docstring is not None:
             try:
-                self.docstring = Docstring(lex(function.docstring))
+                self.docstring = Docstring(function.docstring)
                 if self.docstring.ignore_all:
                     return
                 self._check_parameters()
@@ -94,12 +95,14 @@ class IntegrityChecker(object):
         if self._ignore_error(ParameterTypeMismatchError):
             return
 
-        doc_arg_types = list()
+        argument_types = self.docstring.get_argument_types()
+        doc_arg_types = list() # type: List[str]
         for name in self.function.argument_names:
-            if name not in self.docstring.argument_types:
+            if name not in argument_types:
                 doc_arg_types.append(None)
             else:
-                doc_arg_types.append(self.docstring.argument_types[name])
+                doc_arg_types.append(argument_types[name])
+        noqa_lookup = self.docstring.get_noqas()
         for name, expected, actual in zip(
                 self.function.argument_names,
                 self.function.argument_types,
@@ -107,9 +110,8 @@ class IntegrityChecker(object):
         ):
             if expected is None or actual is None:
                 continue
-            noqa_exists = error_code in self.docstring.noqa
-            name_has_noqa = noqa_exists and name in self.docstring.noqa[
-                error_code]
+            noqa_exists = error_code in noqa_lookup
+            name_has_noqa = noqa_exists and name in noqa_lookup[error_code]
             if not (expected == actual or name_has_noqa):
                 self.errors.append(
                     ParameterTypeMismatchError(
@@ -126,7 +128,7 @@ class IntegrityChecker(object):
             return
 
         fun_type = self.function.return_type
-        doc_type = self.docstring.return_type
+        doc_type = self.docstring.get_return_type()
         if fun_type is not None and doc_type is not None:
             if fun_type != doc_type:
                 self.errors.append(
@@ -139,7 +141,7 @@ class IntegrityChecker(object):
 
     def _check_yield(self):
         # type: () -> None
-        doc_yield = len(self.docstring.yields_description) > 0
+        doc_yield = self.docstring.has_yields_section()
         fun_yield = self.function.has_yield
         ignore_missing = self._ignore_error(MissingYieldError)
         ignore_excess = self._ignore_error(ExcessYieldError)
@@ -154,7 +156,7 @@ class IntegrityChecker(object):
 
     def _check_return(self):
         # type: () -> None
-        doc_return = len(self.docstring.returns_description) > 0
+        doc_return = self.docstring.has_returns_section()
         fun_return = self.function.has_return
         ignore_missing = self._ignore_error(MissingReturnError)
         ignore_excess = self._ignore_error(ExcessReturnError)
@@ -169,7 +171,8 @@ class IntegrityChecker(object):
 
     def _check_parameters(self):
         # type: () -> None
-        docstring_arguments = set(self.docstring.arguments_descriptions.keys())
+        argument_types = self.docstring.get_argument_types()
+        docstring_arguments = set(argument_types.keys())
         actual_arguments = set(self.function.argument_names)
         missing_in_doc = actual_arguments - docstring_arguments
         missing_in_doc = self._remove_ignored(
@@ -206,13 +209,14 @@ class IntegrityChecker(object):
         error_code = error.error_code
         if error_code in self.config.ignore:
             return True
-        inline_error = error_code in self.docstring.noqa
-        if inline_error and self.docstring.noqa[error_code] is None:
+        noqa_lookup = self.docstring.get_noqas()
+        inline_error = error_code in noqa_lookup
+        if inline_error and not noqa_lookup[error_code]:
             return True
         return False
 
     def _remove_ignored(self, missing, error):
-        # type: (Set, DarglintError) -> Set
+        # type: (Set[str], DarglintError) -> Set[str]
         """Remove ignored from missing.
 
         Args:
@@ -230,16 +234,18 @@ class IntegrityChecker(object):
             return set()
 
         # There are no noqa statements
-        inline_ignore = error_code in self.docstring.noqa
+        noqa_lookup = self.docstring.get_noqas()
+        inline_ignore = error_code in noqa_lookup
         if not inline_ignore:
             return missing
 
         # We are to ignore specific instances.
-        return missing - set(self.docstring.noqa[error_code])
+        return missing - set(noqa_lookup[error_code])
 
     def _check_raises(self):
         # type: () -> None
-        docstring_raises = set(self.docstring.raises_descriptions.keys())
+        exception_types = self.docstring.get_exception_types()
+        docstring_raises = set(exception_types)
         actual_raises = self.function.raises
         missing_in_doc = actual_raises - docstring_raises
 

@@ -101,7 +101,7 @@ class DocstringTestCase(TestCase):
         doc = ast.get_docstring(ast.parse(func).body[0])
         docstring = Docstring(doc)
         self.assertTrue(
-            docstring.long_description.startswith('\nThis function returns'),
+            docstring.long_description.startswith('This function returns'),
             'Expected long description to start with "This function returns" '
             'but was {}'.format(repr(docstring.long_description[:20]))
         )

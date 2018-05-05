@@ -2,7 +2,7 @@ r"""
 __EBNF for a google-style docstring__:
 
   <docstring> ::= <short-description>
-                | <short-description><newline>
+                | <short-description><newline><newline>
                     <long-description>*
                     <sections>*
 
@@ -59,15 +59,17 @@ __EBNF for a google-style docstring__:
 
 """
 from typing import (
+    Any,
     List,
     Set,
-)# noqa
+)  # noqa
 
 from .peaker import Peaker  # noqa
 from .token import Token, TokenType  # noqa
 from .node import Node, NodeType
 from .errors import (
     GenericSyntaxError,
+    EmptyDescriptionError,
 )
 
 KEYWORDS = {
@@ -83,7 +85,7 @@ class ParserException(BaseException):
     """The exception raised when there is a parsing problem."""
 
     def __init__(self, msg='', style_error=GenericSyntaxError):
-        # type: (str, Type) -> None
+        # type: (str, Any) -> None
         """Create a new ParserException.
 
         Args:
@@ -96,14 +98,14 @@ class ParserException(BaseException):
         self.style_error = style_error
 
 
-def Assert(expr, msg):
+def Assert(expr, msg, Error=ParserException):
     # type: (bool, str) -> None
     """Assert that the expression is True."""
     if not expr:
-        raise ParserException(msg)
+        raise Error(msg)
 
 
-def AssertNotEmpty(peaker, context):
+def AssertNotEmpty(peaker, context, Error=ParserException):
     # type: (Peaker, str) -> None
     """Raise a parser exception if the next item is empty.
 
@@ -114,7 +116,7 @@ def AssertNotEmpty(peaker, context):
 
     """
     if not peaker.has_next():
-        raise ParserException(
+        raise Error(
             'Unable to {}: stream was unexpectedly empty.'.format(
                 context
             )
@@ -336,7 +338,7 @@ def parse_line(peaker, with_type=False):
         elif _is(TokenType.HASH, next_child):
             children.append(parse_noqa(peaker))
         else:
-            raise Exception(
+            raise ParserException(
                 'Failed to parse line: invalid token type {}'.format(
                     next_child.token_type
                 )
@@ -400,7 +402,7 @@ def parse_line_with_type(peaker):
         elif _is(TokenType.COLON, next_child):
             children.append(parse_colon(peaker))
         else:
-            raise Exception(
+            raise ParserException(
                 'Failed to parse line: invalid token type {}'.format(
                     next_child.token_type
                 )
@@ -509,7 +511,10 @@ def parse_item_definition(peaker):
         token = peaker.peak(lookahead=i)
         return token is not None and _is(TokenType.INDENT, token)
 
-    AssertNotEmpty(peaker, 'parse item definition')
+    AssertNotEmpty(
+        peaker,
+        'parse item definition',
+    )
     children = [
         parse_line(peaker),
     ]
@@ -609,13 +614,13 @@ def parse_short_description(peaker):
         elif _is(TokenType.HASH, next_child):
             children.append(parse_noqa(peaker))
         else:
-            raise Exception(
+            raise ParserException(
                 'Failed to parse line: invalid token type {}'.format(
                     next_child.token_type
                 )
             )
-        if peaker.has_next() and _is(TokenType.NEWLINE, peaker.peak()):
-            peaker.next() # Eat the newline.
+    if peaker.has_next() and _is(TokenType.NEWLINE, peaker.peak()):
+        peaker.next() # Eat the newline.
     return Node(
         node_type=NodeType.SHORT_DESCRIPTION,
         children=children,
@@ -623,6 +628,14 @@ def parse_short_description(peaker):
 
 def parse_long_description(peaker):
     # type: (Peaker[Token]) -> Node
+    Assert(
+        peaker.has_next() and peaker.peak().value not in KEYWORDS,
+        'Expected long description to start with non-keyword but {}.'.format(
+            'was empty.' if not peaker.has_next() else 'was {}'.format(
+                peaker.peak().value
+            )
+        )
+    )
     children = [
         parse_line(peaker),
     ]
@@ -640,6 +653,16 @@ def parse_description(peaker):
         parse_short_description(peaker),
     ]
     if peaker.has_next():
+        Assert(
+            _is(TokenType.NEWLINE, peaker.peak()),
+            'Expected blank line after short description, but '
+            'found {}: {}.'.format(
+                peaker.peak().token_type,
+                repr(peaker.peak().value)
+            )
+        )
+        peaker.next() # consume blank line.
+    if peaker.has_next() and peaker.peak().value not in KEYWORDS:
         children.append(parse_long_description(peaker))
     return Node(
         node_type=NodeType.DESCRIPTION,

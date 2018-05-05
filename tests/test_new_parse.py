@@ -526,7 +526,6 @@ class NewParserTestCase(TestCase):
                 NodeType.WORD,
                 NodeType.WORD,
                 NodeType.SHORT_DESCRIPTION,
-                NodeType.LINE,
                 NodeType.WORD,
                 NodeType.COLON,
                 NodeType.LPAREN,
@@ -697,3 +696,15 @@ class NewParserTestCase(TestCase):
             '# noqa: I101 arg1'
             '\n'
         ])), lookahead=3))
+
+    def test_parse_short_description_without_blank_line_raises_error(self):
+        """Make sure there must be a blank line after the short description."""
+        peaker = Peaker(lex('\n'.join([
+            'Should not have a raises section.',
+            'Args:',
+            '    x: The divisor.',
+            '    y: The dividend.',
+            '',
+        ])), lookahead=3)
+        with self.assertRaises(ParserException):
+            parse(peaker)
