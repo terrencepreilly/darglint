@@ -8,6 +8,10 @@ from typing import (
     Deque,
     List,
     Iterator,
+    Tuple,
+)
+from .token import (
+    Token,
 )
 
 
@@ -54,11 +58,47 @@ class NodeType(Enum):
 class Node(object):
     """A node in a docstring AST."""
 
-    def __init__(self, node_type, value=None, children=None):
-        # type: (NodeType, Any, List[Node]) -> None
+    def __init__(self, node_type, value=None, children=None, token=None):
+        # type: (NodeType, Any, List[Node], Token) -> None
+        """Instantiate the new node.
+
+        If the node is terminal, it will get the line number from the
+        token.  If it is non-terminal, it will derive the line number(s)
+        from the children.
+
+        Args:
+            node_type: The type of node.
+            value: The value of the node.  Should only be specified for
+                terminal nodes.
+            children: The children of this node. Should only be specified
+                for non-terminal nodes.
+            token: The token this node was made from.  Should only be
+                specified for terminal nodes.
+
+        """
         self.node_type = node_type
         self.value = value
         self.children = children or list()
+        self.line_numbers = None # type: Tuple[int, int]
+        if token:
+            self.line_numbers = (
+                token.line_number,
+                token.line_number
+            )
+        elif children:
+            child_min_line_numbers = [
+                x.line_numbers[0] for x in children
+                if x.line_numbers
+            ]
+            child_max_line_numbers = [
+                x.line_numbers[1] for x in children
+                if x.line_numbers
+            ]
+            if child_min_line_numbers and child_max_line_numbers:
+                self.line_numbers = (
+                    min(child_min_line_numbers),
+                    max(child_max_line_numbers),
+                )
 
     @property
     def is_keyword(self):

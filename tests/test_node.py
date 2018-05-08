@@ -3,6 +3,10 @@ from darglint.node import (
     Node,
     NodeType,
 )
+from darglint.token import (
+    Token,
+    TokenType,
+)
 
 from unittest import TestCase
 
@@ -19,6 +23,20 @@ class NodeTestCase(TestCase):
                     value='This is a docstring.',
                 ),
             ]
+        )
+
+    def test_supplying_tokens_sets_line_number(self):
+        """Make sure giving tokens will set the line numbers to the range."""
+        token = Token(value="a", token_type=TokenType.WORD, line_number=3)
+        node = Node(
+            value="a b c",
+            node_type=NodeType.LONG_DESCRIPTION,
+            token=token,
+        )
+        self.assertEqual(
+            node.line_numbers,
+            (3,3),
+            'The line numbers should be a tuple of the lowest and highest.'
         )
 
     def test_breadth_first_walk_no_leaves(self):

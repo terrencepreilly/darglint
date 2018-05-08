@@ -708,3 +708,37 @@ class NewParserTestCase(TestCase):
         ])), lookahead=3)
         with self.assertRaises(ParserException):
             parse(peaker)
+
+    def test_all_nodes_have_line_numbers(self):
+        """Make sure all nodes in the AST have line numbers."""
+        peaker = Peaker(lex('\n'.join([
+            'The short description should have line numbers.',
+            '',
+            'The long description should have line numbers.',
+            '',
+            'noqa: I203',
+            '',
+            'Args:',
+            '    x (LineNumber, optional): The argument should have a',
+            '        line number.',
+            '',
+            'Raises:',
+            '    IndexError: The exception should have a line number.',
+            '',
+            'Yields:',
+            '    LineNumber: The yields should have a line number.',
+            '',
+            'Returns:',
+            '    LineNumber: The return section should have a line number.',
+        ])), lookahead=3)
+        root = parse(peaker)
+        for node in root.walk():
+            if not node.line_numbers:
+                print('\n'.join(['{} {}'.format(child.value, child.line_numbers ) for child in node.children]))
+            self.assertTrue(
+                node.line_numbers is not None,
+                'The node ({}) {} does not have line numbers.'.format(
+                    node.node_type,
+                    node.value,
+                )
+            )

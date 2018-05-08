@@ -163,7 +163,7 @@ def parse_keyword(peaker):
         ),
     )
     token = peaker.next()
-    return Node(KEYWORDS[token.value], value=token.value)
+    return Node(KEYWORDS[token.value], value=token.value, token=token)
 
 def parse_colon(peaker):
     # type: (Peaker[Token]) -> Node
@@ -174,9 +174,11 @@ def parse_colon(peaker):
             TokenType.COLON, peaker.peak().token_type
         )
     )
+    token = peaker.next()
     return Node(
         node_type=NodeType.COLON,
-        value=peaker.next().value
+        value=token.value,
+        token=token,
     )
 
 def parse_word(peaker):
@@ -188,9 +190,11 @@ def parse_word(peaker):
             TokenType.WORD, peaker.peak().token_type
         )
     )
+    token = peaker.next()
     return Node(
         node_type=NodeType.WORD,
-        value=peaker.next().value
+        value=token.value,
+        token=token,
     )
 
 
@@ -203,9 +207,11 @@ def parse_hash(peaker):
             TokenType.HASH, peaker.peak().token_type
         )
     )
+    token = peaker.next()
     return Node(
         node_type=NodeType.HASH,
-        value=peaker.next().value
+        value=token.value,
+        token=token,
     )
 
 def parse_lparen(peaker):
@@ -218,9 +224,11 @@ def parse_lparen(peaker):
             TokenType.LPAREN, peaker.peak().token_type
         )
     )
+    token = peaker.next()
     return Node(
         node_type=NodeType.LPAREN,
-        value=peaker.next().value,
+        value=token.value,
+        token=token,
     )
 
 def parse_rparen(peaker):
@@ -233,9 +241,11 @@ def parse_rparen(peaker):
             TokenType.RPAREN, peaker.peak().token_type
         )
     )
+    token = peaker.next()
     return Node(
         node_type=NodeType.RPAREN,
-        value=peaker.next().value,
+        value=token.value,
+        token=token,
     )
 
 
@@ -285,8 +295,10 @@ def parse_type(peaker):
     node = parse_word(peaker)
     Assert(
         _is(TokenType.COLON, peaker.peak()),
-        'Expected type to have "(" and ")" around it or '
-        'end in colon.'
+        'Expected type, "{}", to have "(" and ")" around it or '
+        'end in colon.'.format(
+            node.value
+        )
     )
     peaker.next() # Toss the colon
     return Node(
@@ -304,9 +316,11 @@ def parse_indent(peaker):
             TokenType.INDENT, peaker.peak().token_type
         )
     )
+    token = peaker.next()
     return Node(
         node_type=NodeType.INDENT,
-        value=peaker.next().value,
+        value=token.value,
+        token=token,
     )
 
 def parse_line(peaker, with_type=False):
@@ -354,11 +368,21 @@ def parse_line(peaker, with_type=False):
                     next_child.token_type
                 )
             )
+
+    # It is possible that there are no children at this point, in
+    # which case there is likely just the newline.  In this case,
+    # we try to set the token so that the line can have a line
+    # number.
+    token = None
     if peaker.has_next():
-        peaker.next() # Throw away newline.
+        if not children:
+            token = peaker.next()
+        else:
+            peaker.next() # Throw away newline.
     return Node(
         NodeType.LINE,
         children=children,
+        token=token,
     )
 
 # NOTE: If Peaker ever allows 2-constant look-ahead, then change
@@ -418,8 +442,6 @@ def parse_line_with_type(peaker):
                     next_child.token_type
                 )
             )
-#    AssertNotEmpty(peaker, 'parse line end')
-#    peaker.next() # Throw away newline.
     return Node(
         NodeType.LINE,
         children=children,
@@ -779,18 +801,6 @@ def parse(peaker):
             children.append(
                 parse_long_description(peaker)
             )
-#        two_ahead = peaker.peak(lookahead=2)
-#        if two_ahead is None:
-#            parse_line(peaker) # Throw away final newline.
-#            break
-#        if two_ahead.value in keyword_parse_lookup:
-#            children.append(
-#                keyword_parse_lookup[two_ahead.value](peaker)
-#            )
-#        else:
-#            children.append(
-#                parse_long_description(peaker)
-#            )
     return Node(
         node_type=NodeType.DOCSTRING,
         children=children,
