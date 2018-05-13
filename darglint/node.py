@@ -9,6 +9,7 @@ from typing import (
     List,
     Iterator,
     Tuple,
+    Optional,
 )
 from .token import (
     Token,
@@ -54,12 +55,12 @@ class NodeType(Enum):
     RPAREN = 21
     HASH = 32
 
- 
+
 class Node(object):
     """A node in a docstring AST."""
 
     def __init__(self, node_type, value=None, children=None, token=None):
-        # type: (NodeType, Any, List[Node], Token) -> None
+        # type: (NodeType, str, List[Node], Token) -> None
         """Instantiate the new node.
 
         If the node is terminal, it will get the line number from the
@@ -79,7 +80,7 @@ class Node(object):
         self.node_type = node_type
         self.value = value
         self.children = children or list()
-        self.line_numbers = None # type: Tuple[int, int]
+        self.line_numbers = None  # type: Optional[Tuple[int, int]]
         if token:
             self.line_numbers = (
                 token.line_number,
@@ -153,7 +154,7 @@ class Node(object):
         sections.
 
         """
-        queue = deque() # type: Deque[Node]
+        queue = deque()  # type: Deque[Node]
         queue.appendleft(self)
         while queue:
             curr = queue.pop()
@@ -179,7 +180,7 @@ class Node(object):
             Something close to the original string.
 
         """
-        lines = [[]] # type: List[List[str]]
+        lines = [[]]  # type: List[List[str]]
         keyword = None
         for child in self.walk():
             if child.node_type == NodeType.INDENT:
@@ -193,13 +194,13 @@ class Node(object):
                     lines.append(list())
                 elif lines[-1]:
                     lines[-1][-1] += ':'
-                else:
+                elif child.value:
                     lines[-1].append(child.value)
             elif child.is_keyword:
                 # Keywords always have colons after them, so wait for
                 # the colon.
                 keyword = child.value
-            elif child.is_leaf:
+            elif child.is_leaf and child.value:
                 lines[-1].append(child.value)
             elif child.node_type == NodeType.LINE:
                 lines.append(list())

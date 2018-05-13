@@ -6,6 +6,8 @@ from typing import (
     List,
     Set,
     Union,
+    Tuple,
+    Optional,
 )
 from .node import (
     Node,
@@ -38,73 +40,73 @@ class Docstring(object):
     def _discover(self):
         # type: () -> Dict[NodeType, List[Node]]
         """Walk the tree, finding all non-terminal nodes."""
-        lookup = defaultdict(list) # type: Dict[NodeType, List[Node]]
+        lookup = defaultdict(list)  # type: Dict[NodeType, List[Node]]
         for node in self.root.breadth_first_walk(leaves=False):
             lookup[node.node_type].append(node)
         return lookup
 
     def has_short_description(self):
+        # type: () -> bool
         """Tell if the docstring has a short description.
 
         Returns:
             True if the docstring has a short description.
 
         """
-        # type: () -> bool
         return NodeType.SHORT_DESCRIPTION in self._lookup
 
     def has_long_description(self):
+        # type: () -> bool
         """Tell if the docstring has a long description.
 
         Returns:
             True if the docstring has a long description.
 
         """
-        # type: () -> bool
         return NodeType.LONG_DESCRIPTION in self._lookup
 
     def has_args_section(self):
+        # type: () -> bool
         """Tell if the docstring has a args section.
 
         Returns:
             True if the docstring has a args section.
 
         """
-        # type: () -> bool
         return NodeType.ARGS_SECTION in self._lookup
 
     def has_raises_section(self):
+        # type: () -> bool
         """Tell if the docstring has a has raises section.
 
         Returns:
             True if the docstring has a has raises section.
 
         """
-        # type: () -> bool
         return NodeType.RAISES_SECTION in self._lookup
 
     def has_yields_section(self):
+        # type: () -> bool
         """Tell if the docstring has a has yields section.
 
         Returns:
             True if the docstring has a has yields section.
 
         """
-        # type: () -> bool
         return NodeType.YIELDS_SECTION in self._lookup
 
     def has_returns_section(self):
+        # type: () -> bool
         """Tell if the docstring has a has returns section.
 
         Returns:
             True if the docstring has a has returns section.
 
         """
-        # type: () -> bool
         return NodeType.RETURNS_SECTION in self._lookup
 
     def get_return_type(self):
-        # type: () -> str
+        # type: () -> Union[str, None]
         """Get the return type specified by the docstring, if any.
 
         Returns:
@@ -128,7 +130,7 @@ class Docstring(object):
             The types of exceptions described by the docstring.
 
         """
-        ret = list() # type: List[str]
+        ret = list()  # type: List[str]
         for raises_node in self._lookup[NodeType.RAISES_SECTION]:
             for node in raises_node.breadth_first_walk(leaves=False):
                 if node.node_type == NodeType.ITEM_NAME:
@@ -137,7 +139,7 @@ class Docstring(object):
         return ret
 
     def get_yield_type(self):
-        # type: () -> str
+        # type: () -> Union[str, None]
         """Get the yield type specified by the docstring, if any.
 
         Returns:
@@ -161,8 +163,8 @@ class Docstring(object):
             A dictionary matching arguments to types.
 
         """
-        argtypes = dict() # type: Dict[str, str]
-        item_names = list() # type: List[Node]
+        argtypes = dict()  # type: Dict[str, str]
+        item_names = list()  # type: List[Node]
 
         for arg_section in self._lookup[NodeType.ARGS_SECTION]:
             for node in arg_section.breadth_first_walk(leaves=False):
@@ -192,9 +194,9 @@ class Docstring(object):
             the values.  A blank list implies a global noqa.
 
         """
-        encountered = set() # type: Set[Node]
-        global_noqas = set() # type: Set[Node]
-        noqas = defaultdict(list) # type: Dict[str, List[str]]
+        encountered = set()  # type: Set[Node]
+        global_noqas = set()  # type: Set[Node]
+        noqas = defaultdict(list)  # type: Dict[str, List[str]]
 
         # Get exceptions with implied targets
         for item_node in self._lookup[NodeType.ITEM]:
@@ -237,6 +239,36 @@ class Docstring(object):
         if not nodes:
             return None
         return ''.join([x.reconstruct_string() for x in nodes])
+
+    def get_line_numbers(self, node_type):
+        # type: (NodeType) -> Optional[Tuple[int, int]]
+        """Get the line numbers for the first instance of the given section."""
+        nodes = self._lookup[node_type]
+        if nodes:
+            return nodes[0].line_numbers
+        return None
+
+    def get_line_numbers_for_value(self, node_type, value):
+        # type: (NodeType, str) -> Optional[Tuple[int, int]]
+        """Get the line number for a node with the given value.
+
+        Args:
+            node_type: The compound node which should contain the
+                node we are searching for.
+            value: The value of the node.
+
+        Returns:
+            A list of line numbers for nodes which match the
+            parameters.
+
+        """
+        line_numbers = list()  # type: List[Tuple[int, int]]
+        nodes = self._lookup[node_type]
+        for node in nodes:
+            for child in node.walk():
+                if child.value == value and child.line_numbers:
+                    return child.line_numbers
+        return None
 
     @property
     def raises_description(self):

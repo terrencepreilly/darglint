@@ -21,6 +21,9 @@ I101.
 
 """
 import ast
+from typing import (
+    Tuple,
+)
 
 
 class DarglintError(BaseException):
@@ -42,7 +45,11 @@ class DarglintError(BaseException):
     # See the description of error code groups above.
     error_code = None  # type: str
 
-    def message(self, verbosity=1): # type: (int) -> str
+    # The first and last line numbers where the error occurs.
+    line_numbers = None  # type: Tuple[int, int]
+
+    def message(self, verbosity=1):
+        # type: (int) -> str
         """Get the message for this error, according to the verbosity.
 
         Args:
@@ -67,8 +74,8 @@ class DarglintError(BaseException):
             raise Exception('Unrecognized verbosity setting, {}.'.format(
                 verbosity))
 
-    def __init__(self, function):
-        # type: (ast.FunctionDef) -> None
+    def __init__(self, function, line_numbers=None):
+        # type: (ast.FunctionDef, Tuple[int, int]) -> None
         """Create a new exception with a message and line number.
 
         Raises:
@@ -77,9 +84,13 @@ class DarglintError(BaseException):
 
         Args:
             function: An ast node for the function.
+            line_numbers: The line numbers where this error occurs.
 
         """
         self.function = function
+
+        if line_numbers:
+            self.line_numbers = line_numbers
 
         # The abstract base class syntax was too verbose for this,
         # and not really justified by the size of the module.
@@ -94,19 +105,23 @@ class GenericSyntaxError(DarglintError):
 
     error_code = 'S001'
 
-    def __init__(self, function, message):
-        # type: (ast.FunctionDef, str) -> None
+    def __init__(self, function, message, line_numbers=None):
+        # type: (ast.FunctionDef, str, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
             function: An ast node for the function.
             message: The parser error's message.
+            line_numbers: The line numbers where this error occurs.
 
         """
         self.general_message = 'Syntax error'
         self.terse_message = 's {}'.format(message)
 
-        super(GenericSyntaxError, self).__init__(function)
+        super(GenericSyntaxError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
 
 
 class EmptyDescriptionError(DarglintError):
@@ -114,19 +129,24 @@ class EmptyDescriptionError(DarglintError):
 
     error_code = 'S002'
 
-    def __init__(self, function, message):
-        # type: (ast.FunctionDef, str) -> None
+    def __init__(self, function, message, line_numbers=None):
+        # type: (ast.FunctionDef, str, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
             function: An ast node for the function.
             message: The parser error's message.
+            line_numbers: The line numbers where this error occurs.
+                Unused.
 
         """
         self.general_message = 'Empty description'
         self.terse_message = 'e {}'.format(message)
 
-        super(EmptyDescriptionError, self).__init__(function)
+        super(EmptyDescriptionError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
 
 
 class MissingParameterError(DarglintError):
@@ -134,18 +154,22 @@ class MissingParameterError(DarglintError):
 
     error_code = 'I101'
 
-    def __init__(self, function, name):
-        # type: (ast.FunctionDef, str) -> None
+    def __init__(self, function, name, line_numbers=None):
+        # type: (ast.FunctionDef, str, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
             function: An ast node for the function.
             name: The name of the argument that is missing.
+            line_numbers: The line numbers where this error occurs.
 
         """
         self.general_message = 'Missing parameter(s) in Docstring'
         self.terse_message = '- {}'.format(name)
-        super(MissingParameterError, self).__init__(function)
+        super(MissingParameterError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
 
 
 class ExcessParameterError(DarglintError):
@@ -153,18 +177,22 @@ class ExcessParameterError(DarglintError):
 
     error_code = 'I102'
 
-    def __init__(self, function, name):
-        # type: (ast.FunctionDef, str) -> None
+    def __init__(self, function, name, line_numbers=None):
+        # type: (ast.FunctionDef, str, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
             function: An ast node for the function.
             name: The name of the argument that is excess.
+            line_numbers: The line numbers where this error occurs.
 
         """
         self.general_message = 'Excess parameter(s) in Docstring'
         self.terse_message = '+ {}'.format(name)
-        super(ExcessParameterError, self).__init__(function)
+        super(ExcessParameterError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
 
 
 class ParameterTypeMismatchError(DarglintError):
@@ -172,8 +200,8 @@ class ParameterTypeMismatchError(DarglintError):
 
     error_code = 'I103'
 
-    def __init__(self, function, name, expected, actual):
-        # type: (ast.FunctionDef, str, str, str) -> None
+    def __init__(self, function, name, expected, actual, line_numbers=None):
+        # type: (ast.FunctionDef, str, str, str, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
@@ -181,6 +209,7 @@ class ParameterTypeMismatchError(DarglintError):
             name: The name of the parameter.
             expected: The type defined in the function.
             actual: The type described in the docstring.
+            line_numbers: The line numbers where this error occurs.
 
         """
         self.general_message = 'Parameter type mismatch'
@@ -192,7 +221,10 @@ class ParameterTypeMismatchError(DarglintError):
         self.name = name
         self.expected = expected
         self.actual = actual
-        super(ParameterTypeMismatchError, self).__init__(function)
+        super(ParameterTypeMismatchError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
 
 
 class MissingReturnError(DarglintError):
@@ -200,17 +232,22 @@ class MissingReturnError(DarglintError):
 
     error_code = 'I201'
 
-    def __init__(self, function): # type: (ast.FunctionDef) -> None
+    def __init__(self, function, line_numbers=None):
+        # type: (ast.FunctionDef, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
             function: An ast node for the function.
+            line_numbers: The line numbers where this error occurs.
 
         """
         self.general_message = 'Missing "Returns" in Docstring'
         self.terse_message = '- return'
 
-        super(MissingReturnError, self).__init__(function)
+        super(MissingReturnError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
 
 
 class ExcessReturnError(DarglintError):
@@ -218,17 +255,22 @@ class ExcessReturnError(DarglintError):
 
     error_code = 'I202'
 
-    def __init__(self, function): # type: (ast.FunctionDef) -> None
+    def __init__(self, function, line_numbers=None):
+        # type: (ast.FunctionDef, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
             function: An ast node for the function.
+            line_numbers: The line numbers where this error occurs.
 
         """
         self.general_message = 'Excess "Returns" in Docstring'
         self.terse_message = '+ return'
 
-        super(ExcessReturnError, self).__init__(function)
+        super(ExcessReturnError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
 
 
 class ReturnTypeMismatchError(DarglintError):
@@ -236,14 +278,15 @@ class ReturnTypeMismatchError(DarglintError):
 
     error_code = 'I203'
 
-    def __init__(self, function, expected, actual):
-        # type: (ast.FunctionDef, str, str) -> None
+    def __init__(self, function, expected, actual, line_numbers=None):
+        # type: (ast.FunctionDef, str, str, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
             function: An ast node for the function.
             expected: The type defined in the function.
             actual: The type described in the docstring.
+            line_numbers: The line numbers where this error occurs.
 
         """
         self.general_message = 'Return type mismatch'
@@ -253,7 +296,10 @@ class ReturnTypeMismatchError(DarglintError):
         )
         self.expected = expected
         self.actual = actual
-        super(ReturnTypeMismatchError, self).__init__(function)
+        super(ReturnTypeMismatchError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
 
 
 class MissingYieldError(DarglintError):
@@ -261,17 +307,22 @@ class MissingYieldError(DarglintError):
 
     error_code = 'I301'
 
-    def __init__(self, function): # type: (ast.FunctionDef) -> None
+    def __init__(self, function, line_numbers=None):
+        # type: (ast.FunctionDef, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
             function: An ast node for the function.
+            line_numbers: The line numbers where this error occurs.
 
         """
         self.general_message = 'Missing "Yields" in Docstring'
         self.terse_message = '- yield'
 
-        super(MissingYieldError, self).__init__(function)
+        super(MissingYieldError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
 
 
 class ExcessYieldError(DarglintError):
@@ -279,18 +330,22 @@ class ExcessYieldError(DarglintError):
 
     error_code = 'I302'
 
-    def __init__(self, function):
-        # type: (ast.FunctionDef) -> None
+    def __init__(self, function, line_numbers=None):
+        # type: (ast.FunctionDef, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
             function: An ast node for the function.
+            line_numbers: The line numbers where this error occurs.
 
         """
         self.general_message = 'Excess "Yields" in Docstring'
         self.terse_message = '+ yield'
 
-        super(ExcessYieldError, self).__init__(function)
+        super(ExcessYieldError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
 
 
 class MissingRaiseError(DarglintError):
@@ -298,19 +353,23 @@ class MissingRaiseError(DarglintError):
 
     error_code = 'I401'
 
-    def __init__(self, function, name):
-        # type: (ast.FunctionDef, str) -> None
+    def __init__(self, function, name, line_numbers=None):
+        # type: (ast.FunctionDef, str, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
             function: An ast node for the function.
             name: The name of the exception that is missing.
+            line_numbers: The line numbers where this error occurs.
 
         """
         self.general_message = 'Missing exception(s) in Raises section'
         self.terse_message = '-r {}'.format(name)
         self.name = name
-        super(MissingRaiseError, self).__init__(function)
+        super(MissingRaiseError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
 
 
 class ExcessRaiseError(DarglintError):
@@ -325,16 +384,20 @@ class ExcessRaiseError(DarglintError):
 
     error_code = 'I402'
 
-    def __init__(self, function, name):
-        # type: (ast.FunctionDef, str) -> None
+    def __init__(self, function, name, line_numbers=None):
+        # type: (ast.FunctionDef, str, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
             function: An ast node for the function.
             name: The name of the exception that is surplus.
+            line_numbers: The line numbers where this error occurs.
 
         """
         self.general_message = 'Excess exception(s) in Raises section'
         self.terse_message = '+r {}'.format(name)
         self.name = name
-        super(ExcessRaiseError, self).__init__(function)
+        super(ExcessRaiseError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )

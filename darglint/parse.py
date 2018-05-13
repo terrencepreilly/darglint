@@ -61,7 +61,9 @@ __EBNF for a google-style docstring__:
 from typing import (
     Any,
     List,
+    Optional,
     Set,
+    Tuple,
 )  # noqa
 
 from .peaker import Peaker  # noqa
@@ -84,8 +86,11 @@ KEYWORDS = {
 class ParserException(BaseException):
     """The exception raised when there is a parsing problem."""
 
-    def __init__(self, msg='', style_error=GenericSyntaxError):
-        # type: (str, Any) -> None
+    def __init__(self,
+                 msg='',
+                 style_error=GenericSyntaxError,
+                 line_numbers=None):
+        # type: (str, Any, Tuple[int, int]) -> None
         """Create a new ParserException.
 
         Args:
@@ -96,20 +101,32 @@ class ParserException(BaseException):
         """
         super(ParserException, self).__init__(msg)
         self.style_error = style_error
+        self.line_numbers = line_numbers
 
 
-def Assert(expr, msg, style_error=None):
-    # type: (bool, str) -> None
+def Assert(expr, msg, style_error=None, token=None):
+    # type: (bool, str, Any, Token) -> None
     """Assert that the expression is True."""
     if not expr:
-        if style_error:
-            raise ParserException(msg, style_error=style_error)
+        if token is not None:
+            line_numbers = (token.line_number, token.line_number)  # type: Optional[Tuple[int, int]] # noqa
         else:
-            raise ParserException(msg)
+            line_numbers = None
+        if style_error:
+            raise ParserException(
+                msg,
+                style_error=style_error,
+                line_numbers=line_numbers,
+            )
+        else:
+            raise ParserException(
+                msg,
+                line_numbers=line_numbers,
+            )
 
 
 def AssertNotEmpty(peaker, context, style_error=None):
-    # type: (Peaker, str) -> None
+    # type: (Peaker, str, Any) -> None
     """Raise a parser exception if the next item is empty.
 
     Args:
@@ -130,8 +147,9 @@ def AssertNotEmpty(peaker, context, style_error=None):
             raise ParserException(
                 'Unable to {}: stream was unexpectedly empty.'.format(
                     context,
-                )
+                ),
             )
+
 
 def _is(expected_type, token):
     # type: (TokenType, Token) -> bool
@@ -154,16 +172,19 @@ def parse_keyword(peaker):
         _is(TokenType.WORD, peaker.peak()),
         'Unable to parse keyword: expected {} but received {}'.format(
             TokenType.WORD, peaker.peak().token_type
-        )
+        ),
+        token=peaker.peak(),
     )
     Assert(
         peaker.peak().value in KEYWORDS,
         'Unable to parse keyword: "{}" is not a keyword'.format(
             peaker.peak().token_type
         ),
+        token=peaker.peak(),
     )
     token = peaker.next()
     return Node(KEYWORDS[token.value], value=token.value, token=token)
+
 
 def parse_colon(peaker):
     # type: (Peaker[Token]) -> Node
@@ -172,7 +193,8 @@ def parse_colon(peaker):
         _is(TokenType.COLON, peaker.peak()),
         'Unable to parse colon: expected {} but received {}'.format(
             TokenType.COLON, peaker.peak().token_type
-        )
+        ),
+        token=peaker.peak()
     )
     token = peaker.next()
     return Node(
@@ -181,6 +203,7 @@ def parse_colon(peaker):
         token=token,
     )
 
+
 def parse_word(peaker):
     # type: (Peaker[Token]) -> Node
     AssertNotEmpty(peaker, 'parse word')
@@ -188,7 +211,8 @@ def parse_word(peaker):
         _is(TokenType.WORD, peaker.peak()),
         'Unable to parse word: expected {} but received {}'.format(
             TokenType.WORD, peaker.peak().token_type
-        )
+        ),
+        token=peaker.peak(),
     )
     token = peaker.next()
     return Node(
@@ -205,7 +229,8 @@ def parse_hash(peaker):
         _is(TokenType.HASH, peaker.peak()),
         'Unable to parse hash: expected {} but received {}'.format(
             TokenType.HASH, peaker.peak().token_type
-        )
+        ),
+        token=peaker.peak(),
     )
     token = peaker.next()
     return Node(
@@ -213,6 +238,7 @@ def parse_hash(peaker):
         value=token.value,
         token=token,
     )
+
 
 def parse_lparen(peaker):
     # type: (Peaker[Token]) -> Node
@@ -222,7 +248,8 @@ def parse_lparen(peaker):
         'Unable to parse left parenthesis: expected {} '
         'but received {}'.format(
             TokenType.LPAREN, peaker.peak().token_type
-        )
+        ),
+        token=peaker.peak(),
     )
     token = peaker.next()
     return Node(
@@ -230,6 +257,7 @@ def parse_lparen(peaker):
         value=token.value,
         token=token,
     )
+
 
 def parse_rparen(peaker):
     # type: (Peaker[Token]) -> Node
@@ -239,7 +267,8 @@ def parse_rparen(peaker):
         'Unable to parse right parenthesis: expected {} '
         'but received {}'.format(
             TokenType.RPAREN, peaker.peak().token_type
-        )
+        ),
+        token=peaker.peak(),
     )
     token = peaker.next()
     return Node(
@@ -260,7 +289,8 @@ def parse_parenthetical_type(peaker):
             'Encountered end of stream while parsing '
             'parenthetical type. Ended with {}'.format(
                 [x.value for x in children]
-            )
+            ),
+            token=peaker.peak(),
         )
         if _is(TokenType.LPAREN, peaker.peak()):
             parentheses_count += 1
@@ -275,16 +305,19 @@ def parse_parenthetical_type(peaker):
             children.append(parse_word(peaker))
     Assert(
         parentheses_count == 0,
-        'Mismatched parentheses in parenthetical type.'
+        'Mismatched parentheses in parenthetical type.',
+        token=peaker.peak(),
     )
     Assert(
         encountered_word,
-        'Parenthetical type must contain at least one word.'
+        'Parenthetical type must contain at least one word.',
+        token=peaker.peak(),
     )
     return Node(
         node_type=NodeType.TYPE,
         children=children,
     )
+
 
 def parse_type(peaker):
     # type: (Peaker[Token]) -> Node
@@ -298,9 +331,10 @@ def parse_type(peaker):
         'Expected type, "{}", to have "(" and ")" around it or '
         'end in colon.'.format(
             node.value
-        )
+        ),
+        token=peaker.peak(),
     )
-    peaker.next() # Toss the colon
+    peaker.next()  # Toss the colon
     return Node(
         node_type=NodeType.TYPE,
         children=[node],
@@ -314,7 +348,8 @@ def parse_indent(peaker):
         _is(TokenType.INDENT, peaker.peak()),
         'Unable to parse indent: expected {} but received {}'.format(
             TokenType.INDENT, peaker.peak().token_type
-        )
+        ),
+        token=peaker.peak(),
     )
     token = peaker.next()
     return Node(
@@ -322,6 +357,7 @@ def parse_indent(peaker):
         value=token.value,
         token=token,
     )
+
 
 def parse_line(peaker, with_type=False):
     # type: (Peaker[Token], bool) -> Node
@@ -378,7 +414,7 @@ def parse_line(peaker, with_type=False):
         if not children:
             token = peaker.next()
         else:
-            peaker.next() # Throw away newline.
+            peaker.next()  # Throw away newline.
     return Node(
         NodeType.LINE,
         children=children,
@@ -388,6 +424,8 @@ def parse_line(peaker, with_type=False):
 # NOTE: If Peaker ever allows 2-constant look-ahead, then change
 # this to call to the `parse_line(peaker)` function to prevent
 # drift between these two functions.
+
+
 def parse_line_with_type(peaker):
     # type: (Peaker[Token]) -> Node
     """Parse a line which begins with a type description.
@@ -410,6 +448,7 @@ def parse_line_with_type(peaker):
     # Get the first node, which may be a type description.
     if _is(TokenType.WORD, peaker.peak()):
         next_value = peaker.next()
+        AssertNotEmpty(peaker, 'parse line')
         if next_value.value.startswith('(') and next_value.value.endswith(')'):
             first_node = parse_type(
                 Peaker((x for x in [next_value]))
@@ -447,17 +486,19 @@ def parse_line_with_type(peaker):
         children=children,
     )
 
+
 def parse_section_head(peaker, expecting=set()):
     # type: (Peaker[Token], Set[str]) -> Node
     AssertNotEmpty(peaker, 'parse section head')
-    children = list() # type: List[Node]
+    children = list()  # type: List[Node]
     # TODO: This error message is too generic; try to make it more specific.
     Assert(
         peaker.peak().value in expecting,
         'Expected section head to start with one of {} but was {}'.format(
             expecting,
             repr(peaker.peak().value),
-        )
+        ),
+        token=peaker.peak(),
     )
     children.append(parse_keyword(peaker))
     children.append(parse_colon(peaker))
@@ -468,7 +509,8 @@ def parse_section_head(peaker, expecting=set()):
         'it to end with {} but encountered {}'.format(
             TokenType.NEWLINE,
             peaker.peak().token_type,
-        )
+        ),
+        token=peaker.peak(),
     )
     peaker.next()
     return Node(
@@ -491,6 +533,7 @@ def parse_section_simple_body(peaker):
         children=children,
     )
 
+
 def parse_simple_section(peaker):
     # type: (Peaker[Token]) -> Node
     AssertNotEmpty(peaker, 'parse section')
@@ -501,9 +544,10 @@ def parse_simple_section(peaker):
     if peaker.has_next():
         Assert(
             _is(TokenType.NEWLINE, peaker.peak()),
-            'Expected newline after section.'
+            'Expected newline after section.',
+            token=peaker.peak(),
         )
-        peaker.next() # Discard newline.
+        peaker.next()  # Discard newline.
     return Node(
         NodeType.SECTION,
         children=children,
@@ -537,6 +581,7 @@ def parse_item_name(peaker):
         children=children,
     )
 
+
 def parse_item_definition(peaker):
     # type: (Peaker[Token]) -> Node
 
@@ -558,6 +603,7 @@ def parse_item_definition(peaker):
         NodeType.ITEM_DEFINITION,
         children=children,
     )
+
 
 def parse_item(peaker):
     # type: (Peaker[Token]) -> Node
@@ -604,9 +650,10 @@ def parse_compound_section(peaker):
             'Expected {} after compound section but received {}'.format(
                 TokenType.NEWLINE,
                 peaker.peak().token_type
-            )
+            ),
+            token=peaker.peak(),
         )
-        peaker.next() # discard newline.
+        peaker.next()  # discard newline.
 
     return Node(
         node_type=NodeType.SECTION,
@@ -654,11 +701,12 @@ def parse_short_description(peaker):
                 )
             )
     if peaker.has_next() and _is(TokenType.NEWLINE, peaker.peak()):
-        peaker.next() # Eat the newline.
+        peaker.next()  # Eat the newline.
     return Node(
         node_type=NodeType.SHORT_DESCRIPTION,
         children=children,
     )
+
 
 def parse_long_description(peaker):
     # type: (Peaker[Token]) -> Node
@@ -668,7 +716,8 @@ def parse_long_description(peaker):
             'was empty.' if not peaker.has_next() else 'was {}'.format(
                 peaker.peak().value
             )
-        )
+        ),
+        token=peaker.peak(),
     )
     children = [
         parse_line(peaker),
@@ -680,6 +729,7 @@ def parse_long_description(peaker):
         node_type=NodeType.LONG_DESCRIPTION,
         children=children,
     )
+
 
 def parse_description(peaker):
     # type: (Peaker[Token]) -> Node
@@ -693,9 +743,10 @@ def parse_description(peaker):
             'found {}: {}.'.format(
                 peaker.peak().token_type,
                 repr(peaker.peak().value)
-            )
+            ),
+            token=peaker.peak(),
         )
-        peaker.next() # consume blank line.
+        peaker.next()  # consume blank line.
     if peaker.has_next() and peaker.peak().value not in KEYWORDS:
         children.append(parse_long_description(peaker))
     return Node(
@@ -715,7 +766,8 @@ def parse_noqa_head(peaker):
         'Failed to parse noqa statement. '
         'Expected "# noqa" but received "# {}"'.format(
             word.value,
-        )
+        ),
+        token=peaker.peak(),
     )
     children.append(word)
     return Node(
@@ -737,6 +789,7 @@ def parse_list(peaker):
         node_type=NodeType.LIST,
         children=children
     )
+
 
 def parse_noqa_body(peaker):
     # type: (Peaker[Token]) -> Node
