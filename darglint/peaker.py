@@ -18,6 +18,9 @@ T = TypeVar('T')
 class Peaker(Generic[T]):
     """A stream transformer allowing us to peak ahead."""
 
+    # The previous token which was gotten.
+    prev = None  # type: T
+
     class _Empty(object):
         value = None
 
@@ -32,7 +35,7 @@ class Peaker(Generic[T]):
 
         """
         self.stream = stream
-        self.buffer = deque() # type: Deque[T]
+        self.buffer = deque()  # type: Deque[T]
         self.lookahead = lookahead
         self._buffer_to(lookahead)
 
@@ -44,11 +47,12 @@ class Peaker(Generic[T]):
 
         Args:
             amount: The length to make the buffer.
-        
+
         """
         if amount > self.lookahead:
             raise Exception(
-                'Cannot extend buffer to {}: beyond buffer lookahead {}'.format(
+                'Cannot extend buffer to {}: '
+                'beyond buffer lookahead {}'.format(
                     amount, self.lookahead
                 )
             )
@@ -74,9 +78,9 @@ class Peaker(Generic[T]):
         """
         if len(self.buffer) == 0:
             raise StopIteration
-        previous = self.buffer.pop()
+        self.prev = self.buffer.pop()
         self._buffer_to(self.lookahead)
-        return previous
+        return self.prev
 
     def peak(self, lookahead=1):
         # type: (int) -> T
@@ -123,7 +127,7 @@ class Peaker(Generic[T]):
             A list of items (of type T), which pass the given test function.
 
         """
-        passing_elements = [] # type: List[T]
+        passing_elements = []  # type: List[T]
         while self.has_next() and test(self.peak()):
             passing_elements.append(self.next())
         return passing_elements

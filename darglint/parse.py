@@ -136,18 +136,24 @@ def AssertNotEmpty(peaker, context, style_error=None):
 
     """
     if not peaker.has_next():
+        prev_line_numbers = None
+        if peaker.prev and peaker.prev.line_number:
+            line_no = peaker.prev.line_number
+            prev_line_numbers = (line_no, line_no)
         if style_error:
             raise ParserException(
                 'Unable to {}: stream was unexpectedly empty.'.format(
                     context
                 ),
                 style_error=style_error,
+                line_numbers=prev_line_numbers,
             )
         else:
             raise ParserException(
                 'Unable to {}: stream was unexpectedly empty.'.format(
                     context,
                 ),
+                line_numbers=prev_line_numbers,
             )
 
 
@@ -402,6 +408,10 @@ def parse_line(peaker, with_type=False):
             raise ParserException(
                 'Failed to parse line: invalid token type {}'.format(
                     next_child.token_type
+                ),
+                line_numbers=(
+                    next_child.line_number,
+                    next_child.line_number,
                 )
             )
 
@@ -582,8 +592,8 @@ def parse_item_name(peaker):
     )
 
 
-def parse_item_definition(peaker):
-    # type: (Peaker[Token]) -> Node
+def parse_item_definition(peaker, prev_line_number=None):
+    # type: (Peaker[Token], Optional[int]) -> Node
 
     def _is_indent(i):
         token = peaker.peak(lookahead=i)
@@ -593,6 +603,11 @@ def parse_item_definition(peaker):
         peaker,
         'parse item definition',
         style_error=EmptyDescriptionError
+    )
+    Assert(
+        not _is(TokenType.NEWLINE, peaker.peak()),
+        'Unable to parse item definition: stream was unexpectedly empty.',
+        token=peaker.peak(),
     )
     children = [
         parse_line(peaker),

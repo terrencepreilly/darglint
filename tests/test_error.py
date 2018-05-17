@@ -237,3 +237,43 @@ class ErrorTest(TestCase):
             (3, 3),
             'It should point to the Excess item..',
         )
+
+    def test_missing_definition_after_item_points_to_item_line(self):
+        """Make sure empty definitions point to lines."""
+        src = '\n'.join([
+            'def missing_definition(x):',
+            '    """Missing the definition.',
+            '',
+            '    Args:',
+            '        x:',
+            '',
+            '    """',
+            '    print(x)',
+        ])
+        error = self.get_single_error(src)
+        self.assertEqual(
+            error.line_numbers,
+            (3, 3),
+            'It should point to the item\'s line.'
+        )
+
+    def test_missing_definition_points_to_items_in_middle(self):
+        """Make sure it works if the empty description is in the middle."""
+        src = '\n'.join([
+            'def missing_def(x, y, z):',
+            '    """Missing a single one.',
+            '',
+            '    Args:',
+            '        x: The first.',
+            '        y:',
+            '        z: Something else.',
+            '',
+            '    """',
+            '    print(x + y + z)'
+        ])
+        error = self.get_single_error(src)
+        self.assertEqual(
+            error.line_numbers,
+            (4, 4),
+            'It should point to the item line.',
+        )

@@ -7,6 +7,7 @@ from typing import (
     List,
     Set,
     Tuple,
+    Optional,
 )
 
 from .config import get_logger
@@ -15,7 +16,7 @@ from .config import get_logger
 logger = get_logger()
 
 
-def read_program(filename): # type: (str) -> str
+def read_program(filename):  # type: (str) -> str
     """Read a program from a file.
 
     Args:
@@ -107,36 +108,36 @@ def _has_return(fun):
     return False
 
 
-def _has_yield(fun): # type: (ast.FunctionDef) -> bool
+def _has_yield(fun):  # type: (ast.FunctionDef) -> bool
     for node in ast.walk(fun):
         if isinstance(node, ast.Yield) or isinstance(node, ast.YieldFrom):
             return True
     return False
 
 
-def _get_docstring(fun): # type: (ast.AST) -> str
+def _get_docstring(fun):  # type: (ast.AST) -> str
     return ast.get_docstring(fun)
 
 
-def _get_all_functions(tree): # type: (ast.AST) -> Iterator[ast.FunctionDef]
+def _get_all_functions(tree):  # type: (ast.AST) -> Iterator[ast.FunctionDef]
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
             yield node
 
 
-def _get_all_classes(tree): # type: (ast.AST) -> Iterator[ast.ClassDef]
+def _get_all_classes(tree):  # type: (ast.AST) -> Iterator[ast.ClassDef]
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef):
             yield node
 
 
-def _get_all_methods(tree): # type: (ast.AST) -> Iterator[ast.FunctionDef]
+def _get_all_methods(tree):  # type: (ast.AST) -> Iterator[ast.FunctionDef]
     for klass in _get_all_classes(tree):
         for fun in _get_all_functions(klass):
             yield fun
 
 
-def _get_decorator_names(fun): # type: (ast.FunctionDef) -> List[str]
+def _get_decorator_names(fun):  # type: (ast.FunctionDef) -> List[str]
     """Get decorator names from the function.
 
     Args:
@@ -155,11 +156,11 @@ def _get_decorator_names(fun): # type: (ast.FunctionDef) -> List[str]
     return ret
 
 
-def _is_classmethod(fun): # type: (ast.FunctionDef) -> bool
+def _is_classmethod(fun):  # type: (ast.FunctionDef) -> bool
     return 'classmethod' in _get_decorator_names(fun)
 
 
-def _is_staticmethod(fun): # type: (ast.FunctionDef) -> bool
+def _is_staticmethod(fun):  # type: (ast.FunctionDef) -> bool
     return 'staticmethod' in _get_decorator_names(fun)
 
 
@@ -182,7 +183,7 @@ def _get_all_raises(fn):
             yield node
 
 
-def _get_exception_name(raises): # type: (ast.Raise) -> str
+def _get_exception_name(raises):  # type: (ast.Raise) -> str
     if isinstance(raises.exc, ast.Name):
         return raises.exc.id
     elif isinstance(raises.exc, ast.Call):
@@ -202,7 +203,7 @@ def _get_exception_name(raises): # type: (ast.Raise) -> str
     return ''
 
 
-def _get_exceptions_raised(fn): # type: (ast.FunctionDef) -> Set[str]
+def _get_exceptions_raised(fn):  # type: (ast.FunctionDef) -> Set[str]
     ret = set()  # type: Set[str]
     for raises in _get_all_raises(fn):
         # TODO: Handle this?
@@ -213,10 +214,29 @@ def _get_exceptions_raised(fn): # type: (ast.FunctionDef) -> Set[str]
     return ret
 
 
-def _get_return_type(fn): # type: (ast.FunctionDef) -> str
+def _get_return_type(fn):
+    # type: (ast.FunctionDef) -> Optional[str]
     if fn.returns is not None and hasattr(fn.returns, 'id'):
         return fn.returns.id
     return None
+
+
+def get_line_number_from_function(fn):
+    # type: (ast.FunctionDef) -> int
+    """Get the line number for the end of the function signature.
+
+    The function signature can be farther down when the parameter
+    list is split across multiple lines.
+
+    Args:
+        fn: The function from which we are getting the line number.
+
+    """
+    line_number = fn.lineno
+    if hasattr(fn, 'args') and fn.args.args:
+        last_arg = fn.args.args[-1]
+        line_number = last_arg.lineno
+    return line_number
 
 
 class FunctionDescription(object):
@@ -240,7 +260,7 @@ class FunctionDescription(object):
         """
         self.is_method = is_method
         self.function = function
-        self.line_number = function.lineno
+        self.line_number = get_line_number_from_function(function)
         self.name = function.name
         if is_method:
             self.argument_names, self.argument_types = (

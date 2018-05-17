@@ -6,6 +6,9 @@ from typing import (
     Dict,
     List,
 )
+from .function_description import (
+    get_line_number_from_function,
+)
 
 from .errors import DarglintError
 
@@ -14,12 +17,12 @@ class ErrorReport(object):
     """Reports the errors for the given run."""
 
     def __init__(
-            self,
-            errors,
-            filename,
-            verbosity=2,
-            message_template=None,
-        ):
+        self,
+        errors,
+        filename,
+        verbosity=2,
+        message_template=None,
+    ):
         # type: (List[DarglintError], str, int, str) -> None
         """Create a new error report.
 
@@ -55,7 +58,8 @@ class ErrorReport(object):
 
         """
         self._sort()
-        error_dict = OrderedDict() # type: Dict[ast.FunctionDef, List[DarglintError]]
+        # type: Dict[ast.FunctionDef, List[DarglintError]]
+        error_dict = OrderedDict()
         current = None  # The current function
         for error in self.errors:
             if current != error.function:
@@ -64,7 +68,7 @@ class ErrorReport(object):
             error_dict[current].append(error)
         return error_dict
 
-    def _get_error_description(self, error): # type: (DarglintError) -> str
+    def _get_error_description(self, error):  # type: (DarglintError) -> str
         """Get the error description.
 
         Args:
@@ -74,15 +78,25 @@ class ErrorReport(object):
             A string representing the error.
 
         """
+        # TODO: We should get the FunctionDefinition here,
+        # not the function. This will allow us to get the correctly
+        # updated line number.
+        line_number = get_line_number_from_function(error.function)
+        # line_number = error.function.lineno
+        if (hasattr(error.function, 'decorator_list')
+                and error.function.decorator_list):
+            line_number += len(error.function.decorator_list)
+        if error.line_numbers:
+            line_number += error.line_numbers[0] + 1
         return self.message_template.format(
             msg_id=error.error_code,
             msg=error.message(verbosity=self.verbosity),
             path=self.filename,
             obj=error.function.name,
-            line=error.function.lineno,
+            line=line_number,  # error.function.lineno,
         )
 
-    def __str__(self): # type: () -> str
+    def __str__(self):  # type: () -> str
         """Return a string representation of this error report.
 
         Returns:
