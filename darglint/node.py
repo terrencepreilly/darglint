@@ -141,6 +141,9 @@ class Node(object):
         in this case never gets very deep.  Does a post-order
         traversal of the tree.
 
+        Yields:
+            Nodes in the tree.
+
         """
         for child in self.children:
             yield from child.walk()
@@ -152,6 +155,13 @@ class Node(object):
 
         A breadth-first traversal will be much faster when identifying
         sections.
+
+        Args:
+            leaves: True if leaves of the tree should also be yielded,
+                otherwise only parent nodes will be yielded.
+
+        Yields:
+            Nodes in the tree.
 
         """
         queue = deque()  # type: Deque[Node]

@@ -22,7 +22,7 @@ class WalkPathTestCase(TestCase):
 
     @mock.patch('darglint.config.os.getcwd')
     def test_at_root_yields_only_once(self, mock_getcwd):
-        """We should only get root once."""
+        """We should only get root once. # noqa"""
         mock_getcwd.return_value = '/'
         path_walker = walk_path()
         self.assertEqual(next(path_walker), '/')
@@ -58,7 +58,7 @@ class FindConfigFileInPathTestCase(TestCase):
     @mock.patch('darglint.config.configparser.ConfigParser')
     @mock.patch('darglint.config.os.listdir')
     def test_filename_checked(self, mock_listdir, mock_ConfigParser):
-        """Check that only the necessary filenames are identified."""
+        """Check that only the necessary filenames are identified.  # noqa """
         fake_files = [
             ''.join([choice(ascii_letters + '_-')
                      for _ in range(randint(5, 10))]) for _ in range(10)

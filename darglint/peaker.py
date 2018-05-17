@@ -8,7 +8,8 @@ from typing import (
     List,
     TypeVar,
     Union,
-    Deque
+    Deque,
+    Optional,
 )
 
 
@@ -48,6 +49,10 @@ class Peaker(Generic[T]):
         Args:
             amount: The length to make the buffer.
 
+        Raises:
+            Exception: If we are not able to buffer to the
+                given amount.
+
         """
         if amount > self.lookahead:
             raise Exception(
@@ -83,12 +88,16 @@ class Peaker(Generic[T]):
         return self.prev
 
     def peak(self, lookahead=1):
-        # type: (int) -> T
+        # type: (int) -> Optional[T]
         """Get the next letter in the stream, without moving it forward.
 
         Args:
             lookahead: The amount of tokens to look ahead in
                 the buffer.
+
+        Raises:
+            Exception: If we are not able to buffer to the given
+                lookahead.
 
         Returns:
             The next item of type T in the stream.

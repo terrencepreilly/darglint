@@ -97,6 +97,7 @@ class ParserException(BaseException):
             msg: The message this error should display.
             style_error: If style errors are supported, then this
                 is the type of style error.
+            line_numbers: Th eline number where this error occurred.
 
         """
         super(ParserException, self).__init__(msg)
@@ -106,7 +107,22 @@ class ParserException(BaseException):
 
 def Assert(expr, msg, style_error=None, token=None):
     # type: (bool, str, Any, Token) -> None
-    """Assert that the expression is True."""
+    """Assert that the expression is True.
+
+    Args:
+        expr: The expression which we are evaluating.
+        msg: The message which will be passed to the error
+            if we are wrong.
+        style_error: The error to pass into the ParserException
+            if `expr` is false.
+        token: The last token which was parsed before or at
+            this check. (Used for passing along line numbers.)
+
+    Raises:
+        ParserException: If `expr` is not true and `style_error`
+            is not specified.
+
+    """
     if not expr:
         if token is not None:
             line_numbers = (token.line_number, token.line_number)  # type: Optional[Tuple[int, int]] # noqa
@@ -129,10 +145,15 @@ def AssertNotEmpty(peaker, context, style_error=None):
     # type: (Peaker, str, Any) -> None
     """Raise a parser exception if the next item is empty.
 
+    Raises:
+        ParserException: If the peaker is, in fact, empty.
+
     Args:
         peaker: The Peaker which should not be empty.
         context: A verb in the gerund form which describes
             our current actions.
+        style_error: The style error passed with the
+            ParserException if the Peaker is empty.
 
     """
     if not peaker.has_next():
@@ -446,6 +467,10 @@ def parse_line_with_type(peaker):
     Args:
         peaker: A stream of tokens.
 
+    Raises:
+        ParserException: If there was any problem with parsing
+            the line.
+
     Returns:
         A line node.
 
@@ -485,6 +510,10 @@ def parse_line_with_type(peaker):
             children.append(parse_indent(peaker))
         elif _is(TokenType.COLON, next_child):
             children.append(parse_colon(peaker))
+        elif _is(TokenType.LPAREN, next_child):
+            children.append(parse_lparen(peaker))
+        elif _is(TokenType.RPAREN, next_child):
+            children.append(parse_rparen(peaker))
         else:
             raise ParserException(
                 'Failed to parse line: invalid token type {}'.format(
@@ -843,7 +872,7 @@ def parse(peaker):
 
     Raises:
         ParserException: If there is anything malformed with
-            the docstring, or if anything goes wrong with parsing.
+            the docstring, or if anything goes wrong with parsing. # noqa
 
     Returns:
         The parsed docstring as an AST.

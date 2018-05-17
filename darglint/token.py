@@ -12,8 +12,8 @@ class TokenType(Enum):
     NEWLINE = 4
     INDENT = 5  # Assumed to always be 4 spaces
     HASH = 6  # A hash mark (for comments/noqa).
-    LPAREN = 7 # (
-    RPAREN = 8 # )
+    LPAREN = 7  # (
+    RPAREN = 8  # )
 
 
 class Token(object):
@@ -29,6 +29,8 @@ class Token(object):
         Args:
             value: The value of the token. (The actual string.)
             token_type: The type of token this represents.
+            line_number: The line number where this token resides.
+                Used when reporting errors.
 
         """
         self.value = value

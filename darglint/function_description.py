@@ -231,6 +231,10 @@ def get_line_number_from_function(fn):
     Args:
         fn: The function from which we are getting the line number.
 
+    Returns:
+        The line number for the start of the docstring for this
+        function.
+
     """
     line_number = fn.lineno
     if hasattr(fn, 'args') and fn.args.args:

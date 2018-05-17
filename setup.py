@@ -6,7 +6,15 @@ import subprocess
 
 
 def read_full_documentation(fname):
-    """Get long documentation from the README.rst."""
+    """Get long documentation from the README.rst.
+
+    Args:
+        fname: The filename for the documentation.
+
+    Returns:
+        The documentation, as a string.
+
+    """
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 

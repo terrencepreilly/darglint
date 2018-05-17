@@ -197,7 +197,7 @@ class NewParserTestCase(TestCase):
 
     def test_parse_line_with_parentheses(self):
         """Make sure lines can have parentheses in them."""
-        node= parse_line(Peaker(lex(
+        node = parse_line(Peaker(lex(
             'This is a (parenthis-containing) line.\n'
         )))
         self.assertEqual(
@@ -318,6 +318,12 @@ class NewParserTestCase(TestCase):
                 NodeType.LINE,
             ]
         )
+
+    def test_parse_line_without_type_but_with_parentheses(self):
+        """Make sure we can have parentheses otherwise."""
+        parse_line_with_type(Peaker(lex(
+            '    A list of items (of type T), which pass the given test'
+        )))
 
     def test_parse_returns_section_with_type(self):
         """Make sure the returns section can have a type."""
@@ -563,7 +569,6 @@ class NewParserTestCase(TestCase):
             NodeType.RETURNS_SECTION,
         )
 
-
     def test_long_description_can_come_between_sections(self):
         """Make sure non-standard parts are treated as descriptions."""
         node = parse(Peaker(lex('\n'.join([
@@ -734,7 +739,8 @@ class NewParserTestCase(TestCase):
         root = parse(peaker)
         for node in root.walk():
             if not node.line_numbers:
-                print('\n'.join(['{} {}'.format(child.value, child.line_numbers ) for child in node.children]))
+                print('\n'.join(
+                    ['{} {}'.format(child.value, child.line_numbers) for child in node.children]))
             self.assertTrue(
                 node.line_numbers is not None,
                 'The node ({}) {} does not have line numbers.'.format(

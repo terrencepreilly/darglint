@@ -39,7 +39,12 @@ class Docstring(object):
 
     def _discover(self):
         # type: () -> Dict[NodeType, List[Node]]
-        """Walk the tree, finding all non-terminal nodes."""
+        """Walk the tree, finding all non-terminal nodes.
+
+        Returns:
+            A lookup table for compound Nodes by their NodeType.
+
+        """
         lookup = defaultdict(list)  # type: Dict[NodeType, List[Node]]
         for node in self.root.breadth_first_walk(leaves=False):
             lookup[node.node_type].append(node)
@@ -242,7 +247,18 @@ class Docstring(object):
 
     def get_line_numbers(self, node_type):
         # type: (NodeType) -> Optional[Tuple[int, int]]
-        """Get the line numbers for the first instance of the given section."""
+        """Get the line numbers for the first instance of the given section.
+
+        Args:
+            node_type: The NodeType which we want line numbers for.
+                These should be unique instances. (I.e. they should be
+                in the set of compound NodeTypes which only occur
+                once in a docstring. For example, "Raises" and "Args".
+
+        Returns:
+            The line numbers for the first instance of the given node type.
+
+        """
         nodes = self._lookup[node_type]
         if nodes:
             return nodes[0].line_numbers
@@ -344,9 +360,10 @@ class Docstring(object):
         """Return whether we should ignore everything in the docstring.
 
         This happens when there is a bare noqa in the docstring, or
-        there is "# noqa: *" in the docstring.
+        there is "noqa: *" in the docstring.
 
-        Returns: True if we should ignore everything, otherwise false.
+        Returns:
+            True if we should ignore everything, otherwise false.
 
         """
         for node in self._lookup[NodeType.NOQA]:
