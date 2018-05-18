@@ -1,5 +1,8 @@
 # Darglint
 
+Check out the [poster](./docs/poster.pdf) about darglint which was presented
+at pycon!
+
 A functional docstring linter which checks whether a docstring's
 description matches the actual function/method implementation.
 *Darglint* expects docstrings to be formatted using the
