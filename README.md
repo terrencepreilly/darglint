@@ -207,9 +207,10 @@ message.  That way, anyone can specify their own format.
 
 ### 1.0
 - [ ] Robust logging for errors caused/encountered by *darglint*.
-- [ ] Add support for python versions earlier than 3.6.
-- [ ] Add more specific line numbers in error messages.
+- [x] Add support for python versions earlier than 3.6.
+- [x] Add more specific line numbers in error messages.
 - [ ] Add style errors and suggestions.
+- [ ] Support for Sphinx-style docstrings.
 
 
 ### Other features
