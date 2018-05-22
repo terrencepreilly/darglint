@@ -8,7 +8,6 @@ from typing import (
     List,
     TypeVar,
     Union,
-    Deque,
     Optional,
 )
 
@@ -36,7 +35,7 @@ class Peaker(Generic[T]):
 
         """
         self.stream = stream
-        self.buffer = deque()  # type: Deque[T]
+        self.buffer = deque()  # type: deque
         self.lookahead = lookahead
         self._buffer_to(lookahead)
 

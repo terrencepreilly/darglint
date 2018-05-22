@@ -5,7 +5,6 @@ from collections import deque
 from enum import Enum
 from typing import (
     Any,
-    Deque,
     List,
     Iterator,
     Tuple,
@@ -164,7 +163,7 @@ class Node(object):
             Nodes in the tree.
 
         """
-        queue = deque()  # type: Deque[Node]
+        queue = deque()  # type: deque
         queue.appendleft(self)
         while queue:
             curr = queue.pop()
