@@ -5,9 +5,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.3.4] - 2018-05-22
 
+### Added
+
+- Previously, *darglint* always exited with status 0, even if errors
+  were encountered.  Now, darglint exists with status 1 if docstring
+  errors were encountered.
+
 ### Fixed
 
 - Fix regression in type hints: Deque was only available in Python3.6.
+
 
 ## [0.3.3] - 2018-05-13
 

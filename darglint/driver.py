@@ -1,6 +1,7 @@
 """Defines the command line interface for darglint."""
 import argparse
 import ast
+import sys
 
 from .function_description import (
     read_program,
@@ -35,7 +36,7 @@ parser.add_argument(
     action='store_true',
     help=(
         'When a docstring is incorrectly formatted, raise an exception '
-        'rather than storing the error.'
+        'rather than storing the error.  Useful for debugging darglint.'
     ),
 )
 parser.add_argument(
@@ -54,6 +55,18 @@ parser.add_argument(
         '".py" are ignored.'
     ),
 )
+parser.add_argument(
+    '--no-exit-code',
+    '-x',
+    action='store_true',
+    help=(
+        'Exit with status 0, even on errors.  By default, darglint '
+        'exits with status 1 when errors are encountered.  Giving '
+        'this flag prevents that.  Useful when invocating with xargs '
+        'and you want to see all errors.  '
+        'Ex: `find . -name "*.py" | xargs darglint -x`'
+    ),
+)
 
 # ---------------------- MAIN SCRIPT ---------------------------------
 
@@ -63,7 +76,7 @@ def get_error_report(filename,
                      config,
                      raise_errors_for_syntax,
                      message_template=None,
-    ):
+                     ):
     # type: (str, int, Configuration, bool, str) -> str
     """Get the error report for the given file.
 
@@ -105,20 +118,34 @@ def main():
     Called as a script when setup.py is installed.
 
     """
-    config = get_config()
     args = parser.parse_args()
-    files = [x for x in args.files if x.endswith('.py')]
-    raise_errors_for_syntax = args.raise_syntax or False
-    for filename in files:
-        error_report = get_error_report(
-            filename,
-            args.verbosity,
-            config,
-            raise_errors_for_syntax,
-            message_template=args.message_template,
-        )
-        if error_report:
-            print(error_report + '\n')
+    exit_code = not args.no_exit_code
+    encountered_errors = False
+
+    try:
+        config = get_config()
+        files = [x for x in args.files if x.endswith('.py')]
+        raise_errors_for_syntax = args.raise_syntax or False
+        for filename in files:
+            error_report = get_error_report(
+                filename,
+                args.verbosity,
+                config,
+                raise_errors_for_syntax,
+                message_template=args.message_template,
+            )
+            if error_report:
+                print(error_report + '\n')
+                encountered_errors = True
+    except Exception:
+        # Exit with status 2 regardless of whether user wants a
+        # exit code or not -- darglint failed, and it should
+        # look like it failed.
+        sys.exit(129)
+    if encountered_errors and exit_code:
+        sys.exit(1)
+    else:
+        sys.exit(0)
 
 
 if __name__ == '__main__':
