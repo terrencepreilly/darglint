@@ -14,6 +14,14 @@ See the **Roadmap** section for an idea of where the project is going.
 Feel free to submit an issue/pull request if you spot a problem or
 would like a feature in *darglint*.
 
+**Table of Contents**:
+
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Roadmap](#roadmap)
+- [Contribution](#development-and-contributions)
+
 
 ## Installation
 
@@ -195,6 +203,34 @@ def always_raises_exception(x):
 So, in this case, the argument for `noqa` is really all the way to
 the left.  (Or whatever description we are parsing.)  We could also
 have put it on its own line, as `# noqa: I402 ZeroDivisionError`.
+
+### Error Codes
+
+- *I101*: The docstring is missing a parameter in the definition.
+- *I102*: The docstring contains a parameter not in function.
+- *I103*: The docstring parameter type doesn't match function.
+- *I201*: The docstring is missing a return from definition.
+- *I202*: The docstring has a return not in definition.
+- *I203*: The docstring parameter type doesn't match function.
+- *I301*: The docstring is missing a yield present in definition.
+- *I302*: The docstring has a yield not in definition.
+- *I401*: The docstring is missing an exception raised.
+- *I402*: The docstring describes an exception not explicitly raised.
+- *S001*: Describes that something went wrong in parsing the docstring.
+- *S002*: An argument/exception lacks a description.
+
+The error code scheme is based on the errors from the pycodestyle package.
+The first letter corresponds to the broad class of error:
+
+-  I (Interface): Incorrect or incomplete documentation.
+-  S (Style): Errors with documentation style/syntax.
+
+The number in the hundreds narrows the error by location in the docstring:
+
+- 100: Args section
+- 200: Returns section
+- 300: Yields section
+- 400: Raises section
 
 ## Roadmap
 The below list is the current roadmap for *darglint*.  For each

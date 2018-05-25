@@ -49,7 +49,7 @@ parser.add_argument(
 )
 parser.add_argument(
     'files',
-    nargs='+',
+    nargs='*',
     help=(
         'The python source files to check.  Any files not ending in '
         '".py" are ignored.'
@@ -66,6 +66,13 @@ parser.add_argument(
         'and you want to see all errors.  '
         'Ex: `find . -name "*.py" | xargs darglint -x`'
     ),
+)
+parser.add_argument(
+    '--list-errors',
+    action='store_true',
+    help=(
+        'Print a list of error codes and what they represent.'
+    )
 )
 
 # ---------------------- MAIN SCRIPT ---------------------------------
@@ -111,6 +118,23 @@ def get_error_report(filename,
     )
 
 
+def print_error_list():
+    print('\n'.join([
+        'I101: The docstring is missing a parameter in the definition.',
+        'I102: The docstring contains a parameter not in function.',
+        'I103: The docstring parameter type doesn\'t match function.',
+        'I201: The docstring is missing a return from definition.',
+        'I202: The docstring has a return not in definition.',
+        'I203: The docstring parameter type doesn\'t match function.',
+        'I301: The docstring is missing a yield present in definition.',
+        'I302: The docstring has a yield not in definition.',
+        'I401: The docstring is missing an exception raised.',
+        'I402: The docstring describes an exception not explicitly raised.',
+        'S001: Describes that something went wrong in parsing the docstring.',
+        'S002: An argument/exception lacks a description.',
+    ]))
+
+
 def main():
     # type: () -> None
     """Run darglint.
@@ -121,6 +145,10 @@ def main():
     args = parser.parse_args()
     exit_code = not args.no_exit_code
     encountered_errors = False
+
+    if args.list_errors:
+        print_error_list()
+        sys.exit(0)
 
     try:
         config = get_config()

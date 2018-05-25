@@ -373,7 +373,7 @@ class MissingRaiseError(DarglintError):
 
 
 class ExcessRaiseError(DarglintError):
-    """Describes when docstring describes an exception not explicitly raised.
+    """Describes when a docstring describes an exception not explicitly raised.
 
     This error should not be included by default.  We assume that the user
     knows when an underlying function is likely to raise an error.  Of course,

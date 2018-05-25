@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Previously, *darglint* always exited with status 0, even if errors
   were encountered.  Now, darglint exists with status 1 if docstring
   errors were encountered.
+- Add description of errors to both the readme and the driver.
+  The errors are each described on a single line to make it easy
+  to search for errors from the command line.
 
 ### Fixed
 
