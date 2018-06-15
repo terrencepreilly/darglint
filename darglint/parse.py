@@ -411,6 +411,7 @@ def parse_line(peaker, with_type=False):
     # Get the remaining nodes in the line, up to the newline.
     while peaker.has_next() and not peaker.peak().token_type == TokenType.NEWLINE:
         next_child = peaker.peak()
+        assert next_child is not None
         if _is(TokenType.WORD, next_child) and next_child.value in KEYWORDS:
             children.append(parse_keyword(peaker))
         elif _is(TokenType.WORD, next_child):

@@ -3,33 +3,38 @@
 from typing import (
     Iterator,
     List,
+    Optional,
 )
 from .peaker import Peaker
 from .token import Token, TokenType
 
+# These convenience functions take an optional string
+# because the peaker could return None when at the end
+# of the stream.
+
 
 def _is_space(char):
-    # type: (str) -> bool
+    # type: (Optional[str]) -> bool
     return char == ' '
 
 
 def _is_newline(char):
-    # type: (str) -> bool
+    # type: (Optional[str]) -> bool
     return char == '\n'
 
 
 def _is_colon(char):
-    # type: (str) -> bool
+    # type: (Optional[str]) -> bool
     return char == ':'
 
 
 def _is_hash(char):
-    # type: (str) -> bool
+    # type: (Optional[str]) -> bool
     return char == '#'
 
 
 def _is_separator(char):
-    # type: (str) -> bool
+    # type: (Optional[str]) -> bool
     """Check whether if `char` is a separator other than newline or space.
 
     Args:
@@ -39,19 +44,23 @@ def _is_separator(char):
         true if `char` is a separator other than newline or space.
 
     """
+    if char is None:
+        return False
     return char.isspace() and not (_is_space(char) or _is_newline(char))
 
 
 def _is_double_quotation(char):
-    # type: (str) -> bool
+    # type: (Optional[str]) -> bool
     return char == '"'
 
+
 def _is_lparen(char):
-    # type: (str) -> bool
+    # type: (Optional[str]) -> bool
     return char == '('
 
+
 def _is_rparen(char):
-    # type: (str) -> bool
+    # type: (Optional[str]) -> bool
     return char == ')'
 
 
