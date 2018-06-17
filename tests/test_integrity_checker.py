@@ -18,7 +18,7 @@ from darglint.errors import (
     ParameterTypeMismatchError,
     ReturnTypeMismatchError,
 )
-from darglint.parse import ParserException
+from darglint.parse.common import ParserException
 
 
 class IntegrityCheckerTestCase(TestCase):

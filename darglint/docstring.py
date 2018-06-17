@@ -13,7 +13,7 @@ from .node import (
     Node,
     NodeType,
 )
-from .parse import parse
+from .parse.google import parse
 from .lex import lex
 from .peaker import Peaker
 

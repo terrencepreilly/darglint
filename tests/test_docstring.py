@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from darglint.docstring import Docstring
 from darglint.lex import lex
-from darglint.parse import parse
+from darglint.parse.google import parse
 from darglint.peaker import Peaker
 
 
@@ -35,7 +35,8 @@ class DocstringMethodTest(TestCase):
 
     def test_get_short_description(self):
         """Ensure we can get the short description."""
-        root = parse(Peaker(lex('Nothing but a short description.'), lookahead=3))
+        root = parse(
+            Peaker(lex('Nothing but a short description.'), lookahead=3))
         docstring = Docstring(root)
         self.assertEqual(
             docstring.short_description,

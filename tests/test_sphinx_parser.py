@@ -5,10 +5,10 @@ from darglint.lex import (
 )
 from darglint.node import NodeType
 from darglint.peaker import Peaker
-from darglint.parse import (
+from darglint.parse.common import (
     ParserException,
 )
-from darglint.sphinx_parse import (
+from darglint.parse.sphinx import (
     parse_short_description,
 )
 

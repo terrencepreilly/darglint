@@ -10,7 +10,7 @@ from typing import (
 from .function_description import (
     FunctionDescription,
 )
-from .parse import (
+from .parse.common import (
     ParserException,
 )
 from .docstring import (

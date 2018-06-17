@@ -10,25 +10,28 @@ from darglint.lex import (
 from darglint.node import (
     NodeType,
 )
-from darglint.parse import (
+from darglint.parse.common import (
     ParserException,
-    parse,
-    parse_args,
     parse_colon,
+    parse_keyword,
+    parse_noqa,
+    parse_word,
+)
+from darglint.parse.google import (
+    parse,
+    parse_item,
+    parse_args,
     parse_compound_section,
     parse_description,
-    parse_item,
-    parse_keyword,
     parse_line,
     parse_line_with_type,
-    parse_noqa,
     parse_raises,
     parse_returns,
     parse_short_description,
     parse_simple_section,
     parse_type,
-    parse_word,
     parse_yields,
+    KEYWORDS,
 )
 from darglint.peaker import (
     Peaker
@@ -295,7 +298,7 @@ class DocstringTestCase(TestCase):
                 ('Yields', NodeType.YIELDS),
                 ('Raises', NodeType.RAISES)
         ]:
-            node = parse_keyword(Peaker(lex(word)))
+            node = parse_keyword(Peaker(lex(word)), KEYWORDS)
             self.assertEqual(
                 node.node_type,
                 node_type
@@ -309,7 +312,7 @@ class DocstringTestCase(TestCase):
         """Make sure incorrectly calling the keyword parse fails."""
         for word in ['Not', 'a', 'keyword', 'args']:
             with self.assertRaises(ParserException):
-                parse_keyword(Peaker(lex(word)))
+                parse_keyword(Peaker(lex(word)), KEYWORDS)
 
     def test_parse_colon(self):
         """Make sure we can parse colons."""

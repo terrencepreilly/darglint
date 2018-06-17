@@ -1,15 +1,15 @@
 from typing import List
 
-from .node import (
+from ..node import (
     Node,
     NodeType,
 )
-from .peaker import Peaker
-from .token import (
+from ..peaker import Peaker
+from ..token import (
     Token,
     TokenType,
 )
-from .parse import (
+from .common import (
     Assert,
     AssertNotEmpty,
     ParserException,
@@ -68,7 +68,7 @@ def parse_line(peaker):
 
     while peaker.has_next() and not _is(TokenType.NEWLINE, peaker):
         if _is(TokenType.WORD, peaker) and _in_keywords(peaker):
-            children.append(parse_keyword(peaker))
+            children.append(parse_keyword(peaker, KEYWORDS))
         elif _is(TokenType.WORD, peaker):
             children.append(parse_word(peaker))
         elif _is(TokenType.COLON, peaker):
