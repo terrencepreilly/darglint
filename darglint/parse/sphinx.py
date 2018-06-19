@@ -1,3 +1,68 @@
+"""A parser for Sphinx-style docstrings.
+
+The EBNF for the parser is as follows:
+
+  docstring = short-description, [long-description];
+            | short-description
+                , [long-description]
+                , item
+                , {[newline], item}
+                , newline;
+
+  long-description = line, {line}, newline;
+  short-description = unline
+                    | line, newline;
+
+  item = indent, item-name, item-definition;
+  section-name = colon, keyword, [word], colon;
+  item-definition = line, {line};
+  line = unline, newline
+  unline = { word
+           , hash
+           , colon
+           , indent
+           , keyword
+           , lparen
+           , rparen
+           }, [noqa];
+
+  noqa = noqa-head, [colon, list]
+  noqa-head = hash, noqa-keyword
+  list = word {"," word}
+
+  keyword = "arg"
+          | "argument"
+          | "param"
+          | "parameter"
+          | "key"
+          | "keyword"
+          | "raises"
+          | "raise"
+          | "except"
+          | "exception"
+          | "var"
+          | "ivar"
+          | "cvar"
+          | "returns"
+          | "return"
+          | "yield"
+          | "yields"
+          | "type"
+          | "vartype"
+          | "rtype"
+          | "ytype";
+
+  indent  = " " * 4;
+  word    = ? r/[^\ \n\:\"\t]+/ ?;
+  noqa-keyword = "noqa"
+  hash = "#"
+  lparen = "("
+  rparen = ")"
+  colon   = ":";
+  newline = "\n";
+
+"""
+
 from typing import List
 
 from ..node import (
@@ -24,11 +89,35 @@ from .common import (
 )
 
 KEYWORDS = {
-    'Args': NodeType.ARGUMENTS,
-    'Arguments': NodeType.ARGUMENTS,
-    'Returns': NodeType.RETURNS,
-    'Yields': NodeType.YIELDS,
-    'Raises': NodeType.RAISES,
+    'arg': NodeType.ARGUMENTS,
+    'argument': NodeType.ARGUMENTS,
+    'param': NodeType.ARGUMENTS,
+    'parameter': NodeType.ARGUMENTS,
+    'key': NodeType.ARGUMENTS,
+    'keyword': NodeType.ARGUMENTS,
+    'type': NodeType.TYPE,
+    'raises': NodeType.RAISES,
+    'raise': NodeType.RAISES,
+    'except': NodeType.RAISES,
+    'exception': NodeType.RAISES,
+    'var': NodeType.VARIABLES,
+    'ivar': NodeType.VARIABLES,
+    'cvar': NodeType.VARIABLES,
+    'vartype': NodeType.TYPE,
+    'returns': NodeType.RETURNS,
+    'return': NodeType.RETURNS,
+    'rtype': NodeType.TYPE,
+    'yield': NodeType.YIELDS,
+    'yields': NodeType.YIELDS,
+    'ytype': NodeType.TYPE,
+}
+
+_KEYWORD_TO_SECTION = {
+    NodeType.ARGUMENTS: NodeType.ARGS_SECTION,
+    NodeType.RAISES: NodeType.RAISES_SECTION,
+    NodeType.VARIABLES: NodeType.VARIABLES_SECTION,
+    NodeType.RETURNS: NodeType.RETURNS_SECTION,
+    NodeType.YIELDS: NodeType.YIELDS_SECTION,
 }
 
 
@@ -120,3 +209,111 @@ def parse_short_description(peaker):
         NodeType.SHORT_DESCRIPTION,
         children=[parse_line(peaker)],
     )
+
+
+def parse_item_definition(peaker):
+    # type: (Peaker[Token]) -> Node
+    children = [parse_line(peaker)]
+    while _is(TokenType.INDENT, peaker, 2):
+        children.append(parse_line(peaker))
+    return Node(
+        node_type=NodeType.ITEM_DEFINITION,
+        children=children,
+    )
+
+
+def parse_item_head(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse item')
+    children = list()  # type: List[Node]
+
+    token = peaker.peak()
+    assert token is not None
+    Assert(
+        _is(TokenType.INDENT, peaker),
+        'Insufficient indentation for item. Expected {} but got {}'.format(
+            TokenType.INDENT, token.token_type,
+        ),
+    )
+    children.append(parse_indent(peaker))
+
+    token = peaker.peak()
+    assert token is not None
+    Assert(
+        _is(TokenType.COLON, peaker),
+        'Expected item to start with {} but was {}'.format(
+            TokenType.COLON, token.token_type
+        ),
+    )
+    children.append(parse_colon(peaker))
+
+    AssertNotEmpty(peaker, 'parse item')
+    token = peaker.peak()
+    assert token is not None
+    Assert(
+        _in_keywords(peaker),
+        'Expected a keyword (e.g. "arg", "returns", etc.) but was {}'.format(
+            token.value
+        )
+    )
+    keyword = parse_keyword(peaker, KEYWORDS)
+    children.append(keyword)
+
+    if not _is(TokenType.COLON, peaker):
+        # TODO: Handle arguments
+        pass
+
+    Assert(
+        _is(TokenType.COLON, peaker),
+        'Expected item head to end with {} but was {}'.format(
+            TokenType.COLON, token.token_type
+        ),
+    )
+    children.append(parse_colon(peaker))
+    return Node(
+        node_type=NodeType.ITEM_NAME,
+        children=children,
+    )
+
+
+def parse_item(peaker):
+    # type: (Peaker[Token]) -> Node
+    head = parse_item_head(peaker)
+
+    keyword = head.children[2]
+
+    if keyword.node_type == NodeType.TYPE:
+        allowable_types = ['type', 'rtype', 'vartype', 'ytype']
+        Assert(
+            keyword.value in allowable_types,
+            'Unable to determine section type from keyword {}: '
+            'expected one of {}'.format(
+                keyword.value,
+                str(allowable_types),
+            )
+        )
+        if keyword.value == 'rtype':
+            section_type = NodeType.RETURNS_SECTION
+        elif keyword.value == 'vartype':
+            section_type = NodeType.VARIABLES_SECTION
+        elif keyword.value == 'type':
+            section_type = NodeType.ARGS_SECTION
+        elif keyword.value == 'ytype':
+            section_type = NodeType.YIELDS_SECTION
+    else:
+        section_type = _KEYWORD_TO_SECTION[keyword.node_type]
+
+    children = [
+        head,
+        parse_item_definition(peaker),
+    ]
+
+    return Node(
+        node_type=section_type,
+        children=children,
+    )
+
+# TODO: In the parse function, parse everything,
+# then run over it and conglomerate the sections.
+# that will allow us to treat the tree the same as we
+# treat the Google tree.

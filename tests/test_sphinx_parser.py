@@ -8,8 +8,13 @@ from darglint.peaker import Peaker
 from darglint.parse.common import (
     ParserException,
 )
+from darglint.parse.common import (
+    parse_keyword,
+)
 from darglint.parse.sphinx import (
     parse_short_description,
+    parse_item,
+    KEYWORDS,
 )
 
 
@@ -93,3 +98,66 @@ class SphinxParserTest(TestCase):
         content = '\n'
         with self.assertRaises(ParserException):
             parse_short_description(Peaker(lex(content)))
+
+    def test_parse_all_keywords(self):
+        """Make sure we can parse all of the keywords."""
+        for keyword in [
+                'param', 'parameter', 'arg', 'argument', 'key', 'keyword',
+                'type', 'raises', 'var', 'ivar', 'cvar',
+                'vartype', 'returns', 'rtype',
+                'yield', 'yields'
+        ]:
+            node = parse_keyword(Peaker(lex(keyword)), KEYWORDS)
+            self.assertEqual(
+                node.node_type,
+                KEYWORDS[keyword],
+            )
+            self.assertEqual(
+                node.value,
+                keyword,
+            )
+
+#  item = indent, colon, keyword, [word], colon, item-body;
+#  item-body = line, {line};
+#  line = unline, newline
+#  unline = { word
+#           , hash
+#           , colon
+#           , indent
+#           , keyword
+#           , lparen
+#           , rparen
+#           }, [noqa];
+
+    def test_item_without_argument(self):
+        """Test that we can parse an item without an argument."""
+        node = parse_item(
+            Peaker(lex('    :returns: A value.\n'), lookahead=2)
+        )
+        self.assertEqual(
+            node.node_type,
+            NodeType.RETURNS_SECTION,
+        )
+        node_types = [x.node_type for x in node.walk()]
+        self.assertEqual(
+            node_types,
+            [
+                NodeType.INDENT,
+                NodeType.COLON,
+                NodeType.RETURNS,
+                NodeType.COLON,
+                NodeType.ITEM_NAME,
+                NodeType.WORD,
+                NodeType.WORD,
+                NodeType.LINE,
+                NodeType.ITEM_DEFINITION,
+                NodeType.RETURNS_SECTION,
+            ],
+            'Incorrect node types.  Got: \n\t{}'.format('\n\t'.join([
+                str(x) for x in node_types
+            ]))
+        )
+
+    def test_parse_argument_item(self):
+        """Make sure we can parse an item with an arity of 1."""
+        pass

@@ -40,6 +40,7 @@ class NodeType(Enum):
     LIST = 29
     NOQA_HEAD = 30
     NOQA_BODY = 31
+    VARIABLES_SECTION = 34
 
     # Terminals
     KEYWORD = 3
@@ -53,6 +54,7 @@ class NodeType(Enum):
     LPAREN = 20
     RPAREN = 21
     HASH = 32
+    VARIABLES = 33
 
 
 class Node(object):
