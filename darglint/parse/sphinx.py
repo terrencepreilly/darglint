@@ -9,9 +9,9 @@ The EBNF for the parser is as follows:
                 , {[newline], item}
                 , newline;
 
-  long-description = line, {line}, newline;
   short-description = unline
                     | line, newline;
+  long-description = line, {line}, newline;
 
   item = indent, item-name, item-definition;
   section-name = colon, keyword, [word], colon;
@@ -63,6 +63,7 @@ The EBNF for the parser is as follows:
 
 """
 
+from itertools import chain
 from typing import List
 
 from ..node import (
@@ -200,7 +201,7 @@ def parse_line(peaker):
 
 def parse_short_description(peaker):
     # type: (Peaker[Token]) -> Node
-    AssertNotEmpty(peaker, 'parse line')
+    AssertNotEmpty(peaker, 'parse short description')
     Assert(
         not _is(TokenType.NEWLINE, peaker),
         'Must have short description in docstring.'
@@ -208,6 +209,25 @@ def parse_short_description(peaker):
     return Node(
         NodeType.SHORT_DESCRIPTION,
         children=[parse_line(peaker)],
+    )
+
+
+def _at_item(peaker):
+    # type: (Peaker[Token]) -> bool
+    return (_is(TokenType.COLON, peaker)
+            and peaker.peak(lookahead=2).value in KEYWORDS)
+
+
+def parse_long_description(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse long description')
+    children = list()  # type: List[Node]
+    while peaker.has_next() and not _at_item(peaker):
+        children.append(parse_line(peaker))
+
+    return Node(
+        node_type=NodeType.LONG_DESCRIPTION,
+        children=children,
     )
 
 
@@ -226,16 +246,6 @@ def parse_item_head(peaker):
     # type: (Peaker[Token]) -> Node
     AssertNotEmpty(peaker, 'parse item')
     children = list()  # type: List[Node]
-
-    token = peaker.peak()
-    assert token is not None
-    Assert(
-        _is(TokenType.INDENT, peaker),
-        'Insufficient indentation for item. Expected {} but got {}'.format(
-            TokenType.INDENT, token.token_type,
-        ),
-    )
-    children.append(parse_indent(peaker))
 
     token = peaker.peak()
     assert token is not None
@@ -260,8 +270,7 @@ def parse_item_head(peaker):
     children.append(keyword)
 
     if not _is(TokenType.COLON, peaker):
-        # TODO: Handle arguments
-        pass
+        children.append(parse_word(peaker))
 
     Assert(
         _is(TokenType.COLON, peaker),
@@ -280,7 +289,7 @@ def parse_item(peaker):
     # type: (Peaker[Token]) -> Node
     head = parse_item_head(peaker)
 
-    keyword = head.children[2]
+    keyword = head.children[1]
 
     if keyword.node_type == NodeType.TYPE:
         allowable_types = ['type', 'rtype', 'vartype', 'ytype']
@@ -313,7 +322,37 @@ def parse_item(peaker):
         children=children,
     )
 
-# TODO: In the parse function, parse everything,
-# then run over it and conglomerate the sections.
-# that will allow us to treat the tree the same as we
-# treat the Google tree.
+
+def parse(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse docstring')
+    children = [
+        parse_short_description(peaker),
+    ]
+
+    long_descriptions = list()  # type: List[Node]
+    while peaker.has_next() and not _at_item(peaker):
+        long_descriptions.append(
+            parse_long_description(peaker)
+        )
+    if long_descriptions:
+        desc = [x.children for x in long_descriptions]
+        children.append(
+            Node(
+                node_type=NodeType.LONG_DESCRIPTION,
+                children=list(chain(*desc))
+            )
+        )
+
+    while peaker.has_next():
+        children.append(parse_item(peaker))
+
+    return Node(
+        node_type=NodeType.DOCSTRING,
+        children=children,
+    )
+
+    # TODO: In the parse function, parse everything,
+    # then run over it and conglomerate the sections.
+    # that will allow us to treat the tree the same as we
+    # treat the Google tree.
