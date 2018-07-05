@@ -1,7 +1,7 @@
 import ast
 from unittest import TestCase, skip
 
-from darglint.docstring import (
+from darglint.docstring.google import (
     Docstring,
 )
 from darglint.lex import (

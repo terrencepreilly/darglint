@@ -3,6 +3,8 @@ from unittest import (
     TestCase,
 )
 
+from darglint.config import Configuration
+from darglint.docstring.base import DocstringStyle
 from darglint.integrity_checker import IntegrityChecker
 from darglint.function_description import get_function_descriptions
 from darglint.errors import (
@@ -19,6 +21,39 @@ from darglint.errors import (
     ReturnTypeMismatchError,
 )
 from darglint.parse.common import ParserException
+
+
+class IntegrityCheckerSphinxTestCase(TestCase):
+
+    def setUp(self):
+        self.config = Configuration(
+            ignore=[],
+            message_template=None,
+            style=DocstringStyle.SPHINX
+        )
+
+    def test_missing_parameter(self):
+        """Make sure we capture missing parameters."""
+        program = '\n'.join([
+            'def cons(x, l):',
+            '    """Add an item to the head of the list.',
+            '    ',
+            '    :param x: The item to add to the list.',
+            '    :return: The list with the item attached.',
+            '    ',
+            '    """',
+            '    return [x] + l',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker(self.config)
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertEqual(
+            len(errors), 1,
+            [(x.message()) for x in errors]
+        )
+        self.assertTrue(isinstance(errors[0], MissingParameterError))
 
 
 class IntegrityCheckerTestCase(TestCase):

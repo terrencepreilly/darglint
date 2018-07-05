@@ -134,6 +134,13 @@ class Node(object):
             NodeType.HASH,
         }
 
+    def first_instance(self, node_type):
+        # type: (NodeType) -> Optional[Node]
+        for child in self.breadth_first_walk():
+            if child.node_type == node_type:
+                return child
+        return None
+
     def walk(self):
         # type: () -> Iterator[Node]
         """Iterate over nodes in the tree rooted at this node.

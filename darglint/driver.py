@@ -8,7 +8,7 @@ from .function_description import (
     get_function_descriptions,
 )
 from .integrity_checker import IntegrityChecker
-from .config import (
+from .config import (  # noqa
     Configuration,
     get_config,
 )

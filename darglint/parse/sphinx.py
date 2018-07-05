@@ -63,7 +63,6 @@ The EBNF for the parser is as follows:
 
 """
 
-from collections import deque
 from itertools import chain
 from typing import (  # noqa
     Dict,
@@ -331,22 +330,26 @@ def parse_item(peaker):
 
     return Node(
         node_type=section_type,
-        children=children,
+        children=[Node(
+            node_type=NodeType.ITEM,
+            children=children,
+        )]
     )
 
 
-def parse(peaker):
+def parse_description(peaker):
     # type: (Peaker[Token]) -> Node
-    AssertNotEmpty(peaker, 'parse docstring')
+    AssertNotEmpty(peaker, 'parse description')
     children = [
         parse_short_description(peaker),
     ]
-
     long_descriptions = list()  # type: List[Node]
     while peaker.has_next() and not _at_item(peaker):
         long_descriptions.append(
             parse_long_description(peaker)
         )
+
+    # Consolidate all long descriptions into one.
     if long_descriptions:
         desc = [x.children for x in long_descriptions]
         children.append(
@@ -355,6 +358,19 @@ def parse(peaker):
                 children=list(chain(*desc))
             )
         )
+
+    return Node(
+        node_type=NodeType.DESCRIPTION,
+        children=children
+    )
+
+
+def parse(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse docstring')
+    children = [
+        parse_description(peaker)
+    ]
 
     while peaker.has_next():
         children.append(parse_item(peaker))
@@ -368,47 +384,3 @@ def parse(peaker):
     # then run over it and conglomerate the sections.
     # that will allow us to treat the tree the same as we
     # treat the Google tree.
-
-
-def consolidate_ast(node):
-    # type: (Node) -> Node
-    """Consolidate sections of AST from Sphinx to match Google-Style.
-
-    Args:
-        node: The docstring to consolidate.
-
-    Returns:
-        The consolidated docstring.
-
-    """
-    Assert(
-        node.node_type == NodeType.DOCSTRING,
-        'We can only consolidate docstrings.'
-    )
-    storage_node_types = {
-        NodeType.ARGS_SECTION,
-        NodeType.VARIABLES_SECTION,
-        NodeType.RAISES_SECTION,
-    }
-    # The first occurence of the given storage node types.
-    storage = dict()  # type: Dict
-    queue = deque()  # type: deque
-    queue.appendleft(node)
-    while queue:
-        parent = queue.pop()
-        remove_from_parent = deque()  # type: deque
-        for i in range(len(parent.children)):
-            child = parent.children[i]
-            if child.node_type not in storage_node_types:
-                continue
-            if child.node_type in storage:
-                remove_from_parent.appendleft(i)
-                storage[child.node_type].children.extend(
-                    child.children
-                )
-                child.children = list()
-            else:
-                storage[child.node_type] = child
-        for i in remove_from_parent:
-            parent.children.pop(i)
-    return node

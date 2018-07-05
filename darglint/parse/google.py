@@ -1,61 +1,69 @@
 r"""
 __EBNF for a google-style docstring__:
 
-  <docstring> ::= <short-description>
-                | <short-description><newline><newline>
-                    <long-description>*
-                    <sections>*
+  docstring = short-description
+              | short-description
+                  , newline
+                  , newline
+                  , {long-description}
+                  , [sections];
 
-  <short-description> ::= <word>[<hash><noqa><word><colon><keyword>]*
-  <long-description>  ::= <head-line>+
-  <head-line> ::= <indent>
-                    [<word><colon><indent>]
-                    [<word><colon><indent><keyword>]*
-                    <noqa>?<newline>
+  short-description = word, {hash | noqa | word | colon | keyword}
+  long-description  = head-line, {head-line}
+  head-line = indent
+                  , [word | colon | indent]
+                  , {word | colon | indent | keyword}
+                  , [noqa]
+                  , newline
 
-  <sections> ::= <arguments-section>?
-                   <raises-section>?
-                   (<yields-section>|<returns-section>)?
-               | <raises-section>?
-                   <arguments-section>?
-                   (yields-section>|<returns-section>)?
+  sections = [arguments-section]
+                  , [raises-section]
+                  , [yields-section | returns-section]
+              | [raises-section]
+                  , [arguments-section]
+                  , [yields-section | returns-section]
 
-  <arguments-section> ::= <section-compound>
-  <raises-section> ::= <section-compound>
-  <yields-section> ::= <section-simple>
-  <returns-section> ::= <section-simple>
+  arguments-section = section-compound
+  raises-section = section-compound
+  yields-section = section-simple
+  returns-section = section-simple
 
-  <section-simple> ::= <section-head><section-simple-body>
-  <section-compound> ::= <section-head><section-compound-body>
-  <section-head> ::= <keyword><colon><newline>
-  <section-simple-body> ::=
-    <indent><type>?[<word><colon><indent><keyword>]*<newline>
-    (<indent><indent><line>)*
-  <section-compound-body> ::= <item>+
-  <item> ::= <indent><item-name><colon><item-definition>
-  <item-name> ::= <word><type>?
-  <item-definition> ::= <line>+
-  <line> ::= [<word><hash><colon><indent><keyword>]*<noqa>?<newline>
-  <type> ::= <lparen><word>+<rparen>
-           | <word><colon>
+  section-simple = section-head, section-simple-body
+  section-compound = section-head, section-compound-body
+  section-head = keyword, colon, newline
+  section-simple-body =
+    indent, [type], {word | colon | indent | keyword}, newline
+    {indent, indent, line}
+  section-compound-body = item, {item}
+  item = indent, item-name, colon, item-definition
+  item-name = word, [type]
+  item-definition = line, {line}
+  line = { word
+         | hash
+         | colon
+         | indent
+         | keyword
+         }, [noqa] newline
+  type = lparen, word, {word}, rparen
+           | word, colon
 
-  <noqa> ::= <noqa-head>(<colon><noqa-body>)?
-  <noqa-head> ::= <hash><word>
-  <noqa-body> ::= <word><list>?
-  <list> ::= <word>["," <word>]*
+  noqa      = noqa-head, [colon, noqa-body]
+  noqa-head = hash, word
+  noqa-body = word, [list]
+  list      = word, {"," word}
 
-  <hash> ::= "#"
-  <lparen> ::= "("
-  <rparen> ::= ")"
-  <keyword> ::= "Args"
+  hash    = "#"
+  lparen  = "("
+  rparen  = ")"
+  keyword = "Args"
             | "Arguments"
             | "Returns
             | "Yields"
             | "Raises"
-  <indent>  ::= " "{4}
-  <word>    ::= [^\ \n\:\"\t]+
-  <colon>   ::= ":"
-  <newline> ::= "\n"
+  indent  = " "{4}
+  word    = [^\ \n\:\"\t]+
+  colon   = ":"
+  newline = "\n"
 
 """
 from typing import (

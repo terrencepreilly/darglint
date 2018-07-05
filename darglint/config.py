@@ -3,9 +3,17 @@
 from collections import namedtuple
 import configparser
 import logging
+from logging import (  # noqa
+    Logger,
+)
 import os
 
-from typing import Iterable
+from typing import (  # noqa
+    Iterable,
+    Optional,
+)
+
+from .docstring.base import DocstringStyle
 
 
 # TODO: Configure this logger and allow the user to specify
@@ -20,11 +28,17 @@ POSSIBLE_CONFIG_FILENAMES = (
     'tox.ini',
 )
 
+
 # ignore: List[str] -- A list of error codes to ignore.
-Configuration = namedtuple('Configuration', 'ignore message_template')
+# message_template: str -- the template with which to format the errors.
+# style: DocstringStyle -- The style of docstring.
+Configuration = namedtuple(
+    'Configuration',
+    'ignore message_template style'
+)
 
 
-def load_config_file(filename): # type: (str) -> Configuration
+def load_config_file(filename):  # type: (str) -> Configuration
     """Load the config file located at the filename.
 
     Args:
@@ -38,6 +52,7 @@ def load_config_file(filename): # type: (str) -> Configuration
     config.read(filename)
     ignore = list()
     message_template = None
+    style = DocstringStyle.GOOGLE
     if 'darglint' in config.sections():
         if 'ignore' in config['darglint']:
             errors = config['darglint']['ignore']
@@ -45,10 +60,25 @@ def load_config_file(filename): # type: (str) -> Configuration
                 ignore.append(error.strip())
         if 'message_template' in config['darglint']:
             message_template = config['darglint']['message_template']
-    return Configuration(ignore=ignore, message_template=message_template)
+        if 'style' in config['darglint']:
+            if config['darglint']['style'].lower().strip() == 'google':
+                style = DocstringStyle.GOOGLE
+            elif config['darglint']['style'].lower().strip() == 'sphinx':
+                style = DocstringStyle.SPHINX
+            else:
+                raise Exception(
+                    'Unrecognized style.  Should be one of {}'.format(
+                        [x.name for x in DocstringStyle]
+                    )
+                )
+    return Configuration(
+        ignore=ignore,
+        message_template=message_template,
+        style=style
+    )
 
 
-def walk_path(): # type: () -> Iterable[str]
+def walk_path():  # type: () -> Iterable[str]
     """Yield directories from the current to root.
 
     Yields:
@@ -69,7 +99,7 @@ def walk_path(): # type: () -> Iterable[str]
         next_path = os.path.dirname(next_path)
 
 
-def find_config_file_in_path(path): # type: (str) -> str
+def find_config_file_in_path(path):  # type: (str) -> Optional[str]
     """Return the config path, if it is correct, or None.
 
     Args:
@@ -96,7 +126,7 @@ def find_config_file_in_path(path): # type: (str) -> str
     return None
 
 
-def find_config_file(): # type: () -> str
+def find_config_file():  # type: () -> Optional[str]
     """Return the location of the config file.
 
     Returns:
@@ -112,7 +142,7 @@ def find_config_file(): # type: () -> str
     return None
 
 
-def get_config(): # type: () -> Configuration
+def get_config():  # type: () -> Configuration
     """Locate the configuration file and return its Configuration.
 
     Returns:
@@ -122,11 +152,15 @@ def get_config(): # type: () -> Configuration
     """
     filename = find_config_file()
     if filename is None:
-        return Configuration(ignore=list(), message_template=None)
+        return Configuration(
+            ignore=list(),
+            message_template=None,
+            style=DocstringStyle.GOOGLE
+        )
     return load_config_file(filename)
 
 
-def get_logger(): # type: () -> logging.Loger
+def get_logger():  # type: () -> Logger
     """Get the default logger for darglint.
 
     Returns:

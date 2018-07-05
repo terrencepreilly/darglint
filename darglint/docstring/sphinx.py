@@ -1,7 +1,6 @@
-"""Defines the Docstring class, which interprets the AST."""
-
+from .base import BaseDocstring, DocstringStyle
 from collections import defaultdict
-from typing import (
+from typing import (  # noqa
     Dict,
     List,
     Set,
@@ -9,20 +8,22 @@ from typing import (
     Tuple,
     Optional,
 )
-from .node import (
+from ..node import (
     Node,
     NodeType,
 )
-from .parse.google import parse
-from .lex import lex
-from .peaker import Peaker
+from ..parse import (
+    sphinx,
+)
+from ..lex import lex
+from ..peaker import Peaker
 
 
-class Docstring(object):
+class Docstring(BaseDocstring):
     """The docstring class interprets the AST of a docstring."""
 
-    def __init__(self, root):
-        # type: (Union[Node, str]) -> None
+    def __init__(self, root, style=DocstringStyle.SPHINX):
+        # type: (Union[Node, str], DocstringStyle) -> None
         """Create a new docstring from the AST.
 
         Args:
@@ -34,7 +35,7 @@ class Docstring(object):
         if isinstance(root, Node):
             self.root = root
         else:
-            self.root = parse(Peaker(lex(root), lookahead=3))
+            self.root = sphinx.parse(Peaker(lex(root), lookahead=2))
         self._lookup = self._discover()
 
     def _discover(self):
@@ -111,7 +112,7 @@ class Docstring(object):
         return NodeType.RETURNS_SECTION in self._lookup
 
     def get_return_type(self):
-        # type: () -> Union[str, None]
+        # type: () -> Optional[str]
         """Get the return type specified by the docstring, if any.
 
         Returns:
@@ -119,12 +120,12 @@ class Docstring(object):
 
         """
         for return_node in self._lookup[NodeType.RETURNS_SECTION]:
-            for node in return_node.breadth_first_walk(leaves=False):
-                if node.node_type == NodeType.TYPE:
-                    type_repr = node.reconstruct_string()
-                    if type_repr.startswith('(') and type_repr.endswith(')'):
-                        type_repr = type_repr[2:-2]
-                    return type_repr
+            type_node = return_node.first_instance(NodeType.TYPE)
+            if type_node is None:
+                continue
+            definition = return_node.first_instance(NodeType.ITEM_DEFINITION)
+            assert definition is not None
+            return definition.reconstruct_string().strip()
         return None
 
     def get_exception_types(self):
@@ -137,14 +138,16 @@ class Docstring(object):
         """
         ret = list()  # type: List[str]
         for raises_node in self._lookup[NodeType.RAISES_SECTION]:
-            for node in raises_node.breadth_first_walk(leaves=False):
-                if node.node_type == NodeType.ITEM_NAME:
-                    exception_name = node.children[0].value
-                    ret.append(exception_name)
+            item_name = raises_node.first_instance(NodeType.ITEM_NAME)
+            assert item_name is not None
+            word = item_name.first_instance(NodeType.WORD)
+            assert word is not None, '`except` should have an argument.'
+            assert word.value is not None
+            ret.append(word.value)
         return ret
 
     def get_yield_type(self):
-        # type: () -> Union[str, None]
+        # type: () -> Optional[str]
         """Get the yield type specified by the docstring, if any.
 
         Returns:
@@ -152,41 +155,41 @@ class Docstring(object):
 
         """
         for yield_node in self._lookup[NodeType.YIELDS_SECTION]:
-            for node in yield_node.breadth_first_walk(leaves=False):
-                if node.node_type == NodeType.TYPE:
-                    type_repr = node.reconstruct_string()
-                    if type_repr.startswith('(') and type_repr.endswith(')'):
-                        type_repr = type_repr[2:-2]
-                    return type_repr
+            type_node = yield_node.first_instance(NodeType.TYPE)
+            if type_node is None:
+                continue
+            definition = yield_node.first_instance(NodeType.ITEM_DEFINITION)
+            assert definition is not None
+            return definition.reconstruct_string().strip()
         return None
 
     def get_argument_types(self):
-        # type: () -> Dict[str, str]
+        # type: () -> Dict[str, Optional[str]]
         """Get a dictionary mapping arguments to types.
 
         Returns:
             A dictionary matching arguments to types.
 
         """
-        argtypes = dict()  # type: Dict[str, str]
-        item_names = list()  # type: List[Node]
-
+        argtypes = dict()  # type: Dict[str, Optional[str]]
         for arg_section in self._lookup[NodeType.ARGS_SECTION]:
-            for node in arg_section.breadth_first_walk(leaves=False):
-                if node.node_type == NodeType.ITEM_NAME:
-                    item_names.append(node)
+            item_name = arg_section.first_instance(NodeType.ITEM_NAME)
+            assert item_name is not None
+            param = item_name.first_instance(NodeType.WORD)
+            assert param is not None
+            assert param.value is not None
 
-        for item_name in item_names:
-            argument = item_name.children[0]
-            if len(item_name.children) > 1:
-                type_node = item_name.children[1]
-                type_repr = type_node.reconstruct_string()
-                if type_repr.startswith('(') and type_repr.endswith(')'):
-                    type_repr = type_repr[2:-2]
-                argtypes[argument.value] = type_repr
-            else:
-                argtypes[argument.value] = None
-
+            is_param_item = arg_section.first_instance(NodeType.TYPE) is None
+            if is_param_item:
+                if param.value not in argtypes:
+                    argtypes[param.value] = None
+            else:  # Is the type description of a parameter.
+                definition = arg_section.first_instance(
+                    NodeType.ITEM_DEFINITION
+                )
+                assert definition is not None
+                param_type = definition.reconstruct_string().strip()
+                argtypes[param.value] = param_type
         return argtypes
 
     def get_noqas(self):
@@ -205,13 +208,18 @@ class Docstring(object):
 
         # Get exceptions with implied targets
         for item_node in self._lookup[NodeType.ITEM]:
-            item = None
+            item = None  # type: Optional[str]
             for node in item_node.breadth_first_walk(leaves=False):
                 # We will always encounter the item name first.
                 if node.node_type == NodeType.ITEM_NAME:
-                    item = node.children[0].value
+                    iname = node.first_instance(NodeType.WORD)
+                    if iname is None:
+                        continue
+                    item = iname.value
                 elif node.node_type == NodeType.NOQA_BODY:
+                    assert item is not None
                     exception = node.children[0]
+                    assert exception.value is not None
                     encountered.add(exception)
                     noqas[exception.value].append(item)
 
@@ -227,6 +235,8 @@ class Docstring(object):
 
             for word_node in noqa_node.children[1].children:
                 word = word_node.value
+                assert word is not None
+                assert exception.value is not None
                 if word.endswith(','):
                     word = word[:-1]
                 noqas[exception.value].append(word)
@@ -234,12 +244,13 @@ class Docstring(object):
         # We overwrite any previous targets, because it was defined
         # as a global. (This could happen before a target is defined.)
         for global_noqa in global_noqas:
+            assert global_noqa.value is not None
             noqas[global_noqa.value] = list()
 
         return dict(noqas)
 
     def _get_description(self, node_type):
-        # type: (NodeType) -> str
+        # type: (NodeType) -> Optional[str]
         nodes = self._lookup[node_type]
         if not nodes:
             return None
@@ -278,7 +289,6 @@ class Docstring(object):
             parameters.
 
         """
-        line_numbers = list()  # type: List[Tuple[int, int]]
         nodes = self._lookup[node_type]
         for node in nodes:
             for child in node.walk():
@@ -288,7 +298,7 @@ class Docstring(object):
 
     @property
     def raises_description(self):
-        # type: () -> str
+        # type: () -> Optional[str]
         """Get the raises section of the docstring.
 
         Returns:
@@ -299,7 +309,7 @@ class Docstring(object):
 
     @property
     def returns_description(self):
-        # type: () -> str
+        # type: () -> Optional[str]
         """Get the returns section of the docstring.
 
         Returns:
@@ -311,7 +321,7 @@ class Docstring(object):
 
     @property
     def yields_description(self):
-        # type: () -> str
+        # type: () -> Optional[str]
         """Get the yield ssection of the docstring.
 
         Returns:
@@ -322,7 +332,7 @@ class Docstring(object):
 
     @property
     def arguments_description(self):
-        # type: () -> str
+        # type: () -> Optional[str]
         """Get the arguments section of the docstring.
 
         Returns:
@@ -334,7 +344,7 @@ class Docstring(object):
 
     @property
     def short_description(self):
-        # type: () -> str
+        # type: () -> Optional[str]
         """Get the short description of the docstring.
 
         Returns:
@@ -345,7 +355,7 @@ class Docstring(object):
 
     @property
     def long_description(self):
-        # type: () -> str
+        # type: () -> Optional[str]
         """Get the long description of the docstring.
 
         Returns:

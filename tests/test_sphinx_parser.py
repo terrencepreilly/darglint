@@ -1,5 +1,5 @@
 import ast
-from unittest import TestCase, skip
+from unittest import TestCase
 
 from darglint.lex import (
     lex,
@@ -18,10 +18,7 @@ from darglint.parse.sphinx import (
     parse_item,
     parse_long_description,
     parse_short_description,
-    consolidate_ast,
 )
-
-from .sphinx_docstrings import docstrings
 
 
 class SphinxParserTest(TestCase):
@@ -123,6 +120,7 @@ class SphinxParserTest(TestCase):
                 NodeType.WORD,
                 NodeType.LINE,
                 NodeType.ITEM_DEFINITION,
+                NodeType.ITEM,
                 NodeType.RETURNS_SECTION,
             ],
             'Incorrect node types.  Got: \n\t{}'.format('\n\t'.join([
@@ -150,6 +148,7 @@ class SphinxParserTest(TestCase):
             NodeType.WORD,
             NodeType.LINE,
             NodeType.ITEM_DEFINITION,
+            NodeType.ITEM,
             NodeType.ARGS_SECTION,
         ])
 
@@ -172,6 +171,7 @@ class SphinxParserTest(TestCase):
             NodeType.WORD,
             NodeType.LINE,
             NodeType.ITEM_DEFINITION,
+            NodeType.ITEM,
             NodeType.ARGS_SECTION,
         ])
 
@@ -194,6 +194,7 @@ class SphinxParserTest(TestCase):
             NodeType.WORD,
             NodeType.LINE,
             NodeType.ITEM_DEFINITION,
+            NodeType.ITEM,
             NodeType.VARIABLES_SECTION,
         ])
 
@@ -304,53 +305,3 @@ class SphinxParserTest(TestCase):
                     word,
                 )
             )
-
-    def test_ast_transform_ensures_one_of_each_section(self):
-        """Make sure we can transform the flat AST to join sections."""
-        for docstring in docstrings():
-            try:
-                node = parse(Peaker(lex(docstring), lookahead=2))
-            except ParserException as ex:
-                self.fail('FAILED TO PARSE\n{}\n\n{}\n'.format(docstring, ex))
-            transformed = consolidate_ast(node)
-            argument_section_count = 0
-            variable_section_count = 0
-            returns_section_count = 0
-            for child in transformed.walk():
-                if child.node_type == NodeType.ARGS_SECTION:
-                    argument_section_count += 1
-                elif child.node_type == NodeType.VARIABLES_SECTION:
-                    variable_section_count += 1
-                elif child.node_type == NodeType.RETURNS_SECTION:
-                    returns_section_count += 0
-            self.assertTrue(
-                argument_section_count <= 1
-            )
-            self.assertTrue(
-                variable_section_count <= 1
-            )
-            self.assertTrue(
-                returns_section_count <= 1
-            )
-
-    def test_consecutive_sections_consolidation_same_reconstruction(self):
-        """Make sure we have the same str repr. after consolidation.
-
-        This should only happen if the sections are not interleaved.
-
-        """
-        docstring = parse(Peaker(lex('\n'.join([
-            'Split, map, join siamese twins.',
-            '',
-            ':param twins: A list of siamese twins.',
-            ':param left: The mapping function for the first twin.',
-            ':param right: The mapping function for the second twin.',
-            ':return: A new set of siamese twins.',
-        ])), lookahead=2))
-        original = docstring.reconstruct_string()
-        docstring = consolidate_ast(docstring)
-        consolidated = docstring.reconstruct_string()
-        self.assertEqual(
-            original,
-            consolidated,
-        )

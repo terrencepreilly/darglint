@@ -2,9 +2,10 @@
 
 from unittest import TestCase
 
-from darglint.docstring import Docstring
+from darglint.docstring.docstring import Docstring
 from darglint.lex import lex
 from darglint.parse.google import parse
+from darglint.parse import sphinx
 from darglint.peaker import Peaker
 
 
@@ -19,7 +20,7 @@ class DocstringMethodTest(TestCase):
             '    # noqa',
             '\n',
         ])), lookahead=3))
-        docstring = Docstring(root)
+        docstring = Docstring.from_google(root)
         self.assertTrue(docstring.ignore_all)
 
     def test_global_noqa_star_body(self):
@@ -30,14 +31,14 @@ class DocstringMethodTest(TestCase):
             '    # noqa: *',
             '\n',
         ])), lookahead=3))
-        docstring = Docstring(root)
+        docstring = Docstring.from_google(root)
         self.assertTrue(docstring.ignore_all)
 
     def test_get_short_description(self):
         """Ensure we can get the short description."""
         root = parse(
             Peaker(lex('Nothing but a short description.'), lookahead=3))
-        docstring = Docstring(root)
+        docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.short_description,
             'Nothing but a short description.'
@@ -51,7 +52,7 @@ class DocstringMethodTest(TestCase):
             'Long description should be contiguous.',
             '',
         ])), lookahead=3))
-        docstring = Docstring(root)
+        docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.long_description,
             'Long description should be contiguous.\n'
@@ -66,7 +67,7 @@ class DocstringMethodTest(TestCase):
             '    x: An integer.',
             '\n',
         ])), lookahead=3))
-        docstring = Docstring(root)
+        docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.arguments_description,
             'Args:\n    x: An integer.\n'
@@ -82,7 +83,7 @@ class DocstringMethodTest(TestCase):
             '    y (List[int], optional): The second.',
             '\n',
         ])), lookahead=3))
-        docstring = Docstring(root)
+        docstring = Docstring.from_google(root)
         argtypes = docstring.get_argument_types()
         self.assertEqual(
             argtypes['x'],
@@ -102,7 +103,7 @@ class DocstringMethodTest(TestCase):
             '    Bourbon.',
             '\n',
         ])), lookahead=3))
-        docstring = Docstring(root)
+        docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.returns_description,
             'Returns:\n    Bourbon.\n',
@@ -117,7 +118,7 @@ class DocstringMethodTest(TestCase):
             '    Alcohol: Vodka.',
             '\n',
         ])), lookahead=3))
-        docstring = Docstring(root)
+        docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.get_return_type(),
             'Alcohol',
@@ -132,7 +133,7 @@ class DocstringMethodTest(TestCase):
             '    To pedestrians.',
             '\n',
         ])), lookahead=3))
-        docstring = Docstring(root)
+        docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.yields_description,
             'Yields:\n    To pedestrians.\n',
@@ -147,7 +148,7 @@ class DocstringMethodTest(TestCase):
             '    Cat: The slavic ones.',
             '\n',
         ])), lookahead=3))
-        docstring = Docstring(root)
+        docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.get_yield_type(),
             'Cat',
@@ -162,7 +163,7 @@ class DocstringMethodTest(TestCase):
             '    ProblemException: if there is a problem.',
             '\n',
         ])), lookahead=3))
-        docstring = Docstring(root)
+        docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.raises_description,
             'Raises:\n    ProblemException: if there is a problem.\n'
@@ -178,7 +179,7 @@ class DocstringMethodTest(TestCase):
             '    DoesNotExist: Always.',
             '\n',
         ])), lookahead=3))
-        docstring = Docstring(root)
+        docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.get_exception_types(),
             ['IndexError', 'DoesNotExist']
@@ -196,7 +197,7 @@ class DocstringMethodTest(TestCase):
             '    x: Something. # noqa: I201',
             '\n',
         ])), lookahead=3))
-        docstring = Docstring(root)
+        docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.get_noqas(),
             {
@@ -224,7 +225,7 @@ class DocstringMethodTest(TestCase):
             'Returns:',
             '    When it completes.',
         ])), lookahead=3))
-        docstring = Docstring(has_everything_root)
+        docstring = Docstring.from_google(has_everything_root)
         self.assertTrue(all([
             docstring.has_short_description(),
             docstring.has_long_description(),
@@ -236,7 +237,7 @@ class DocstringMethodTest(TestCase):
         has_only_short_description = parse(Peaker(lex('\n'.join([
             'Short description'
         ])), lookahead=3))
-        docstring = Docstring(has_only_short_description)
+        docstring = Docstring.from_google(has_only_short_description)
         self.assertTrue(
             docstring.has_short_description(),
         )
@@ -247,3 +248,67 @@ class DocstringMethodTest(TestCase):
             docstring.has_yields_section(),
             docstring.has_returns_section(),
         ]))
+
+
+class DocstringForSphinxTests(TestCase):
+
+    def test_has_everything_for_sphinx(self):
+        has_everything_root = sphinx.parse(Peaker(lex('\n'.join([
+            'Short decscription.',
+            '',
+            'Long description.',
+            '',
+            ':param x: Some value.',
+            ':raises IntegrityError: Sometimes.',
+            ':yields: The occasional value.',
+            ':returns: When it completes.',
+            ''
+        ])), lookahead=3))
+        docstring = Docstring.from_sphinx(has_everything_root)
+        self.assertTrue(all([
+            docstring.has_short_description(),
+            docstring.has_long_description(),
+            docstring.has_args_section(),
+            docstring.has_raises_section(),
+            docstring.has_yields_section(),
+            docstring.has_returns_section(),
+        ]))
+        has_only_short_description = parse(Peaker(lex('\n'.join([
+            'Short description'
+        ])), lookahead=3))
+        docstring = Docstring.from_google(has_only_short_description)
+        self.assertTrue(
+            docstring.has_short_description(),
+        )
+        self.assertFalse(any([
+            docstring.has_long_description(),
+            docstring.has_args_section(),
+            docstring.has_raises_section(),
+            docstring.has_yields_section(),
+            docstring.has_returns_section(),
+        ]))
+
+    def test_get_argument_types(self):
+        """Make sure we can get a dictionary of arguments to types."""
+        root = sphinx.parse(Peaker(lex('\n'.join([
+            'Something.',
+            '',
+            ':param x: The first.',
+            ':param y: The second.',
+            ':type x: int',
+            ':type y: List[int], optional'
+            '\n',
+        ])), lookahead=3))
+        from darglint.utils import generate_dot
+        with open('_data/example.dot', 'w') as fout:
+            fout.write(generate_dot(root))
+        docstring = Docstring.from_sphinx(root)
+        argtypes = docstring.get_argument_types()
+        self.assertEqual(
+            argtypes['x'],
+            'int',
+        )
+        self.assertEqual(
+            argtypes['y'],
+            'List[int], optional',
+        )

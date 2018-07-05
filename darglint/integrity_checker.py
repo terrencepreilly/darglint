@@ -1,25 +1,29 @@
 """Defines IntegrityChecker."""
 
-from typing import (
+from typing import (  # noqa
     Any,
     List,
     Set,
     Optional,
 )
 
-from .function_description import (
+from .function_description import (  # noqa
     FunctionDescription,
 )
 from .parse.common import (
     ParserException,
 )
-from .docstring import (
+from .docstring.base import (  # noqa
+    BaseDocstring,
+    DocstringStyle,
+)
+from .docstring.docstring import (
     Docstring,
 )
 from .node import (
     NodeType,
 )
-from .errors import (
+from .errors import (  # noqa
     DarglintError,
     ExcessParameterError,
     ExcessRaiseError,
@@ -35,17 +39,23 @@ from .errors import (
 from .error_report import (
     ErrorReport,
 )
-from .config import Configuration
+from .config import (
+    Configuration,
+)
 
 
 class IntegrityChecker(object):
     """Checks the integrity of the docstring compared to the definition."""
 
-    docstring = None  # type: Docstring
+    docstring = None  # type: BaseDocstring
     function = None  # type: FunctionDescription
 
     def __init__(self,
-                 config=Configuration(ignore=[], message_template=None),
+                 config=Configuration(
+                     ignore=[],
+                     message_template=None,
+                     style=DocstringStyle.GOOGLE
+                 ),
                  raise_errors=False
                  ):
         # type: (Configuration, bool) -> None
@@ -75,7 +85,14 @@ class IntegrityChecker(object):
         self.function = function
         if function.docstring is not None:
             try:
-                self.docstring = Docstring(function.docstring)
+                if self.config.style == DocstringStyle.GOOGLE:
+                    self.docstring = Docstring.from_google(
+                        function.docstring,
+                    )
+                elif self.config.style == DocstringStyle.SPHINX:
+                    self.docstring = Docstring.from_sphinx(
+                        function.docstring,
+                    )
                 if self.docstring.ignore_all:
                     return
                 self._check_parameters()
@@ -126,7 +143,7 @@ class IntegrityChecker(object):
                 line_numbers = self.docstring.get_line_numbers_for_value(
                     NodeType.ITEM_NAME,
                     name,
-                ) or defalut_line_numbers
+                ) or default_line_numbers
                 self.errors.append(
                     ParameterTypeMismatchError(
                         self.function.function,
