@@ -275,7 +275,15 @@ def parse_item_head(peaker):
     keyword = parse_keyword(peaker, KEYWORDS)
     children.append(keyword)
 
+    #           1     2  3
+    # :param <type> <arg>:
     if not _is(TokenType.COLON, peaker):
+        if not _is(TokenType.COLON, peaker, offset=2):
+            _type = parse_word(peaker)
+            children.append(Node(
+                node_type=NodeType.TYPE,
+                children=[_type],
+            ))
         children.append(parse_word(peaker))
 
     AssertNotEmpty(peaker, 'parse item head end')

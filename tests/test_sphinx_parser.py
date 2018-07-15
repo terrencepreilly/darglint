@@ -19,6 +19,7 @@ from darglint.parse.sphinx import (
     parse_long_description,
     parse_short_description,
 )
+from .sphinx_docstrings import docstrings
 
 
 class SphinxParserTest(TestCase):
@@ -175,6 +176,44 @@ class SphinxParserTest(TestCase):
             NodeType.ARGS_SECTION,
         ])
 
+    def test_inline_item_type(self):
+        """Make sure we can get the type of the item in its definition."""
+        node = parse_item(
+            Peaker(lex(':param int x: A number.\n'), lookahead=2)
+        )
+        self.assertEqual(
+            node.node_type,
+            NodeType.ARGS_SECTION,
+        )
+        node_types = [x.node_type for x in node.walk()]
+        self.assertEqual(node_types, [
+            NodeType.COLON,
+            NodeType.ARGUMENTS,
+            NodeType.WORD,
+            NodeType.TYPE,
+            NodeType.WORD,
+            NodeType.COLON,
+            NodeType.ITEM_NAME,
+            NodeType.WORD,
+            NodeType.WORD,
+            NodeType.LINE,
+            NodeType.ITEM_DEFINITION,
+            NodeType.ITEM,
+            NodeType.ARGS_SECTION,
+        ])
+
+    def test_definition_with_colon_not_mistaken_for_inline_type(self):
+        node = parse_item(
+            Peaker(lex(
+                ':param x: : That shouldn\'t be there.\n'
+            ), lookahead=2)
+        )
+        self.assertEqual(node.node_type, NodeType.ARGS_SECTION)
+        self.assertTrue(not any([
+            x.node_type == NodeType.TYPE
+            for x in node.walk()
+        ]))
+
     def test_parse_vartype_item(self):
         """Ensure we can parse a variable type description."""
         node = parse_item(
@@ -305,3 +344,24 @@ class SphinxParserTest(TestCase):
                     word,
                 )
             )
+
+
+class CompatibilityTest(TestCase):
+    """Tests against real-world docstrings."""
+
+    def test_parser_can_parse_all_docstrings(self):
+        for docstring in docstrings():
+            try:
+                parse(Peaker(lex(docstring), lookahead=2))
+            except ParserException as pe:
+                self.fail(
+                    'FAILED TO PARSE:\n\n{}\n\n{}'.format(
+                        docstring,
+                        pe
+                    )
+                )
+
+
+# Some comments use the format.
+#
+# :param <type> <variable>: <description>
