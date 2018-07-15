@@ -214,6 +214,33 @@ class SphinxParserTest(TestCase):
             for x in node.walk()
         ]))
 
+    def test_item_name_with_return_can_have_type_but_not_argument(self):
+        """Make sure the return item can can a type."""
+        node = parse_item(
+            Peaker(lex(
+                ':returns int: Whoa.'
+            ), lookahead=2)
+        )
+        self.assertEqual(node.node_type, NodeType.RETURNS_SECTION)
+        node_types = [x.node_type for x in node.walk()]
+        print('\n'.join(map(str, node_types)))
+        self.assertEqual(
+            node_types,
+            [
+                NodeType.COLON,
+                NodeType.RETURNS,
+                NodeType.WORD,
+                NodeType.TYPE,
+                NodeType.COLON,
+                NodeType.ITEM_NAME,
+                NodeType.WORD,
+                NodeType.LINE,
+                NodeType.ITEM_DEFINITION,
+                NodeType.ITEM,
+                NodeType.RETURNS_SECTION,
+            ]
+        )
+
     def test_parse_vartype_item(self):
         """Ensure we can parse a variable type description."""
         node = parse_item(
@@ -290,6 +317,32 @@ class SphinxParserTest(TestCase):
         self.assertTrue(has_type_for_limit)
         self.assertEqual(colon_count, 12)
 
+    def test_multiple_line_item_definition(self):
+        """Make sure item definitions can span multiple lines."""
+        func = '\n'.join([
+            'def do_nothing(x):',
+            '    """Do nothing with x.',
+            '    ',
+            '    :param x: This is an argument which must be ',
+            '        qualified by a large amount of text.',
+            '',
+            '    """',
+            '    pass',
+        ])
+        doc = ast.get_docstring(ast.parse(func).body[0])
+        node = parse(Peaker(lex(doc), lookahead=2))
+        item_node = None
+        for child in node.walk():
+            if child.node_type == NodeType.ITEM:
+                item_node = child
+                break
+        self.assertEqual(
+            sum([1 if x.node_type == NodeType.LINE else 0
+                 for x in item_node.walk()]),
+            2,
+            'There should be two lines in this item definition.'
+        )
+
     def test_parse_from_ast(self):
         """Make sure we can parse the docstring as returned from ast."""
         func = '\n'.join([
@@ -360,8 +413,3 @@ class CompatibilityTest(TestCase):
                         pe
                     )
                 )
-
-
-# Some comments use the format.
-#
-# :param <type> <variable>: <description>

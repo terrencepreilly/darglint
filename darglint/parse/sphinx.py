@@ -240,7 +240,7 @@ def parse_long_description(peaker):
 def parse_item_definition(peaker):
     # type: (Peaker[Token]) -> Node
     children = [parse_line(peaker)]
-    while _is(TokenType.INDENT, peaker, 2):
+    while _is(TokenType.INDENT, peaker):
         children.append(parse_line(peaker))
     return Node(
         node_type=NodeType.ITEM_DEFINITION,
@@ -248,7 +248,7 @@ def parse_item_definition(peaker):
     )
 
 
-def parse_item_head(peaker):
+def parse_item_head_with_argument(peaker):
     # type: (Peaker[Token]) -> Node
     AssertNotEmpty(peaker, 'parse item')
     children = list()  # type: List[Node]
@@ -302,6 +302,90 @@ def parse_item_head(peaker):
         node_type=NodeType.ITEM_NAME,
         children=children,
     )
+
+
+def parse_item_head_without_argument(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse item')
+    children = list()  # type: List[Node]
+
+    token = peaker.peak()
+    assert token is not None
+    Assert(
+        _is(TokenType.COLON, peaker),
+        'Expected item to start with {} but was {}'.format(
+            TokenType.COLON, token.token_type
+        ),
+    )
+    children.append(parse_colon(peaker))
+
+    AssertNotEmpty(peaker, 'parse item')
+    token = peaker.peak()
+    assert token is not None
+    Assert(
+        token.value in {'returns', 'return', 'yields', 'yield'},
+        'Expected a which doesn\'t take an argument ({}) but was {}'.format(
+            'returns, return, yields or yield', token.value
+        )
+    )
+    keyword = parse_keyword(peaker, KEYWORDS)
+    children.append(keyword)
+
+    if not _is(TokenType.COLON, peaker):
+        _type = parse_word(peaker)
+        children.append(Node(
+            node_type=NodeType.TYPE,
+            children=[_type],
+        ))
+
+    AssertNotEmpty(peaker, 'parse item head end')
+    token = peaker.peak()
+    assert token is not None
+    Assert(
+        _is(TokenType.COLON, peaker),
+        'Expected item head to end with {} but was {} {}'.format(
+            TokenType.COLON,
+            token.token_type,
+            repr(token.value),
+        ),
+    )
+    children.append(parse_colon(peaker))
+    return Node(
+        node_type=NodeType.ITEM_NAME,
+        children=children,
+    )
+
+
+def parse_item_head(peaker):
+    # type: (Peaker[Token]) -> Node
+    AssertNotEmpty(peaker, 'parse item')
+
+    colon_token = peaker.peak()
+    assert colon_token is not None
+    Assert(
+        _is(TokenType.COLON, peaker),
+        'Expected item to start with {} but was {}'.format(
+            TokenType.COLON, colon_token.token_type
+        ),
+    )
+
+    section_token = peaker.peak(lookahead=2)
+    Assert(
+        section_token is not None,
+        'Stream unexpectedly empty while parsing item head.'
+    )
+    assert section_token is not None
+    Assert(
+        section_token.value in KEYWORDS,
+        'Expected a keyword (e.g. "arg", "returns", etc.) but was {}'.format(
+            section_token.value
+        )
+    )
+
+    if section_token.value in {'returns', 'return', 'yield', 'yields'}:
+        return parse_item_head_without_argument(peaker)
+    else:
+        return parse_item_head_with_argument(peaker)
 
 
 def parse_item(peaker):
@@ -382,6 +466,10 @@ def parse(peaker):
 
     while peaker.has_next():
         children.append(parse_item(peaker))
+
+        # Consume extra newlines.
+        while _is(TokenType.NEWLINE, peaker):
+            peaker.next()
 
     return Node(
         node_type=NodeType.DOCSTRING,
