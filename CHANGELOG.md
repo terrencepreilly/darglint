@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- Parser for sphinx-style docstrings.
+- Parser for sphinx-style docstrings.  This parser handles most
+  sphinx-style docstrings, but adds certain restrictions.  For example,
+  the fields such as `:returns:` must be the last items in the docstring,
+  must be together, and any multiple lines must be indented with four spaces.
 - Pipfile for setup with pipenv.
 
 ## [0.3.4] - 2018-05-22

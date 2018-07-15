@@ -101,10 +101,10 @@ def test_params(request):
     test parameters that is specified by 'pytest.mark.test_params'
 
     :param Union[str] shared_result:
-       If the value is provided, app._status and app._warning objects will be
-       shared in the parametrized test functions and/or test functions that
-       have same 'shared_result' value.
-       **NOTE**: You can not specify shared_result and srcdir in same time.
+        If the value is provided, app._status and app._warning objects will be
+        shared in the parametrized test functions and/or test functions that
+        have same 'shared_result' value.
+        **NOTE**: You can not specify shared_result and srcdir in same time.
     """
     # Expected item head to end with TokenType.COLON but was TokenType.WORD 'shared_result'
 
@@ -177,18 +177,18 @@ def find_catalog_source_files(*args):
     # File: sphinx/util/i18n.py
     """
     :param list locale_dirs:
-       list of path as `['locale_dir1', 'locale_dir2', ...]` to find
-       translation catalogs. Each path contains a structure such as
-       `<locale>/LC_MESSAGES/domain.po`.
+        list of path as `['locale_dir1', 'locale_dir2', ...]` to find
+        translation catalogs. Each path contains a structure such as
+        `<locale>/LC_MESSAGES/domain.po`.
     :param str locale: a language as `'en'`
     :param list domains: list of domain names to get. If empty list or None
-       is specified, get all domain names. default is None.
+        is specified, get all domain names. default is None.
     :param boolean gettext_compact:
-       * False: keep domains directory structure (default).
-       * True: domains in the sub directory will be merged into 1 file.
+        * False: keep domains directory structure (default).
+        * True: domains in the sub directory will be merged into 1 file.
     :param boolean force_all:
-       Set True if you want to get all catalogs rather than updated catalogs.
-       default is False.
+        Set True if you want to get all catalogs rather than updated catalogs.
+        default is False.
     :return: [CatalogInfo(), ...]
     """
     # Expected item head to end with TokenType.COLON but was TokenType.WORD 'locale'
@@ -233,8 +233,8 @@ def repr_domxml(node, length=80):
 
     :param nodes.Node node: target node
     :param int length:
-       length of return value to be striped. if false-value is specified, repr_domxml
-       returns full of DOM XML representation.
+        length of return value to be striped. if false-value is specified, repr_domxml
+        returns full of DOM XML representation.
     :return: DOM XML representation
     """
     # Expected item head to end with TokenType.COLON but was TokenType.WORD 'node'

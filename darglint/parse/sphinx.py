@@ -257,8 +257,8 @@ def parse_item_head_with_argument(peaker):
     assert token is not None
     Assert(
         _is(TokenType.COLON, peaker),
-        'Expected item to start with {} but was {}'.format(
-            TokenType.COLON, token.token_type
+        'Expected item to start with {} but was {}: {}'.format(
+            TokenType.COLON, token.token_type, token.value
         ),
     )
     children.append(parse_colon(peaker))
@@ -313,8 +313,8 @@ def parse_item_head_without_argument(peaker):
     assert token is not None
     Assert(
         _is(TokenType.COLON, peaker),
-        'Expected item to start with {} but was {}'.format(
-            TokenType.COLON, token.token_type
+        'Expected item to start with {} but was {}: {}'.format(
+            TokenType.COLON, token.token_type, token.value,
         ),
     )
     children.append(parse_colon(peaker))
@@ -364,8 +364,9 @@ def parse_item_head(peaker):
     assert colon_token is not None
     Assert(
         _is(TokenType.COLON, peaker),
-        'Expected item to start with {} but was {}'.format(
-            TokenType.COLON, colon_token.token_type
+        'Expected item to start with {} but was {}: "{}". '
+        'Are your indents four spaces?'.format(
+            TokenType.COLON, colon_token.token_type, colon_token.value,
         ),
     )
 
