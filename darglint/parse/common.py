@@ -303,6 +303,8 @@ def parse_keyword(peaker, keywords=dict()):
 
     Args:
         peaker: A stream of tokens from lexing a docstring.
+        keywords: A map of keywords to their associated
+            NodeTypes.
 
     Returns:
         A Node with Keyword NodeType.

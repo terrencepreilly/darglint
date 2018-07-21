@@ -52,6 +52,9 @@ def load_config_file(filename):  # type: (str) -> Configuration
     Args:
         filename: A valid filename to read from.
 
+    Raises:
+        Exception: When the configuration style is not a valid choice.
+
     Returns:
         A Configuration object.
 

@@ -30,6 +30,8 @@ class Docstring(BaseDocstring):
             root: The root of the AST, or the docstring
                 (as a string.)  If it is a string, the
                 string will be parsed.
+            style: The docstring style.  Discarded, since this
+                docstring always represents the Sphinx style.
 
         """
         if isinstance(root, Node):

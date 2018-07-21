@@ -30,6 +30,8 @@ class Docstring(BaseDocstring):
             root: The root of the AST, or the docstring
                 (as a string.)  If it is a string, the
                 string will be parsed.
+            style: The style of the docstring.  Discarded,
+                since this Docstring is always the Google style.
 
         """
         if isinstance(root, Node):
