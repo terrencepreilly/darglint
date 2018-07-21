@@ -19,6 +19,7 @@ would like a feature in *darglint*.
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Usage](#usage)
+- [Sphinx](#sphinx)
 - [Roadmap](#roadmap)
 - [Contribution](#development-and-contributions)
 
@@ -232,6 +233,31 @@ The number in the hundreds narrows the error by location in the docstring:
 - 300: Yields section
 - 400: Raises section
 
+
+## Sphinx
+
+Darglint can handle sphinx-style docstrings, but imposes some restrictions
+on top of the Sphinx style. For example, all fields (such as `:returns:`)
+must be the last items in the docstring.  They must be together, and all
+indents should be four spaces.  These restrictions may be loosened at a
+later date.
+
+To analyze Sphinx-style docstrings, pass the style flag to the command:
+
+```
+darglint -s sphinx example.py
+darglint --docsting-style sphinx example.py
+```
+
+Alternatively, you can specify the style in the configuration file using
+the setting, "docstring\_style":
+
+```
+[darglint]
+docstring_style=sphinx
+```
+
+
 ## Roadmap
 The below list is the current roadmap for *darglint*.  For each
 version number, it specifies which features will be added.
@@ -246,7 +272,7 @@ message.  That way, anyone can specify their own format.
 - [x] Add support for python versions earlier than 3.6.
 - [x] Add more specific line numbers in error messages.
 - [ ] Add style errors and suggestions.
-- [ ] Support for Sphinx-style docstrings.
+- [x] Support for Sphinx-style docstrings.
 
 
 ### Other features

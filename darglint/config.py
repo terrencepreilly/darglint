@@ -1,6 +1,5 @@
 """This module reads the configuration file."""
 
-from collections import namedtuple
 import configparser
 import logging
 from logging import (  # noqa
@@ -10,6 +9,7 @@ import os
 
 from typing import (  # noqa
     Iterable,
+    List,
     Optional,
 )
 
@@ -29,13 +29,21 @@ POSSIBLE_CONFIG_FILENAMES = (
 )
 
 
-# ignore: List[str] -- A list of error codes to ignore.
-# message_template: str -- the template with which to format the errors.
-# style: DocstringStyle -- The style of docstring.
-Configuration = namedtuple(
-    'Configuration',
-    'ignore message_template style'
-)
+class Configuration(object):
+
+    def __init__(self, ignore, message_template, style):
+        # type: (List[str], Optional[str], DocstringStyle) -> None
+        """Initialize the configuration object.
+
+        Args:
+            ignore: A list of error codes to ignore.
+            message_template: the template with which to format the errors.
+            style: The style of docstring.
+
+        """
+        self.ignore = ignore
+        self.message_template = message_template
+        self.style = style
 
 
 def load_config_file(filename):  # type: (str) -> Configuration
@@ -60,10 +68,11 @@ def load_config_file(filename):  # type: (str) -> Configuration
                 ignore.append(error.strip())
         if 'message_template' in config['darglint']:
             message_template = config['darglint']['message_template']
-        if 'style' in config['darglint']:
-            if config['darglint']['style'].lower().strip() == 'google':
+        if 'docstring_style' in config['darglint']:
+            raw_style = config['darglint']['docstring_style'].lower().strip()
+            if raw_style == 'google':
                 style = DocstringStyle.GOOGLE
-            elif config['darglint']['style'].lower().strip() == 'sphinx':
+            elif raw_style == 'sphinx':
                 style = DocstringStyle.SPHINX
             else:
                 raise Exception(

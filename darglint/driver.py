@@ -12,6 +12,7 @@ from .config import (  # noqa
     Configuration,
     get_config,
 )
+from .docstring.base import DocstringStyle
 
 
 # ---------------------- ARGUMENT PARSER -----------------------------
@@ -72,6 +73,16 @@ parser.add_argument(
     action='store_true',
     help=(
         'Print a list of error codes and what they represent.'
+    )
+)
+parser.add_argument(
+    '-s',
+    '--docstring-style',
+    default=None,
+    choices=['google', 'sphinx'],
+    help=(
+        'The docstring style used in the given project. Currently, '
+        'only google or sphinx styles are supported.'
     )
 )
 
@@ -152,6 +163,10 @@ def main():
 
     try:
         config = get_config()
+        if args.docstring_style == 'sphinx':
+            config.style = DocstringStyle.SPHINX
+        elif args.docstring_style == 'google':
+            config.style = DocstringStyle.GOOGLE
         files = [x for x in args.files if x.endswith('.py')]
         raise_errors_for_syntax = args.raise_syntax or False
         for filename in files:
