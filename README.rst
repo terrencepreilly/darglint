@@ -4,7 +4,7 @@ Darglint
 Check out the `poster <./docs/poster.pdf>`__ about darglint which was
 presented at pycon!
 
-A functional docstring linter which checks whether a docstring's
+A functional docstring linter which checks whether a docstring’s
 description matches the actual function/method implementation.
 *Darglint* expects docstrings to be formatted using the `Google Python
 Style Guide <https://google.github.io/styleguide/pyguide.html>`__.
@@ -20,6 +20,7 @@ like a feature in *darglint*.
 -  `Installation <#installation>`__
 -  `Configuration <#configuration>`__
 -  `Usage <#usage>`__
+-  `Sphinx <#sphinx>`__
 -  `Roadmap <#roadmap>`__
 -  `Contribution <#development-and-contributions>`__
 
@@ -30,13 +31,13 @@ To install *darglint*, use pip.
 
 ::
 
-    pip install darglint
+   pip install darglint
 
 Or, clone the repository, ``cd`` to the directory, and
 
 ::
 
-    pip install .
+   pip install .
 
 Configuration
 -------------
@@ -56,24 +57,24 @@ named *.darglint*:
 
 ::
 
-    [darglint]
-    ignore=I402
+   [darglint]
+   ignore=I402
 
 We can ignore multiple errors by using a comma-separated list:
 
 ::
 
-    [darglint]
-    ignore=I402,I103
+   [darglint]
+   ignore=I402,I103
 
 If we would like to specify a message template, we may do so as follows:
 
 ::
 
-    [darglint]
-    message_template={msg_id}@{path}:{line}
+   [darglint]
+   message_template={msg_id}@{path}:{line}
 
-Which will produce a message such as "I102@driver.py:72".
+Which will produce a message such as “I102@driver.py:72”.
 
 Usage
 -----
@@ -86,13 +87,13 @@ docstrings as follows:
 
 ::
 
-    darglint serializers.py
+   darglint serializers.py
 
 You can give an optional verbosity setting to *darglint*. For example,
 
 ::
 
-    darglint -v 2 *.py
+   darglint -v 2 *.py
 
 Would give a description of the error along with information as to this
 specific instance. The default verbosity is 1, which gives the filename,
@@ -103,18 +104,17 @@ is a python format string. For example, if we pass the message template
 
 ::
 
-    darglint -m "{path}:{line} -> {msg_id}" darglint/driver.py
+   darglint -m "{path}:{line} -> {msg_id}" darglint/driver.py
 
 Then we would get back error messages like
 
 ::
 
-    darglint/driver.py :61 -> I101
+   darglint/driver.py :61 -> I101
 
 The following attributes can be passed to the format string: - *line*:
-The line number, - *msg*: The error message, - *msg\_id*: The error
-code, - *obj*: The function/method name, - *path*: The relative file
-path.
+The line number, - *msg*: The error message, - *msg_id*: The error code,
+- *obj*: The function/method name, - *path*: The relative file path.
 
 The message template can also be specified in the configuration file as
 the value ``message_template``.
@@ -126,9 +126,9 @@ invoke *darglint* as follows:
 
 ::
 
-    find . -name "*.py" | xargs darglint
+   find . -name "*.py" | xargs darglint
 
-Where I'm searching all files ending in ".py" recursively from the
+Where I’m searching all files ending in “.py” recursively from the
 current directory, and calling *darglint* on each one in turn.
 
 Ignoring Errors in a Docstring
@@ -139,7 +139,7 @@ much like that of *pycodestyle*, etc. It generally takes the from of:
 
 ::
 
-    # noqa: <error> <argument>
+   # noqa: <error> <argument>
 
 Where ``<error>`` is the particular error to ignore (``I402``, or
 ``I201`` for example), and ``<argument>`` is what (if anything) the
@@ -150,16 +150,16 @@ following docstring:
 
 ::
 
-    def we_dont_want_a_returns_section():
-      """Return the value, 3.
+   def we_dont_want_a_returns_section():
+     """Return the value, 3.
 
-      # noqa: I201
+     # noqa: I201
 
-      """
-      return 3
+     """
+     return 3
 
 We put the ``noqa`` anywhere in the top level of the docstring. However,
-this won't work if we are missing something more specific, like a
+this won’t work if we are missing something more specific, like a
 parameter. We may not want to ignore all missing parameters, either,
 just one particular one. For example, we may be writing a function that
 takes a class instance as self. (Say, in a bound *celery* task.) Then we
@@ -167,16 +167,16 @@ would do something like:
 
 ::
 
-    def a_bound_function(self, arg1):
-      """Do something interesting.
+   def a_bound_function(self, arg1):
+     """Do something interesting.
 
-      Args:
-        arg1: The first argument.
+     Args:
+       arg1: The first argument.
 
-      # noqa: I101 arg1
+     # noqa: I101 arg1
 
-      """
-      arg1.execute(self)
+     """
+     arg1.execute(self)
 
 So, the argument comes to the right of the error.
 
@@ -186,18 +186,18 @@ example, we may not want to explicitly catch and raise a
 
 ::
 
-    def always_raises_exception(x):
-        """Raise a zero division error or type error.o
+   def always_raises_exception(x):
+       """Raise a zero division error or type error.o
 
-        Args:
-          x: The argument which could be a number or could not be.
+       Args:
+         x: The argument which could be a number or could not be.
 
-        Raises:
-          ZeroDivisionError: If x is a number.  # noqa: I402
-          TypeError: If x is not a number.  # noqa: I402
+       Raises:
+         ZeroDivisionError: If x is a number.  # noqa: I402
+         TypeError: If x is not a number.  # noqa: I402
 
-        """
-        x / 0
+       """
+       x / 0
 
 So, in this case, the argument for ``noqa`` is really all the way to the
 left. (Or whatever description we are parsing.) We could also have put
@@ -208,10 +208,10 @@ Error Codes
 
 -  *I101*: The docstring is missing a parameter in the definition.
 -  *I102*: The docstring contains a parameter not in function.
--  *I103*: The docstring parameter type doesn't match function.
+-  *I103*: The docstring parameter type doesn’t match function.
 -  *I201*: The docstring is missing a return from definition.
 -  *I202*: The docstring has a return not in definition.
--  *I203*: The docstring parameter type doesn't match function.
+-  *I203*: The docstring parameter type doesn’t match function.
 -  *I301*: The docstring is missing a yield present in definition.
 -  *I302*: The docstring has a yield not in definition.
 -  *I401*: The docstring is missing an exception raised.
@@ -233,6 +233,30 @@ docstring:
 -  300: Yields section
 -  400: Raises section
 
+Sphinx
+------
+
+Darglint can handle sphinx-style docstrings, but imposes some
+restrictions on top of the Sphinx style. For example, all fields (such
+as ``:returns:``) must be the last items in the docstring. They must be
+together, and all indents should be four spaces. These restrictions may
+be loosened at a later date.
+
+To analyze Sphinx-style docstrings, pass the style flag to the command:
+
+::
+
+   darglint -s sphinx example.py
+   darglint --docsting-style sphinx example.py
+
+Alternatively, you can specify the style in the configuration file using
+the setting, “docstring_style”:
+
+::
+
+   [darglint]
+   docstring_style=sphinx
+
 Roadmap
 -------
 
@@ -246,6 +270,8 @@ recently implemented features, see the *CHANGELOG*.
 -  [x] Take an argument which supports a formatting string for the error
    message. That way, anyone can specify their own format.
 
+.. _section-1:
+
 1.0
 ~~~
 
@@ -253,12 +279,12 @@ recently implemented features, see the *CHANGELOG*.
 -  [x] Add support for python versions earlier than 3.6.
 -  [x] Add more specific line numbers in error messages.
 -  [ ] Add style errors and suggestions.
--  [ ] Support for Sphinx-style docstrings.
+-  [x] Support for Sphinx-style docstrings.
 
 Other features
 ~~~~~~~~~~~~~~
 
-I haven't decided when to add the below features.
+I haven’t decided when to add the below features.
 
 -  [ ] ALE support.
 -  [ ] Syntastic support. (Syntastic is not accepting new checkers until
@@ -276,30 +302,30 @@ Install ``darglint``. First, clone the repository:
 
 ::
 
-    git clone https://github.com/terrencepreilly/darglint.git
+   git clone https://github.com/terrencepreilly/darglint.git
 
 ``cd`` into the directory, create a virtual environment (optional), then
 setup:
 
 ::
 
-    cd darglint/
-    virtualenv -p python3.6 .env
-    source .env/bin/activate
-    pip install -e .
+   cd darglint/
+   virtualenv -p python3.6 .env
+   source .env/bin/activate
+   pip install -e .
 
 You can run the tests using
 
 ::
 
-    python setup.py test
+   python setup.py test
 
-Or, install ``pytest`` manually, ``cd`` to the project's root directory,
+Or, install ``pytest`` manually, ``cd`` to the project’s root directory,
 and run
 
 ::
 
-    pytest
+   pytest
 
 This project tries to conform by the styles imposed by ``pycodestyle``
 and ``pydocstyle``, as well as by ``darglint`` itself.
@@ -308,6 +334,6 @@ Contribution
 ~~~~~~~~~~~~
 
 If you would like to tackle an issue or feature, email me or comment on
-the issue to make sure it isn't already being worked on. Contributions
+the issue to make sure it isn’t already being worked on. Contributions
 will be accepted through pull requests. New features should include unit
 tests, and, of course, properly formatted documentation.
