@@ -75,6 +75,14 @@ message_template={msg_id}@{path}:{line}
 
 Which will produce a message such as "I102@driver.py:72".
 
+Finally, we can specify the docstring style type using `docstring_style`
+("google" by default):
+
+```
+[darglint]
+docstring_style=sphinx
+```
+
 
 ## Usage
 
