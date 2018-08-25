@@ -361,6 +361,18 @@ class IntegrityChecker(object):
             self._sorted = True
 
     def get_error_report(self, verbosity, filename, message_template=None):
+        # type: (int, str, str) -> ErrorReport
+        return ErrorReport(
+            errors=self.errors,
+            filename=filename,
+            verbosity=verbosity,
+            message_template=message_template or self.config.message_template,
+        )
+
+    def get_error_report_string(self,
+                                verbosity,
+                                filename,
+                                message_template=None):
         # type: (int, str, str) -> str
         """Return a string representation of the errors.
 
@@ -375,9 +387,6 @@ class IntegrityChecker(object):
             A string representation of the errors.
 
         """
-        return str(ErrorReport(
-            errors=self.errors,
-            filename=filename,
-            verbosity=verbosity,
-            message_template=message_template or self.config.message_template,
+        return str(self.get_error_report(
+            verbosity, filename, message_template
         ))

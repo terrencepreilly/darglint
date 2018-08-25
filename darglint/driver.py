@@ -122,7 +122,7 @@ def get_error_report(filename,
     )
     for function in functions:
         checker.run_checks(function)
-    return checker.get_error_report(
+    return checker.get_error_report_string(
         verbosity,
         filename,
         message_template=message_template,

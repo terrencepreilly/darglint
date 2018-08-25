@@ -64,9 +64,12 @@ class CleanCommand(Command):
         subprocess.run(['rm', '-rf', './build'])
 
 
+flake8_entry_point = 'flake8.extension'
+
+
 setup(
     name="darglint",
-    version="0.4.0",
+    version="0.4.1",
     author="Terrence Reilly",
     author_email="terrencepreilly@gmail.com",
     description=("A utility for ensuring Google-style docstrings"
@@ -80,17 +83,22 @@ setup(
         'console_scripts': [
             'darglint = darglint.driver:main',
         ],
+        flake8_entry_point: [
+            'I = darglint.flake8_entry:DarglintChecker',
+            'S = darglint.flake8_entry:DarglintChecker',
+        ],
     },
     install_requires=requirements,
     setup_requires=requirements,
     tests_require=['pytest', 'tox'] + requirements,
     python_requires='>=3.5',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Documentation',
         'Topic :: Software Development :: Quality Assurance',
         'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.5',
     ],

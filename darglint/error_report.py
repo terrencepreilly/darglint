@@ -1,16 +1,18 @@
 """The error reporting classes."""
 
-import ast
+import ast  # noqa
 from collections import OrderedDict
-from typing import (
+from typing import (  # noqa
     Dict,
+    Iterator,
     List,
+    Tuple,
 )
 from .function_description import (
     get_line_number_from_function,
 )
 
-from .errors import DarglintError
+from .errors import DarglintError  # noqa
 
 
 class ErrorReport(object):
@@ -58,8 +60,7 @@ class ErrorReport(object):
 
         """
         self._sort()
-        # type: Dict[ast.FunctionDef, List[DarglintError]]
-        error_dict = OrderedDict()
+        error_dict = OrderedDict()  # type: Dict
         current = None  # The current function
         for error in self.errors:
             if current != error.function:
@@ -78,11 +79,7 @@ class ErrorReport(object):
             A string representing the error.
 
         """
-        # TODO: We should get the FunctionDefinition here,
-        # not the function. This will allow us to get the correctly
-        # updated line number.
         line_number = get_line_number_from_function(error.function)
-        # line_number = error.function.lineno
         if (hasattr(error.function, 'decorator_list')
                 and error.function.decorator_list):
             line_number += len(error.function.decorator_list)
@@ -110,3 +107,26 @@ class ErrorReport(object):
             for error in self.error_dict[function]:
                 ret.append(self._get_error_description(error))
         return '\n'.join(ret)
+
+    def flake8_report(self):
+        # type: () -> Iterator[Tuple[int, int, str]]
+        # line, col, message
+        for function in self.error_dict:
+            for error in self.error_dict[function]:
+                # TODO: Shouldn't get_line_number (here and above) return
+                # the correct line number?  Why do we have to handle decorators
+                # here?
+                line_number = get_line_number_from_function(error.function)
+                if (hasattr(error.function, 'decorator_list')
+                        and error.function.decorator_list):
+                    line_number += len(error.function.decorator_list)
+                if error.line_numbers:
+                    line_number += error.line_numbers[0] + 1
+                else:
+                    line_number += 1
+                # TODO: Do we need verbosity here?
+                message = '{} {}'.format(
+                    error.error_code,
+                    error.message(self.verbosity),
+                )
+                yield (line_number, 0, message)
