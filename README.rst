@@ -21,6 +21,7 @@ like a feature in *darglint*.
 -  `Configuration <#configuration>`__
 -  `Usage <#usage>`__
 -  `Sphinx <#sphinx>`__
+-  `Flake8 <#flake8>`__
 -  `Roadmap <#roadmap>`__
 -  `Contribution <#development-and-contributions>`__
 
@@ -264,6 +265,16 @@ the setting, “docstring_style”:
 
    [darglint]
    docstring_style=sphinx
+
+Flake8
+------
+
+Darglint can be used in conjunction with Flake8 as a plugin. The only
+setup necessary is to install Flake8 and Darglint in the same
+environment. Darglint will pull its configuration from any configuration
+file present. (So, if you would like to lint Sphinx-style comments, then
+you should have that setting enabled in a configuration file in the
+project directory.)
 
 Roadmap
 -------

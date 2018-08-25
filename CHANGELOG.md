@@ -3,6 +3,14 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2018-08-25
+
+### Added
+
+- Support for using Darglint as a Flake8 extension.  If Flake8 and Darglint
+  are installed in the same environment, Darglint will issue warnings through
+  Flake8.
+
 ## [0.4.0] - 2018-06-14
 
 ### Added
