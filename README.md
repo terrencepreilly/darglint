@@ -226,6 +226,7 @@ have put it on its own line, as `# noqa: I402 ZeroDivisionError`.
 - *I302*: The docstring has a yield not in definition.
 - *I401*: The docstring is missing an exception raised.
 - *I402*: The docstring describes an exception not explicitly raised.
+- *I501*: The docstring describes a variable which is not defined.
 - *S001*: Describes that something went wrong in parsing the docstring.
 - *S002*: An argument/exception lacks a description.
 
