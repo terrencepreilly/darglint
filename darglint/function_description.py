@@ -221,6 +221,22 @@ def _get_return_type(fn):
     return None
 
 
+def _get_all_variable_names(fn):
+    # type: (ast.FunctionDef) -> Iterator[str]
+    """Get all variable names used in the function.
+
+    Args:
+        fn: The function.
+
+    Yields:
+        The nodes which represent names.
+
+    """
+    for node in ast.walk(fn):
+        if isinstance(node, ast.Name):
+            yield node.id
+
+
 def get_line_number_from_function(fn):
     # type: (ast.FunctionDef) -> int
     """Get the line number for the end of the function signature.
@@ -282,6 +298,7 @@ class FunctionDescription(object):
             msg = '{}: {}'.format(self.name, ex)
             logger.error(msg)
             raise
+        self.variables = _get_all_variable_names(function)
 
 
 def get_function_descriptions(program):

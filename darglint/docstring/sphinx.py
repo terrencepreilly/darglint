@@ -298,6 +298,19 @@ class Docstring(BaseDocstring):
                     return child.line_numbers
         return None
 
+    def get_variables(self):
+        # type: () -> List[str]
+        variables = list()  # type: List[str]
+        for variable_section in self._lookup[NodeType.VARIABLES_SECTION]:
+            for item in variable_section.children:
+                item_name = item.first_instance(NodeType.ITEM_NAME)
+                assert item_name is not None
+                variable_node = item_name.first_instance(NodeType.WORD)
+                assert variable_node is not None
+                assert variable_node.value is not None
+                variables.append(variable_node.value)
+        return variables
+
     @property
     def raises_description(self):
         # type: () -> Optional[str]

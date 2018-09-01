@@ -12,6 +12,7 @@ Groups of errors:
     200 Returns
     300 Yields
     400 Raises
+    500 Variables
 
 These errors are based on the errors and warnings from the
 pycodestyle package.  Interface, here, describes incorrect or incomplete
@@ -20,8 +21,8 @@ So, for instance, missing a parameter in the documentation would be
 I101.
 
 """
-import ast
-from typing import (
+import ast  # noqa: F401
+from typing import (  # noqa: F401
     Tuple,
 )
 
@@ -398,6 +399,31 @@ class ExcessRaiseError(DarglintError):
         self.terse_message = '+r {}'.format(name)
         self.name = name
         super(ExcessRaiseError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
+
+
+class ExcessVariableError(DarglintError):
+    """Describes when a docstring describes a variable which is not defined."""
+
+    error_code = 'I501'
+
+    def __init__(self, function, name, line_numbers=None):
+        # type: (ast.FunctionDef, str, Tuple[int, int]) -> None
+        """Instantiate the error's message.
+
+        Args:
+            function: The ast node for the function.
+            name: The name of the variable which is in excess.
+            line_numbers: The first and last line numbers where this
+                error occurs.
+
+        """
+        self.general_message = 'Excess variable description.'
+        self.terse_message = '+v {}'.format(name)
+        self.name = name
+        super(ExcessVariableError, self).__init__(
             function,
             line_numbers=line_numbers,
         )

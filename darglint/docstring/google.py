@@ -296,6 +296,13 @@ class Docstring(BaseDocstring):
                     return child.line_numbers
         return None
 
+    def get_variables(self):
+        # type: () -> List[str]
+        raise NotImplementedError(
+            'This check has yet to be implemented '
+            'for Google-Style docstrings.'
+        )
+
     @property
     def raises_description(self):
         # type: () -> Optional[str]

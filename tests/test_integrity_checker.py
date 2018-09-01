@@ -11,6 +11,7 @@ from darglint.errors import (
     EmptyDescriptionError,
     ExcessParameterError,
     ExcessRaiseError,
+    ExcessVariableError,
     ExcessYieldError,
     GenericSyntaxError,
     MissingParameterError,
@@ -54,6 +55,31 @@ class IntegrityCheckerSphinxTestCase(TestCase):
             [(x.message()) for x in errors]
         )
         self.assertTrue(isinstance(errors[0], MissingParameterError))
+
+    def test_variable_doesnt_exist(self):
+        """Ensure described variables must exist in the function."""
+        program = '\n'.join([
+            'def circle_area(r):',
+            '    """Calculate the circle\'s area.',
+            '    ',
+            '    :param r: The radius of the circle.',
+            '    :var pi: An estimate of PI.',
+            '    :return: The area of the circle.',
+            '    ',
+            '    """',
+            '    return 3.1415 * r**2',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker(self.config)
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertEqual(
+            len(errors), 1,
+            [(x.message()) for x in errors]
+        )
+        self.assertTrue(isinstance(errors[0], ExcessVariableError))
+        self.assertEqual(errors[0].terse_message, '+v pi')
 
 
 class IntegrityCheckerTestCase(TestCase):

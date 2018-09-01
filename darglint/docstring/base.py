@@ -88,6 +88,11 @@ class BaseDocstring(ABC):
         # type: (NodeType, str) -> Optional[Tuple[int, int]]
         pass
 
+    @abstractmethod
+    def get_variables(self):
+        # type: () -> List[str]
+        pass
+
     @property
     @abstractmethod
     def raises_description(self):

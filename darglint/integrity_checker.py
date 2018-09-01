@@ -1,19 +1,19 @@
 """Defines IntegrityChecker."""
 
-from typing import (  # noqa
+from typing import (  # noqa: F401
     Any,
     List,
     Set,
     Optional,
 )
 
-from .function_description import (  # noqa
+from .function_description import (  # noqa: F401
     FunctionDescription,
 )
 from .parse.common import (
     ParserException,
 )
-from .docstring.base import (  # noqa
+from .docstring.base import (  # noqa: F401
     BaseDocstring,
     DocstringStyle,
 )
@@ -23,11 +23,12 @@ from .docstring.docstring import (
 from .node import (
     NodeType,
 )
-from .errors import (  # noqa
+from .errors import (  # noqa: F401
     DarglintError,
     ExcessParameterError,
     ExcessRaiseError,
     ExcessReturnError,
+    ExcessVariableError,
     ExcessYieldError,
     MissingParameterError,
     MissingRaiseError,
@@ -93,6 +94,7 @@ class IntegrityChecker(object):
                     self.docstring = Docstring.from_sphinx(
                         function.docstring,
                     )
+                    self._check_variables()
                 if self.docstring.ignore_all:
                     return
                 self._check_parameters()
@@ -120,7 +122,7 @@ class IntegrityChecker(object):
             return
 
         argument_types = self.docstring.get_argument_types()
-        doc_arg_types = list()  # type: List[str]
+        doc_arg_types = list()  # type: List[Optional[str]]
         for name in self.function.argument_names:
             if name not in argument_types:
                 doc_arg_types.append(None)
@@ -258,6 +260,30 @@ class IntegrityChecker(object):
                 ExcessParameterError(
                     self.function.function,
                     missing,
+                    line_numbers=line_numbers,
+                )
+            )
+
+    def _check_variables(self):
+        # type: () -> None
+        described_variables = set(self.docstring.get_variables())
+        actual_variables = set(self.function.variables)
+        excess_in_doc = described_variables - actual_variables
+
+        # Get a default line number.
+        default_line_numbers = self.docstring.get_line_numbers(
+            NodeType.VARIABLES_SECTION
+        )
+
+        for excess in excess_in_doc:
+            line_numbers = self.docstring.get_line_numbers_for_value(
+                NodeType.VARIABLES_SECTION,
+                excess,
+            ) or default_line_numbers
+            self.errors.append(
+                ExcessVariableError(
+                    self.function.function,
+                    excess,
                     line_numbers=line_numbers,
                 )
             )
