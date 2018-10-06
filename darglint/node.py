@@ -3,14 +3,14 @@
 from collections import deque
 
 from enum import Enum
-from typing import (
+from typing import (  # noqa: F401
     Any,
     List,
     Iterator,
     Tuple,
     Optional,
 )
-from .token import (
+from .token import (  # noqa: F401
     Token,
 )
 

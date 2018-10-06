@@ -1,12 +1,18 @@
-from .base import BaseDocstring, DocstringStyle
 from collections import defaultdict
-from typing import (  # noqa
+from typing import (  # noqa: F401
+    Any,
     Dict,
     List,
     Set,
     Union,
     Tuple,
     Optional,
+)
+
+from .base import (  # noqa: F401
+    BaseDocstring,
+    DocstringStyle,
+    Sections,
 )
 from ..node import (
     Node,
@@ -52,6 +58,177 @@ class Docstring(BaseDocstring):
         for node in self.root.breadth_first_walk(leaves=False):
             lookup[node.node_type].append(node)
         return lookup
+
+    def get_section(self, section):
+        # type: (Sections) -> Optional[str]
+        return_value = ''
+        nodes = []  # type: Optional[List[Node]]
+
+        if section == Sections.SHORT_DESCRIPTION:
+            nodes = self._lookup.get(NodeType.SHORT_DESCRIPTION, None)
+        elif section == Sections.LONG_DESCRIPTION:
+            nodes = self._lookup.get(NodeType.LONG_DESCRIPTION, None)
+        elif section == Sections.ARGUMENTS_SECTION:
+            nodes = self._lookup.get(NodeType.ARGS_SECTION, None)
+        elif section == Sections.RAISES_SECTION:
+            nodes = self._lookup.get(NodeType.RAISES_SECTION, None)
+        elif section == Sections.YIELDS_SECTION:
+            nodes = self._lookup.get(NodeType.YIELDS_SECTION, None)
+        elif section == Sections.RETURNS_SECTION:
+            nodes = self._lookup.get(NodeType.RETURNS_SECTION, None)
+        elif section == Sections.NOQAS:
+            nodes = self._lookup.get(NodeType.NOQA, None)
+        else:
+            raise Exception(
+                'Unsupported section type {}'.format(section.name)
+            )
+
+        if nodes is None:
+            return None
+
+        for node in nodes:
+            return_value += '\n' + node.reconstruct_string()
+
+        return return_value
+
+    def _get_argument_types(self):
+        # type: () ->  List[Optional[str]]
+        """Get a list of types corresponding to arguments.
+
+        Returns:
+            A dictionary matching arguments to types.
+
+        """
+        argtypes = list()  # type: List[Optional[str]]
+        item_names = list()  # type: List[Node]
+
+        for arg_section in self._lookup[NodeType.ARGS_SECTION]:
+            for node in arg_section.breadth_first_walk(leaves=False):
+                if node.node_type == NodeType.ITEM_NAME:
+                    item_names.append(node)
+
+        for item_name in item_names:
+            argument = item_name.children[0]
+            assert argument.value is not None
+            if len(item_name.children) > 1:
+                type_node = item_name.children[1]
+                type_repr = type_node.reconstruct_string()
+                if type_repr.startswith('(') and type_repr.endswith(')'):
+                    type_repr = type_repr[2:-2]
+                argtypes.append(type_repr)
+            else:
+                argtypes.append(None)
+
+        return argtypes
+
+    def _get_return_type(self):
+        # type: () -> Optional[str]
+        """Get the return type specified by the docstring, if any.
+
+        Returns:
+            The return type or None.
+
+        """
+        for return_node in self._lookup[NodeType.RETURNS_SECTION]:
+            for node in return_node.breadth_first_walk(leaves=False):
+                if node.node_type == NodeType.TYPE:
+                    type_repr = node.reconstruct_string()
+                    if type_repr.startswith('(') and type_repr.endswith(')'):
+                        type_repr = type_repr[2:-2]
+                    return type_repr
+        return None
+
+    def get_types(self, section):
+        # type: (Sections) -> Union[None, str, List[Optional[str]]]
+        if section == Sections.ARGUMENTS_SECTION:
+            if NodeType.ARGS_SECTION not in self._lookup:
+                return None
+            return self._get_argument_types()
+        elif section == Sections.RETURNS_SECTION:
+            return self._get_return_type()
+        else:
+            raise Exception(
+                'Section type {} does not have types, '.format(
+                    section.name
+                ) + 'or is not yet supported'
+            )
+        return None
+
+    def _get_compound_items(self, node_type):
+        # type: (NodeType) -> Optional[List[str]]
+        if node_type not in self._lookup:
+            return None
+
+        names = list()  # type: List[str]
+        for raises_section in self._lookup[node_type]:
+            for node in raises_section.breadth_first_walk(leaves=False):
+                if node.node_type == NodeType.ITEM_NAME:
+                    names.append(node.reconstruct_string())
+
+        return names
+
+    def _get_noqas(self):
+        # type: () -> Optional[List[str]]
+        encountered = set()  # type: Set[Node]
+        global_noqas = set()  # type: Set[Node]
+        noqas = set()  # type: Set[str]
+
+        # Get exceptions with implied targets
+        for item_node in self._lookup[NodeType.ITEM]:
+            item = None  # type: Optional[str]
+            for node in item_node.breadth_first_walk(leaves=False):
+                # We will always encounter the item name first.
+                if node.node_type == NodeType.ITEM_NAME:
+                    assert node.children[0].value is not None
+                    item = node.children[0].value
+                elif node.node_type == NodeType.NOQA_BODY:
+                    assert item is not None
+                    exception = node.children[0]
+                    assert exception.value is not None
+                    encountered.add(exception)
+                    noqas.add(item)
+
+        # Get all other exceptions
+        for noqa_node in self._lookup[NodeType.NOQA_BODY]:
+            exception = noqa_node.children[0]
+            if exception in encountered:
+                continue
+
+            if len(noqa_node.children) == 1:
+                global_noqas.add(exception)
+                continue
+
+            for word_node in noqa_node.children[1].children:
+                word = word_node.value
+                assert word is not None
+                assert exception.value is not None
+                if word.endswith(','):
+                    word = word[:-1]
+                noqas.add(word)
+
+        # We overwrite any previous targets, because it was defined
+        # as a global. (This could happen before a target is defined.)
+        for global_noqa in global_noqas:
+            assert global_noqa.value is not None
+            noqas.add('*')
+
+        return list(noqas) or None
+
+    def get_items(self, section):
+        # type: (Sections) -> Optional[List[str]]
+        if section == Sections.ARGUMENTS_SECTION:
+            return self._get_compound_items(NodeType.ARGS_SECTION)
+        elif section == Sections.RAISES_SECTION:
+            return self._get_compound_items(NodeType.RAISES_SECTION)
+        elif section == Sections.NOQAS:
+            return self._get_noqas()
+        else:
+            raise Exception(
+                'Section type {} does not have items, '.format(
+                    section.name
+                ) + 'or is not yet supported.'
+            )
+        return None
 
     def has_short_description(self):
         # type: () -> bool

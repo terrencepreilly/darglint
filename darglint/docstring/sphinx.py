@@ -1,4 +1,3 @@
-from .base import BaseDocstring, DocstringStyle
 from collections import defaultdict
 from typing import (  # noqa
     Dict,
@@ -7,6 +6,12 @@ from typing import (  # noqa
     Union,
     Tuple,
     Optional,
+)
+
+from .base import (
+    BaseDocstring,
+    DocstringStyle,
+    Sections,
 )
 from ..node import (
     Node,
@@ -52,6 +57,66 @@ class Docstring(BaseDocstring):
         for node in self.root.breadth_first_walk(leaves=False):
             lookup[node.node_type].append(node)
         return lookup
+
+    def get_section(self, section):
+        # type: (Sections) -> Optional[str]
+        if section == Sections.SHORT_DESCRIPTION:
+            pass
+        elif section == Sections.LONG_DESCRIPTION:
+            pass
+        elif section == Sections.ARGUMENTS_SECTION:
+            pass
+        elif section == Sections.RAISES_SECTION:
+            pass
+        elif section == Sections.YIELDS_SECTION:
+            pass
+        elif section == Sections.RETURNS_SECTION:
+            pass
+        elif section == Sections.VARIABLES_SECTION:
+            pass
+        elif section == Sections.NOQAS:
+            pass
+        return None
+
+    def get_types(self, section):
+        # type: (Sections) -> Optional[Union[str, List[str]]]
+        if section == Sections.SHORT_DESCRIPTION:
+            pass
+        elif section == Sections.LONG_DESCRIPTION:
+            pass
+        elif section == Sections.ARGUMENTS_SECTION:
+            pass
+        elif section == Sections.RAISES_SECTION:
+            pass
+        elif section == Sections.YIELDS_SECTION:
+            pass
+        elif section == Sections.RETURNS_SECTION:
+            pass
+        elif section == Sections.VARIABLES_SECTION:
+            pass
+        elif section == Sections.NOQAS:
+            pass
+        return None
+
+    def get_items(self, section):
+        # type: (Sections) -> Optional[List[str]]
+        if section == Sections.SHORT_DESCRIPTION:
+            pass
+        elif section == Sections.LONG_DESCRIPTION:
+            pass
+        elif section == Sections.ARGUMENTS_SECTION:
+            pass
+        elif section == Sections.RAISES_SECTION:
+            pass
+        elif section == Sections.YIELDS_SECTION:
+            pass
+        elif section == Sections.RETURNS_SECTION:
+            pass
+        elif section == Sections.VARIABLES_SECTION:
+            pass
+        elif section == Sections.NOQAS:
+            pass
+        return None
 
     def has_short_description(self):
         # type: () -> bool
