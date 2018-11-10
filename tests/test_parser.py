@@ -272,15 +272,6 @@ class DocstringTestCase(TestCase):
         doc = Docstring(docstring)
         self.assertTrue('*fns' in doc.arguments_description)
 
-    @skip('Allow this?')
-    def test_doesnt_choke_on_missing_newline_for_returns(self):
-        docstring = '\n'.join([
-            'Serialize a label object.',
-            '',
-            'Returns: Valid JSON.',
-        ])
-        Docstring(docstring)
-
     def test_bare_noqa_can_be_parsed(self):
         docstring = '\n'.join([
             'The first line may have something, but others are missing.',
@@ -938,9 +929,48 @@ class DocstringTestCase(TestCase):
             ]
         )
 
+    def test_only_indents_treated_as_newlines_in_compound(self):
+        """Make sure that erroneous indentation is treated like newlines.
+
+        This is okay to do, since other tools should pick up and handle
+        erroneous newlines.  (Flake8, for example raises the W293 error.)
+
+        """
+        root = parse(Peaker(lex('\n'.join([
+            'Maintains the heap invariant.',
+            '',
+            'Args:',
+            '    heap: A something close to a heap.',
+            '    ',
+            'Returns:',
+            '    That self-same heap.',
+        ])), lookahead=3))
+        self.assertTrue(
+            root.first_instance(NodeType.RETURNS_SECTION) is not None,
+            'The return section should not have been swallowed.',
+        )
+
+    def test_only_indents_treated_newlines_within_simple_section(self):
+        """Make sure indent-only lines are treated as newlines in simple."""
+        root = parse(Peaker(lex('\n'.join([
+            'Get the value of pi.',
+            '',
+            'Returns:',
+            '    A value that is an approximation of pi.  This approximation',
+            '    is actually just the quotient,',
+            '    ',
+            'Raises:',
+            '    Exception: Seemingly at random.',
+            '',
+        ])), lookahead=3))
+        raises = root.first_instance(NodeType.RAISES_SECTION)
+        self.assertTrue(
+            raises is not None,
+        )
+
     def test_parse_long_description_with_noqa(self):
         """Make sure noqas can appear in a global scope."""
-        node = parse(Peaker(lex('\n'.join([
+        parse(Peaker(lex('\n'.join([
             'Short description can\'t have a noqa.'
             ''
             'But a long description can.'

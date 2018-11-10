@@ -66,19 +66,16 @@ __EBNF for a google-style docstring__:
   newline = "\n"
 
 """
-from typing import (
-    Any,
+from typing import (  # noqa: F401
     List,
     Optional,
     Set,
-    Tuple,
-)  # noqa
+)
 
-from ..peaker import Peaker  # noqa
-from ..token import Token, TokenType  # noqa
+from ..peaker import Peaker  # noqa: F401
+from ..token import Token, TokenType  # noqa: F401
 from ..node import Node, NodeType
 from ..errors import (
-    GenericSyntaxError,
     EmptyDescriptionError,
 )
 from .common import (
@@ -86,10 +83,8 @@ from .common import (
     AssertNotEmpty,
     ParserException,
     parse_colon,
-    parse_hash,
     parse_indent,
     parse_keyword,
-    parse_list,
     parse_lparen,
     parse_noqa,
     parse_rparen,
@@ -106,7 +101,9 @@ KEYWORDS = {
 
 
 def _is(expected_type, token):
-    # type: (TokenType, Token) -> bool
+    # type: (TokenType, Optional[Token]) -> bool
+    if token is None:
+        return False
     return token.token_type == expected_type
 
 
@@ -196,7 +193,7 @@ def parse_line(peaker, with_type=False):
         children.append(first_node)
 
     # Get the remaining nodes in the line, up to the newline.
-    while peaker.has_next() and not peaker.peak().token_type == TokenType.NEWLINE:
+    while peaker.has_next() and not _is(TokenType.NEWLINE, peaker.peak()):
         next_child = peaker.peak()
         assert next_child is not None
         if _is(TokenType.WORD, next_child) and next_child.value in KEYWORDS:
@@ -287,9 +284,9 @@ def parse_line_with_type(peaker):
         children.append(first_node)
 
     # Get the remaining nodes in the line, up to the newline.
-    while (peaker.has_next()
-            and not peaker.peak().token_type == TokenType.NEWLINE):
+    while peaker.has_next() and not _is(TokenType.NEWLINE, peaker.peak()):
         next_child = peaker.peak()
+        assert next_child is not None, 'Make the type checker happy.'
         if _is(TokenType.WORD, next_child) and next_child.value in KEYWORDS:
             children.append(parse_keyword(peaker, KEYWORDS))
         elif _is(TokenType.WORD, next_child):
@@ -319,23 +316,26 @@ def parse_section_head(peaker, expecting=set()):
     AssertNotEmpty(peaker, 'parse section head')
     children = list()  # type: List[Node]
     # TODO: This error message is too generic; try to make it more specific.
+    child = peaker.peak()
+    assert child is not None
     Assert(
-        peaker.peak().value in expecting,
+        child.value in expecting,
         'Expected section head to start with one of {} but was {}'.format(
             expecting,
-            repr(peaker.peak().value),
+            repr(child.value),
         ),
         token=peaker.peak(),
     )
     children.append(parse_keyword(peaker, KEYWORDS))
     children.append(parse_colon(peaker))
     # TODO: Allow a noqa here.
+    node = peaker.peak()
     Assert(
-        _is(TokenType.NEWLINE, peaker.peak()),
+        _is(TokenType.NEWLINE, node),
         'Failed to parse section head: expected '
         'it to end with {} but encountered {}'.format(
             TokenType.NEWLINE,
-            peaker.peak().token_type,
+            'None' if node is None else node.token_type,
         ),
         token=peaker.peak(),
     )
@@ -413,8 +413,7 @@ def parse_item_definition(peaker, prev_line_number=None):
     # type: (Peaker[Token], Optional[int]) -> Node
 
     def _is_indent(i):
-        token = peaker.peak(lookahead=i)
-        return token is not None and _is(TokenType.INDENT, token)
+        return _is(TokenType.INDENT, peaker.peak(lookahead=i))
 
     AssertNotEmpty(
         peaker,
@@ -438,11 +437,25 @@ def parse_item_definition(peaker, prev_line_number=None):
 
 
 def parse_item(peaker):
-    # type: (Peaker[Token]) -> Node
+    # type: (Peaker[Token]) -> Optional[Node]
     children = [
         parse_indent(peaker),
-        parse_item_name(peaker),
     ]
+
+    excess_whitespace = False
+    while _is(TokenType.INDENT, peaker.peak()):
+        excess_whitespace = True
+        peaker.next()
+    if _is(TokenType.NEWLINE, peaker.peak()):
+        return None
+    Assert(
+        not excess_whitespace,
+        'Expected item but encountered extra whitespace.',
+    )
+
+    children.append(
+        parse_item_name(peaker),
+    )
 
     if _is(TokenType.LPAREN, peaker.peak()):
         children.append(parse_type(peaker))
@@ -462,7 +475,11 @@ def parse_section_compound_body(peaker):
         parse_item(peaker),
     ]
     while peaker.has_next() and not _is(TokenType.NEWLINE, peaker.peak()):
-        children.append(parse_item(peaker))
+        item = parse_item(peaker)
+        whitespace_only_line = item is None
+        if whitespace_only_line:
+            continue
+        children.append(item)
 
     return Node(
         node_type=NodeType.SECTION_COMPOUND_BODY,
@@ -477,11 +494,13 @@ def parse_compound_section(peaker):
         parse_section_compound_body(peaker),
     ]
     if peaker.has_next():
+        node = peaker.peak()
+        assert node is not None
         Assert(
-            _is(TokenType.NEWLINE, peaker.peak()),
+            _is(TokenType.NEWLINE, node),
             'Expected {} after compound section but received {}'.format(
                 TokenType.NEWLINE,
-                peaker.peak().token_type
+                node.token_type
             ),
             token=peaker.peak(),
         )
@@ -512,6 +531,7 @@ def parse_short_description(peaker):
     children = list()
     while peaker.has_next() and not _is(TokenType.NEWLINE, peaker.peak()):
         next_child = peaker.peak()
+        assert next_child is not None
         if _is(TokenType.WORD, next_child) and next_child.value in KEYWORDS:
             children.append(parse_keyword(peaker, KEYWORDS))
         elif _is(TokenType.WORD, next_child):
@@ -542,11 +562,12 @@ def parse_short_description(peaker):
 
 def parse_long_description(peaker):
     # type: (Peaker[Token]) -> Node
+    node = peaker.peak()
     Assert(
-        peaker.has_next() and peaker.peak().value not in KEYWORDS,
+        node is not None and node.value not in KEYWORDS,
         'Expected long description to start with non-keyword but {}.'.format(
             'was empty.' if not peaker.has_next() else 'was {}'.format(
-                peaker.peak().value
+                'None' if node is None else node.value
             )
         ),
         token=peaker.peak(),
@@ -554,8 +575,10 @@ def parse_long_description(peaker):
     children = [
         parse_line(peaker),
     ]
-    while peaker.has_next() and peaker.peak().value not in KEYWORDS:
+    node = peaker.peak()
+    while node is not None and node.value not in KEYWORDS:
         children.append(parse_line(peaker))
+        node = peaker.peak()
 
     return Node(
         node_type=NodeType.LONG_DESCRIPTION,
@@ -569,17 +592,20 @@ def parse_description(peaker):
         parse_short_description(peaker),
     ]
     if peaker.has_next():
+        node = peaker.peak()
+        assert node is not None
         Assert(
-            _is(TokenType.NEWLINE, peaker.peak()),
+            _is(TokenType.NEWLINE, node),
             'Expected blank line after short description, but '
             'found {}: {}.'.format(
-                peaker.peak().token_type,
-                repr(peaker.peak().value)
+                node.token_type,
+                repr(node.value)
             ),
             token=peaker.peak(),
         )
         peaker.next()  # consume blank line.
-    if peaker.has_next() and peaker.peak().value not in KEYWORDS:
+    node = peaker.peak()
+    if node is not None and node.value not in KEYWORDS:
         children.append(parse_long_description(peaker))
     return Node(
         node_type=NodeType.DESCRIPTION,
@@ -614,7 +640,9 @@ def parse(peaker):
         parse_description(peaker)
     ]
     while peaker.has_next():
-        next_value = peaker.peak().value
+        node = peaker.peak()
+        assert node is not None
+        next_value = node.value
         if next_value in keyword_parse_lookup:
             children.append(
                 keyword_parse_lookup[next_value](peaker)
