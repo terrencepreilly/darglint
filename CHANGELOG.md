@@ -3,13 +3,19 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.5.1] - 2018-09-01
+## [0.5.1] - 2018-11-10
 
 ### Added
 
 - Check for excess variable descriptions in Sphinx docstrings.  If the
   docstring contains `:var <name>:`, and the *name* doesn't exist in
   the actual function, an error will be issued.
+
+### Fixed
+
+- Parser exception being thrown when there is a whitespace-only line
+  with indentation at the same level as an item within a compound section.
+  (See Issue #7.)
 
 ## [0.5.0] - 2018-08-25
 
