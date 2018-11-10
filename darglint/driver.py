@@ -49,6 +49,13 @@ parser.add_argument(
     help='The level of verbosity.',
 )
 parser.add_argument(
+    '--version',
+    action='store_true',
+    help=(
+        'Return the current version number of darglint.'
+    ),
+)
+parser.add_argument(
     'files',
     nargs='*',
     help=(
@@ -146,6 +153,10 @@ def print_error_list():
     ]))
 
 
+def print_version():
+    print('0.5.1')
+
+
 def main():
     # type: () -> None
     """Run darglint.
@@ -160,6 +171,9 @@ def main():
     if args.list_errors:
         print_error_list()
         sys.exit(0)
+
+    if args.version:
+        print_version()
 
     try:
         config = get_config()
