@@ -289,7 +289,9 @@ message.  That way, anyone can specify their own format.
 - [ ] Robust logging for errors caused/encountered by *darglint*.
 - [x] Add support for python versions earlier than 3.6.
 - [x] Add more specific line numbers in error messages.
-- [ ] Add style errors and suggestions.
+- [ ] Add style errors and suggestions.  In particular, allow for multiple
+levels of strictness, (lenient by default).  Then warn for no newline after
+short description, and for excess whitespace between sections, etc.
 - [x] Support for Sphinx-style docstrings.
 
 

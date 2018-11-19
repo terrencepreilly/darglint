@@ -9,7 +9,8 @@ RUN apk update && \
 
 RUN python -m pip install -U pip && \
     python -m pip install pytest \
-                          mypy
+                          mypy \
+                          typing
 
 
 WORKDIR /code/
