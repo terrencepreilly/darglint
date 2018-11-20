@@ -1,7 +1,7 @@
 """Describes Peaker, a stream transformer for peaking ahead."""
 from collections import deque
 
-from typing import (
+from typing import (  # noqa: F401
     Callable,
     Generic,
     Iterator,
@@ -110,6 +110,34 @@ class Peaker(Generic[T]):
             )
         if lookahead > len(self.buffer):
             return None
+        index = len(self.buffer) - lookahead
+        return self.buffer[index]
+
+    def rpeak(self, lookahead=1):
+        # type: (int) -> T
+        """Peak at the item lookahead ahead, raising an exception if empty.
+
+        Args:
+            lookahead: The amount of tokens to look ahead in
+                the buffer.
+
+        Raises:
+            Exception: If we are not able to buffer to the given
+                lookahead.
+            IndexError: If there are no items at the given index ahead.
+
+        Returns:
+            The next item of type T in the stream.
+
+        """
+        if lookahead > self.lookahead:
+            raise Exception(
+                'Cannot peak to {}: beyond buffer lookahead {}'.format(
+                    lookahead, self.lookahead
+                )
+            )
+        if lookahead > len(self.buffer):
+            raise IndexError
         index = len(self.buffer) - lookahead
         return self.buffer[index]
 

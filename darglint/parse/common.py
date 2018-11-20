@@ -1,6 +1,6 @@
 """Common parsing utilities."""
 
-from typing import (
+from typing import (  # noqa: F401
     Any,
     Dict,
     Optional,
@@ -14,10 +14,10 @@ from ..node import (
     Node,
     NodeType,
 )
-from ..peaker import (
+from ..peaker import (  # noqa: F401
     Peaker,
 )
-from ..token import (
+from ..token import (  # noqa: F401
     Token,
     TokenType,
 )
@@ -130,7 +130,7 @@ def parse_colon(peaker):
     Assert(
         _is(TokenType.COLON, peaker.peak()),
         'Unable to parse colon: expected {} but received {}'.format(
-            TokenType.COLON, peaker.peak().token_type
+            TokenType.COLON, peaker.rpeak().token_type
         ),
         token=peaker.peak()
     )
@@ -148,7 +148,7 @@ def parse_word(peaker):
     Assert(
         _is(TokenType.WORD, peaker.peak()),
         'Unable to parse word: expected {} but received {}'.format(
-            TokenType.WORD, peaker.peak().token_type
+            TokenType.WORD, peaker.rpeak().token_type
         ),
         token=peaker.peak(),
     )
@@ -166,7 +166,7 @@ def parse_hash(peaker):
     Assert(
         _is(TokenType.HASH, peaker.peak()),
         'Unable to parse hash: expected {} but received {}'.format(
-            TokenType.HASH, peaker.peak().token_type
+            TokenType.HASH, peaker.rpeak().token_type
         ),
         token=peaker.peak(),
     )
@@ -185,7 +185,7 @@ def parse_lparen(peaker):
         _is(TokenType.LPAREN, peaker.peak()),
         'Unable to parse left parenthesis: expected {} '
         'but received {}'.format(
-            TokenType.LPAREN, peaker.peak().token_type
+            TokenType.LPAREN, peaker.rpeak().token_type
         ),
         token=peaker.peak(),
     )
@@ -204,7 +204,7 @@ def parse_rparen(peaker):
         _is(TokenType.RPAREN, peaker.peak()),
         'Unable to parse right parenthesis: expected {} '
         'but received {}'.format(
-            TokenType.RPAREN, peaker.peak().token_type
+            TokenType.RPAREN, peaker.rpeak().token_type
         ),
         token=peaker.peak(),
     )
@@ -222,7 +222,7 @@ def parse_indent(peaker):
     Assert(
         _is(TokenType.INDENT, peaker.peak()),
         'Unable to parse indent: expected {} but received {}'.format(
-            TokenType.INDENT, peaker.peak().token_type
+            TokenType.INDENT, peaker.rpeak().token_type
         ),
         token=peaker.peak(),
     )
@@ -270,7 +270,7 @@ def parse_list(peaker):
     # type: (Peaker[Token]) -> Node
     prev = parse_word(peaker)
     children = [prev]
-    while (prev.value.endswith(',')
+    while ((prev.value or '').endswith(',')
             and peaker.has_next()
             and _is(TokenType.WORD, peaker.peak())):
         prev = parse_word(peaker)
@@ -314,14 +314,14 @@ def parse_keyword(peaker, keywords=dict()):
     Assert(
         _is(TokenType.WORD, peaker.peak()),
         'Unable to parse keyword: expected {} but received {}'.format(
-            TokenType.WORD, peaker.peak().token_type
+            TokenType.WORD, peaker.rpeak().token_type
         ),
         token=peaker.peak(),
     )
     Assert(
-        peaker.peak().value in keywords,
+        peaker.rpeak().value in keywords,
         'Unable to parse keyword: "{}" is not a keyword'.format(
-            peaker.peak().token_type
+            peaker.rpeak().token_type
         ),
         token=peaker.peak(),
     )
