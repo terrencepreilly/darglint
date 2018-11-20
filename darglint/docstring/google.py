@@ -54,7 +54,9 @@ class Docstring(BaseDocstring):
             A lookup table for compound Nodes by their NodeType.
 
         """
-        lookup = defaultdict(list)  # type: Dict[NodeType, List[Node]]
+        lookup = defaultdict(
+            lambda: list()
+        )  # type: Dict[NodeType, List[Node]]
         for node in self.root.breadth_first_walk(leaves=False):
             lookup[node.node_type].append(node)
         return lookup

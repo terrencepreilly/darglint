@@ -1,4 +1,4 @@
-"""A parser for Sphinx-style docstrings.
+r"""A parser for Sphinx-style docstrings.
 
 The EBNF for the parser is as follows:
 
@@ -275,16 +275,22 @@ def parse_item_head_with_argument(peaker):
     keyword = parse_keyword(peaker, KEYWORDS)
     children.append(keyword)
 
+    Assert(
+        not _is(TokenType.COLON, peaker),
+        'Expected argument in {} section.'.format(
+            children[-1].value
+        ),
+    )
+
     #           1     2  3
     # :param <type> <arg>:
-    if not _is(TokenType.COLON, peaker):
-        if not _is(TokenType.COLON, peaker, offset=2):
-            _type = parse_word(peaker)
-            children.append(Node(
-                node_type=NodeType.TYPE,
-                children=[_type],
-            ))
-        children.append(parse_word(peaker))
+    if not _is(TokenType.COLON, peaker, offset=2):
+        _type = parse_word(peaker)
+        children.append(Node(
+            node_type=NodeType.TYPE,
+            children=[_type],
+        ))
+    children.append(parse_word(peaker))
 
     AssertNotEmpty(peaker, 'parse item head end')
     token = peaker.peak()
@@ -323,8 +329,11 @@ def parse_item_head_without_argument(peaker):
     token = peaker.peak()
     assert token is not None
     Assert(
-        token.value in {'returns', 'return', 'yields', 'yield'},
-        'Expected a which doesn\'t take an argument ({}) but was {}'.format(
+        token.value in {
+            'returns', 'return', 'yields', 'yield', 'rtype', 'ytype'
+        },
+        'Expected section which doesn\'t take an argument '
+        '({}) but was {}'.format(
             'returns, return, yields or yield', token.value
         )
     )
@@ -383,7 +392,9 @@ def parse_item_head(peaker):
         )
     )
 
-    if section_token.value in {'returns', 'return', 'yield', 'yields'}:
+    if section_token.value in {
+            'returns', 'return', 'yield', 'yields', 'rtype', 'ytype'
+    }:
         return parse_item_head_without_argument(peaker)
     else:
         return parse_item_head_with_argument(peaker)

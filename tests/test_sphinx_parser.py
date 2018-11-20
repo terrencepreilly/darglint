@@ -24,6 +24,13 @@ from .sphinx_docstrings import docstrings
 
 class SphinxParserTest(TestCase):
 
+    def test_missing_vartype_target_raises_exception(self):
+        """Make sure that vartype has an argument, or raises an exception."""
+        content = ':vartype: List[T]'
+        peaker = Peaker(lex(content), lookahead=2)
+        with self.assertRaises(ParserException):
+            parse_item(peaker)
+
     def test_parse_short_description_is_line(self):
         """Make sure a short description is just a single line."""
         content = 'Description!\n'
@@ -349,7 +356,8 @@ class SphinxParserTest(TestCase):
             'def get_foobar(self, foo, bar=True):',
             '    """This gets the foobar',
             '',
-            '    This really should have a full function definition, but I am too lazy.',
+            '    This really should have a full function definition, but I '
+            'am too lazy.',
             '',
             '    >>> print get_foobar(10, 20)',
             '    30',

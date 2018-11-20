@@ -58,7 +58,7 @@ class BaseDocstring(ABC):
 
     @abstractmethod
     def get_types(self, section):
-        # type: (Sections) -> Union[None, str, List[Optional[str]]]
+        # type: (Sections) -> Optional[Union[str, List[Optional[str]]]]
         """Get the type of the section, or of the items in the section.
 
         Args:

@@ -1,6 +1,6 @@
 """Utilities for debugging Darglint."""
 
-from .node import Node
+from .node import Node  # noqa: F401
 
 
 def generate_dot(node):

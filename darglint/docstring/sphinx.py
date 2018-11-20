@@ -53,49 +53,106 @@ class Docstring(BaseDocstring):
             A lookup table for compound Nodes by their NodeType.
 
         """
-        lookup = defaultdict(list)  # type: Dict[NodeType, List[Node]]
+        lookup = defaultdict(
+            lambda: list()
+        )  # type: Dict[NodeType, List[Node]]
         for node in self.root.breadth_first_walk(leaves=False):
             lookup[node.node_type].append(node)
         return lookup
 
     def get_section(self, section):
         # type: (Sections) -> Optional[str]
+        return_value = ''
+        nodes = []  # type: Optional[List[Node]]
+
         if section == Sections.SHORT_DESCRIPTION:
-            pass
+            nodes = self._lookup.get(NodeType.SHORT_DESCRIPTION, None)
         elif section == Sections.LONG_DESCRIPTION:
-            pass
+            nodes = self._lookup.get(NodeType.LONG_DESCRIPTION, None)
         elif section == Sections.ARGUMENTS_SECTION:
-            pass
+            nodes = self._lookup.get(NodeType.ARGS_SECTION, None)
         elif section == Sections.RAISES_SECTION:
-            pass
+            nodes = self._lookup.get(NodeType.RAISES_SECTION, None)
         elif section == Sections.YIELDS_SECTION:
-            pass
+            nodes = self._lookup.get(NodeType.YIELDS_SECTION, None)
         elif section == Sections.RETURNS_SECTION:
-            pass
+            nodes = self._lookup.get(NodeType.RETURNS_SECTION, None)
         elif section == Sections.VARIABLES_SECTION:
-            pass
+            nodes = self._lookup.get(NodeType.VARIABLES_SECTION, None)
         elif section == Sections.NOQAS:
-            pass
-        return None
+            nodes = self._lookup.get(NodeType.NOQA, None)
+        else:
+            raise Exception(
+                'Unsupported section type, {}'.format(section)
+            )
+
+        if nodes is None:
+            return None
+
+        for node in nodes:
+            return_value += '\n' + node.reconstruct_string()
+
+        return return_value
+
+    def _get_argument_types(self):
+        # type: () ->  List[Optional[str]]
+        """Get a list of types corresponding to arguments.
+
+        Returns:
+            A dictionary matching arguments to types.
+
+        """
+        # FIXME: We need to impose a consistent ordering on
+        # both args and the argument types. (Probably alphabetically).
+        argtypes = list()  # type: List[Optional[str]]
+
+        for section in self._lookup[NodeType.ARGS_SECTION]:
+            is_type = section.first_instance(NodeType.TYPE)
+            if not is_type:
+                continue
+            description = section.first_instance(NodeType.ITEM_DEFINITION)
+            if description is None:
+                argtypes.append(description)
+            else:
+                argtypes.append(description.reconstruct_string().strip())
+
+        return argtypes
+
+    def _get_variable_types(self):
+        # FIXME: We need to impose a consistent ordering on
+        # both vars and the variable types. (Probably alphabetically).
+        vartypes = list()  # type: List[Optional[str]]
+
+        for section in self._lookup[NodeType.VARIABLES_SECTION]:
+            is_type = section.first_instance(NodeType.TYPE)
+            if not is_type:
+                continue
+            description = section.first_instance(NodeType.ITEM_DEFINITION)
+            if description is None:
+                vartypes.append(description)
+            else:
+                vartypes.append(description.reconstruct_string().strip())
+
+        return vartypes
 
     def get_types(self, section):
-        # type: (Sections) -> Optional[Union[str, List[str]]]
-        if section == Sections.SHORT_DESCRIPTION:
-            pass
-        elif section == Sections.LONG_DESCRIPTION:
-            pass
-        elif section == Sections.ARGUMENTS_SECTION:
-            pass
-        elif section == Sections.RAISES_SECTION:
-            pass
-        elif section == Sections.YIELDS_SECTION:
+        # type: (Sections) -> Optional[Union[str, List[Optional[str]]]]
+        if section == Sections.ARGUMENTS_SECTION:
+            if NodeType.ARGS_SECTION not in self._lookup:
+                return None
+            return self._get_argument_types()
+        elif section == Sections.VARIABLES_SECTION:
+            if NodeType.VARIABLES_SECTION not in self._lookup:
+                return None
             pass
         elif section == Sections.RETURNS_SECTION:
             pass
-        elif section == Sections.VARIABLES_SECTION:
-            pass
-        elif section == Sections.NOQAS:
-            pass
+        else:
+            raise Exception(
+                'Section type {} does not have types, '.format(
+                    section.name
+                ) + 'or is not yet supported'
+            )
         return None
 
     def get_items(self, section):
@@ -371,6 +428,7 @@ class Docstring(BaseDocstring):
                 item_name = item.first_instance(NodeType.ITEM_NAME)
                 assert item_name is not None
                 variable_node = item_name.first_instance(NodeType.WORD)
+                # FIXME This was None!
                 assert variable_node is not None
                 assert variable_node.value is not None
                 variables.append(variable_node.value)

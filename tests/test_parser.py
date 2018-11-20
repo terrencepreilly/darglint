@@ -1,5 +1,5 @@
 import ast
-from unittest import TestCase, skip
+from unittest import TestCase
 
 from darglint.docstring.google import (
     Docstring,
