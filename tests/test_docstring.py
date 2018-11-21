@@ -2,11 +2,138 @@
 
 from unittest import TestCase
 
+from darglint.docstring.base import Sections
 from darglint.docstring.docstring import Docstring
 from darglint.lex import lex
-from darglint.parse.google import parse
+from darglint.parse import google
 from darglint.parse import sphinx
 from darglint.peaker import Peaker
+
+
+class DocstringBaseMethodTests(TestCase):
+
+    # A set of equivalent docstrings, in each of the representations.
+    # These should evaluate to the same for each of the base methods.
+    _equivalent_docstrings = [
+        (
+            '\n'.join([
+                'Only a short description.',
+            ]),
+            '\n'.join([
+                'Only a short description.',
+            ])
+        ),
+        (
+            '\n'.join([
+                'A single item and type.',
+                '',
+                'Args:',
+                '    x (int): A number.',
+                '',
+            ]),
+            '\n'.join([
+                'A single item and type.',
+                '',
+                ':param x: A number.',
+                ':type x: int',
+                '',
+            ])
+        ),
+        (
+            '\n'.join([
+                'A docstring with noqas in it.',
+                '',
+                '# noqa: I203',
+                '',
+                '# noqa',
+                '',
+            ]),
+            '\n'.join([
+                'A docstring with noqas in it.',
+                '',
+                '# noqa: I203',
+                '',
+                '# noqa',
+                '',
+            ])
+        ),
+        (
+            '\n'.join([
+                'A docstring with types in it.',
+                '',
+                'Args:',
+                '    x (int): The number to double.',
+                '',
+                'Returns:',
+                '    int: The number, doubled.',
+                '',
+            ]),
+            '\n'.join([
+                'A docstring with types in it.',
+                '',
+                ':param x: The number to double.',
+                ':type x: int',
+                ':returns: The number, doubled.',
+                ':rtype: int',
+                '',
+            ])
+        ),
+    ]
+
+    @classmethod
+    def setUpClass(cls, *args, **kwargs):
+        super().setUpClass(*args, **kwargs)
+        cls.equivalent_docstrings = list()
+        for google_doc, sphinx_doc in cls._equivalent_docstrings:
+            google_root = google.parse(Peaker(lex(google_doc), 3))
+            sphinx_root = sphinx.parse(Peaker(lex(sphinx_doc), 2))
+            cls.equivalent_docstrings.append((
+                Docstring.from_google(google_root),
+                Docstring.from_sphinx(sphinx_root),
+            ))
+
+    # Get section (section)
+    def test_get_section_equivalency(self):
+        for google_doc, sphinx_doc in self.equivalent_docstrings:
+            for section in [
+                Sections.SHORT_DESCRIPTION,
+                Sections.LONG_DESCRIPTION,
+                Sections.NOQAS,
+            ]:
+                g = google_doc.get_section(section)
+                s = sphinx_doc.get_section(section)
+                self.assertEqual(
+                    g, s,
+                    'Section {} differs for google and sphinx for "{}"'.format(
+                        section,
+                        google_doc.get_section(Sections.SHORT_DESCRIPTION),
+                    ),
+                )
+
+    def test_get_types_equivalency(self):
+        for google_doc, sphinx_doc in self.equivalent_docstrings:
+            for section in [
+                Sections.ARGUMENTS_SECTION,
+                Sections.RETURNS_SECTION,
+            ]:
+                self.assertEqual(
+                    google_doc.get_types(section),
+                    sphinx_doc.get_types(section)
+                )
+
+    def test_get_items_equivalency(self):
+        for google_doc, sphinx_doc in self.equivalent_docstrings:
+            for section in [
+                Sections.ARGUMENTS_SECTION,
+                Sections.RAISES_SECTION,
+                Sections.NOQAS,
+            ]:
+                self.assertEqual(
+                    google_doc.get_items(section),
+                    sphinx_doc.get_items(section),
+                )
+
+    # Test that types and names always match in their lists.
 
 
 class DocstringMethodTest(TestCase):
@@ -14,7 +141,7 @@ class DocstringMethodTest(TestCase):
 
     def test_global_noqa_no_body(self):
         """Ensure an empty noqa body means ignore everything."""
-        root = parse(Peaker(lex('\n'.join([
+        root = google.parse(Peaker(lex('\n'.join([
             'A short explanation.',
             '',
             '    # noqa',
@@ -25,7 +152,7 @@ class DocstringMethodTest(TestCase):
 
     def test_global_noqa_star_body(self):
         """Ensure noqa with * means ignore everything."""
-        root = parse(Peaker(lex('\n'.join([
+        root = google.parse(Peaker(lex('\n'.join([
             'A short explanation.',
             '',
             '    # noqa: *',
@@ -36,7 +163,7 @@ class DocstringMethodTest(TestCase):
 
     def test_get_short_description(self):
         """Ensure we can get the short description."""
-        root = parse(
+        root = google.parse(
             Peaker(lex('Nothing but a short description.'), lookahead=3))
         docstring = Docstring.from_google(root)
         self.assertEqual(
@@ -46,7 +173,7 @@ class DocstringMethodTest(TestCase):
 
     def test_get_long_description(self):
         """Make sure we can get the long description."""
-        root = parse(Peaker(lex('\n'.join([
+        root = google.parse(Peaker(lex('\n'.join([
             'Ignore short.',
             '',
             'Long description should be contiguous.',
@@ -60,7 +187,7 @@ class DocstringMethodTest(TestCase):
 
     def test_get_arguments_description(self):
         """Make sure we can get the arguments description."""
-        root = parse(Peaker(lex('\n'.join([
+        root = google.parse(Peaker(lex('\n'.join([
             'Something.',
             '',
             'Args:',
@@ -75,7 +202,7 @@ class DocstringMethodTest(TestCase):
 
     def test_get_argument_types(self):
         """Make sure we can get a dictionary of arguments to types."""
-        root = parse(Peaker(lex('\n'.join([
+        root = google.parse(Peaker(lex('\n'.join([
             'Something.',
             '',
             'Args:',
@@ -96,7 +223,7 @@ class DocstringMethodTest(TestCase):
 
     def test_get_return_section(self):
         """Make sure we can get the returns description."""
-        root = parse(Peaker(lex('\n'.join([
+        root = google.parse(Peaker(lex('\n'.join([
             'Ferment corn.',
             '',
             'Returns:',
@@ -111,7 +238,7 @@ class DocstringMethodTest(TestCase):
 
     def test_get_return_type(self):
         """Make sure we can get the return type described."""
-        root = parse(Peaker(lex('\n'.join([
+        root = google.parse(Peaker(lex('\n'.join([
             'Ferment potato.',
             '',
             'Returns:',
@@ -126,7 +253,7 @@ class DocstringMethodTest(TestCase):
 
     def test_get_yields_description(self):
         """Make sure we can get the yields description."""
-        root = parse(Peaker(lex('\n'.join([
+        root = google.parse(Peaker(lex('\n'.join([
             'To pedestrians.',
             '',
             'Yields:',
@@ -141,7 +268,7 @@ class DocstringMethodTest(TestCase):
 
     def test_get_yields_type(self):
         """Make sure we can get the yields type."""
-        root = parse(Peaker(lex('\n'.join([
+        root = google.parse(Peaker(lex('\n'.join([
             'Get slavic cats.',
             '',
             'Yields:',
@@ -156,7 +283,7 @@ class DocstringMethodTest(TestCase):
 
     def test_get_raises_description(self):
         """Make sure we can get the raises description."""
-        root = parse(Peaker(lex('\n'.join([
+        root = google.parse(Peaker(lex('\n'.join([
             'Check if there\'s a problem.',
             '',
             'Raises:',
@@ -171,7 +298,7 @@ class DocstringMethodTest(TestCase):
 
     def test_get_exception_types(self):
         """Make sure we can get the types of exceptions raised."""
-        root = parse(Peaker(lex('\n'.join([
+        root = google.parse(Peaker(lex('\n'.join([
             'Problematic.',
             '',
             'Raises:',
@@ -187,7 +314,7 @@ class DocstringMethodTest(TestCase):
 
     def test_get_noqas(self):
         """Make sure we can get all of the noqas in the docstring."""
-        root = parse(Peaker(lex('\n'.join([
+        root = google.parse(Peaker(lex('\n'.join([
             'Full of noqas.',
             '',
             '# noqa: I200',
@@ -208,7 +335,7 @@ class DocstringMethodTest(TestCase):
 
     def test_has_section(self):
         """Make sure the docstring can tell if it has the given sections."""
-        has_everything_root = parse(Peaker(lex('\n'.join([
+        has_everything_root = google.parse(Peaker(lex('\n'.join([
             'Short decscription.',
             '',
             'Long description.',
@@ -234,7 +361,7 @@ class DocstringMethodTest(TestCase):
             docstring.has_yields_section(),
             docstring.has_returns_section(),
         ]))
-        has_only_short_description = parse(Peaker(lex('\n'.join([
+        has_only_short_description = google.parse(Peaker(lex('\n'.join([
             'Short description'
         ])), lookahead=3))
         docstring = Docstring.from_google(has_only_short_description)
@@ -273,7 +400,7 @@ class DocstringForSphinxTests(TestCase):
             docstring.has_yields_section(),
             docstring.has_returns_section(),
         ]))
-        has_only_short_description = parse(Peaker(lex('\n'.join([
+        has_only_short_description = google.parse(Peaker(lex('\n'.join([
             'Short description'
         ])), lookahead=3))
         docstring = Docstring.from_google(has_only_short_description)

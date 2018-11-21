@@ -63,7 +63,6 @@ class Docstring(BaseDocstring):
 
     def get_section(self, section):
         # type: (Sections) -> Optional[str]
-        return_value = ''
         nodes = []  # type: Optional[List[Node]]
 
         if section == Sections.SHORT_DESCRIPTION:
@@ -85,13 +84,14 @@ class Docstring(BaseDocstring):
                 'Unsupported section type {}'.format(section.name)
             )
 
-        if nodes is None:
+        if not nodes:
             return None
 
+        return_value = ''
         for node in nodes:
             return_value += '\n' + node.reconstruct_string()
 
-        return return_value
+        return return_value.strip() or None
 
     def _get_argument_types(self):
         # type: () ->  List[Optional[str]]
@@ -162,10 +162,15 @@ class Docstring(BaseDocstring):
             return None
 
         names = list()  # type: List[str]
-        for raises_section in self._lookup[node_type]:
-            for node in raises_section.breadth_first_walk(leaves=False):
-                if node.node_type == NodeType.ITEM_NAME:
-                    names.append(node.reconstruct_string())
+        for node in self._lookup[node_type]:
+            item_name = node.first_instance(NodeType.ITEM_NAME)
+            assert item_name is not None, '{} should have a name'.format(
+                repr(node.reconstruct_string()),
+            )
+            name = node.first_instance(NodeType.WORD)
+            if not name or not name.value:
+                continue
+            names.append(name.value)
 
         return names
 

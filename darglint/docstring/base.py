@@ -31,9 +31,16 @@ class Sections(enum.Enum):
     NOQAS = 13
 
 
-# TODO: Reduce the number of methods here.
 class BaseDocstring(ABC):
-    """The interface for a docstring object which can be used with checkers."""
+    """The interface for a docstring object which can be used with checkers.
+
+    Unfortunately, slight differences in the parsers result
+    in kind of inconsistent values for different nodes. (Sometimes
+    there are blank lines and such.)  For that reason, we include some
+    tests to try to make the output from the below three methods as
+    consistent as possible.
+
+    """
 
     @abstractmethod
     def get_section(self, section):
