@@ -170,6 +170,8 @@ class Docstring(BaseDocstring):
             return self._get_variable_types() or None
         elif section == Sections.RETURNS_SECTION:
             return self._get_return_type() or None
+        elif section == Sections.YIELDS_SECTION:
+            return self._get_yield_type() or None
         else:
             raise Exception(
                 'Section type {} does not have types, '.format(
@@ -251,102 +253,7 @@ class Docstring(BaseDocstring):
             )
         return None
 
-    def has_short_description(self):
-        # type: () -> bool
-        """Tell if the docstring has a short description.
-
-        Returns:
-            True if the docstring has a short description.
-
-        """
-        return NodeType.SHORT_DESCRIPTION in self._lookup
-
-    def has_long_description(self):
-        # type: () -> bool
-        """Tell if the docstring has a long description.
-
-        Returns:
-            True if the docstring has a long description.
-
-        """
-        return NodeType.LONG_DESCRIPTION in self._lookup
-
-    def has_args_section(self):
-        # type: () -> bool
-        """Tell if the docstring has a args section.
-
-        Returns:
-            True if the docstring has a args section.
-
-        """
-        return NodeType.ARGS_SECTION in self._lookup
-
-    def has_raises_section(self):
-        # type: () -> bool
-        """Tell if the docstring has a has raises section.
-
-        Returns:
-            True if the docstring has a has raises section.
-
-        """
-        return NodeType.RAISES_SECTION in self._lookup
-
-    def has_yields_section(self):
-        # type: () -> bool
-        """Tell if the docstring has a has yields section.
-
-        Returns:
-            True if the docstring has a has yields section.
-
-        """
-        return NodeType.YIELDS_SECTION in self._lookup
-
-    def has_returns_section(self):
-        # type: () -> bool
-        """Tell if the docstring has a has returns section.
-
-        Returns:
-            True if the docstring has a has returns section.
-
-        """
-        return NodeType.RETURNS_SECTION in self._lookup
-
-    def get_return_type(self):
-        # type: () -> Optional[str]
-        """Get the return type specified by the docstring, if any.
-
-        Returns:
-            The return type or None.
-
-        """
-        for return_node in self._lookup[NodeType.RETURNS_SECTION]:
-            type_node = return_node.first_instance(NodeType.TYPE)
-            if type_node is None:
-                continue
-            definition = return_node.first_instance(NodeType.ITEM_DEFINITION)
-            assert definition is not None
-            return definition.reconstruct_string().strip()
-        return None
-
-    def get_exception_types(self):
-        # type: () -> List[str]
-        """Get the exception types described by the docstring.
-
-        Returns:
-            The types of exceptions described by the docstring.
-
-        """
-        ret = list()  # type: List[str]
-        for raises_node in self._lookup[NodeType.RAISES_SECTION]:
-            item_name = raises_node.first_instance(NodeType.ITEM_NAME)
-            assert item_name is not None
-            word = item_name.first_instance(NodeType.WORD)
-            assert word is not None, '`except` should have an argument.'
-            assert word.value is not None
-            ret.append(word.value)
-        return ret
-
-    def get_yield_type(self):
+    def _get_yield_type(self):
         # type: () -> Optional[str]
         """Get the yield type specified by the docstring, if any.
 
@@ -362,35 +269,6 @@ class Docstring(BaseDocstring):
             assert definition is not None
             return definition.reconstruct_string().strip()
         return None
-
-    def get_argument_types(self):
-        # type: () -> Dict[str, Optional[str]]
-        """Get a dictionary mapping arguments to types.
-
-        Returns:
-            A dictionary matching arguments to types.
-
-        """
-        argtypes = dict()  # type: Dict[str, Optional[str]]
-        for arg_section in self._lookup[NodeType.ARGS_SECTION]:
-            item_name = arg_section.first_instance(NodeType.ITEM_NAME)
-            assert item_name is not None
-            param = item_name.first_instance(NodeType.WORD)
-            assert param is not None
-            assert param.value is not None
-
-            is_param_item = arg_section.first_instance(NodeType.TYPE) is None
-            if is_param_item:
-                if param.value not in argtypes:
-                    argtypes[param.value] = None
-            else:  # Is the type description of a parameter.
-                definition = arg_section.first_instance(
-                    NodeType.ITEM_DEFINITION
-                )
-                assert definition is not None
-                param_type = definition.reconstruct_string().strip()
-                argtypes[param.value] = param_type
-        return argtypes
 
     def get_noqas(self):
         # type: () -> Dict[str, List[str]]
@@ -449,13 +327,6 @@ class Docstring(BaseDocstring):
 
         return dict(noqas)
 
-    def _get_description(self, node_type):
-        # type: (NodeType) -> Optional[str]
-        nodes = self._lookup[node_type]
-        if not nodes:
-            return None
-        return ''.join([x.reconstruct_string() for x in nodes])
-
     def get_line_numbers(self, node_type):
         # type: (NodeType) -> Optional[Tuple[int, int]]
         """Get the line numbers for the first instance of the given section.
@@ -495,87 +366,6 @@ class Docstring(BaseDocstring):
                 if child.value == value and child.line_numbers:
                     return child.line_numbers
         return None
-
-    def get_variables(self):
-        # type: () -> List[str]
-        variables = list()  # type: List[str]
-        for variable_section in self._lookup[NodeType.VARIABLES_SECTION]:
-            for item in variable_section.children:
-                item_name = item.first_instance(NodeType.ITEM_NAME)
-                assert item_name is not None
-                variable_node = item_name.first_instance(NodeType.WORD)
-                assert variable_node is not None
-                assert variable_node.value is not None
-                variables.append(variable_node.value)
-        return variables
-
-    @property
-    def raises_description(self):
-        # type: () -> Optional[str]
-        """Get the raises section of the docstring.
-
-        Returns:
-            The raises section of the docstring or None.
-
-        """
-        return self._get_description(NodeType.RAISES_SECTION)
-
-    @property
-    def returns_description(self):
-        # type: () -> Optional[str]
-        """Get the returns section of the docstring.
-
-        Returns:
-            The returns section of the docstring, as a String,
-            or None.
-
-        """
-        return self._get_description(NodeType.RETURNS_SECTION)
-
-    @property
-    def yields_description(self):
-        # type: () -> Optional[str]
-        """Get the yield ssection of the docstring.
-
-        Returns:
-            The yields section, if it exists.
-
-        """
-        return self._get_description(NodeType.YIELDS_SECTION)
-
-    @property
-    def arguments_description(self):
-        # type: () -> Optional[str]
-        """Get the arguments section of the docstring.
-
-        Returns:
-            The arguments section of the docstring, as a string,
-            or None.
-
-        """
-        return self._get_description(NodeType.ARGS_SECTION)
-
-    @property
-    def short_description(self):
-        # type: () -> Optional[str]
-        """Get the short description of the docstring.
-
-        Returns:
-            The short description in the docstring, or None.
-
-        """
-        return self._get_description(NodeType.SHORT_DESCRIPTION)
-
-    @property
-    def long_description(self):
-        # type: () -> Optional[str]
-        """Get the long description of the docstring.
-
-        Returns:
-            The long description in the docstring, or None.
-
-        """
-        return self._get_description(NodeType.LONG_DESCRIPTION)
 
     @property
     def ignore_all(self):

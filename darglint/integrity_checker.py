@@ -17,6 +17,9 @@ from .docstring.base import (  # noqa: F401
     BaseDocstring,
     DocstringStyle,
 )
+from .docstring.base import (
+    Sections,
+)
 from .docstring.docstring import (
     Docstring,
 )
@@ -121,7 +124,10 @@ class IntegrityChecker(object):
         if self._ignore_error(ParameterTypeMismatchError):
             return
 
-        argument_types = self.docstring.get_argument_types()
+        argument_types = dict(
+            zip(self.docstring.get_items(Sections.ARGUMENTS_SECTION) or [],
+                self.docstring.get_types(Sections.ARGUMENTS_SECTION) or [])
+        )
         doc_arg_types = list()  # type: List[Optional[str]]
         for name in self.function.argument_names:
             if name not in argument_types:
@@ -162,7 +168,9 @@ class IntegrityChecker(object):
             return
 
         fun_type = self.function.return_type
-        doc_type = self.docstring.get_return_type()
+        doc_type = self.docstring.get_types(Sections.RETURNS_SECTION)
+        if not doc_type or isinstance(doc_type, list):
+            doc_type = ''
         if fun_type is not None and doc_type is not None:
             if fun_type != doc_type:
                 line_numbers = self.docstring.get_line_numbers(
@@ -179,7 +187,7 @@ class IntegrityChecker(object):
 
     def _check_yield(self):
         # type: () -> None
-        doc_yield = self.docstring.has_yields_section()
+        doc_yield = self.docstring.get_section(Sections.YIELDS_SECTION)
         fun_yield = self.function.has_yield
         ignore_missing = self._ignore_error(MissingYieldError)
         ignore_excess = self._ignore_error(ExcessYieldError)
@@ -200,7 +208,7 @@ class IntegrityChecker(object):
 
     def _check_return(self):
         # type: () -> None
-        doc_return = self.docstring.has_returns_section()
+        doc_return = self.docstring.get_section(Sections.RETURNS_SECTION)
         fun_return = self.function.has_return
         ignore_missing = self._ignore_error(MissingReturnError)
         ignore_excess = self._ignore_error(ExcessReturnError)
@@ -221,8 +229,11 @@ class IntegrityChecker(object):
 
     def _check_parameters(self):
         # type: () -> None
-        argument_types = self.docstring.get_argument_types()
-        docstring_arguments = set(argument_types.keys())
+        # argument_types = self.docstring.get_argument_types()
+        # docstring_arguments = set(argument_types.keys())
+        docstring_arguments = set(self.docstring.get_items(
+            Sections.ARGUMENTS_SECTION
+        ) or [])
         actual_arguments = set(self.function.argument_names)
         missing_in_doc = actual_arguments - docstring_arguments
         missing_in_doc = self._remove_ignored(
@@ -266,7 +277,9 @@ class IntegrityChecker(object):
 
     def _check_variables(self):
         # type: () -> None
-        described_variables = set(self.docstring.get_variables())
+        described_variables = set(
+            self.docstring.get_items(Sections.VARIABLES_SECTION) or []
+        )  # type: Set[str]
         actual_variables = set(self.function.variables)
         excess_in_doc = described_variables - actual_variables
 
@@ -338,8 +351,8 @@ class IntegrityChecker(object):
 
     def _check_raises(self):
         # type: () -> None
-        exception_types = self.docstring.get_exception_types()
-        docstring_raises = set(exception_types)
+        exception_types = self.docstring.get_items(Sections.RAISES_SECTION)
+        docstring_raises = set(exception_types or [])
         actual_raises = self.function.raises
         missing_in_doc = actual_raises - docstring_raises
 

@@ -1,6 +1,9 @@
 import ast
 from unittest import TestCase
 
+from darglint.docstring.base import (
+    Sections,
+)
 from darglint.docstring.google import (
     Docstring,
 )
@@ -58,7 +61,9 @@ class DocstringTestCase(TestCase):
         doc = ast.get_docstring(ast.parse(func).body[0])
         self.assertTrue(doc.startswith('Has an extra'))
         docstring = Docstring(doc)
-        self.assertTrue('arg1' in docstring.arguments_description)
+        self.assertTrue('arg1' in docstring.get_items(
+            Sections.ARGUMENTS_SECTION)
+        )
         noqas = docstring.get_noqas()
         self.assertTrue('arg1' in noqas['I102'])
 
@@ -128,10 +133,11 @@ class DocstringTestCase(TestCase):
         ])
         doc = ast.get_docstring(ast.parse(func).body[0])
         docstring = Docstring(doc)
+        long_description = docstring.get_section(Sections.LONG_DESCRIPTION)
         self.assertTrue(
-            docstring.long_description.startswith('This function returns'),
+            long_description.startswith('This function returns'),
             'Expected long description to start with "This function returns" '
-            'but was {}'.format(repr(docstring.long_description[:20]))
+            'but was {}'.format(repr(long_description[:20]))
         )
 
     def test_arguments_extracted_when_extant(self):
@@ -155,8 +161,9 @@ class DocstringTestCase(TestCase):
         ])
         doc = Docstring(docstring)
 
-        self.assertTrue('param1' in doc.arguments_description)
-        self.assertTrue('param2' in doc.arguments_description)
+        args = doc.get_items(Sections.ARGUMENTS_SECTION)
+        self.assertTrue('param1' in args)
+        self.assertTrue('param2' in args)
 
     def test_arguments_with_multiple_lines(self):
         """Make sure multiple lines are okay in items."""
@@ -183,8 +190,9 @@ class DocstringTestCase(TestCase):
             '    bool: True if successful, False otherwise.',
         ])
         doc = Docstring(docstring)
+        args = doc.get_items(Sections.ARGUMENTS_SECTION)
         for arg in 'param1', 'param2', '*args', '**kwargs':
-            self.assertTrue(arg in doc.arguments_description)
+            self.assertTrue(arg in args)
 
     def test_arguments_are_last(self):
         """Make sure arguments can be parsed as the last section."""
@@ -207,8 +215,9 @@ class DocstringTestCase(TestCase):
             '    param3 (list(str)): Description of `param3`.',
         ])
         doc = Docstring(docstring)
+        args = doc.get_items(Sections.ARGUMENTS_SECTION)
         for arg in ['param1', 'param2', 'param3']:
-            self.assertTrue(arg in doc.arguments_description)
+            arg in args
 
     def test_can_parse_yields(self):
         """Make sure we can parse the yields section."""
@@ -221,7 +230,7 @@ class DocstringTestCase(TestCase):
             '    The number 5. Always.',
         ])
         doc = Docstring(docstring)
-        self.assertTrue(len(doc.yields_description) > 0)
+        self.assertTrue(len(doc.get_section(Sections.YIELDS_SECTION)) > 0)
 
     def test_can_parse_raises(self):
         """Make sure we can parse the raises section."""
@@ -232,7 +241,9 @@ class DocstringTestCase(TestCase):
             '    Exception: An exception for generic reasons.',
         ])
         doc = Docstring(docstring)
-        self.assertTrue('Exception' in doc.raises_description)
+        self.assertTrue('Exception' in doc.get_section(
+            Sections.RAISES_SECTION)
+        )
 
     def test_argument_types_can_be_parsed(self):
         docstring = '\n'.join([
@@ -243,7 +254,13 @@ class DocstringTestCase(TestCase):
             '    y (float): The second number.',
         ])
         doc = Docstring(docstring)
-        arg_types = doc.get_argument_types()
+        arg_types = {
+            name: _type
+            for name, _type in zip(
+                doc.get_items(Sections.ARGUMENTS_SECTION),
+                doc.get_types(Sections.ARGUMENTS_SECTION),
+            )
+        }
         self.assertEqual(arg_types['x'], 'int')
         self.assertEqual(arg_types['y'], 'float')
 
@@ -255,7 +272,7 @@ class DocstringTestCase(TestCase):
             '    Decimal: An approximation of pi.',
         ])
         doc = Docstring(docstring)
-        self.assertEqual(doc.get_return_type(), 'Decimal')
+        self.assertEqual(doc.get_types(Sections.RETURNS_SECTION), 'Decimal')
 
     def test_star_arguments_parsed(self):
         docstring = '\n'.join([
@@ -270,7 +287,7 @@ class DocstringTestCase(TestCase):
             '        callables return false.',
         ])
         doc = Docstring(docstring)
-        self.assertTrue('*fns' in doc.arguments_description)
+        self.assertTrue('*fns' in doc.get_items(Sections.ARGUMENTS_SECTION))
 
     def test_bare_noqa_can_be_parsed(self):
         docstring = '\n'.join([
