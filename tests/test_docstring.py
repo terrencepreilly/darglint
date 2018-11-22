@@ -1,6 +1,7 @@
 """Tests for the Docstring class."""
 
 from unittest import TestCase
+from random import shuffle
 
 from darglint.docstring.base import Sections
 from darglint.docstring.docstring import Docstring
@@ -15,66 +16,112 @@ class DocstringBaseMethodTests(TestCase):
     # A set of equivalent docstrings, in each of the representations.
     # These should evaluate to the same for each of the base methods.
     _equivalent_docstrings = [
+        # (
+        #     '\n'.join([
+        #         'Only a short description.',
+        #     ]),
+        #     '\n'.join([
+        #         'Only a short description.',
+        #     ])
+        # ),
+        # (
+        #     '\n'.join([
+        #         'A single item and type.',
+        #         '',
+        #         'Args:',
+        #         '    x (int): A number.',
+        #         '',
+        #     ]),
+        #     '\n'.join([
+        #         'A single item and type.',
+        #         '',
+        #         ':param x: A number.',
+        #         ':type x: int',
+        #         '',
+        #     ])
+        # ),
+        # (
+        #     '\n'.join([
+        #         'A docstring with noqas in it.',
+        #         '',
+        #         '# noqa: I203',
+        #         '',
+        #         '# noqa',
+        #         '',
+        #     ]),
+        #     '\n'.join([
+        #         'A docstring with noqas in it.',
+        #         '',
+        #         '# noqa: I203',
+        #         '',
+        #         '# noqa',
+        #         '',
+        #     ])
+        # ),
+        # (
+        #     '\n'.join([
+        #         'A docstring with types in it.',
+        #         '',
+        #         'Args:',
+        #         '    x (int): The number to double.',
+        #         '',
+        #         'Returns:',
+        #         '    int: The number, doubled.',
+        #         '',
+        #     ]),
+        #     '\n'.join([
+        #         'A docstring with types in it.',
+        #         '',
+        #         ':param x: The number to double.',
+        #         ':type x: int',
+        #         ':returns: The number, doubled.',
+        #         ':rtype: int',
+        #         '',
+        #     ])
+        # ),
         (
             '\n'.join([
-                'Only a short description.',
-            ]),
-            '\n'.join([
-                'Only a short description.',
-            ])
-        ),
-        (
-            '\n'.join([
-                'A single item and type.',
+                'A very complete docstring.',
+                '',
+                'There is a long-description section.',
+                '',
+                '    code example',
+                '',
+                'And it continues over multiple lines.',
                 '',
                 'Args:',
-                '    x (int): A number.',
+                '    x (int): The first integer.  This description ',
+                '        spans multiple lines.',
+                '    y (int): The second integer.',
+                '',
+                'Raises:',
+                '    InvalidNumberException: An exception for if it\'s '
+                '        invalid.',
+                '    Exception: Seemingly at random.',
+                '',
+                'Yields:',
+                '    int: Numbers that were calculated somehow.',
                 '',
             ]),
             '\n'.join([
-                'A single item and type.',
+                'A very complete docstring.',
                 '',
-                ':param x: A number.',
+                'There is a long-description section.',
+                '',
+                '    code example',
+                '',
+                'And it continues over multiple lines.',
+                '',
+                ':param x: The first integer.  This description ',
+                '    spans multiple lines.',
                 ':type x: int',
-                '',
-            ])
-        ),
-        (
-            '\n'.join([
-                'A docstring with noqas in it.',
-                '',
-                '# noqa: I203',
-                '',
-                '# noqa',
-                '',
-            ]),
-            '\n'.join([
-                'A docstring with noqas in it.',
-                '',
-                '# noqa: I203',
-                '',
-                '# noqa',
-                '',
-            ])
-        ),
-        (
-            '\n'.join([
-                'A docstring with types in it.',
-                '',
-                'Args:',
-                '    x (int): The number to double.',
-                '',
-                'Returns:',
-                '    int: The number, doubled.',
-                '',
-            ]),
-            '\n'.join([
-                'A docstring with types in it.',
-                '',
-                ':param x: The number to double.',
-                ':type x: int',
-                ':returns: The number, doubled.',
-                ':rtype: int',
+                ':param y: The second integer.',
+                ':type y: int',
+                ':raises InvalidNumberException: An exception for if it\'s '
+                '    invalid.',
+                ':raises Exception: Seemingly at random.',
+                ':yields: Numbers that were calculated somehow.',
+                ':ytype: int',
                 '',
             ])
         ),
@@ -133,7 +180,63 @@ class DocstringBaseMethodTests(TestCase):
                     sphinx_doc.get_items(section),
                 )
 
-    # Test that types and names always match in their lists.
+    def test_type_and_name_always_associated(self):
+        """Make sure the type goes to the correct name."""
+        names = ['x', 'y', 'a', 'z', 'q']
+        types = ['int', 'float', 'Decimal', 'str', 'Any']
+        short_description = 'A short docstring.'
+
+        # Change the types of the parameters.
+        shuffle(names)
+        shuffle(types)
+
+        sphinx_params = [
+            ':param {}: An explanation'.format(name)
+            for name in names
+        ] + [
+            ':type {}: {}'.format(name, _type)
+            for name, _type in zip(names, types)
+        ]
+        shuffle(sphinx_params)
+        sphinx_docstring = '\n'.join([
+            short_description,
+            '',
+            '\n'.join(sphinx_params)
+        ])
+
+        google_params = [
+            '    {} ({}): An explanation.'.format(name, _type)
+            for name, _type in zip(names, types)
+        ]
+        google_docstring = '\n'.join([
+            short_description,
+            '',
+            'Args:',
+            '\n'.join(google_params),
+        ])
+
+        google_doc = Docstring.from_google(
+            google.parse(Peaker(lex(google_docstring), 3))
+        )
+        sphinx_doc = Docstring.from_sphinx(
+            sphinx.parse(Peaker(lex(sphinx_docstring), 2))
+        )
+
+        items = google_doc.get_items(Sections.ARGUMENTS_SECTION)
+        self.assertTrue(
+            items == sorted(items),
+            'The items should be sorted.'
+        )
+        self.assertEqual(
+            google_doc.get_items(Sections.ARGUMENTS_SECTION),
+            sphinx_doc.get_items(Sections.ARGUMENTS_SECTION),
+            'Google and Sphinx items should be the same.',
+        )
+        self.assertEqual(
+            google_doc.get_types(Sections.ARGUMENTS_SECTION),
+            sphinx_doc.get_types(Sections.ARGUMENTS_SECTION),
+            'Google and Sphinx types should be the same.',
+        )
 
 
 class DocstringMethodTest(TestCase):

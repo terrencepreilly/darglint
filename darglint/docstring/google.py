@@ -101,27 +101,12 @@ class Docstring(BaseDocstring):
             A dictionary matching arguments to types.
 
         """
-        argtypes = list()  # type: List[Optional[str]]
-        item_names = list()  # type: List[Node]
+        lookup = self._get_compound_item_type_lookup(NodeType.ARGS_SECTION)
+        if lookup is None:
+            return []
 
-        for arg_section in self._lookup[NodeType.ARGS_SECTION]:
-            for node in arg_section.breadth_first_walk(leaves=False):
-                if node.node_type == NodeType.ITEM_NAME:
-                    item_names.append(node)
-
-        for item_name in item_names:
-            argument = item_name.children[0]
-            assert argument.value is not None
-            if len(item_name.children) > 1:
-                type_node = item_name.children[1]
-                type_repr = type_node.reconstruct_string()
-                if type_repr.startswith('(') and type_repr.endswith(')'):
-                    type_repr = type_repr[2:-2]
-                argtypes.append(type_repr)
-            else:
-                argtypes.append(None)
-
-        return argtypes
+        names_and_types = sorted(lookup.items())
+        return [x[1] for x in names_and_types]
 
     def _get_return_type(self):
         # type: () -> Optional[str]
@@ -156,23 +141,43 @@ class Docstring(BaseDocstring):
             )
         return None
 
-    def _get_compound_items(self, node_type):
-        # type: (NodeType) -> Optional[List[str]]
+    def _get_compound_item_type_lookup(self, node_type):
+        # type: (NodeType) -> Optional[Dict[str, Optional[str]]]
+        """Get a map of names to types for the section.
+
+        Args:
+            node_type: The type of the section.
+
+        Returns:
+            A lookup of items to types.
+
+        """
         if node_type not in self._lookup:
             return None
 
-        names = list()  # type: List[str]
+        item_types = dict()  # type: Dict[str, Optional[str]]
         for node in self._lookup[node_type]:
-            item_name = node.first_instance(NodeType.ITEM_NAME)
-            assert item_name is not None, '{} should have a name'.format(
-                repr(node.reconstruct_string()),
-            )
-            name = node.first_instance(NodeType.WORD)
-            if not name or not name.value:
-                continue
-            names.append(name.value)
+            for item_name in node.breadth_first_walk(leaves=False):
+                if item_name.node_type != NodeType.ITEM_NAME:
+                    continue
+                name = item_name.first_instance(NodeType.WORD)
+                if not name or not name.value:
+                    continue
+                _type = item_name.first_instance(NodeType.TYPE)
+                if _type is None:
+                    item_types[name.value] = None
+                else:
+                    _type_repr = _type.reconstruct_string()
+                    _type_repr = _type_repr[1:-1].strip()
+                    item_types[name.value] = _type_repr
+        return item_types
 
-        return names
+    def _get_compound_items(self, node_type):
+        # type: (NodeType) -> Optional[List[str]]
+        lookup = self._get_compound_item_type_lookup(node_type)
+        if lookup is None:
+            return None
+        return sorted(lookup.keys())
 
     def _get_noqas(self):
         # type: () -> Optional[List[str]]
