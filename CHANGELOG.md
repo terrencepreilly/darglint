@@ -3,6 +3,22 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+
+## [0.5.2] - 2018-11-23
+
+### Changed
+
+- Simplified the interface for the Docstring base class.  This should
+  make modifications easier, and should ensure that the same value is
+  returned consistently between Google and Sphinx styles.
+
+  This comes at the cost of a slightly more complicated function signature
+  for the functions which remain.  However, the single parameter which
+  is passed to the functions (an enumeration named `Sections`), can
+  (and should) be used everywhere the `NodeType` enumeration is currently
+  used (outside of the actual parsing step.)  This will effectively create
+  a firewall around the parsing step.
+
 ## [0.5.1] - 2018-11-10
 
 ### Added
