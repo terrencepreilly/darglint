@@ -268,12 +268,13 @@ def parse_line_with_type(peaker):
     # Get the first node, which may be a type description.
     if _is(TokenType.WORD, peaker.peak()):
         next_value = peaker.next()
-        AssertNotEmpty(peaker, 'parse line')
         if next_value.value.startswith('(') and next_value.value.endswith(')'):
+            AssertNotEmpty(peaker, 'parse line')
             first_node = parse_type(
                 Peaker((x for x in [next_value]))
             )
         elif _is(TokenType.COLON, peaker.peak()):
+            AssertNotEmpty(peaker, 'parse line')
             first_node = parse_type(
                 Peaker((x for x in [next_value, peaker.next()]))
             )

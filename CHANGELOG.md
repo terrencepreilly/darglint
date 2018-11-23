@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   used (outside of the actual parsing step.)  This will effectively create
   a firewall around the parsing step.
 
+### Fixed
+
+- Fix the parser failing on single-word return description.
+
+
 ## [0.5.1] - 2018-11-10
 
 ### Added

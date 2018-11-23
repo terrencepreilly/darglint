@@ -1039,3 +1039,34 @@ class DocstringTestCase(TestCase):
                     node.value,
                 )
             )
+
+    def test_single_word_sections_parse_correctly(self):
+        """Make sure we can have a minimal amount of words in each section."""
+        contents = '\n'.join([
+            'def f(foo):',
+            '    """foobar',
+            '',
+            '    Args:',
+            '        foo: foobar',
+            '',
+            '    Returns:',
+            '        bar',
+            '',
+            '    """',
+            '    return "bar"',
+        ])
+        function = ast.parse(contents).body[0]
+        docstring = ast.get_docstring(function)
+        doc = Docstring(docstring)
+        self.assertEqual(
+            doc.get_section(Sections.SHORT_DESCRIPTION),
+            'foobar',
+        )
+        self.assertEqual(
+            doc.get_section(Sections.RETURNS_SECTION),
+            'Returns:\n    bar',
+        )
+        self.assertEqual(
+            doc.get_items(Sections.ARGUMENTS_SECTION),
+            ['foo'],
+        )
