@@ -173,12 +173,16 @@ class DocstringBaseMethodTests(TestCase):
             for section in [
                 Sections.ARGUMENTS_SECTION,
                 Sections.RAISES_SECTION,
-                Sections.NOQAS,
             ]:
                 self.assertEqual(
                     google_doc.get_items(section),
                     sphinx_doc.get_items(section),
                 )
+
+            self.assertEqual(
+                google_doc.get_noqas(),
+                sphinx_doc.get_noqas(),
+            )
 
     def test_type_and_name_always_associated(self):
         """Make sure the type goes to the correct name."""

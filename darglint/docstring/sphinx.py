@@ -180,55 +180,6 @@ class Docstring(BaseDocstring):
             )
         return None
 
-    # TODO: This was taken wholesale from the Google docstring type.
-    # Move to the super class, since it should be the same for all docstrings.
-    def _get_noqas(self):
-        # type: () -> Optional[List[str]]
-        encountered = set()  # type: Set[Node]
-        global_noqas = set()  # type: Set[Node]
-        noqas = set()  # type: Set[str]
-
-        # Get exceptions with implied targets
-        for item_node in self._lookup[NodeType.ITEM]:
-            item = None  # type: Optional[str]
-            for node in item_node.breadth_first_walk(leaves=False):
-                # We will always encounter the item name first.
-                if node.node_type == NodeType.ITEM_NAME:
-                    assert node.children[0].value is not None
-                    item = node.children[0].value
-                elif node.node_type == NodeType.NOQA_BODY:
-                    assert item is not None
-                    exception = node.children[0]
-                    assert exception.value is not None
-                    encountered.add(exception)
-                    noqas.add(item)
-
-        # Get all other exceptions
-        for noqa_node in self._lookup[NodeType.NOQA_BODY]:
-            exception = noqa_node.children[0]
-            if exception in encountered:
-                continue
-
-            if len(noqa_node.children) == 1:
-                global_noqas.add(exception)
-                continue
-
-            for word_node in noqa_node.children[1].children:
-                word = word_node.value
-                assert word is not None
-                assert exception.value is not None
-                if word.endswith(','):
-                    word = word[:-1]
-                noqas.add(word)
-
-        # We overwrite any previous targets, because it was defined
-        # as a global. (This could happen before a target is defined.)
-        for global_noqa in global_noqas:
-            assert global_noqa.value is not None
-            noqas.add('*')
-
-        return list(noqas) or None
-
     def get_items(self, section):
         # type: (Sections) -> Optional[List[str]]
         if section == Sections.ARGUMENTS_SECTION:
@@ -243,8 +194,6 @@ class Docstring(BaseDocstring):
             var_types = self._get_item_type_lookup(NodeType.VARIABLES_SECTION)
             sorted_items = sorted(var_types.items())
             return [x[0] for x in sorted_items] or None
-        elif section == Sections.NOQAS:
-            return self._get_noqas()
         else:
             raise Exception(
                 'Section type {} does not have items, '.format(
