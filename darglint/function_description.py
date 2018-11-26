@@ -1,6 +1,7 @@
 """A linter for docstrings following the google docstring format."""
 import ast
 from collections import deque
+import sys
 from typing import (
     Callable,
     Iterator,
@@ -20,15 +21,19 @@ def read_program(filename):  # type: (str) -> str
     """Read a program from a file.
 
     Args:
-        filename: The name of the file to read.
+        filename: The name of the file to read. If set to '-', then we will
+            read from stdin.
 
     Returns:
         The program as a single string.
 
     """
     program = None  # type: str
-    with open(filename, 'r') as fin:
-        program = fin.read()
+    if filename == '-':
+        program = sys.stdin.read()
+    else:
+        with open(filename, 'r') as fin:
+            program = fin.read()
     return program
 
 
