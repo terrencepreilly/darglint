@@ -59,8 +59,8 @@ parser.add_argument(
     'files',
     nargs='*',
     help=(
-        'The python source files to check.  Any files not ending in '
-        '".py" are ignored. If "-" is given, then stdin will be read.'
+        'The python source files to check. If "-" is given, then stdin will '
+        'be read.'
     ),
 )
 parser.add_argument(
@@ -194,7 +194,7 @@ def main():
                 print(error_report + '\n')
                 encountered_errors = True
     except Exception as exc:
-        # Exit with status 2 regardless of whether user wants a
+        # Exit with status 129 regardless of whether user wants a
         # exit code or not -- darglint failed, and it should
         # look like it failed.
         print(exc, file=sys.stderr)
