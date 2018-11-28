@@ -4,6 +4,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 
+## [0.5.3] - 2018-11-28
+
+### Added
+
+- The ability to read from stdin, which should make it easier to
+  integrate darglint into other tools.
+
+### Removed
+
+- The restriction that a file must end in `.py`.
+
+
 ## [0.5.2] - 2018-11-23
 
 ### Changed
