@@ -59,8 +59,8 @@ parser.add_argument(
     'files',
     nargs='*',
     help=(
-        'The python source files to check.  Any files not ending in '
-        '".py" are ignored.'
+        'The python source files to check. If "-" is given, then stdin will '
+        'be read.'
     ),
 )
 parser.add_argument(
@@ -181,9 +181,8 @@ def main():
             config.style = DocstringStyle.SPHINX
         elif args.docstring_style == 'google':
             config.style = DocstringStyle.GOOGLE
-        files = [x for x in args.files if x.endswith('.py')]
         raise_errors_for_syntax = args.raise_syntax or False
-        for filename in files:
+        for filename in args.files:
             error_report = get_error_report(
                 filename,
                 args.verbosity,
@@ -194,10 +193,11 @@ def main():
             if error_report:
                 print(error_report + '\n')
                 encountered_errors = True
-    except Exception:
-        # Exit with status 2 regardless of whether user wants a
+    except Exception as exc:
+        # Exit with status 129 regardless of whether user wants a
         # exit code or not -- darglint failed, and it should
         # look like it failed.
+        print(exc, file=sys.stderr)
         sys.exit(129)
     if encountered_errors and exit_code:
         sys.exit(1)
