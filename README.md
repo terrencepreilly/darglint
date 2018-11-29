@@ -1,15 +1,10 @@
 # Darglint
 
-Check out the [poster](./docs/poster.pdf) about darglint which was presented
-at pycon!
-
 A functional docstring linter which checks whether a docstring's
 description matches the actual function/method implementation.
 *Darglint* expects docstrings to be formatted using the
-[Google Python Style Guide](https://google.github.io/styleguide/pyguide.html).
-
-*Darglint* is still in an early stage, and may fail for some things.
-See the **Roadmap** section for an idea of where the project is going.
+[Google Python Style Guide](https://google.github.io/styleguide/pyguide.html)
+or [Sphinx Style Guide](https://pythonhosted.org/an_example_pypi_project/sphinx.html#function-definitions).
 
 Feel free to submit an issue/pull request if you spot a problem or
 would like a feature in *darglint*.
@@ -20,7 +15,7 @@ would like a feature in *darglint*.
 - [Configuration](#configuration)
 - [Usage](#usage)
 - [Sphinx](#sphinx)
-- [Flake8](#flake8)
+- [Integrations](#integrations)
 - [Roadmap](#roadmap)
 - [Contribution](#development-and-contributions)
 
@@ -267,7 +262,9 @@ the setting, "docstring\_style":
 docstring_style=sphinx
 ```
 
-## Flake8
+## Integrations
+
+### Flake8
 
 Darglint can be used in conjunction with Flake8 as a plugin.  The only
 setup necessary is to install Flake8 and Darglint in the same environment.
@@ -275,24 +272,24 @@ Darglint will pull its configuration from any configuration file present.
 (So, if you would like to lint Sphinx-style comments, then you should have
 that setting enabled in a configuration file in the project directory.)
 
+### SublimeLinter
+
+A plugin for SublimeLinter can be found [here](https://github.com/raddessi/SublimeLinter-contrib-darglint)
+
 
 ## Roadmap
 The below list is the current roadmap for *darglint*.  For each
 version number, it specifies which features will be added.
 To see the most recently implemented features, see the *CHANGELOG*.
 
-### 0.3
-- [x] Take an argument which supports a formatting string for the error
-message.  That way, anyone can specify their own format.
 
 ### 1.0
 - [ ] Robust logging for errors caused/encountered by *darglint*.
-- [x] Add support for python versions earlier than 3.6.
-- [x] Add more specific line numbers in error messages.
 - [ ] Add style errors and suggestions.  In particular, allow for multiple
 levels of strictness, (lenient by default).  Then warn for no newline after
 short description, and for excess whitespace between sections, etc.
-- [x] Support for Sphinx-style docstrings.
+- [ ] Add support for numpydoc style docstrings.
+
 
 
 ### Other features
@@ -338,6 +335,19 @@ pytest
 
 This project tries to conform by the styles imposed by `pycodestyle`
 and `pydocstyle`, as well as by `darglint` itself.
+
+
+A dockerfile exists for testing with Python3.4.  Although it's not
+officially supported (only 3.5+), it's nice to try to make minor
+version numbers support it.  You would build the dockerfile and
+test using something like
+
+```
+pushd docker-build
+docker build -t darglint-34 -f Dockerfile.test34 .
+popd
+docker run -it --rm -v $(pwd):/code darglint_python34 pytest
+```
 
 ### Contribution
 
