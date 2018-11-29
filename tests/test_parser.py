@@ -1,5 +1,5 @@
 import ast
-from unittest import TestCase
+from unittest import TestCase, skip
 
 from darglint.docstring.base import (
     Sections,
@@ -1070,3 +1070,57 @@ class DocstringTestCase(TestCase):
             doc.get_items(Sections.ARGUMENTS_SECTION),
             ['foo'],
         )
+
+
+class StyleWarningsTestCase(TestCase):
+    """Tests for the new style warnings.
+
+    The new style warning require the ability to parse an ambiguous
+    grammare.  This means the parser will be something like a GLR parser
+    Since there could be multiple instances of the word "Returns" or
+    something in the docstring, we could have a very large parse
+    tree.  It may be worth looking into a chart parser.  (wiki/Chart_parser)
+
+    """
+
+    @skip('Finish me!')
+    def test_excess_blank_lines_raise_style_error(self):
+        """Ensure blank lines raise a style warning.
+
+        This should only be an issue for excess lines between
+        sections, or at the end of a docstring.
+
+        """
+        self.fail('Finish me!')
+
+    @skip('Finish me!')
+    def test_short_description_on_wrong_lines_raises_error_but_finishes(self):
+        """Make sure no short descr. doesn't kill the parser."""
+        self.fail('Finish me!')
+
+    @skip('Finish me!')
+    def test_missing_line_between_sections_doesnt_kill_parser(self):
+        """Make sure conjoined sections raises a style warning only."""
+        self.fail('Finish me!')
+
+    @skip('Finish me!')
+    def test_missing_colon_after_section_raises_warning(self):
+        """Make sure that a missing colon is just a style warning.
+
+        This should only apply for docstrings where the given word
+        is the only one which can result in a correct section.
+        (Or it otherwise has the highest score when parsing.)
+
+        """
+        self.fail('Finish me!')
+
+    @skip('Finish me!')
+    def test_missing_colon_after_nonsection_doesnt_raise_warning(self):
+        """Make sure that a non-section doesn't raise a style warning.
+
+        If the section already exists, or another word like this one
+        with a higher scoring parse, then this word shouldn't raise
+        a syntax warning.
+
+        """
+        self.fail('Finish me!')
