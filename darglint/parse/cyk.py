@@ -16,45 +16,49 @@ article, https://en.wikipedia.org/wiki/CYK_algorithm.
 
 """
 
+from typing import (
+    Optional,
+    List,
+)
+
+from .grammar import (  # noqa: F401
+    BaseGrammar,
+    Derivation,
+    Production,
+)
+
 
 class CykNode(object):
     """A node for use in a cyk parse."""
 
     def __init__(self, symbol, lchild=None, rchild=None, value=None):
+        # type: (str, CykNode, CykNode, str) -> None
         self.symbol = symbol
         self.lchild = lchild
         self.rchild = rchild
         self.value = value
 
 
-def build_lookup(grammar):
-    lookup = dict()
-    for i, symbol in enumerate(grammar.productions):
-        lookup[symbol] = i
-    return lookup
-
-
 def parse(grammar, tokens):
+    # type: (BaseGrammar, List[str]) -> Optional[CykNode]
     if not tokens:
-        return False
+        return None
     n = len(tokens)
     r = len(grammar.productions)
     P = [
-        [[False for _ in range(r)] for _ in range(n)]
+        [[None for _ in range(r)] for _ in range(n)]
         for _ in range(n)
-    ]
-    lookup = build_lookup(grammar)
+    ]  # type: List[List[List[Optional[CykNode]]]]
+    lookup = grammar.get_symbol_lookup()
     for s in range(n):
-        for v, symbol in enumerate(grammar.productions):
-            derivations = grammar.productions[symbol]
-            if tokens[s] in derivations:
-                P[0][s][v] = CykNode(symbol, value=tokens[s])
+        for v, production in enumerate(grammar.productions):
+            if tokens[s] in production.rhs:
+                P[0][s][v] = CykNode(production.lhs, value=tokens[s])
     for l in range(2, n + 1):
         for s in range(n - l + 2):
             for p in range(l):
-                for a, symbol in enumerate(grammar.productions):
-                    derivations = grammar.productions[symbol]
-                    for derivation in derivations:
+                for a, production in enumerate(grammar.productions):
+                    for derivation in production.rhs:
                         is_terminal_derivation = isinstance(derivation, str)
                         if is_terminal_derivation:
                             continue
@@ -65,16 +69,6 @@ def parse(grammar, tokens):
                         rchild = P[l - p - 1][s + p - 1][c]
                         if lchild and rchild:
                             P[l - 1][s - 1][a] = CykNode(
-                                symbol, lchild, rchild
+                                production.lhs, lchild, rchild
                             )
     return P[n - 1][0][lookup[grammar.start]]
-
-
-class SimpleKlingonGrammar(object):
-    terminals = {
-        "verb": ["SuS"],
-    }
-
-    non_terminals = {
-        "sentence": [("verb",)],
-    }

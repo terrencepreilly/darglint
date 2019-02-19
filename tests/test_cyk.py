@@ -4,47 +4,51 @@ from unittest import (
     TestCase,
 )
 import random
-from collections import OrderedDict
 
 from darglint.parse.cyk import parse
+from darglint.parse.grammar import (
+    BaseGrammar,
+)
+from darglint.parse.grammar import Production as P
 
 
-class SimpleKlingonGrammar(object):
-    productions = OrderedDict([
-        ("verb", ["SuS"]),
-        ("noun", ["be'"]),
-        ("sentence", [("verb", "noun")]),
-    ])
+class SimpleKlingonGrammar(BaseGrammar):
+    productions = [
+        P("verb", "SuS"),
+        P("noun", "be'"),
+        P("sentence", ("verb", "noun")),
+    ]
 
     start = "sentence"
 
 
-class AmbiguousKlingonGrammar(object):
+class AmbiguousKlingonGrammar(BaseGrammar):
 
-    productions = OrderedDict([
-        ('verb', ['SuS', ('verb', 'negation')]),
-        ('noun', ['be\'']),
-        ('negation', ['be\'']),
-        ('sentence', [('verb', 'noun')]),
-    ])
+    productions = [
+        P('verb', 'SuS', ('verb', 'negation')),
+        P('noun', 'be\''),
+        P('negation', 'be\''),
+        P('sentence', ('verb', 'noun')),
+    ]
 
     start = 'sentence'
 
 
-class SmallGrammar(object):
+class SmallGrammar(BaseGrammar):
     """Represents a very small grammar."""
 
-    productions = OrderedDict([
-        ('one', ['1']),
-        ('epsilon', ['ε']),
-        ('zero', ['0']),
-        ('number', [
+    productions = [
+        P('one', '1'),
+        P('epsilon', 'ε'),
+        P('zero', '0'),
+        P(
+            'number',
             ('one', 'epsilon'),
             ('zero', 'epsilon'),
             ('one', 'number'),
             ('zero', 'number'),
-        ]),
-    ])
+        ),
+    ]
 
     start = 'number'
 
