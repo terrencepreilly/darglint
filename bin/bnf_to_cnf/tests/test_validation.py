@@ -11,10 +11,10 @@ class ValidateCnfTests(TestCase):
     def test_terminal_production(self):
         """Make sure we a terminal production passes."""
         valid_productions = [
-            'COLON -> ":"',
-            'PARAM -> "Args"',
-            'QUOTE -> "\"\"\""',
-            'PERIOD -> "."',
+            'COLON ::= ":"',
+            'PARAM ::= "Args"',
+            'QUOTE ::= "\"\"\""',
+            'PERIOD ::= "."',
         ]
         for production in valid_productions:
             self.assertTrue(
@@ -26,10 +26,10 @@ class ValidateCnfTests(TestCase):
         """Make sure there are no groupings on the lhs."""
         for l, r in ['()', '[]']:
             invalid_productions = [
-                'COLON{right} -> ":"',
-                '{left}COLON -> ":"',
-                'C{left}OLO{right}N -> ":"',
-                '{left}{right}COLON -> ":"',
+                'COLON{right} ::= ":"',
+                '{left}COLON ::= ":"',
+                'C{left}OLO{right}N ::= ":"',
+                '{left}{right}COLON ::= ":"',
             ]
             for production in invalid_productions:
                 self.assertFalse(
@@ -41,10 +41,10 @@ class ValidateCnfTests(TestCase):
         """Make sure the lhs has only one item."""
         for c in ', +*':
             invalid_productions = [
-                'COLON{}HEADING -> COLON HEADING'.format(c),
-                'COLON{} -> ":"'.format(c),
-                '{}COLON -> ":"'.format(c),
-                'CO{}LON -> ":"'.format(c),
+                'COLON{}HEADING ::= COLON HEADING'.format(c),
+                'COLON{} ::= ":"'.format(c),
+                '{}COLON ::= ":"'.format(c),
+                'CO{}LON ::= ":"'.format(c),
             ]
             for production in invalid_productions:
                 self.assertFalse(
@@ -56,9 +56,9 @@ class ValidateCnfTests(TestCase):
         """Make sure the rhs has only one item."""
         for c in ', +*|':
             invalid_productions = [
-                'ARGS -> {}Args',
-                'ARGS -> Args{}',
-                'ARGS -> Ar{}gs',
+                'ARGS ::= {}Args',
+                'ARGS ::= Args{}',
+                'ARGS ::= Ar{}gs',
             ]
             for production in invalid_productions:
                 self.assertFalse(
@@ -70,6 +70,6 @@ class ValidateCnfTests(TestCase):
         """Make sure that special characters are okay if escaped."""
         for c in ', +*()[]|':
             self.assertTrue(
-                Validator().validate('SOMETHING -> A\\{}B'.format(c)),
+                Validator().validate('SOMETHING ::= A\\{}B'.format(c)),
                 'Escaping "{}" should allow it.'.format(c),
             )

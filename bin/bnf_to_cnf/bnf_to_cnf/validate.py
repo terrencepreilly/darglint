@@ -13,9 +13,6 @@ produce the CNF of the grammar from the modified tree.
 """
 
 import re
-from typing import (
-    Optional,
-)
 
 LHS = re.compile(r'^\w[\w_-]*$')
 RHS = re.compile(r'[\w:_\-"\.]')
@@ -26,6 +23,13 @@ class ValidationError(Exception):
 
 
 class Validator(object):
+    """Validates a CNF production.
+
+    For now, because it's simple, this validator operates
+    on a string representation of the production.  In the
+    future, we should probably move it to validate the tree.
+
+    """
 
     def __init__(self, raise_exception=False):
         # type: (bool) -> None
@@ -81,12 +85,12 @@ class Validator(object):
         """
         # Since this is just an internal tool, it's okay if it's
         # fragile: we can assume that there are spaces around the
-        # "->" operator.
-        if production.count(' -> ') != 1:
+        # "::=" operator.
+        if production.count(' ::= ') != 1:
             return self._wrap(
                 'Production must contain the operator, '
-                '"->", surrounded by a single space.'
+                '"::=", surrounded by a single space.'
             )
 
-        lhs, rhs = production.split(' -> ')
+        lhs, rhs = production.split(' ::= ')
         return self._lhs(lhs) and self._rhs(rhs)
