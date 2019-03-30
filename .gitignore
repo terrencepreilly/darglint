@@ -105,4 +105,3 @@ venv.bak/
 _data/
 
 .pytest_cache/
-bin/
