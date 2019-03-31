@@ -1,5 +1,11 @@
+from collections import (
+    deque,
+)
 from enum import Enum
 from typing import (
+    Callable,
+    Deque,
+    Iterator,
     List,
     Optional,
     Union,
@@ -44,6 +50,19 @@ class Node(object):
             return ' '.join(map(str, self.children))
         elif self.node_type == NodeType.TERMINAL:
             return self.value
+
+    def _bfs(self) -> Iterator['Node']:
+        queue = deque([self])  # Type: Deque[Node]
+        while queue:
+            current = queue.pop()
+            for child in current.children:
+                queue.appendleft(child)
+            yield current
+
+    def filter(self, filt: Callable[['Node'], bool]) -> Iterator['Node']:
+        for node in self._bfs():
+            if filt(node):
+                yield node
 
     @classmethod
     def from_lark_tree(self, tree: Union[Tree, Token]) -> 'Node':
