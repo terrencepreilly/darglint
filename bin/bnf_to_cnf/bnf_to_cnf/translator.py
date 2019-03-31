@@ -1,9 +1,11 @@
 from typing import (
-    Dict,
     Iterator,
     Set,
 )
 
+from .parser import (
+    Parser,
+)
 from .node import (
     Node,
     NodeType,
@@ -18,12 +20,47 @@ def is_terminal(x: Node) -> bool:
     return x.node_type == NodeType.TERMINAL
 
 
+def is_production(x: Node) -> bool:
+    return x.node_type == NodeType.PRODUCTION
+
+
+def is_sequence(x: Node) -> bool:
+    return x.node_type == NodeType.SEQUENCE
+
+
 def exists(it: Iterator) -> bool:
     try:
         next(it)
     except StopIteration:
         return False
     return True
+
+
+def to_symbol(value: str, count: int = None) -> str:
+    """Given a terminal value, produce an adquate symbol.
+
+    Args:
+        value: The value of the terminal.
+        count: A number to append to the terminal symbol name,
+            if non-null, otherwise nothing is added to the name.
+
+    Returns:
+        An adequate symbol name.
+
+    """
+    ret = value
+    for not_allowed, allowed in [
+        ('\\"', 'Q'),
+        ('"', ''),
+        ('*', 'A'),
+        ('.', 'P'),
+        (':', 'C'),
+    ]:
+        ret = ret.replace(not_allowed, allowed)
+    return ret + (
+        str(count) if count is not None
+        else ''
+    )
 
 
 class Translator(object):
@@ -78,41 +115,21 @@ class Translator(object):
             for symbol in tree.filter(is_start_node):
                 symbol.value = f'start{start_suffix}'
 
-        new_production = Node(
-            NodeType.PRODUCTION,
-            children=[
-                Node(
-                    NodeType.SYMBOL,
-                    value='start',
-                ),
-                Node(
-                    NodeType.EXPRESSION,
-                    children=[
-                        Node(
-                            NodeType.SEQUENCE,
-                            children=[
-                                Node(
-                                    NodeType.SYMBOL,
-                                    value=f'start{start_suffix}',
-                                )
-                            ],
-                        ),
-                    ],
-                ),
-            ],
+        new_production = Parser().parse_production(
+            f'<start> ::= <start{start_suffix}>'
         )
         tree.children.insert(0, new_production)
 
     def _reassign_nonsolitary_terminals(self, tree: Node):
         def contains_nonsolitary_terminal(x):
             return (
-                x.node_type == NodeType.SEQUENCE
-                and exists(x.find(lambda y: y.node_type == NodeType.SYMBOL))
-                and exists(x.find(lambda y: y.node_type == NodeType.TERMINAL))
+                is_sequence(x)
+                and exists(x.filter(is_symbol))
+                and exists(x.filter(is_terminal))
             )
 
         def defines_terminal(x):
-            if x.node_type != NodeType.PRODUCTION:
+            if not is_production(x):
                 return False
 
             if len(x.children) < 2:
@@ -122,20 +139,41 @@ class Translator(object):
             if lhs.node_type != NodeType.SYMBOL:
                 return False
 
-            expression = x.chlidren[1]
+            expression = x.children[1]
             return (
-                exists(expression.find(
+                exists(expression.filter(
                     lambda y: y.node_type == NodeType.TERMINAL
                 ))
-                and not exists(expression.find(
+                and not exists(expression.filter(
                     lambda y: y.node_type == NodeType.SYMBOL
                 ))
             )
 
+        terminal_symbol_lookup = {
+            x.children[1].value: x.children[0].value
+            for x in tree.filter(defines_terminal)
+        }
+
         # Find non-solitary terminals.
-        # See if there is a corresponding lhs.
-        # If so, replace with that.
-        # Otherwise, create it and replace with that.
+        for sequence in tree.filter(contains_nonsolitary_terminal):
+            for terminal in sequence.filter(is_terminal):
+                replacement = None
+                if terminal.value in terminal_symbol_lookup:
+                    replacement = terminal_symbol_lookup[terminal.value]
+                else:
+                    assert terminal.value is not None
+                    replacement = to_symbol(terminal.value)
+                    i = 0
+                    while tree.defines(replacement):
+                        replacement = to_symbol(terminal.value, i)
+                        i += 1
+                    tree.children.append(
+                        Parser().parse_production(
+                            f'<{replacement}> ::= {terminal.value}'
+                        )
+                    )
+                terminal.value = replacement
+                terminal.node_type = NodeType.SYMBOL
 
     def translate(self, tree: Node):
         self._reassign_start(tree)

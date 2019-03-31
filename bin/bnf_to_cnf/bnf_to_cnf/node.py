@@ -3,12 +3,13 @@ from collections import (
 )
 from enum import Enum
 from typing import (
+    Any,
     Callable,
-    Deque,
     Iterator,
     List,
     Optional,
     Union,
+    Set,
 )
 
 from lark import (
@@ -36,6 +37,7 @@ class Node(object):
         self.node_type = node_type
         self.value = value
         self.children = children
+        self.cached_symbols = set()  # type: Set[str]
 
     def __str__(self):
         if self.node_type == NodeType.GRAMMAR:
@@ -52,12 +54,35 @@ class Node(object):
             return self.value
 
     def _bfs(self) -> Iterator['Node']:
-        queue = deque([self])  # Type: Deque[Node]
+        queue = deque([self])
         while queue:
             current = queue.pop()
             for child in current.children:
                 queue.appendleft(child)
             yield current
+
+    def defines(self, value: Any) -> bool:
+        """Return whether this grammar defines the given symbol.
+
+        Args:
+            value: The value of the symbol we're looking for.
+
+        Return:
+            Whether the grammar contains the symbol's definition.
+
+        """
+        assert self.node_type == NodeType.GRAMMAR
+        if self.cached_symbols:
+            return value in self.cached_symbols
+
+        for production in self.filter(
+            lambda x: x.node_type == NodeType.PRODUCTION
+        ):
+            assert production.children[0].value is not None
+            symbol = production.children[0].value
+            self.cached_symbols.add(symbol)
+
+        return value in self.cached_symbols
 
     def filter(self, filt: Callable[['Node'], bool]) -> Iterator['Node']:
         for node in self._bfs():

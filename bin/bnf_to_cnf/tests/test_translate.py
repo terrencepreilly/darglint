@@ -49,7 +49,21 @@ class TranslatorTestCase(TestCase):
         self.assertEqual(
             str(node),
             '\n'.join([
-                '<arg-header> ::= <arg> <QCQ>',
-                '<QCQ> ::= ":"',
+                '<arg-header> ::= <arg> <C>',
+                '<C> ::= ":"',
             ]),
+        )
+
+    def test_nonsolitary_terminals_symbol_taken(self):
+        """Make sure non-solitary teminals will have unique name."""
+        tree = Parser().parse(
+            '<arg-header> ::= <arg> ":"\n'
+            '<C> ::= "Another_value"'
+        )
+        node = Translator().translate(tree)
+        self.assertEqual(
+            str(node),
+            '<arg-header> ::= <arg> <C0>\n'
+            '<C> ::= "Another_value"\n'
+            '<C0> ::= ":"'
         )
