@@ -67,3 +67,35 @@ class TranslatorTestCase(TestCase):
             '<C> ::= "Another_value"\n'
             '<C0> ::= ":"'
         )
+
+    def test_factor_3plus_RHSs(self):
+        """Make sure we refactor RHSs with more than two symbols."""
+        tree = Parser().parse(
+            '<a> ::= <b> <c> <d>'
+        )
+        node = Translator().translate(tree)
+        self.assertEqual(
+            str(node),
+            '<a> ::= <b> <a0>\n'
+            '<a0> ::= <c> <d>'
+        )
+
+    def test_factor_five_length_RHS(self):
+        """Make sure recursive calls function correctly."""
+        tree = Parser().parse(
+            '<a2> ::= ":"\n'
+            '<a> ::= <a2> <b> <c> <d> <e>'
+        )
+        node = Translator().translate(tree)
+        expected = (
+            '<a2> ::= ":"\n'
+            '<a> ::= <a2> <a0>\n'
+            '<a0> ::= <b> <a1>\n'
+            '<a1> ::= <c> <a3>\n'
+            '<a3> ::= <d> <e>'
+        )
+        self.assertEqual(
+            str(node),
+            expected,
+            f'Expected\n{expected}\n\nBut got:\n{str(node)}\n'
+        )

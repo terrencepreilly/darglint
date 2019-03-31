@@ -1,6 +1,9 @@
+import re
 from typing import (
     Iterator,
+    List,
     Set,
+    Tuple,
 )
 
 from .parser import (
@@ -10,6 +13,9 @@ from .node import (
     Node,
     NodeType,
 )
+
+
+END_DIGIT = re.compile(r'\d+$')
 
 
 def is_symbol(x: Node) -> bool:
@@ -118,7 +124,7 @@ class Translator(object):
         new_production = Parser().parse_production(
             f'<start> ::= <start{start_suffix}>'
         )
-        tree.children.insert(0, new_production)
+        tree.prepend(new_production)
 
     def _reassign_nonsolitary_terminals(self, tree: Node):
         def contains_nonsolitary_terminal(x):
@@ -167,7 +173,7 @@ class Translator(object):
                     while tree.defines(replacement):
                         replacement = to_symbol(terminal.value, i)
                         i += 1
-                    tree.children.append(
+                    tree.append(
                         Parser().parse_production(
                             f'<{replacement}> ::= {terminal.value}'
                         )
@@ -175,7 +181,65 @@ class Translator(object):
                 terminal.value = replacement
                 terminal.node_type = NodeType.SYMBOL
 
+    def _get_name_end_digit(self, value: str) -> Tuple[str, int]:
+        instances = END_DIGIT.findall(value)
+        if instances:
+            end_digit = instances[0]
+            name = value[:-1 * len(end_digit)]
+            return name, int(instances[0])
+        else:
+            return value, 0
+
+    def _break_sequences_up(self, grammar: Node, production: Node):
+        assert production.children[0].value is not None
+        name, i = self._get_name_end_digit(production.children[0].value)
+        for sequence in production.filter(is_sequence):
+            if len(sequence.children) <= 2:
+                continue
+            while grammar.defines(f'{name}{i}'):
+                i += 1
+            new_children = [
+                sequence.children[0],
+                Node(
+                    NodeType.SYMBOL,
+                    value=f'{name}{i}'
+                )
+            ]
+            old_children = sequence.children[1:]
+            sequence.children = new_children
+            new_sequence = Node(
+                NodeType.SEQUENCE,
+                children=old_children,
+            )
+            new_production = Node(
+                NodeType.PRODUCTION,
+                children=[
+                    Node(
+                        NodeType.SYMBOL,
+                        value=f'{name}{i}'
+                    ),
+                    new_sequence
+                ]
+            )
+            grammar.append(new_production)
+
+            # We call recursively, because there may have been
+            # more than three symbols on the RHS.
+            self._break_sequences_up(grammar, new_production)
+
+    def _eliminate_rhs_with_3plus_symbols(self, tree: Node):
+        # We capture all productions before the transformation:
+        # since the breaking up is recursive, we don't have to
+        # worry about new productions.
+        #
+        # Productions which do not have RHSs which are too
+        # long won't be affected.
+        productions = list(tree.filter(is_production))
+        for production in productions:
+            self._break_sequences_up(tree, production)
+
     def translate(self, tree: Node):
         self._reassign_start(tree)
         self._reassign_nonsolitary_terminals(tree)
+        self._eliminate_rhs_with_3plus_symbols(tree)
         return tree

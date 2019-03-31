@@ -53,6 +53,9 @@ class Node(object):
         elif self.node_type == NodeType.TERMINAL:
             return self.value
 
+    def __repr__(self):
+        return str(self)
+
     def _bfs(self) -> Iterator['Node']:
         queue = deque([self])
         while queue:
@@ -129,3 +132,14 @@ class Node(object):
             raise Exception(
                 f'Unrecognized Lark type "{tree.data}".  Check grammar.'
             )
+
+    def _invalidate_cache(self):
+        self.cached_symbols = set()
+
+    def append(self, node: 'Node'):
+        self._invalidate_cache()
+        self.children.append(node)
+
+    def prepend(self, node: 'Node'):
+        self._invalidate_cache()
+        self.children.insert(0, node)
