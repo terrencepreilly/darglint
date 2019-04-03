@@ -69,7 +69,7 @@ flake8_entry_point = 'flake8.extension'
 
 setup(
     name="darglint",
-    version="0.5.3",
+    version="0.5.4",
     author="Terrence Reilly",
     author_email="terrencepreilly@gmail.com",
     description=("A utility for ensuring Google-style docstrings"
@@ -84,8 +84,8 @@ setup(
             'darglint = darglint.driver:main',
         ],
         flake8_entry_point: [
-            'I = darglint.flake8_entry:DarglintChecker',
-            'S = darglint.flake8_entry:DarglintChecker',
+            'I = darglint.flake8_entry:InterfaceDarglintChecker',
+            'S = darglint.flake8_entry:StyleDarglintChecker',
         ],
     },
     install_requires=requirements,

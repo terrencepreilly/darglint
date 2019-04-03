@@ -3,6 +3,16 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.5.4] - 2019-04-03
+
+### Fixed
+
+Fixed double reports from flake8.  These were occurring due to the two
+entry points listed in the setup file.  Currently, the fix just uses two
+temporary subclasses that filter the response from running Darglint.
+Ideally, flake8 would not run the same program twice -- a script may want
+to report more than one error code.  (As is the case here.)
+
 
 ## [0.5.3] - 2018-11-28
 

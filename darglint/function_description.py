@@ -28,7 +28,7 @@ def read_program(filename):  # type: (str) -> str
         The program as a single string.
 
     """
-    program = None  # type: str
+    program = None  # type: Optional[str]
     if filename == '-':
         program = sys.stdin.read()
     else:
@@ -315,7 +315,6 @@ def get_function_descriptions(program):
 
     Args:
         program: The tree representing the entire program.
-            This should be the direct result of
 
     Returns:
         A list of function descriptions pulled from the ast.
