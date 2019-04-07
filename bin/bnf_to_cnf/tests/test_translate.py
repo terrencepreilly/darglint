@@ -97,5 +97,64 @@ class TranslatorTestCase(TestCase):
         self.assertEqual(
             str(node),
             expected,
-            f'Expected\n{expected}\n\nBut got:\n{str(node)}\n'
+        )
+
+    def test_eliminate_simplest_epsilon_form(self):
+        tree = Parser().parse('<E> ::= "e" | ε')
+        node = Translator().translate(tree)
+        expected = '<E> ::= "e"'
+        self.assertEqual(
+            str(node),
+            expected,
+        )
+
+    def test_removes_empty_productions_after_epsilon_elimination(self):
+        tree = Parser().parse(
+            '<A> ::= "a"\n'
+            '<B> ::= ε'
+        )
+        node = Translator().translate(tree)
+        expected = '<A> ::= "a"'
+        self.assertEqual(
+            str(node),
+            expected,
+        )
+
+    def test_eliminate_epsilon_forms(self):
+        """Make sure we can eliminate all ε-rules."""
+        tree = Parser().parse(
+            '<S> ::= <A> <B>\n'
+            '<B> ::= "b"\n'
+            '<A> ::= "a" | ε'
+        )
+        node = Translator().translate(tree)
+        expected = (
+            '<S> ::= <A> <B> | <B>\n'
+            '<B> ::= "b"\n'
+            '<A> ::= "a"'
+        )
+        self.assertEqual(
+            str(node),
+            expected,
+        )
+
+    def test_elimination_with_multiple_passes(self):
+        """Make sure we can eliminate all ε-rules, even with mult. passes."""
+        tree = Parser().parse(
+            '<A> ::= <LETTER> <B>\n'
+            '<B> ::= <C>\n'
+            '<C> ::= <LETTER> | ε\n'
+            '<LETTER> ::= "a"'
+        )
+        node = Translator().translate(tree)
+        expected = (
+            '<A> ::= <LETTER> <B> | <LETTER>\n'
+            '<B> ::= <C>\n'
+            '<C> ::= <LETTER>\n'
+            '<LETTER> ::= "a"'
+        )
+        self.assertEqual(
+            str(node),
+            expected,
+            f'\n\nExpected:\n{expected}\n\nBut Got:\n{str(node)}\n\n'
         )

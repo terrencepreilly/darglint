@@ -1,5 +1,7 @@
 import re
 from typing import (
+    Callable,
+    Dict,
     Iterator,
     List,
     Set,
@@ -34,12 +36,37 @@ def is_sequence(x: Node) -> bool:
     return x.node_type == NodeType.SEQUENCE
 
 
+def is_expression(x: Node) -> bool:
+    return x.node_type == NodeType.EXPRESSION
+
+
+def has_symbol(x: str) -> Callable[['Node'], bool]:
+    def _inner(y: Node) -> bool:
+        return exists(y.filter(lambda z: is_symbol(z) and z.value == x))
+    return _inner
+
+
 def exists(it: Iterator) -> bool:
     try:
         next(it)
     except StopIteration:
         return False
     return True
+
+
+def _and(*args: Callable[[Node], bool]) -> Callable[[Node], bool]:
+    def _inner(x: Node) -> bool:
+        for fn in args:
+            if not fn(x):
+                return False
+        return True
+    return _inner
+
+
+def _not(fn: Callable[[Node], bool]) -> Callable[[Node], bool]:
+    def _inner(x: Node) -> bool:
+        return not fn(x)
+    return _inner
 
 
 def to_symbol(value: str, count: int = None) -> str:
@@ -238,8 +265,136 @@ class Translator(object):
         for production in productions:
             self._break_sequences_up(tree, production)
 
+    def _prune(self, tree: Node):
+        def _sequence_is_empty(x: Node) -> bool:
+            return is_sequence(x) and not x.children
+
+        def _expression_is_empty(x: Node) -> bool:
+            return is_expression(x) and not x.children
+
+        def _production_is_empty(x: Node) -> bool:
+            return is_production(x) and _expression_is_empty(x.children[1])
+
+        # This could be far more efficient by doing a BFS,
+        # and only iterating over the children.
+        tree.remove(_sequence_is_empty)
+        tree.remove(_production_is_empty)
+
+    def _get_symbol_production_lookup(self,
+                                      tree: Node
+                                      ) -> Dict[str, List[Node]]:
+        lookup = dict()  # type: Dict[str, List[Node]]
+        for production in tree.filter(is_production):
+            for symbol in production.filter(is_symbol):
+                assert symbol.value is not None
+                key = symbol.value
+                if key not in lookup:
+                    lookup[key] = list()
+                lookup[key].append(production)
+        return lookup
+
+    def _permute_sequence(self, sequence: Node, symbol: str) -> Iterator[Node]:
+        """Yield all sequences resulting from an optional symbol.
+
+        Args:
+            sequence: The sequence to mutate.
+            symbol: The symbol which may be present, or may not be present.
+
+        Yields:
+            All permutations of the symbol being present and absent,
+            including the original sequence.
+
+        """
+        def from_bitmask(mask: int) -> Node:
+            i = len(sequence.children) - 1
+            mask_index = 0
+            new_sequence = sequence.clone()
+            while i >= 0:
+                matches = new_sequence.children[i].value == symbol
+                if matches:
+                    include = (mask >> mask_index) & 1
+                    if not include:
+                        new_sequence.children.pop(i)
+                    mask_index += 1
+                i -= 1
+
+            # Re-add an epsilon if it's otherwise empty.
+            is_empty = len(new_sequence.children) == 0
+            if is_empty:
+                new_sequence.children.append(Node(
+                    node_type=NodeType.SYMBOL,
+                    value='ε',
+                ))
+
+            return new_sequence
+
+        occurrences = len([x for x in sequence.children if x.value == symbol])
+        for mask in range(2**occurrences - 1):
+            yield from_bitmask(mask)
+
+    def _eliminate_epsilon_productions(self, tree: Node) -> bool:
+        """Eliminate all current epsilon rules.
+
+        Args:
+            tree: The root of the grammar.
+
+        Returns:
+            Whether the grammar was updated or not.
+
+        """
+        def is_epsilon_rule(x: Node) -> bool:
+            return exists(x.filter(lambda y: y.value == 'ε'))
+
+        updated = False
+
+        replacement_candidates = set()  # Set[str]
+
+        for production in tree.filter(_and(is_production, is_epsilon_rule)):
+            updated = True
+
+            # Remove the epsilon sequence
+            production.children[1].remove(_and(is_sequence, is_epsilon_rule))
+
+            # Register to replace the symbol, or remove the production
+            # entirely. (It is either empty, or represents optional values.)
+            symbol = production.children[0].value
+            assert symbol is not None
+            has_nonempty_expression = production.children[1].children
+            if has_nonempty_expression:
+                replacement_candidates.add(symbol)
+            else:
+                # TODO: Remove symbol from all sequences?
+                tree.remove(_and(
+                    is_production, lambda x: x.children[0].value == symbol
+                ))
+
+        production_lookup = self._get_symbol_production_lookup(tree)
+
+        # Add each permutation of the symbol's presence. (For each
+        # occurrence, it could be present, or it could be absent.)
+        for symbol in replacement_candidates:
+            for production in production_lookup[symbol]:
+                for sequence in production.filter(_and(
+                    is_sequence, has_symbol(symbol)
+                )):
+                    for new_sequence in self._permute_sequence(
+                        sequence, symbol
+                    ):
+                        production.children[1].children.append(new_sequence)
+
+        # Remove any productions which have empty expressions.
+        self._prune(tree)
+
+        return updated
+
     def translate(self, tree: Node):
         self._reassign_start(tree)
         self._reassign_nonsolitary_terminals(tree)
         self._eliminate_rhs_with_3plus_symbols(tree)
+
+        # Repeat the process until all epsilons are gone.
+        max_iterations = 100
+        while max_iterations and self._eliminate_epsilon_productions(tree):
+            max_iterations -= 1
+
         return tree

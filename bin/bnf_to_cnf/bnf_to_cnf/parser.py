@@ -23,6 +23,7 @@ class Parser(object):
         _BAR: "|"
         sequence: (symbol | TERMINAL) (_WHITESPACE (symbol | TERMINAL))*
         TERMINAL: "\"" (LETTER | ESCAPED | NUMBER | "_" | "-" | ":")+ "\""
+            | "ε"
         ESCAPED: "\\" ("." | "*" )
 
         symbol: _LB IDENT _RB

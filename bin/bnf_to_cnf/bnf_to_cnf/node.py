@@ -5,11 +5,12 @@ from enum import Enum
 from typing import (
     Any,
     Callable,
+    Dict,
     Iterator,
     List,
     Optional,
-    Union,
     Set,
+    Union,
 )
 
 from lark import (
@@ -92,6 +93,24 @@ class Node(object):
             if filt(node):
                 yield node
 
+    def remove(self, filt: Callable[['Node'], bool]):
+        parents_to_children = dict()  # type: Dict['Node', List['Node']]
+        for parent in self._bfs():
+            for child in parent.children:
+                if filt(child):
+                    if parent not in parents_to_children:
+                        parents_to_children[parent] = list()
+                    parents_to_children[parent].append(child)
+
+        # Since dicts are ordered in Python3.7, and since this was
+        # a BFS, we can go through in reverse order and remove nodes.
+        # We won't get a null reference in this way.
+        parents = list(parents_to_children.keys())
+        parents.reverse()
+        for parent in parents:
+            for child in parents_to_children[parent]:
+                parent.children.remove(child)
+
     @classmethod
     def from_lark_tree(self, tree: Union[Tree, Token]) -> 'Node':
         if isinstance(tree, Token):
@@ -143,3 +162,10 @@ class Node(object):
     def prepend(self, node: 'Node'):
         self._invalidate_cache()
         self.children.insert(0, node)
+
+    def clone(self) -> 'Node':
+        return Node(
+            node_type=self.node_type,
+            children=[child.clone() for child in self.children],
+            value=self.value,
+        )
