@@ -29,6 +29,15 @@ class NodeType(Enum):
     TERMINAL = 5
 
 
+TERMINAL_NODES = {NodeType.TERMINAL, NodeType.SYMBOL}
+NONTERMINAL_NODES = {
+    NodeType.GRAMMAR,
+    NodeType.PRODUCTION,
+    NodeType.EXPRESSION,
+    NodeType.SEQUENCE,
+}
+
+
 class Node(object):
 
     def __init__(self,
@@ -87,6 +96,21 @@ class Node(object):
             self.cached_symbols.add(symbol)
 
         return value in self.cached_symbols
+
+    def equals(self, other: Any) -> bool:
+        if type(other) != type(self):
+            return False
+        if self.node_type != other.node_type:
+            return False
+        if self.node_type in TERMINAL_NODES:
+            return self.value == other.value
+        elif self.node_type in NONTERMINAL_NODES:
+            return all([
+                x.equals(y)
+                for x, y in zip(self.children, other.children)
+            ])
+        else:
+            raise Exception('Unrecognized node type.')
 
     def filter(self, filt: Callable[['Node'], bool]) -> Iterator['Node']:
         for node in self._bfs():

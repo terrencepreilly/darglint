@@ -1,3 +1,7 @@
+from collections import (
+    defaultdict,
+    deque,
+)
 import re
 from typing import (
     Callable,
@@ -60,6 +64,15 @@ def _and(*args: Callable[[Node], bool]) -> Callable[[Node], bool]:
             if not fn(x):
                 return False
         return True
+    return _inner
+
+
+def _or(*args: Callable[[Node], bool]) -> Callable[[Node], bool]:
+    def _inner(x: Node) -> bool:
+        for fn in args:
+            if fn(x):
+                return True
+        return False
     return _inner
 
 
@@ -387,6 +400,87 @@ class Translator(object):
 
         return updated
 
+    def _expand_reachability(self,
+                             graph: Dict[str, Set[str]]
+                             ) -> Dict[str, Set[str]]:
+        """Get a lookup of nodes to reachable nodes.
+
+        Args:
+            graph: A directed graph represented as an adjacency matrix.
+
+        Returns:
+            A lookup from node to the reachable set of nodes.
+
+        """
+        def _bfs(node: str) -> Set[str]:
+            queue = deque([node])
+            encountered = set()
+            while queue:
+                curr = queue.pop()
+                encountered.add(curr)
+                for child in graph[curr]:
+                    if child in encountered:
+                        continue
+                    queue.appendleft(child)
+            return encountered - {node}
+
+        return {
+            node: _bfs(node)
+            for node in list(graph.keys())
+        }
+
+    def _get_definition_lookup(self, tree: Node) -> Dict[str, Node]:
+        return {
+            node.children[0].value or '': node
+            for node in tree.filter(is_production)
+        }
+
+    def _eliminate_unit_productions(self, tree: Node):
+        def is_unit_sequence(x: Node) -> bool:
+            return (
+                is_sequence(x)
+                and len(x.children) == 1
+                and x.children[0].node_type == NodeType.SYMBOL
+            )
+
+        # Partition into unit, non-unit productions.
+        non_unit_productions = defaultdict(
+            lambda: set()
+        )  # type: Dict[str, Set[str]]
+        for production in tree.filter(is_production):
+            for sequence in production.filter(is_unit_sequence):
+                production_symbol = production.children[0].value
+                assert production_symbol is not None
+                sequence_symbol = sequence.children[0].value
+                assert sequence_symbol is not None
+                non_unit_productions[production_symbol].add(
+                    sequence_symbol
+                )
+
+        tree.remove(is_unit_sequence)
+
+        # Determine which sequences are reachable from each node.
+        reachability_graph = self._expand_reachability(non_unit_productions)
+        definition_lookup = self._get_definition_lookup(tree)
+
+        # Appropriate all reachable terminals.
+        for symbol, reachables in reachability_graph.items():
+            production = definition_lookup[symbol]
+            # Sorting the list of reachable productions makes the result
+            # deterministic (and so, easier to test.)
+            for reachable in sorted(list(reachables)):
+                reachable_production = definition_lookup.get(reachable, None)
+                if not reachable_production:
+                    continue
+                for sequence in reachable_production.filter(is_sequence):
+                    if not any([
+                        x.equals(sequence)
+                        for x in production.children[1].children
+                    ]):
+                        production.children[1].children.append(
+                            sequence.clone()
+                        )
+
     def translate(self, tree: Node):
         self._reassign_start(tree)
         self._reassign_nonsolitary_terminals(tree)
@@ -396,5 +490,7 @@ class Translator(object):
         max_iterations = 100
         while max_iterations and self._eliminate_epsilon_productions(tree):
             max_iterations -= 1
+
+        self._eliminate_unit_productions(tree)
 
         return tree

@@ -50,3 +50,30 @@ class ParserTestCase(TestCase):
                 '<keyword> ::= "Args" | "Returns"',
             ]),
         )
+
+    def test_mix_terminals_and_nonterminals(self):
+        """Make sure we can mix terminals and non-terminals."""
+        values = [
+            '<S> ::= <A> "a" | <B>',
+            '<S> ::= "a" <A> | <B>',
+            '<S> ::= "a" | <B>',
+        ]
+        for value in values:
+            node = Parser().parse(value)
+            self.assertEqual(
+                str(node),
+                value
+            )
+
+    def test_failing_terminal_parse(self):
+        """Make sure this particular instance, which failed, passes."""
+        value = (
+            '<S> ::= <A> "a" | <B>\n'
+            '<A> ::= "b" | <B>\n'
+            '<B> ::= <A> | "a"'
+        )
+        node = Parser().parse(value)
+        self.assertEqual(
+            value,
+            str(node),
+        )

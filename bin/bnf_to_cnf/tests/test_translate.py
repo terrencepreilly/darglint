@@ -32,14 +32,20 @@ class TranslatorTestCase(TestCase):
 
     def test_start_symbol_reassigned(self):
         """Make sure that the start symbol is reassigned, if present."""
-        tree = Parser().parse('<section> ::= <head> <start>')
+        tree = Parser().parse(
+            '<start> ::= <section>\n'
+            '<section> ::= <head> <body>\n'
+        )
         node = Translator().translate(tree)
+        expected = '\n'.join([
+            '<start> ::= <head> <body>\n'
+            '<start0> ::= <head> <body>\n'
+            '<section> ::= <head> <body>'
+        ])
         self.assertEqual(
             str(node),
-            '\n'.join([
-                '<start> ::= <start0>',
-                '<section> ::= <head> <start0>',
-            ])
+            expected,
+            f'\n\nExpected:\n{expected}\n\nBut Got:\n{str(node)}\n\n'
         )
 
     def test_nonsolitary_terminals(self):
@@ -129,7 +135,7 @@ class TranslatorTestCase(TestCase):
         )
         node = Translator().translate(tree)
         expected = (
-            '<S> ::= <A> <B> | <B>\n'
+            '<S> ::= <A> <B> | "b"\n'
             '<B> ::= "b"\n'
             '<A> ::= "a"'
         )
@@ -148,10 +154,46 @@ class TranslatorTestCase(TestCase):
         )
         node = Translator().translate(tree)
         expected = (
-            '<A> ::= <LETTER> <B> | <LETTER>\n'
-            '<B> ::= <C>\n'
-            '<C> ::= <LETTER>\n'
+            '<A> ::= <LETTER> <B> | "a"\n'
+            '<B> ::= "a"\n'
+            '<C> ::= "a"\n'
             '<LETTER> ::= "a"'
+        )
+        self.assertEqual(
+            str(node),
+            expected,
+            f'\n\nExpected:\n{expected}\n\nBut Got:\n{str(node)}\n\n'
+        )
+
+    def test_remove_complex_unit_production(self):
+        tree = Parser().parse(
+            '<S> ::= <A> "a" | <B>\n'
+            '<A> ::= "b" | <B>\n'
+            '<B> ::= <A> | "a"'
+        )
+        node = Translator().translate(tree)
+        expected = (
+            '<S> ::= <A> <a> | "b" | "a"\n'
+            '<A> ::= "b" | "a"\n'
+            '<B> ::= "a" | "b"\n'
+            '<a> ::= "a"'
+        )
+        self.assertEqual(
+            str(node),
+            expected,
+            f'\n\nExpected:\n{expected}\n\nBut Got:\n{str(node)}\n\n'
+        )
+
+    def test_remove_single_unit_production(self):
+        """Make sure we can at least remove a single unit production."""
+        tree = Parser().parse(
+            '<A> ::= <B>\n'
+            '<B> ::= "moch"'
+        )
+        node = Translator().translate(tree)
+        expected = (
+            '<A> ::= "moch"\n'
+            '<B> ::= "moch"'
         )
         self.assertEqual(
             str(node),

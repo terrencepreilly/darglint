@@ -6,6 +6,14 @@ from bnf_to_cnf.node import (
     Node,
     NodeType,
 )
+from bnf_to_cnf.parser import (
+    Parser,
+)
+from utils import (
+    random_string,
+)
+
+MAX_REPS = 100
 
 
 class NodeTest(TestCase):
@@ -78,3 +86,53 @@ class NodeTest(TestCase):
                 '<arg> ::= "Arg"',
             ]),
         )
+
+    def test_terminals_equal(self):
+        for _ in range(MAX_REPS):
+            name = random_string()
+            other_name = random_string()
+            while name == other_name:
+                name = random_string()
+
+            self.assertTrue(
+                Node(NodeType.TERMINAL, value=name).equals(
+                    Node(NodeType.TERMINAL, value=name)
+                )
+            )
+            self.assertFalse(
+                Node(NodeType.TERMINAL, value=name).equals(
+                    Node(NodeType.TERMINAL, value=other_name)
+                ),
+            )
+
+    def test_grammars_equal(self):
+        grammarA = '<A> ::= "b" | "c"'
+        self.assertTrue(
+            Parser().parse(grammarA).equals(
+                Parser().parse(grammarA)
+            )
+        )
+        grammarB = (
+            '<Q> ::= "chicken"\n'
+            '<D> ::= "sargh"'
+        )
+        self.assertTrue(
+            Parser().parse(grammarB).equals(
+                Parser().parse(grammarB)
+            ),
+        )
+        self.assertFalse(
+            Parser().parse(grammarA).equals(
+                Parser().parse(grammarB)
+            ),
+        )
+
+    def test_empty_nodes_equal(self):
+        for node_type in [
+            NodeType.SEQUENCE, NodeType.GRAMMAR, NodeType.EXPRESSION
+        ]:
+            self.assertTrue(
+                Node(node_type, children=[]).equals(
+                    Node(node_type, children=[])
+                ),
+            )
