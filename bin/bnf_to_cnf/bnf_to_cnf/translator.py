@@ -101,6 +101,10 @@ def to_symbol(value: str, count: int = None) -> str:
         ('*', 'A'),
         ('.', 'P'),
         (':', 'C'),
+        ('^', 'E'),
+        ('(', 'LP'),
+        (')', 'RP'),
+        ('\\', 'B'),
     ]:
         ret = ret.replace(not_allowed, allowed)
     return ret + (
@@ -232,6 +236,7 @@ class Translator(object):
 
     def _break_sequences_up(self, grammar: Node, production: Node):
         assert production.children[0].value is not None
+        assert is_production(production)
         name, i = self._get_name_end_digit(production.children[0].value)
         for sequence in production.filter(is_sequence):
             if len(sequence.children) <= 2:
@@ -248,8 +253,13 @@ class Translator(object):
             old_children = sequence.children[1:]
             sequence.children = new_children
             new_sequence = Node(
-                NodeType.SEQUENCE,
-                children=old_children,
+                NodeType.EXPRESSION,
+                children=[
+                    Node(
+                        NodeType.SEQUENCE,
+                        children=old_children,
+                    )
+                ]
             )
             new_production = Node(
                 NodeType.PRODUCTION,
@@ -275,7 +285,7 @@ class Translator(object):
         # Productions which do not have RHSs which are too
         # long won't be affected.
         productions = list(tree.filter(is_production))
-        for production in productions:
+        for i, production in enumerate(productions):
             self._break_sequences_up(tree, production)
 
     def _prune(self, tree: Node):

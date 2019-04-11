@@ -8,6 +8,9 @@ from bnf_to_cnf.translator import (
 from bnf_to_cnf.parser import (
     Parser,
 )
+from bnf_to_cnf.validate import (
+    Validator,
+)
 
 
 class TranslatorTestCase(TestCase):
@@ -199,4 +202,34 @@ class TranslatorTestCase(TestCase):
             str(node),
             expected,
             f'\n\nExpected:\n{expected}\n\nBut Got:\n{str(node)}\n\n'
+        )
+
+    def test_complete_conversion(self):
+        """Test converting a complete example, and ensuring it's in CNF."""
+        grammar = r'''
+<Expr>    ::= <Term>
+            | <Expr> <AddOp> <Term>
+            | <AddOp> <Term>
+<Term>    ::= <Factor>
+            | <Term> <MulOp> <Factor>
+<Factor>  ::= <Primary>
+            | <Factor> "\^" <Primary>
+<Primary> ::= <number>
+            | <variable>
+            | "\(" <Expr> "\)"
+<AddOp>   ::= "\+" | "\-"
+<MulOp>   ::= "\*" | "\/"
+<number>  ::= <digit> | <digit> <number>
+<digit>   ::= "0" | "1" | "2" | "3" | "4"
+            | "5" | "6" | "7" | "8" | "9"
+<variable> ::= "a" | "b" | "c" | "d" | "e" | "f"
+             | "g" | "h" | "i" | "j" | "k" | "l"
+             | "m" | "n" | "o" | "p" | "q" | "r"
+             | "s" | "t" | "u" | "v" | "w" | "x"
+             | "y" | "z"
+        '''
+        tree = Parser().parse(grammar)
+        node = Translator().translate(tree)
+        self.assertTrue(
+            Validator(raise_exception=True).validate(node)
         )

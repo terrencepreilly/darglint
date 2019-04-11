@@ -12,10 +12,10 @@ produce the CNF of the grammar from the modified tree.
 
 """
 
-import re
-
-LHS = re.compile(r'^\w[\w_-]*$')
-RHS = re.compile(r'[\w:_\-"\.]')
+from .node import (
+    Node,
+    NodeType,
+)
 
 
 class ValidationError(Exception):
@@ -31,8 +31,7 @@ class Validator(object):
 
     """
 
-    def __init__(self, raise_exception=False):
-        # type: (bool) -> None
+    def __init__(self, raise_exception: bool = False):
         """Create a new Validator.
 
         Args:
@@ -44,53 +43,57 @@ class Validator(object):
         """
         self.raise_exception = raise_exception
 
-    def _lhs(self, lhs: str) -> bool:
-        if not LHS.match(lhs):
-            return self._wrap(f'The lhs, "{lhs}" is not a simple identifier.')
-        return True
-
-    def _rhs(self, rhs: str) -> bool:
-        i = 0
-        while i < len(rhs):
-
-            escaped_character = rhs[i] == '\\'
-            if escaped_character:
-                i += 2
-                continue
-
-            if not RHS.match(rhs[i]):
-                return self._wrap(
-                    f'The rhs, "{rhs}" contains an invalid character, '
-                    f'"{rhs[i]}" at position {i}'
-                )
-            i += 1
-
-        return True
-
     def _wrap(self, reason: str) -> bool:
         if self.raise_exception:
             raise ValidationError(reason)
         return False
 
-    def validate(self, production):
-        # type: (str) -> bool
+    def _validate_sequence(self, sequence: Node) -> bool:
+        assert sequence.node_type == NodeType.SEQUENCE, (
+            f'"{sequence}" is not a Sequence'
+        )
+        assert len(sequence.children) > 0
+        if len(sequence.children) == 1:
+            if sequence.children[0].node_type != NodeType.TERMINAL:
+                return self._wrap(
+                    f'"{sequence}" has only one node: it should be terminal.'
+                )
+        elif len(sequence.children) == 2:
+            if not all([
+                x.node_type == NodeType.SYMBOL
+                for x in sequence.children
+            ]):
+                return self._wrap(
+                    f'"{sequence}" has two nodes: they should '
+                    f'be non-terminals.'
+                )
+        else:
+            return self._wrap(f'"{sequence} has more than 3 token on the RHS.')
+        return True
+
+    def _validate_production(self, production: Node) -> bool:
+        assert production.node_type == NodeType.PRODUCTION
+        for sequence in production.children[1].children:
+            if not self._validate_sequence(sequence):
+                return False
+        return True
+
+    def validate(self, grammar: Node) -> bool:
         """Validate that the given production is in CNF.
 
         Args:
-            production: The production to validate.
+            grammar: The grammar to validate.
+
+        Throws:
+            ValidationError: If the grammar was not valid
+                and raise_exception is True.
 
         Returns:
-            Whether the production is valid or not.
+            Whether the grammar is valid or not.
 
         """
-        # Since this is just an internal tool, it's okay if it's
-        # fragile: we can assume that there are spaces around the
-        # "::=" operator.
-        if production.count(' ::= ') != 1:
-            return self._wrap(
-                'Production must contain the operator, '
-                '"::=", surrounded by a single space.'
-            )
-
-        lhs, rhs = production.split(' ::= ')
-        return self._lhs(lhs) and self._rhs(rhs)
+        assert grammar.node_type == NodeType.GRAMMAR
+        for production in grammar.children:
+            if not self._validate_production(production):
+                return False
+        return True

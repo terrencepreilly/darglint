@@ -24,7 +24,9 @@ class Parser(object):
         sequence: (symbol | TERMINAL) (_WHITESPACE (symbol | TERMINAL))*
         TERMINAL: "\"" (LETTER | ESCAPED | NUMBER | "_" | "-" | ":")+ "\""
             | "ε"
-        ESCAPED: "\\" ("." | "*" )
+        ESCAPED: "\\" ("." | "," | "*" | "^" | "("
+                      | ")" | "+" | "-" | "/" | "\""
+                      | " " | "]" | "[" | "|")
 
         symbol: _LB IDENT _RB
         _LB: "<"
