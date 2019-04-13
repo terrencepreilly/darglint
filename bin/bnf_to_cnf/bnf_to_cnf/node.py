@@ -193,3 +193,44 @@ class Node(object):
             children=[child.clone() for child in self.children],
             value=self.value,
         )
+
+    def to_python(self) -> str:
+        if self.node_type == NodeType.TERMINAL:
+            assert self.value is not None
+            return self.value
+        elif self.node_type == NodeType.SYMBOL:
+            assert self.value is not None
+            return self.value
+        elif self.node_type == NodeType.SEQUENCE:
+            if len(self.children) == 1:
+                return self.children[0].to_python()
+            elif len(self.children) == 2:
+                return (
+                    f'({self.children[0].to_python()}, '
+                    f'{self.children[1].to_python()})'
+                )
+            else:
+                raise Exception(
+                    f'Expected the sequence "{self}" to have one or '
+                    f'two children, but it had {len(self.children)}'
+                )
+        elif self.node_type == NodeType.EXPRESSION:
+            return ', '.join([x.to_python() for x in self.children])
+        elif self.node_type == NodeType.PRODUCTION:
+            symbol = self.children[0].to_python()
+            expression = self.children[1].to_python()
+            return f'    P({symbol}, {expression})'
+        elif self.node_type == NodeType.GRAMMAR:
+            values = [
+                '# This code is generated: do not edit, '
+                'or your changes will be lost',
+                '',
+                '',
+                'class Grammar(BaseGrammar):'
+            ]
+            for child in self.children:
+                values.append(child.to_python())
+            values.extend(['', '    start = "start"'])
+            return '\n'.join(values)
+        else:
+            raise Exception(f'Unrecognized node type, {self.node_type}')

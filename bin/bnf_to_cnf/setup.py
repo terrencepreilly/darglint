@@ -13,11 +13,11 @@ setup(
         'A small utility to convert BNF to CNF for use in '
         'darglint, to ease writing new grammars.'
     ),
-    # entry_points={
-    #     'console_scripts': [
-    #         'bnf_to_cnf = bnf_to_cnf.driver:main',
-    #     ],
-    # },
+    entry_points={
+        'console_scripts': [
+            'bnf_to_cnf = bnf_to_cnf.driver:main',
+        ],
+    },
     install_requires=[
         'lark-parser==0.7.0',
     ],
