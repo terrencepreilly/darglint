@@ -200,7 +200,7 @@ class Node(object):
             return self.value
         elif self.node_type == NodeType.SYMBOL:
             assert self.value is not None
-            return self.value
+            return f'"{self.value}"'
         elif self.node_type == NodeType.SEQUENCE:
             if len(self.children) == 1:
                 return self.children[0].to_python()
@@ -219,17 +219,20 @@ class Node(object):
         elif self.node_type == NodeType.PRODUCTION:
             symbol = self.children[0].to_python()
             expression = self.children[1].to_python()
-            return f'    P({symbol}, {expression})'
+            return ' ' * 8 + f'P({symbol}, {expression}),'
         elif self.node_type == NodeType.GRAMMAR:
+            import datetime
+            comment = (
+                f'# Generated on {datetime.datetime.now()}'
+            )
             values = [
-                '# This code is generated: do not edit, '
-                'or your changes will be lost',
-                '',
-                '',
-                'class Grammar(BaseGrammar):'
+                comment,
+                'class Grammar(BaseGrammar):',
+                '    productions = [',
             ]
-            for child in self.children:
-                values.append(child.to_python())
+            for production in self.children:
+                values.append(production.to_python())
+            values.append('    ]')
             values.extend(['', '    start = "start"'])
             return '\n'.join(values)
         else:
