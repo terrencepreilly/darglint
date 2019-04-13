@@ -82,6 +82,16 @@ def _not(fn: Callable[[Node], bool]) -> Callable[[Node], bool]:
     return _inner
 
 
+def _production_with_lhs(symbol: str) -> Callable[[Node], bool]:
+    def _inner(x: Node) -> bool:
+        if not is_production(x):
+            return False
+        if not x.children or not is_symbol(x.children[0]):
+            return False
+        return x.children[0].value == symbol
+    return _inner
+
+
 def to_symbol(value: str, count: int = None) -> str:
     """Given a terminal value, produce an adquate symbol.
 
@@ -491,7 +501,58 @@ class Translator(object):
                             sequence.clone()
                         )
 
-    def translate(self, tree: Node):
+    def _build_adjacency_matrix(self, tree: Node) -> Dict[str, Set[str]]:
+        """Return a graph of the grammar being represented.
+
+        Args:
+            tree: The tree representing the BNF of the grammar.
+
+        Returns:
+            A graph of the grammar represented in the BNF.
+
+        """
+        graph = dict()  # type: Dict[str, Set[str]]
+        for production in tree.filter(is_production):
+            symbol = production.children[0].value
+            assert symbol is not None
+            if symbol not in graph:
+                graph[symbol] = set()
+
+            for child in production.children[1].filter(
+                _or(is_symbol, is_terminal)
+            ):
+                assert child.value is not None
+                graph[symbol].add(child.value)
+
+        return graph
+
+    def _remove_unused_productions(self, tree: Node):
+        graph = self._build_adjacency_matrix(tree)
+
+        # Only simplify if the starting symbol is present,
+        # since other grammars will not be used except for
+        # experimenting, anyway.
+        if 'start' not in graph:
+            return
+
+        # Walk the tree, from start, and mark all encountered nodes.
+        encountered = set()  # type: Set[str]
+        queue = deque(['start'])
+        while queue:
+            current = queue.pop()
+            encountered.add(current)
+            is_terminal = current not in graph
+            if is_terminal:
+                continue
+            for child in graph[current]:
+                queue.appendleft(child)
+
+        # Remove all non-encountered nodes.
+        to_remove = set(graph.keys()) - encountered
+        for production_symbol in to_remove:
+            tree.remove(_production_with_lhs(production_symbol))
+
+    def translate(self, tree: Node) -> Node:
         self._reassign_start(tree)
         self._reassign_nonsolitary_terminals(tree)
         self._eliminate_rhs_with_3plus_symbols(tree)
@@ -502,5 +563,8 @@ class Translator(object):
             max_iterations -= 1
 
         self._eliminate_unit_productions(tree)
+        self._remove_unused_productions(tree)
+
+        # TODO: remove nodes which don't lead to terminals?
 
         return tree

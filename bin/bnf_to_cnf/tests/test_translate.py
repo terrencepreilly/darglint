@@ -40,11 +40,9 @@ class TranslatorTestCase(TestCase):
             '<section> ::= <head> <body>\n'
         )
         node = Translator().translate(tree)
-        expected = '\n'.join([
-            '<start> ::= <head> <body>\n'
-            '<start0> ::= <head> <body>\n'
-            '<section> ::= <head> <body>'
-        ])
+
+        # <start0> is reassigned, then removed once simplified.
+        expected = '<start> ::= <head> <body>'
         self.assertEqual(
             str(node),
             expected,
@@ -233,3 +231,16 @@ class TranslatorTestCase(TestCase):
         self.assertTrue(
             Validator(raise_exception=True).validate(node)
         )
+
+    def test_removes_unreachable_symbols(self):
+        grammar = r'''
+            <start> ::= <a> <b>
+            <a> ::= "-" | ε
+            <b> ::= <a> <d>
+            <d> ::= "1"
+            <c> ::= "Q"
+        '''
+        tree = Parser().parse(grammar)
+        Translator().translate(tree)
+        for node in tree.filter(lambda x: x.value == 'c'):
+            self.fail('Expected unused expressions to be removed.')
