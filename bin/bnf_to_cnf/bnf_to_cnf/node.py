@@ -196,8 +196,10 @@ class Node(object):
 
     def to_python(self) -> str:
         if self.node_type == NodeType.TERMINAL:
+            # Terminals are encoded as token types, so
+            # they should not be quoted.
             assert self.value is not None
-            return self.value
+            return self.value[1:-1].replace('\\', '')
         elif self.node_type == NodeType.SYMBOL:
             assert self.value is not None
             return f'"{self.value}"'
