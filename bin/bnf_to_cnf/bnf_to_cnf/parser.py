@@ -35,6 +35,8 @@ class Parser(object):
 
         %import common.LETTER
         %import common.NUMBER
+        _COMMENT: /#[^\n]*/
+        %ignore _COMMENT
         _WHITESPACE: (" " | "\n" | "\t")+
         %ignore _WHITESPACE
     '''

@@ -1,12 +1,17 @@
+from itertools import chain
+import random
 from unittest import (
     TestCase,
 )
+
 from bnf_to_cnf.parser import (
     Parser,
 )
 from bnf_to_cnf.node import (
     Node,
 )
+
+MAX_REPS = 5
 
 
 class ParserTestCase(TestCase):
@@ -77,3 +82,26 @@ class ParserTestCase(TestCase):
             value,
             str(node),
         )
+
+    def test_comments_are_ignored(self):
+        # Here, terminals are tokens which will be represented in python.
+        grammar = [
+            '<start> ::= <sentence>',
+            '<sentence> ::= <word_run> <period>',
+            '<word_run> ::= <word> <word_run> | ε',
+            '<period> ::= "IND_TYPE\\.period"',
+            '<word> ::= "IND_TYPE\\.word"',
+        ]
+        comments = [
+            '# ----- IMPORTANT SECTION ----',
+            '# Author: Thomas Jefferson',
+        ]
+
+        # Make sure they zip together well.
+        comments += [''] * (len(grammar) - len(comments) + 1)
+        without_comments = Parser().parse('\n'.join(grammar))
+        for _ in range(MAX_REPS):
+            random.shuffle(comments)
+            complete = list(chain(*zip(comments, grammar)))
+            with_comments = Parser().parse('\n'.join(complete))
+            self.assertTrue(without_comments.equals(with_comments))
