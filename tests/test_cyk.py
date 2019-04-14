@@ -10,37 +10,65 @@ from darglint.parse.grammar import (
     BaseGrammar,
 )
 from darglint.parse.grammar import Production as P
+from darglint.token import (
+    Token,
+    BaseTokenType,
+)
+
+
+class KT(BaseTokenType):
+
+    VERB = 0
+    NOUN = 1
+
+    UNKNOWN = -1
 
 
 class SimpleKlingonGrammar(BaseGrammar):
     productions = [
-        P("verb", "SuS"),
-        P("noun", "be'"),
-        P("sentence", ("verb", "noun")),
+        P('noun', KT.NOUN),
+        P('verb', KT.VERB),
+        P('sentence', ('verb', 'noun')),
     ]
 
     start = "sentence"
 
 
+class AKT(BaseTokenType):
+
+    # Could be a noun or a negation.
+    BE = 1
+
+    VERB = 1
+    NOUN = 2
+
+
 class AmbiguousKlingonGrammar(BaseGrammar):
 
     productions = [
-        P('verb', 'SuS', ('verb', 'negation')),
-        P('noun', 'be\''),
-        P('negation', 'be\''),
+        P('verb', AKT.VERB, ('verb', 'negation')),
+        P('negation', AKT.BE),
+        P('noun', AKT.NOUN, AKT.BE),
         P('sentence', ('verb', 'noun')),
     ]
 
     start = 'sentence'
 
 
+class ST(BaseTokenType):
+
+    ZERO = 0
+    ONE = 1
+    EPSILON = 2
+
+
 class SmallGrammar(BaseGrammar):
     """Represents a very small grammar."""
 
     productions = [
-        P('one', '1'),
-        P('epsilon', 'ε'),
-        P('zero', '0'),
+        P('one', ST.ONE),
+        P('epsilon', ST.EPSILON),
+        P('zero', ST.ZERO),
         P(
             'number',
             ('one', 'epsilon'),
@@ -58,11 +86,35 @@ class CykTest(TestCase):
 
     def test_parse_simple_member(self):
         """Make sure that we can recognize a valid string in the language."""
-        self.assertTrue(parse(SimpleKlingonGrammar, ["SuS", "be'"]))
+        lexed = [
+            Token(
+                value="SuS",
+                token_type=KT.VERB,
+                line_number=0,
+            ),
+            Token(
+                value="be'",
+                token_type=KT.NOUN,
+                line_number=0,
+            ),
+        ]
+        self.assertTrue(parse(SimpleKlingonGrammar, lexed))
 
     def test_parse_simple_nonmember(self):
         """Make sure we reject invalid strings."""
-        self.assertFalse(parse(SimpleKlingonGrammar, ["qet", "be'"]))
+        lexed = [
+            Token(
+                value="qet",
+                token_type=KT.UNKNOWN,
+                line_number=0,
+            ),
+            Token(
+                value="be'",
+                token_type=KT.NOUN,
+                line_number=0,
+            ),
+        ]
+        self.assertFalse(parse(SimpleKlingonGrammar, lexed))
 
     def test_parse_empty_is_never_part_of_grammar(self):
         """Make sure we don't crash with an empty list."""
@@ -71,10 +123,25 @@ class CykTest(TestCase):
     def test_parse_long_sentence_small_grammar(self):
         """Make sure we can handle a decently long string."""
         max_string_length = 50
-        sentence = ''
+        sentence = list()
         for _ in range(max_string_length):
-            sentence += random.choice('01')
-        sentence += 'ε'
+            if random.random() < 0.5:
+                sentence.append(Token(
+                    value='0',
+                    token_type=ST.ZERO,
+                    line_number=0,
+                ))
+            else:
+                sentence.append(Token(
+                    value='1',
+                    token_type=ST.ONE,
+                    line_number=0,
+                ))
+        sentence.append(Token(
+            value='ε',
+            token_type=ST.EPSILON,
+            line_number=0,
+        ))
         self.assertTrue(parse(
             SmallGrammar,
             sentence
@@ -82,20 +149,60 @@ class CykTest(TestCase):
 
     def test_parse_returns_parse_tree(self):
         """Make sure the parse returned a valid tree."""
-        node = parse(SimpleKlingonGrammar, ["SuS", "be'"])
+        lexed = [
+            Token(
+                value="SuS",
+                token_type=KT.VERB,
+                line_number=0,
+            ),
+            Token(
+                value="be'",
+                token_type=KT.NOUN,
+                line_number=1,
+            ),
+        ]
+        node = parse(SimpleKlingonGrammar, lexed)
         self.assertTrue(node is not None)
         self.assertEqual(node.symbol, 'sentence')
         self.assertEqual(node.lchild.symbol, 'verb')
-        self.assertEqual(node.lchild.value, 'SuS')
+        self.assertEqual(node.lchild.value, lexed[0])
         self.assertEqual(node.rchild.symbol, 'noun')
-        self.assertEqual(node.rchild.value, 'be\'')
+        self.assertEqual(node.rchild.value, lexed[1])
 
     def test_parses_ambiguous_grammars(self):
         """Make sure it can parse an ambigous grammar."""
-        positive = parse(AmbiguousKlingonGrammar, ["SuS", "be'"])
-        self.assertTrue(positive is not None)
-        negated = parse(AmbiguousKlingonGrammar, ["SuS", "be'", "be'"])
-        self.assertTrue(negated is not None)
+        lexed_positive = [
+            Token(
+                value="Hegh",
+                token_type=AKT.VERB,
+                line_number=0,
+            ),
+            Token(
+                value="be'",
+                token_type=AKT.BE,
+                line_number=0,
+            ),
+        ]
+        self.assertTrue(parse(AmbiguousKlingonGrammar, lexed_positive))
+
+        lexed_negative = [
+            Token(
+                value="Hegh",
+                token_type=AKT.VERB,
+                line_number=0,
+            ),
+            Token(
+                value="be'",
+                token_type=AKT.BE,
+                line_number=0,
+            ),
+            Token(
+                value="be'",
+                token_type=AKT.BE,
+                line_number=0,
+            ),
+        ]
+        self.assertTrue(parse(AmbiguousKlingonGrammar, lexed_negative))
 
 
 def verify_implementation():

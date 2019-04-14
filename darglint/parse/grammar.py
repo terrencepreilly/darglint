@@ -18,7 +18,7 @@ class Production(object):
     """Represents a production in a grammar."""
 
     def __init__(self, lhs, *rhs):
-        # type: (str, Union[NonTerminalDerivation, TerminalDerivation]) -> None
+        # # type: (str, Union[NonTerminalDerivation, TerminalDerivation]) -> None  # noqa: E501
         """Create a new production.
 
         Args:

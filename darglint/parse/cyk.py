@@ -26,13 +26,18 @@ from .grammar import (  # noqa: F401
     Derivation,
     Production,
 )
+from ..token import (
+    Token,
+    BaseTokenType,
+)
 
 
 class CykNode(object):
     """A node for use in a cyk parse."""
 
+    # TODO: Change symbol's type to NodeType.
     def __init__(self, symbol, lchild=None, rchild=None, value=None):
-        # type: (str, CykNode, CykNode, str) -> None
+        # type: (str, Optional[CykNode], Optional[CykNode], Optional[Token]) -> None  # noqa: E501
         self.symbol = symbol
         self.lchild = lchild
         self.rchild = rchild
@@ -40,7 +45,7 @@ class CykNode(object):
 
 
 def parse(grammar, tokens):
-    # type: (BaseGrammar, List[str]) -> Optional[CykNode]
+    # type: (BaseGrammar, List[Token]) -> Optional[CykNode]
     if not tokens:
         return None
     n = len(tokens)
@@ -50,16 +55,18 @@ def parse(grammar, tokens):
         for _ in range(n)
     ]  # type: List[List[List[Optional[CykNode]]]]
     lookup = grammar.get_symbol_lookup()
-    for s in range(n):
+    for s, token in enumerate(tokens):
         for v, production in enumerate(grammar.productions):
-            if tokens[s] in production.rhs:
-                P[0][s][v] = CykNode(production.lhs, value=tokens[s])
+            if token.token_type in production.rhs:
+                P[0][s][v] = CykNode(production.lhs, value=token)
     for l in range(2, n + 1):
         for s in range(n - l + 2):
             for p in range(l):
                 for a, production in enumerate(grammar.productions):
                     for derivation in production.rhs:
-                        is_terminal_derivation = isinstance(derivation, str)
+                        is_terminal_derivation = isinstance(
+                            derivation, BaseTokenType
+                        )
                         if is_terminal_derivation:
                             continue
                         B, C = derivation

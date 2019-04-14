@@ -3,7 +3,11 @@
 from enum import Enum
 
 
-class TokenType(Enum):
+class BaseTokenType(Enum):
+    pass
+
+
+class TokenType(BaseTokenType):
     """The possible types of tokens."""
 
     WORD = 1
