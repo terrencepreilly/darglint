@@ -3,6 +3,14 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.5.5] - 2019-05-19
+
+### Fixed
+
+Try-block handlers were not included when tranversing the function
+ast.  This meant that return or yield statements in the except-block
+or else block would not register, and an exception would be raised.
+
 ## [0.5.4] - 2019-04-03
 
 ### Fixed

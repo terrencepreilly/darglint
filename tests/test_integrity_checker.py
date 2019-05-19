@@ -98,6 +98,37 @@ class IntegrityCheckerTestCase(TestCase):
         self.assertEqual(len(errors), 1)
         self.assertTrue(isinstance(errors[0], MissingParameterError))
 
+    def test_try_block_no_excess_error(self):
+        """Make sure the else and except blocks are checked.
+
+        See Issue 20.
+
+        """
+        program = '\n'.join([
+            'def check_module_installed(name):',
+            '    """Temp',
+            '    ',
+            '    Args:',
+            '        name (str): module name',
+            '    ',
+            '    Returns:',
+            '        bool: Whether the module can be imported',
+            '    ',
+            '    """',
+            '    try:',
+            '        __import__(name)',
+            '    except ImportError:',
+            '        return False',
+            '    else:',
+            '        return True',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertEqual(len(errors), 0)
+
     def test_excess_parameter_added(self):
         program = '\n'.join([
             'def function_with_excess_parameter():',

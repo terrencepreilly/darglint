@@ -14,4 +14,4 @@ ipython = "*"
 ipdb = "*"
 wheel = "*"
 twine = "*"
-darglint = "*"
+darglint = {path = "."}
