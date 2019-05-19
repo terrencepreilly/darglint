@@ -7,19 +7,25 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 
-Try-block handlers were not included when tranversing the function
-ast.  This meant that return or yield statements in the except-block
-or else block would not register, and an exception would be raised.
+- Try-block handlers were not included when tranversing the function
+  ast.  This meant that return or yield statements in the except-block
+  or else block would not register, and an exception would be raised.
+
+- Allow indents in types. This lets us handle line continuation for
+  type signatures.
+
+- Fix appropriate noqas not hiding S001. (Because the docstring is never
+  actually parsed when it's a syntax error.)
 
 ## [0.5.4] - 2019-04-03
 
 ### Fixed
 
-Fixed double reports from flake8.  These were occurring due to the two
-entry points listed in the setup file.  Currently, the fix just uses two
-temporary subclasses that filter the response from running Darglint.
-Ideally, flake8 would not run the same program twice -- a script may want
-to report more than one error code.  (As is the case here.)
+- Fixed double reports from flake8.  These were occurring due to the two
+  entry points listed in the setup file.  Currently, the fix just uses two
+  temporary subclasses that filter the response from running Darglint.
+  Ideally, flake8 would not run the same program twice -- a script may want
+  to report more than one error code.  (As is the case here.)
 
 
 ## [0.5.3] - 2018-11-28

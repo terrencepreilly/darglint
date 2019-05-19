@@ -129,6 +129,8 @@ def parse_parenthetical_type(peaker):
             children.append(parse_rparen(peaker))
         elif _is(TokenType.COLON, peaker.peak()):
             children.append(parse_colon(peaker))
+        elif _is(TokenType.INDENT, peaker.peak()):
+            parse_indent(peaker)
         else:
             encountered_word = True
             children.append(parse_word(peaker))

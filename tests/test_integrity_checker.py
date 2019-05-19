@@ -593,3 +593,20 @@ class IntegrityCheckerTestCase(TestCase):
             '    return word == word[::-1]',
         ])
         self.has_no_errors(program)
+
+    def test_global_noqa_works_for_syntax_errors(self):
+        program = '\n'.join([
+            'def test_dataframe(input):',
+            '    """Test.',
+            '',
+            '    Args:',
+            '        input (:obj:`DataFrame <pandas.DataFrame>`, \\',
+            '            :obj:`ndarray <numpy.ndarray>`, list): test',
+            '',
+            '    {}',
+            '',
+            '    """',
+            '    pass',
+        ])
+        for variant in ['# noqa: *', '# noqa: S001', '# noqa']:
+            self.has_no_errors(program.format(variant))

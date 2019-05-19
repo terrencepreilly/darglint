@@ -1,5 +1,6 @@
 """Defines IntegrityChecker."""
 
+import re
 from typing import (  # noqa: F401
     Any,
     List,
@@ -46,6 +47,11 @@ from .error_report import (
 from .config import (
     Configuration,
 )
+
+
+SYNTAX_NOQA = re.compile(r'#\s*noqa:\sS001')
+EXPLICIT_GLOBAL_NOQA = re.compile(r'#\s*noqa:\s*\*')
+BARE_NOQA = re.compile(r'#\s*noqa([^:]|$)')
 
 
 class IntegrityChecker(object):
@@ -108,6 +114,14 @@ class IntegrityChecker(object):
                 self._check_raises()
                 self._sorted = False
             except ParserException as exception:
+                # If a syntax exception was raised, we may still
+                # want to ignore it, if we place a noqa statement.
+                if (
+                    SYNTAX_NOQA.search(function.docstring)
+                    or EXPLICIT_GLOBAL_NOQA.search(function.docstring)
+                    or BARE_NOQA.search(function.docstring)
+                ):
+                    return
                 if self.raise_errors:
                     raise
                 self.errors.append(
