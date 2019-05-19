@@ -16,17 +16,21 @@ class Parser(object):
 
         grammar: production+
 
-        production: symbol _OPER expression
+        production: annotations? symbol _OPER expression
         _OPER: "::="
 
         expression: sequence (_BAR sequence)*
         _BAR: "|"
-        sequence: (symbol | TERMINAL) (_WHITESPACE (symbol | TERMINAL))*
+        sequence: annotations? (symbol | TERMINAL) (_WHITESPACE (symbol | TERMINAL))*
         TERMINAL: "\"" (LETTER | ESCAPED | NUMBER | "_" | "-" | ":")+ "\""
             | "ε"
         ESCAPED: "\\" ("." | "," | "*" | "^" | "("
                       | ")" | "+" | "-" | "/" | "\""
                       | " " | "]" | "[" | "|")
+
+        annotations: annotation+
+        annotation: _AT IDENT
+        _AT: "@"
 
         symbol: _LB IDENT _RB
         _LB: "<"
@@ -35,11 +39,13 @@ class Parser(object):
 
         %import common.LETTER
         %import common.NUMBER
+
         _COMMENT: /#[^\n]*/
         %ignore _COMMENT
+
         _WHITESPACE: (" " | "\n" | "\t")+
         %ignore _WHITESPACE
-    '''
+    '''  # noqa: E501
 
     def __init__(self):
         self.delegate = Lark(self.grammar)
@@ -71,4 +77,3 @@ class Parser(object):
         production = grammar.children[0]
         grammar.children = list()
         return production
-

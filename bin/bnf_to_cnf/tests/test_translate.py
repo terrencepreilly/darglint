@@ -174,7 +174,7 @@ class TranslatorTestCase(TestCase):
         )
         node = Translator().translate(tree)
         expected = (
-            '<S> ::= <A> <a> | "b" | "a"\n'
+            '<S> ::= <A> <a> | "a" | "b"\n'
             '<A> ::= "b" | "a"\n'
             '<B> ::= "a" | "b"\n'
             '<a> ::= "a"'
@@ -244,3 +244,42 @@ class TranslatorTestCase(TestCase):
         Translator().translate(tree)
         for node in tree.filter(lambda x: x.value == 'c'):
             self.fail('Expected unused expressions to be removed.')
+
+    def test_translate_retains_annotations(self):
+        """Make sure that annotations are retained with the grammar."""
+        grammar = r'''
+            <A> ::= <B> <C>
+            <B> ::= <C> | @Q <D>
+            <C> ::= "C"
+            <D> ::= "D"
+        '''
+        tree = Parser().parse(grammar)
+        node = Translator().translate(tree)
+        expected = Parser().parse(r'''
+            <A> ::= <B> <C>
+            <B> ::= "C" | @Q "D"
+            <C> ::= "C"
+            <D> ::= "D"
+        ''')
+        self.assertTrue(
+            node.equals(expected),
+            f'Expected:\n{expected}\n\nBut got:\n{node}'
+        )
+
+    def test_translate_retains_start_annotation(self):
+        """Make sure that an annotation on start is saved."""
+        grammar = r'''
+            @Q
+            <start> ::= <A> <B>
+            <B> ::= "b"
+            <A> ::= "a"
+        '''
+        tree = Parser().parse(grammar)
+        node = Translator().translate(tree)
+        expected = Parser().parse(r'''
+            @Q
+            <start> ::= <A> <B>
+            <B> ::= "b"
+            <A> ::= "a"
+        ''')
+        self.assertTrue(node.equals(expected), f'{node}\n\n{expected}')

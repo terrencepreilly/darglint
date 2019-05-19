@@ -19,77 +19,14 @@ from .node import (
     Node,
     NodeType,
 )
+from .functools import (
+    exists,
+    and_,
+    or_,
+)
 
 
 END_DIGIT = re.compile(r'\d+$')
-
-
-def is_symbol(x: Node) -> bool:
-    return x.node_type == NodeType.SYMBOL
-
-
-def is_terminal(x: Node) -> bool:
-    return x.node_type == NodeType.TERMINAL
-
-
-def is_production(x: Node) -> bool:
-    return x.node_type == NodeType.PRODUCTION
-
-
-def is_sequence(x: Node) -> bool:
-    return x.node_type == NodeType.SEQUENCE
-
-
-def is_expression(x: Node) -> bool:
-    return x.node_type == NodeType.EXPRESSION
-
-
-def has_symbol(x: str) -> Callable[['Node'], bool]:
-    def _inner(y: Node) -> bool:
-        return exists(y.filter(lambda z: is_symbol(z) and z.value == x))
-    return _inner
-
-
-def exists(it: Iterator) -> bool:
-    try:
-        next(it)
-    except StopIteration:
-        return False
-    return True
-
-
-def _and(*args: Callable[[Node], bool]) -> Callable[[Node], bool]:
-    def _inner(x: Node) -> bool:
-        for fn in args:
-            if not fn(x):
-                return False
-        return True
-    return _inner
-
-
-def _or(*args: Callable[[Node], bool]) -> Callable[[Node], bool]:
-    def _inner(x: Node) -> bool:
-        for fn in args:
-            if fn(x):
-                return True
-        return False
-    return _inner
-
-
-def _not(fn: Callable[[Node], bool]) -> Callable[[Node], bool]:
-    def _inner(x: Node) -> bool:
-        return not fn(x)
-    return _inner
-
-
-def _production_with_lhs(symbol: str) -> Callable[[Node], bool]:
-    def _inner(x: Node) -> bool:
-        if not is_production(x):
-            return False
-        if not x.children or not is_symbol(x.children[0]):
-            return False
-        return x.children[0].value == symbol
-    return _inner
 
 
 def to_symbol(value: str, count: int = None) -> str:
@@ -129,6 +66,8 @@ class Translator(object):
     def _reassign_start(self, tree: Node):
         """Factor out the start symbol from the RHS.
 
+        If start is annotated, that annotation moves to the new start.
+
         Args:
             tree: The tree to transform.
 
@@ -142,9 +81,7 @@ class Translator(object):
         def is_start_production(x):
             return (
                 x.node_type == NodeType.PRODUCTION
-                and len(x.children) > 1
-                and hasattr(x.children[0], 'value')
-                and x.children[0].value == 'start'
+                and exists(x.filter(Node.has_value('start')))
             )
 
         # Gather all the symbols that start with "start",
@@ -166,7 +103,11 @@ class Translator(object):
             start_suffix += 1
 
         # Rename the "start" symbol on the LHS.
+        annotations = list()  # type: List[Node]
         for production in tree.filter(is_start_production):
+            if Node.has_annotation(production):
+                parent = production.children.pop(0)
+                annotations.extend(parent.children)
             symbol = production.children[0]
             symbol.value = f'start{start_suffix}'
 
@@ -178,18 +119,23 @@ class Translator(object):
         new_production = Parser().parse_production(
             f'<start> ::= <start{start_suffix}>'
         )
+        if annotations:
+            new_production.prepend(Node(
+                node_type=NodeType.ANNOTATIONS,
+                children=annotations,
+            ))
         tree.prepend(new_production)
 
     def _reassign_nonsolitary_terminals(self, tree: Node):
         def contains_nonsolitary_terminal(x):
             return (
-                is_sequence(x)
-                and exists(x.filter(is_symbol))
-                and exists(x.filter(is_terminal))
+                Node.is_sequence(x)
+                and exists(x.filter(Node.is_symbol))
+                and exists(x.filter(Node.is_terminal))
             )
 
         def defines_terminal(x):
-            if not is_production(x):
+            if not Node.is_production(x):
                 return False
 
             if len(x.children) < 2:
@@ -216,7 +162,7 @@ class Translator(object):
 
         # Find non-solitary terminals.
         for sequence in tree.filter(contains_nonsolitary_terminal):
-            for terminal in sequence.filter(is_terminal):
+            for terminal in sequence.filter(Node.is_terminal):
                 replacement = None
                 if terminal.value in terminal_symbol_lookup:
                     replacement = terminal_symbol_lookup[terminal.value]
@@ -245,10 +191,21 @@ class Translator(object):
             return value, 0
 
     def _break_sequences_up(self, grammar: Node, production: Node):
-        assert production.children[0].value is not None
-        assert is_production(production)
-        name, i = self._get_name_end_digit(production.children[0].value)
-        for sequence in production.filter(is_sequence):
+        has_annotation = (
+            len(production.children) > 0
+            and Node.is_annotations(production.children[0])
+        )
+        assert (
+            (has_annotation and production.children[1].value is not None)
+            or production.children[0].value is not None
+        )
+        assert Node.is_production(production)
+        if has_annotation:
+            symbol = production.children[1]
+        else:
+            symbol = production.children[0]
+        name, i = self._get_name_end_digit(symbol.value)
+        for sequence in production.filter(Node.is_sequence):
             if len(sequence.children) <= 2:
                 continue
             while grammar.defines(f'{name}{i}'):
@@ -294,19 +251,22 @@ class Translator(object):
         #
         # Productions which do not have RHSs which are too
         # long won't be affected.
-        productions = list(tree.filter(is_production))
+        productions = list(tree.filter(Node.is_production))
         for i, production in enumerate(productions):
             self._break_sequences_up(tree, production)
 
     def _prune(self, tree: Node):
         def _sequence_is_empty(x: Node) -> bool:
-            return is_sequence(x) and not x.children
+            return Node.is_sequence(x) and not x.children
 
         def _expression_is_empty(x: Node) -> bool:
-            return is_expression(x) and not x.children
+            return Node.is_expression(x) and not x.children
 
         def _production_is_empty(x: Node) -> bool:
-            return is_production(x) and _expression_is_empty(x.children[1])
+            return (
+                Node.is_production(x)
+                and _expression_is_empty(x.children[1])
+            )
 
         # This could be far more efficient by doing a BFS,
         # and only iterating over the children.
@@ -317,8 +277,8 @@ class Translator(object):
                                       tree: Node
                                       ) -> Dict[str, List[Node]]:
         lookup = dict()  # type: Dict[str, List[Node]]
-        for production in tree.filter(is_production):
-            for symbol in production.filter(is_symbol):
+        for production in tree.filter(Node.is_production):
+            for symbol in production.filter(Node.is_symbol):
                 assert symbol.value is not None
                 key = symbol.value
                 if key not in lookup:
@@ -382,11 +342,15 @@ class Translator(object):
 
         replacement_candidates = set()  # Set[str]
 
-        for production in tree.filter(_and(is_production, is_epsilon_rule)):
+        for production in tree.filter(and_(
+            Node.is_production, is_epsilon_rule
+        )):
             updated = True
 
             # Remove the epsilon sequence
-            production.children[1].remove(_and(is_sequence, is_epsilon_rule))
+            production.children[1].remove(and_(
+                Node.is_sequence, is_epsilon_rule
+            ))
 
             # Register to replace the symbol, or remove the production
             # entirely. (It is either empty, or represents optional values.)
@@ -397,8 +361,9 @@ class Translator(object):
                 replacement_candidates.add(symbol)
             else:
                 # TODO: Remove symbol from all sequences?
-                tree.remove(_and(
-                    is_production, lambda x: x.children[0].value == symbol
+                tree.remove(and_(
+                    Node.is_production,
+                    lambda x: x.children[0].value == symbol
                 ))
 
         production_lookup = self._get_symbol_production_lookup(tree)
@@ -407,8 +372,8 @@ class Translator(object):
         # occurrence, it could be present, or it could be absent.)
         for symbol in replacement_candidates:
             for production in production_lookup[symbol]:
-                for sequence in production.filter(_and(
-                    is_sequence, has_symbol(symbol)
+                for sequence in production.filter(and_(
+                    Node.is_sequence, Node.has_symbol(symbol)
                 )):
                     for new_sequence in self._permute_sequence(
                         sequence, symbol
@@ -451,55 +416,128 @@ class Translator(object):
 
     def _get_definition_lookup(self, tree: Node) -> Dict[str, Node]:
         return {
-            node.children[0].value or '': node
-            for node in tree.filter(is_production)
+            (node.children[1].value or ''
+             if Node.has_annotation(node)
+             else node.children[0].value or ''): node
+            for node in tree.filter(Node.is_production)
         }
 
     def _eliminate_unit_productions(self, tree: Node):
-        def is_unit_sequence(x: Node) -> bool:
-            return (
-                is_sequence(x)
-                and len(x.children) == 1
-                and x.children[0].node_type == NodeType.SYMBOL
-            )
+        """Remove all unit productions from the tree.
 
-        # Partition into unit, non-unit productions.
-        non_unit_productions = defaultdict(
-            lambda: set()
-        )  # type: Dict[str, Set[str]]
-        for production in tree.filter(is_production):
-            for sequence in production.filter(is_unit_sequence):
-                production_symbol = production.children[0].value
-                assert production_symbol is not None
-                sequence_symbol = sequence.children[0].value
-                assert sequence_symbol is not None
-                non_unit_productions[production_symbol].add(
-                    sequence_symbol
+        A unit production is a production matching
+
+            A -> B
+
+        Where B is a non-terminal.  This algorithm performs a
+        post-order traversal of the grammar (as a graph), and each
+        B in the above unit production with the non-unit products of
+        B.
+
+            Algorithm UnitRemoval
+              Find all unit productions.
+              Build a lookup (U) of unit productions to terminals/sequences.
+              Build a lookup (P) of all productions.
+
+              Algorithm Simplify(n)
+                // Does a Post-Order Traversal of U (LRN)
+                Remove n from U.
+                Remove product from production n.
+                for c in { x in children(n) | x in U }
+                  Simplify(c)
+                  for d in {
+                      x in children(c) | ~(x in U) ∧ ~(x in c.children)
+                  }
+                    c.children.append(d)
+
+              while n = head(U):
+                Simplify(n)
+
+        """
+        def is_unit_sequence(x: Node) -> bool:
+            if Node.has_annotation(x):
+                return (
+                    Node.is_sequence(x)
+                    and len(x.children) == 2
+                    and x.children[1].node_type == NodeType.SYMBOL
+                )
+            else:
+                return (
+                    Node.is_sequence(x)
+                    and len(x.children) == 1
+                    and x.children[0].node_type == NodeType.SYMBOL
                 )
 
-        tree.remove(is_unit_sequence)
+        def is_unit_production(x: Node) -> bool:
+            return (
+                Node.is_production(x)
+                and len(x.children) > 1
+                and exists(x.filter(is_unit_sequence))
+            )
 
-        # Determine which sequences are reachable from each node.
-        reachability_graph = self._expand_reachability(non_unit_productions)
-        definition_lookup = self._get_definition_lookup(tree)
+        # A map of symbols K to a list of sequences, [S_1, ..., S_n]
+        # where each K -> S_k is a unit production.
+        unit_productions = defaultdict(
+            lambda: list()
+        )  # type: Dict[str, List[Node]]
+        for production in tree.filter(is_unit_production):
+            symbol = Node.get_symbol(production)
+            assert symbol is not None and Node.is_symbol(symbol)
+            assert symbol.value is not None
+            unit_productions[symbol.value].extend(list(
+                production.filter(is_unit_sequence)
+            ))
 
-        # Appropriate all reachable terminals.
-        for symbol, reachables in reachability_graph.items():
-            production = definition_lookup[symbol]
-            # Sorting the list of reachable productions makes the result
-            # deterministic (and so, easier to test.)
-            for reachable in sorted(list(reachables)):
-                reachable_production = definition_lookup.get(reachable, None)
-                if not reachable_production:
-                    continue
-                for sequence in reachable_production.filter(is_sequence):
-                    if not any([
-                        x.equals(sequence)
-                        for x in production.children[1].children
-                    ]):
-                        production.children[1].children.append(
-                            sequence.clone()
-                        )
+        # A lookup for the grammar of symbols to expressions.
+        lookup = {
+            Node.get_symbol(production).value: next(
+                production.filter(Node.is_expression)
+            )
+            for production in tree.filter(Node.is_production)
+        }
+
+        symbol_lookup = dict()  # type: Dict[str, Node]
+        for production in tree.filter(Node.is_production):
+            symbol = Node.get_symbol(production)
+            assert symbol.value is not None
+            symbol_lookup[symbol.value] = symbol
+
+        def simplify(node: str):
+            n = symbol_lookup[node]
+            if node not in unit_productions:
+                return
+            for unit_sequence in unit_productions.pop(node):
+                if Node.has_annotation(unit_sequence):
+                    child = unit_sequence.children[1]
+                else:
+                    child = unit_sequence.children[0]
+                assert child.value is not None
+                simplify(child.value)
+
+                target = lookup[n.value]
+                target.children.remove(unit_sequence)
+                source = lookup[child.value]
+                for sequence in source.children:
+                    if is_unit_sequence(sequence) or Node.has_sequence(
+                        target, sequence
+                    ):
+                        continue
+                    cloned = sequence.clone()
+                    # Add the annotation, if there was one.
+                    if Node.has_annotation(unit_sequence):
+                        annotations = unit_sequence.children[0]
+                        if Node.has_annotation(cloned):
+                            cloned.children[0].children.extend([
+                                x.clone() for x in annotations.children
+                            ])
+                        else:
+                            cloned.children.insert(0, annotations.clone())
+                    target.append(cloned)
+
+        while unit_productions:
+            keys = list(unit_productions.keys())
+            head = keys[0]
+            simplify(head)
 
     def _build_adjacency_matrix(self, tree: Node) -> Dict[str, Set[str]]:
         """Return a graph of the grammar being represented.
@@ -512,14 +550,22 @@ class Translator(object):
 
         """
         graph = dict()  # type: Dict[str, Set[str]]
-        for production in tree.filter(is_production):
-            symbol = production.children[0].value
+        for production in tree.filter(Node.is_production):
+            has_annotations = Node.is_annotations(production.children[0])
+            if has_annotations:
+                symbol = production.children[1].value
+            else:
+                symbol = production.children[0].value
             assert symbol is not None
             if symbol not in graph:
                 graph[symbol] = set()
 
-            for child in production.children[1].filter(
-                _or(is_symbol, is_terminal)
+            if has_annotations:
+                expression = production.children[2]
+            else:
+                expression = production.children[1]
+            for child in expression.filter(
+                or_(Node.is_symbol, Node.is_terminal)
             ):
                 assert child.value is not None
                 graph[symbol].add(child.value)
@@ -550,7 +596,7 @@ class Translator(object):
         # Remove all non-encountered nodes.
         to_remove = set(graph.keys()) - encountered
         for production_symbol in to_remove:
-            tree.remove(_production_with_lhs(production_symbol))
+            tree.remove(Node._production_with_lhs(production_symbol))
 
     def translate(self, tree: Node) -> Node:
         self._reassign_start(tree)

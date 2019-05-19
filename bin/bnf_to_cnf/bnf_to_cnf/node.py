@@ -18,6 +18,10 @@ from lark import (
     Token,
 )
 
+from .functools import (
+    exists,
+)
+
 
 class NodeType(Enum):
 
@@ -28,13 +32,21 @@ class NodeType(Enum):
     SEQUENCE = 4
     TERMINAL = 5
 
+    ANNOTATIONS = 6
+    ANNOTATION = 7
 
-TERMINAL_NODES = {NodeType.TERMINAL, NodeType.SYMBOL}
+
+TERMINAL_NODES = {
+    NodeType.TERMINAL,
+    NodeType.SYMBOL,
+    NodeType.ANNOTATION,
+}
 NONTERMINAL_NODES = {
     NodeType.GRAMMAR,
     NodeType.PRODUCTION,
     NodeType.EXPRESSION,
     NodeType.SEQUENCE,
+    NodeType.ANNOTATIONS,
 }
 
 
@@ -53,7 +65,13 @@ class Node(object):
         if self.node_type == NodeType.GRAMMAR:
             return '\n'.join([str(child) for child in self.children])
         elif self.node_type == NodeType.PRODUCTION:
-            return f'{self.children[0]} ::= {self.children[1]}'
+            if len(self.children) == 2:
+                return f'{self.children[0]} ::= {self.children[1]}'
+            elif len(self.children) == 3:
+                return (
+                    f'{self.children[0]}\n'
+                    f'{self.children[1]} ::= {self.children[2]}'
+                )
         elif self.node_type == NodeType.SYMBOL:
             return f'<{self.value}>'
         elif self.node_type == NodeType.EXPRESSION:
@@ -62,9 +80,21 @@ class Node(object):
             return ' '.join(map(str, self.children))
         elif self.node_type == NodeType.TERMINAL:
             return self.value
+        elif self.node_type == NodeType.ANNOTATION:
+            return f'@{self.value}'
+        elif self.node_type == NodeType.ANNOTATIONS:
+            return '\n'.join([str(child) for child in self.children])
+        else:
+            raise Exception(f'Unrecognized node type {self.node_type}')
 
-    def __repr__(self):
-        return str(self)
+    def __repr__(self, indent: int = 0):
+        r = '  ' * indent + str(self.node_type)[len('NodeType.'):] + ':'
+        if self.children:
+            for child in self.children:
+                r += '\n' + child.__repr__(indent + 1)
+        else:
+            r += ' ' + (self.value or 'ø')
+        return r
 
     def _bfs(self) -> Iterator['Node']:
         queue = deque([self])
@@ -91,9 +121,13 @@ class Node(object):
         for production in self.filter(
             lambda x: x.node_type == NodeType.PRODUCTION
         ):
-            assert production.children[0].value is not None
+            assert (
+                production.children[1].value
+                if Node.has_annotation(production)
+                else production.children[0].value
+            ), 'The productions must have a symbol value.'
             symbol = production.children[0].value
-            self.cached_symbols.add(symbol)
+            self.cached_symbols.add(symbol or '')
 
         return value in self.cached_symbols
 
@@ -171,6 +205,16 @@ class Node(object):
                 NodeType.SEQUENCE,
                 children=list(map(Node.from_lark_tree, tree.children)),
             )
+        elif tree.data == 'annotations':
+            return Node(
+                NodeType.ANNOTATIONS,
+                children=list(map(Node.from_lark_tree, tree.children)),
+            )
+        elif tree.data == 'annotation':
+            return Node(
+                NodeType.ANNOTATION,
+                value=tree.children[0].value,
+            )
         else:
             raise Exception(
                 f'Unrecognized Lark type "{tree.data}".  Check grammar.'
@@ -239,3 +283,157 @@ class Node(object):
             return '\n'.join(values)
         else:
             raise Exception(f'Unrecognized node type, {self.node_type}')
+
+    @staticmethod
+    def is_symbol(x: 'Node') -> bool:
+        return x.node_type == NodeType.SYMBOL
+
+    @staticmethod
+    def is_terminal(x: 'Node') -> bool:
+        return x.node_type == NodeType.TERMINAL
+
+    @staticmethod
+    def is_production(x: 'Node') -> bool:
+        return x.node_type == NodeType.PRODUCTION
+
+    @staticmethod
+    def is_sequence(x: 'Node') -> bool:
+        return x.node_type == NodeType.SEQUENCE
+
+    @staticmethod
+    def is_expression(x: 'Node') -> bool:
+        return x.node_type == NodeType.EXPRESSION
+
+    @staticmethod
+    def is_annotation(x: 'Node') -> bool:
+        return x.node_type == NodeType.ANNOTATION
+
+    @staticmethod
+    def is_annotations(x: 'Node') -> bool:
+        return x.node_type == NodeType.ANNOTATIONS
+
+    @staticmethod
+    def has_symbol(x: str) -> Callable[['Node'], bool]:
+        def _inner(y: Node) -> bool:
+            return exists(
+                y.filter(lambda z: Node.is_symbol(z) and z.value == x)
+            )
+        return _inner
+
+    @staticmethod
+    def has_value(x: str) -> Callable[['Node'], bool]:
+        def _inner(y: Node) -> bool:
+            return hasattr(y, 'value') and y.value == x
+        return _inner
+
+    @staticmethod
+    def _production_with_lhs(symbol: str) -> Callable[['Node'], bool]:
+        def _inner(x: Node) -> bool:
+            if not Node.is_production(x):
+                return False
+            if not x.children or not Node.is_symbol(x.children[0]):
+                return False
+            return x.children[0].value == symbol
+        return _inner
+
+    @staticmethod
+    def has_annotation(node: 'Node') -> bool:
+        return exists(node.filter(Node.is_annotations))
+
+    # Production-specific functions
+    @staticmethod
+    def get_symbol(node: 'Node') -> 'Node':
+        assert Node.is_production(node)
+        if Node.is_annotations(node.children[0]):
+            return node.children[1]
+        return node.children[0]
+
+    @staticmethod
+    def has_sequence(node: 'Node', sequence: 'Node') -> bool:
+        for child in node.filter(Node.is_sequence):
+            if child.equals(sequence):
+                return True
+        return False
+
+    def to_dot(self) -> str:
+        """Prints the dot representation of the tree.
+
+        This is primarily meant for debugging.
+
+        Returns:
+            The dot representation of the tree.
+
+        """
+        name_lookup = dict()  # type: Dict['Node', str]
+        names = set()  # type: Set[str]
+        def _node_name(node: 'Node') -> str:
+            if node in name_lookup:
+                return name_lookup[node]
+            elif node.node_type in TERMINAL_NODES:
+                name = node.value.replace(
+                    '"', 'Q',
+                ).replace(
+                    '\\', 'B',
+                ).replace(
+                    '@', 'At',
+                )
+                i = 0
+                while name + str(i) in names:
+                    i += 1
+                name = name + str(i)
+                names.add(name)
+                name_lookup[node] = name
+                return name
+            elif node.node_type in NONTERMINAL_NODES:
+                name = str(node.node_type).replace('.', '_')
+                i = 0
+                while name + str(i) in names:
+                    i += 1
+                name = name + str(i)
+                names.add(name)
+                name_lookup[node] = name
+                return name
+            else:
+                raise Exception(
+                    f'Unrecognized node type {node.node_type}'
+                )
+
+        def _node_label(node: 'Node') -> str:
+            if node.node_type in TERMINAL_NODES:
+                assert node.value is not None
+                return node.value.replace('"', '\\"')
+            elif Node.is_expression(node):
+                return ''
+            else:
+                return _node_name(node)
+
+        def _node_shape(node: 'Node') -> str:
+            if Node.is_annotation(node):
+                return 'diamond'
+            elif node.node_type in TERMINAL_NODES:
+                return 'rectangle'
+            else:
+                return 'oval'
+
+        lines = ['digraph G {']
+
+        # Iterate through all the children to create the
+        # definitions.
+        for node in self._bfs():
+            name = _node_name(node)
+            label = _node_label(node)
+            shape = _node_shape(node)
+            lines.append(f'{name} [label="{label}", shape="{shape}"];')
+
+        # Iterate through all the children to create the
+        # relationships between nodes.
+        for node in self._bfs():
+            if node.node_type in TERMINAL_NODES:
+                continue
+            name = _node_name(node)
+            for child in node.children:
+                child_name = _node_name(child)
+                lines.append(f'{name} -> {child_name};')
+
+        lines.append('}')
+        return '\n'.join(lines)

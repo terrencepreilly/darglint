@@ -9,6 +9,7 @@ from bnf_to_cnf.parser import (
 )
 from bnf_to_cnf.node import (
     Node,
+    NodeType,
 )
 
 MAX_REPS = 5
@@ -105,3 +106,56 @@ class ParserTestCase(TestCase):
             complete = list(chain(*zip(comments, grammar)))
             with_comments = Parser().parse('\n'.join(complete))
             self.assertTrue(without_comments.equals(with_comments))
+
+    def test_parse_single_annotation(self):
+        """Make sure we can annotate a production with an error."""
+        grammar = '@SE001\n<sentence> ::= <wordrun> <newline>'
+        tree = Parser().parse(grammar)
+        production = tree.children[0]
+        annotations = production.children[0]
+        self.assertEqual(
+            annotations.node_type,
+            NodeType.ANNOTATIONS,
+        )
+        self.assertEqual(
+            len(annotations.children),
+            1,
+        )
+        annotation = annotations.children[0]
+        self.assertEqual(
+            annotation.node_type,
+            NodeType.ANNOTATION,
+        )
+        self.assertEqual(
+            annotation.value,
+            'SE001',
+        )
+
+    def test_parse_multiple_annotations(self):
+        """Make sure a production can have multiple annotations."""
+        grammar = '@VERBLESS\n@PUNCT\n<sentence> ::= <period> <noun>'
+        tree = Parser().parse(grammar)
+        production = tree.children[0]
+        annotations = production.children[0]
+        self.assertEqual(
+            ['VERBLESS', 'PUNCT'],
+            [x.value for x in annotations.children],
+        )
+
+    def test_parse_annotation_on_rhs(self):
+        """Make sure we can annotate a particular production."""
+        grammar = '<A> ::= @Q <B> <C>'
+        tree = Parser().parse(grammar)
+        production = tree.children[0]
+        expression = production.children[1]
+        sequence = expression.children[0]
+        annotations = sequence.children[0]
+        self.assertEqual(
+            annotations.node_type,
+            NodeType.ANNOTATIONS,
+        )
+        annotation = annotations.children[0]
+        self.assertEqual(
+            annotation.value,
+            'Q',
+        )
