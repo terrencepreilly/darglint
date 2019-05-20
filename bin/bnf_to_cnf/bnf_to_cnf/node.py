@@ -263,9 +263,29 @@ class Node(object):
         elif self.node_type == NodeType.EXPRESSION:
             return ', '.join([x.to_python() for x in self.children])
         elif self.node_type == NodeType.PRODUCTION:
-            symbol = self.children[0].to_python()
-            expression = self.children[1].to_python()
-            return ' ' * 8 + f'P({symbol}, {expression}),'
+            if Node.has_annotation(self):
+                annotation = self.children[0].to_python()
+                symbol = self.children[1].to_python()
+                expression = self.children[2].to_python()
+                return (
+                    ' ' * 8
+                    + f'P.with_annotations('
+                    + f'{annotation}, {symbol}, {expression})'
+                )
+            else:
+                symbol = self.children[0].to_python()
+                expression = self.children[1].to_python()
+                return ' ' * 8 + f'P({symbol}, {expression}),'
+        elif self.node_type == NodeType.ANNOTATIONS:
+            return (
+                '['
+                + ', '.join([n.to_python() for n in self.children])
+                + ']'
+            )
+
+        elif self.node_type == NodeType.ANNOTATION:
+            assert self.value is not None
+            return self.value
         elif self.node_type == NodeType.GRAMMAR:
             import datetime
             comment = (
