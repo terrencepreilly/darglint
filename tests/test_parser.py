@@ -400,6 +400,22 @@ class DocstringTestCase(TestCase):
         with self.assertRaises(ParserException):
             parse_type(Peaker(lex('( int (')))
 
+    def test_parse_type_with_line_continuation(self):
+        """Make sure we allow for line continuation in types.
+
+        See Issue 19.
+
+        """
+        # Should raise exception if not valid.  The ast module
+        # handles line continuation in docstrings, surprisingly.
+        # So, it just ends up looking like indents in random places.
+        # Probably, indents shouldn't have been lexed except
+        # immediately after newlines.
+        parse_type(Peaker(lex(
+            '(int, '
+            '    str)'
+        ), lookahead=2))
+
     def test_parse_line_without_indent(self):
         """Make sure lines don't need to have indents."""
         node = parse_line(Peaker(lex('word word\n')))

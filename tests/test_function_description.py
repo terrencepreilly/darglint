@@ -158,3 +158,17 @@ class GetFunctionsAndDocstrings(TestCase):
         tree = ast.parse(program)
         function = get_function_descriptions(tree)[0]
         self.assertEqual(function.argument_names, ['*nums'])
+
+    def test_multiple_returns_has_returns(self):
+        program = '\n'.join([
+            'def check_module_installed(name):',
+            '    try:',
+            '        __import__(name)',
+            '    except ImportError:',
+            '        return False',
+            '    else:',
+            '        return True',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        self.assertTrue(function.has_return)
