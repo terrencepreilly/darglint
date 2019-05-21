@@ -121,12 +121,20 @@ class Node(object):
         for production in self.filter(
             lambda x: x.node_type == NodeType.PRODUCTION
         ):
-            assert (
-                production.children[1].value
-                if Node.has_annotation(production)
-                else production.children[0].value
-            ), 'The productions must have a symbol value.'
-            symbol = production.children[0].value
+            has_annotation = (
+                len(production.children) > 1
+                and Node.is_annotations(production.children[1])
+            )
+            if has_annotation:
+                assert production.children[1].value, (
+                    'The productions must have a symbol value.'
+                )
+                symbol = production.children[1].value
+            else:
+                assert production.children[0].value, (
+                    'The productions must have a symbol value.'
+                )
+                symbol = production.children[0].value
             self.cached_symbols.add(symbol or '')
 
         return value in self.cached_symbols
@@ -250,20 +258,20 @@ class Node(object):
         elif self.node_type == NodeType.SEQUENCE:
             if len(self.children) == 1:
                 return self.children[0].to_python()
-            elif len(self.children) == 2:
-                return (
-                    f'({self.children[0].to_python()}, '
-                    f'{self.children[1].to_python()})'
-                )
             else:
-                raise Exception(
-                    f'Expected the sequence "{self}" to have one or '
-                    f'two children, but it had {len(self.children)}'
+                return (
+                    '('
+                    + ', '.join([x.to_python() for x in self.children])
+                    + ')'
                 )
         elif self.node_type == NodeType.EXPRESSION:
             return ', '.join([x.to_python() for x in self.children])
         elif self.node_type == NodeType.PRODUCTION:
-            if Node.has_annotation(self):
+            has_annotation = (
+                len(self.children) > 1
+                and Node.is_annotations(self.children[0])
+            )
+            if has_annotation:
                 annotation = self.children[0].to_python()
                 symbol = self.children[1].to_python()
                 expression = self.children[2].to_python()

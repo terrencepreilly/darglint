@@ -283,3 +283,14 @@ class TranslatorTestCase(TestCase):
             <A> ::= "a"
         ''')
         self.assertTrue(node.equals(expected), f'{node}\n\n{expected}')
+
+    def test_translate_works_with_annotation_on_nonterminal(self):
+        grammar = r'''
+            <A> ::= "b"
+                | @Q <B> <C>
+
+            <B> ::= "b"
+            <C> ::= <C>
+        '''
+        tree = Parser().parse(grammar)
+        Translator().translate(tree)
