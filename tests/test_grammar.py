@@ -3,6 +3,7 @@
 from unittest import TestCase
 
 from darglint.parse.grammar import BaseGrammar
+from darglint.parse.grammar import Production as P
 
 
 class GrammarTest(TestCase):
@@ -27,3 +28,16 @@ class GrammarTest(TestCase):
             start = ''
 
         GoodGrammar()
+
+
+class ProductionTest(TestCase):
+
+    def test_can_create_production(self):
+        P('sentence', ('verb', 'noun'))
+
+    def test_can_create_production_with_annotations(self):
+
+        class OutOfOrder(BaseException):
+            pass
+
+        P.with_annotations('sentence', [OutOfOrder], ('noun', 'verb'))

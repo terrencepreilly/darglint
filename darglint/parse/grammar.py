@@ -17,7 +17,7 @@ Derivation = Union[NonTerminalDerivation, TerminalDerivation]
 class Production(object):
     """Represents a production in a grammar."""
 
-    def __init__(self, lhs, *rhs):
+    def __init__(self, lhs, *rhs, annotations=list()):
         # # type: (str, Union[NonTerminalDerivation, TerminalDerivation]) -> None  # noqa: E501
         """Create a new production.
 
@@ -25,10 +25,18 @@ class Production(object):
             lhs: The left-hand side of the production.
             *rhs: The items in the right-hand side of the
                 production.
+            annotations: A list of annotations.  Here, they should
+                be the class of errors which are to be raised as a
+                result of the given production being parsed.
 
         """
         self.lhs = lhs
         self.rhs = rhs
+        self.annotations = annotations
+
+    @classmethod
+    def with_annotations(cls, lhs, annotations, *rhs):
+        return cls(lhs, annotations=annotations, *rhs)
 
 
 class BaseGrammar(abc.ABC):

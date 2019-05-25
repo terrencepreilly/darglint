@@ -12,6 +12,7 @@ Original grammar:
     <intrans_verb_phrase> ::=
           <intransitive_verb> <noun_phrase>
         | <intransitive_verb>
+        | @OutOfOrder <noun_phrase> <intransitive_verb>
 
     <trans_verb_phrase> ::=
           <transitive_verb> <noun_phrase>
@@ -63,6 +64,10 @@ from darglint.token import (
 )
 
 
+class OutOfOrder(BaseException):
+    pass
+
+
 class GTT(BaseTokenType):
 
     intransitive_verb = 0
@@ -73,22 +78,31 @@ class GTT(BaseTokenType):
     unknown = 4
 
 
-# Generated on 2019-04-14 12:25:50.959489
+# Generated on 2019-05-20 21:23:59.248122
 class Grammar(BaseGrammar):
     productions = [
-        P("start", ("intransitive_verb", "noun_phrase"),
-            GTT.intransitive_verb, ("noun_phrase", "trans_verb_phrase"),
-            ("transitive_verb", "noun_phrase"), GTT.transitive_verb),
-        P("trans_verb_phrase", ("transitive_verb", "noun_phrase"),
+        P("start",
+            ([], "noun_phrase", "trans_verb_phrase"),
+            ([], "transitive_verb", "noun_phrase"),
+            GTT.transitive_verb,
+            ([], "intransitive_verb", "noun_phrase"),
+            GTT.intransitive_verb,
+            ([OutOfOrder], "noun_phrase", "intransitive_verb")),
+        P("trans_verb_phrase",
+            ([], "transitive_verb", "noun_phrase"),
             GTT.transitive_verb),
-        P("noun_phrase", ("noun", "adjective"), ("noun", "noun"),
-            ("noun", "noun_phrase0"), ("noun", "noun_phrase1"), GTT.noun),
+        P("noun_phrase",
+            ([], "noun", "adjective"),
+            ([], "noun", "noun"),
+            ([], "noun", "noun_phrase0"),
+            ([], "noun", "noun_phrase1"),
+            GTT.noun),
         P("intransitive_verb", GTT.intransitive_verb),
         P("transitive_verb", GTT.transitive_verb),
         P("noun", GTT.noun),
         P("adjective", GTT.adjective),
-        P("noun_phrase0", ("adjective", "noun")),
-        P("noun_phrase1", ("noun", "adjective")),
+        P("noun_phrase0", ([], "adjective", "noun")),
+        P("noun_phrase1", ([], "noun", "adjective")),
     ]
 
     start = "start"

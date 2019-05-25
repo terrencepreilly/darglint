@@ -69,7 +69,8 @@ def parse(grammar, tokens):
                         )
                         if is_terminal_derivation:
                             continue
-                        B, C = derivation
+                        # TODO: Handle annotations.
+                        annotations, B, C = derivation
                         b = lookup[B]
                         c = lookup[C]
                         lchild = P[p - 1][s - 1][b]

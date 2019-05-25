@@ -258,6 +258,11 @@ class Node(object):
         elif self.node_type == NodeType.SEQUENCE:
             if len(self.children) == 1:
                 return self.children[0].to_python()
+            elif len(self.children) == 2:
+                return (
+                    f'([], {self.children[0].to_python()}, '
+                    f'{self.children[1].to_python()})'
+                )
             else:
                 return (
                     '('

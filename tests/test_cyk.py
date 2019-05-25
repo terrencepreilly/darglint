@@ -28,7 +28,7 @@ class SimpleKlingonGrammar(BaseGrammar):
     productions = [
         P('noun', KT.NOUN),
         P('verb', KT.VERB),
-        P('sentence', ('verb', 'noun')),
+        P('sentence', ([], 'verb', 'noun')),
     ]
 
     start = "sentence"
@@ -46,10 +46,10 @@ class AKT(BaseTokenType):
 class AmbiguousKlingonGrammar(BaseGrammar):
 
     productions = [
-        P('verb', AKT.VERB, ('verb', 'negation')),
+        P('verb', AKT.VERB, ([], 'verb', 'negation')),
         P('negation', AKT.BE),
         P('noun', AKT.NOUN, AKT.BE),
-        P('sentence', ('verb', 'noun')),
+        P('sentence', ([], 'verb', 'noun')),
     ]
 
     start = 'sentence'
@@ -71,10 +71,10 @@ class SmallGrammar(BaseGrammar):
         P('zero', ST.ZERO),
         P(
             'number',
-            ('one', 'epsilon'),
-            ('zero', 'epsilon'),
-            ('one', 'number'),
-            ('zero', 'number'),
+            ([], 'one', 'epsilon'),
+            ([], 'zero', 'epsilon'),
+            ([], 'one', 'number'),
+            ([], 'zero', 'number'),
         ),
     ]
 
