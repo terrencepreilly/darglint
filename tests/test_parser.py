@@ -40,12 +40,22 @@ from darglint.peaker import (
     Peaker
 )
 
+from darglint.parse.grammars.google import (
+    Grammar,
+)
+from darglint.parse.cyk import parse as parse_cyk
+from .utils import (
+    replace,
+    remove,
+)
+
 
 class DocstringTestCase(TestCase):
 
     # examples taken from
     # http://www.sphinx-doc.org/en/stable/ext/example_google.html
 
+    @replace()
     def test_parse_noqa_for_argument(self):
         """Make sure we can get the noqas."""
         func = '\n'.join([
@@ -67,6 +77,7 @@ class DocstringTestCase(TestCase):
         noqas = docstring.get_noqas()
         self.assertTrue('arg1' in noqas['I102'])
 
+    @replace()
     def test_parse_noqa_for_global(self):
         """Make sure global targets are empty lists."""
         func = '\n'.join([
@@ -88,6 +99,7 @@ class DocstringTestCase(TestCase):
             )
         )
 
+    @replace()
     def test_parse_global_noqa_with_target(self):
         """Make sure targets are present in the lists."""
         func = '\n'.join([
@@ -106,6 +118,7 @@ class DocstringTestCase(TestCase):
             'arg1' in noqas['I101']
         )
 
+    @replace()
     def test_parses_long_description(self):
         """Make sure we can parse the long description.
 
@@ -140,6 +153,7 @@ class DocstringTestCase(TestCase):
             'but was {}'.format(repr(long_description[:20]))
         )
 
+    @replace()
     def test_arguments_extracted_when_extant(self):
         """Make sure the arguments can be parsed."""
         docstring = '\n'.join([
@@ -165,6 +179,7 @@ class DocstringTestCase(TestCase):
         self.assertTrue('param1' in args)
         self.assertTrue('param2' in args)
 
+    @replace()
     def test_arguments_with_multiple_lines(self):
         """Make sure multiple lines are okay in items."""
         docstring = '\n'.join([
@@ -194,6 +209,7 @@ class DocstringTestCase(TestCase):
         for arg in 'param1', 'param2', '*args', '**kwargs':
             self.assertTrue(arg in args)
 
+    @replace()
     def test_arguments_are_last(self):
         """Make sure arguments can be parsed as the last section."""
         docstring = '\n'.join([
@@ -219,6 +235,7 @@ class DocstringTestCase(TestCase):
         for arg in ['param1', 'param2', 'param3']:
             arg in args
 
+    @replace()
     def test_can_parse_yields(self):
         """Make sure we can parse the yields section."""
         docstring = '\n'.join([
@@ -232,6 +249,7 @@ class DocstringTestCase(TestCase):
         doc = Docstring(docstring)
         self.assertTrue(len(doc.get_section(Sections.YIELDS_SECTION)) > 0)
 
+    @replace()
     def test_can_parse_raises(self):
         """Make sure we can parse the raises section."""
         docstring = '\n'.join([
@@ -245,6 +263,7 @@ class DocstringTestCase(TestCase):
             Sections.RAISES_SECTION)
         )
 
+    @replace()
     def test_argument_types_can_be_parsed(self):
         docstring = '\n'.join([
             'This docstring contains types for its arguments.',
@@ -264,6 +283,7 @@ class DocstringTestCase(TestCase):
         self.assertEqual(arg_types['x'], 'int')
         self.assertEqual(arg_types['y'], 'float')
 
+    @replace()
     def test_can_parse_return_type(self):
         docstring = '\n'.join([
             'Return an approximation of pi.',
@@ -274,6 +294,7 @@ class DocstringTestCase(TestCase):
         doc = Docstring(docstring)
         self.assertEqual(doc.get_types(Sections.RETURNS_SECTION), 'Decimal')
 
+    @replace()
     def test_star_arguments_parsed(self):
         docstring = '\n'.join([
             'Negate a function which returns a boolean.',
@@ -289,6 +310,7 @@ class DocstringTestCase(TestCase):
         doc = Docstring(docstring)
         self.assertTrue('*fns' in doc.get_items(Sections.ARGUMENTS_SECTION))
 
+    @replace()
     def test_bare_noqa_can_be_parsed(self):
         docstring = '\n'.join([
             'The first line may have something, but others are missing.',
@@ -297,6 +319,7 @@ class DocstringTestCase(TestCase):
         ])
         Docstring(docstring)
 
+    @remove
     def test_parse_keyword(self):
         """Make sure we can parse keywords."""
         for word, node_type in [
@@ -316,12 +339,14 @@ class DocstringTestCase(TestCase):
                 word,
             )
 
+    @remove
     def test_parse_keyword_fails(self):
         """Make sure incorrectly calling the keyword parse fails."""
         for word in ['Not', 'a', 'keyword', 'args']:
             with self.assertRaises(ParserException):
                 parse_keyword(Peaker(lex(word)), KEYWORDS)
 
+    @remove
     def test_parse_colon(self):
         """Make sure we can parse colons."""
         node = parse_colon(Peaker(lex(':')))
@@ -329,6 +354,7 @@ class DocstringTestCase(TestCase):
             node.node_type, NodeType.COLON
         )
 
+    @remove
     def test_parse_word(self):
         """Make sure we can parse a word."""
         node = parse_word(Peaker(lex('joHwI\'')))
@@ -341,6 +367,7 @@ class DocstringTestCase(TestCase):
             'joHwI\'',
         )
 
+    @remove
     def test_parse_primitive_type(self):
         """Make sure we can parse a primitive type like int or str."""
         node = parse_type(Peaker(lex('(int)')))
@@ -353,11 +380,13 @@ class DocstringTestCase(TestCase):
             'int',
         )
 
+    @remove
     def test_type_cannot_by_empty(self):
         """Make sure that if we have a type it cannot be empty."""
         with self.assertRaises(ParserException):
             parse_type(Peaker(lex('()')))
 
+    @remove
     def test_parse_compound_type(self):
         """Make sure we can parse a type declaration with multiple items.
 
@@ -379,6 +408,7 @@ class DocstringTestCase(TestCase):
             'optional',
         )
 
+    @replace()
     def test_parse_type_with_colon(self):
         """Parse a type using the colon syntax."""
         node = parse_type(Peaker(lex('str:')))
@@ -391,6 +421,7 @@ class DocstringTestCase(TestCase):
             'str',
         )
 
+    @replace()
     def test_must_have_parentheses_around(self):
         """Make sure the type has to start with ( and end with )."""
         with self.assertRaises(ParserException):
@@ -400,6 +431,7 @@ class DocstringTestCase(TestCase):
         with self.assertRaises(ParserException):
             parse_type(Peaker(lex('( int (')))
 
+    @replace()
     def test_parse_type_with_line_continuation(self):
         """Make sure we allow for line continuation in types.
 
@@ -416,6 +448,7 @@ class DocstringTestCase(TestCase):
             '    str)'
         ), lookahead=2))
 
+    @remove
     def test_parse_line_without_indent(self):
         """Make sure lines don't need to have indents."""
         node = parse_line(Peaker(lex('word word\n')))
@@ -429,6 +462,7 @@ class DocstringTestCase(TestCase):
             [NodeType.WORD, NodeType.WORD, NodeType.LINE],
         )
 
+    @replace()
     def test_parse_empty_line(self):
         """Make sure we can parse a line with just an indent."""
         node = parse_line(Peaker(lex(' '*4 + '\n')))
@@ -442,6 +476,7 @@ class DocstringTestCase(TestCase):
             [NodeType.INDENT, NodeType.LINE],
         )
 
+    @remove
     def test_parse_line_with_words(self):
         """Make sure we can parse a line with words."""
         node = parse_line(Peaker(lex(
@@ -466,6 +501,7 @@ class DocstringTestCase(TestCase):
             ]
         )
 
+    @replace()
     def test_parse_line_with_parentheses(self):
         """Make sure lines can have parentheses in them."""
         node = parse_line(Peaker(lex(
@@ -476,6 +512,7 @@ class DocstringTestCase(TestCase):
             NodeType.LINE,
         )
 
+    @replace()
     def test_parse_line_with_multiple_indents(self):
         """Make sure code snippets are okay."""
         node = parse_line(Peaker(lex(
@@ -496,6 +533,7 @@ class DocstringTestCase(TestCase):
             ]
         )
 
+    @replace()
     def test_parse_line_with_colons(self):
         """Make sure lines with colons can be parsed."""
         node = parse_line(Peaker(lex(
@@ -516,6 +554,7 @@ class DocstringTestCase(TestCase):
             ]
         )
 
+    @replace()
     def test_parse_line_which_looks_like_definition(self):
         """Make sure a line which looks like a definition can be parsed."""
         node = parse_line(Peaker(lex(
@@ -538,6 +577,7 @@ class DocstringTestCase(TestCase):
             ]
         )
 
+    @remove
     def test_parse_returns_section(self):
         """Make sure can parse returns section."""
         node = parse_simple_section(Peaker(lex(
@@ -566,6 +606,7 @@ class DocstringTestCase(TestCase):
             ]
         )
 
+    @replace()
     def test_parse_line_with_type(self):
         """Make sure we can parse a line when it starts with a type."""
         node = parse_line_with_type(Peaker(lex(
@@ -590,12 +631,14 @@ class DocstringTestCase(TestCase):
             ]
         )
 
+    @replace()
     def test_parse_line_without_type_but_with_parentheses(self):
         """Make sure we can have parentheses otherwise."""
         parse_line_with_type(Peaker(lex(
             '    A list of items (of type T), which pass the given test'
         )))
 
+    @replace()
     def test_parse_returns_section_with_type(self):
         """Make sure the returns section can have a type."""
         node = parse_simple_section(Peaker(lex(
@@ -627,6 +670,7 @@ class DocstringTestCase(TestCase):
             ]
         )
 
+    @replace()
     def test_parse_yields_section(self):
         """Make sure we can parse a yields section."""
         node = parse_simple_section(Peaker(lex(
@@ -656,6 +700,7 @@ class DocstringTestCase(TestCase):
             ]
         )
 
+    @remove
     def test_parse_simple_section_cannot_start_with_args(self):
         """Make sure the simple section starts with return or yield."""
         with self.assertRaises(ParserException):
@@ -665,6 +710,7 @@ class DocstringTestCase(TestCase):
                 '\n'
             )))
 
+    @remove
     def test_parse_item(self):
         """Make sure we can parse the parts of a compound section."""
         node = parse_item(Peaker(lex(
@@ -701,6 +747,7 @@ class DocstringTestCase(TestCase):
             ]
         )
 
+    @remove
     def test_parse_compound(self):
         """Make sure we can parse a compound section."""
         node = parse_compound_section(Peaker(lex('\n'.join([
@@ -726,6 +773,7 @@ class DocstringTestCase(TestCase):
             NodeType.ITEM,
         )
 
+    @remove
     def test_parse_args(self):
         """Make sure we can parse an args section."""
         node = parse_args(Peaker(lex('\n'.join([
@@ -735,6 +783,7 @@ class DocstringTestCase(TestCase):
         ])), lookahead=3))
         self.assertEqual(node.node_type, NodeType.ARGS_SECTION)
 
+    @remove
     def test_parse_raises(self):
         """Make sure we can parse the exceptions section."""
         node = parse_raises(Peaker(lex(
@@ -748,6 +797,7 @@ class DocstringTestCase(TestCase):
             NodeType.RAISES_SECTION,
         )
 
+    @remove
     def test_parse_yields(self):
         node = parse_yields(Peaker(lex(
             'Yields:\n'
@@ -759,6 +809,7 @@ class DocstringTestCase(TestCase):
             NodeType.YIELDS_SECTION,
         )
 
+    @remove
     def test_parse_returns(self):
         node = parse_returns(Peaker(lex(
             'Returns:\n'
@@ -771,6 +822,7 @@ class DocstringTestCase(TestCase):
             NodeType.RETURNS_SECTION,
         )
 
+    @replace('test_parse_short_description_cyk')
     def test_parse_short_description(self):
         """Make sure we can parse the first line in the docstring."""
         node = parse_short_description(Peaker(lex(
@@ -786,6 +838,12 @@ class DocstringTestCase(TestCase):
             ]
         )
 
+    def test_parse_short_description_cyk(self):
+        parse_cyk(Grammar, list(lex(
+            'This is a short description.\n'
+        )))
+
+    @replace()
     def test_parse_whole_description(self):
         """Make sure we can handle descriptions of multiple lines."""
         node = parse_description(Peaker(lex(
@@ -819,6 +877,7 @@ class DocstringTestCase(TestCase):
             ]
         )
 
+    @replace()
     def test_description_ends_with_sections(self):
         """Make sure the description section doesn't eat everything."""
         peaker = Peaker(lex(
@@ -840,6 +899,7 @@ class DocstringTestCase(TestCase):
             NodeType.RETURNS_SECTION,
         )
 
+    @replace()
     def test_long_description_can_come_between_sections(self):
         """Make sure non-standard parts are treated as descriptions."""
         node = parse(Peaker(lex('\n'.join([
@@ -861,6 +921,7 @@ class DocstringTestCase(TestCase):
             NodeType.LONG_DESCRIPTION,
         )
 
+    @replace()
     def test_parses_all_section_types(self):
         """Make sure all section types can be parsed."""
         node = parse(Peaker(lex('\n'.join([
@@ -894,6 +955,7 @@ class DocstringTestCase(TestCase):
             ]
         )
 
+    @replace()
     def test_parse_bare_noqa_statement(self):
         """Make sure we can parse noqa statements."""
         node = parse_noqa(Peaker(lex('# noqa\n')))
@@ -907,6 +969,7 @@ class DocstringTestCase(TestCase):
             ]
         )
 
+    @replace()
     def test_parse_noqa_with_target(self):
         """Make sure we can target a specific error message."""
         node = parse_noqa(Peaker(lex('# noqa: I203\n')))
@@ -923,6 +986,7 @@ class DocstringTestCase(TestCase):
             ],
         )
 
+    @replace()
     def test_parse_noqa_with_target_and_argument(self):
         """Make sure we can target specific args in a noqa."""
         node = parse_noqa(Peaker(lex('# noqa: I101 arg1, arg2\n')))
@@ -942,6 +1006,7 @@ class DocstringTestCase(TestCase):
             ]
         )
 
+    @replace()
     def test_parse_inline_noqa_statements(self):
         """Make sure we can parse noqa statements."""
         node = parse_line(Peaker(lex('Something something.  # noqa: I201\n')))
@@ -962,6 +1027,7 @@ class DocstringTestCase(TestCase):
             ]
         )
 
+    @replace()
     def test_only_indents_treated_as_newlines_in_compound(self):
         """Make sure that erroneous indentation is treated like newlines.
 
@@ -983,6 +1049,7 @@ class DocstringTestCase(TestCase):
             'The return section should not have been swallowed.',
         )
 
+    @replace()
     def test_only_indents_treated_newlines_within_simple_section(self):
         """Make sure indent-only lines are treated as newlines in simple."""
         root = parse(Peaker(lex('\n'.join([
@@ -1001,6 +1068,7 @@ class DocstringTestCase(TestCase):
             raises is not None,
         )
 
+    @replace()
     def test_parse_long_description_with_noqa(self):
         """Make sure noqas can appear in a global scope."""
         parse(Peaker(lex('\n'.join([
@@ -1012,6 +1080,7 @@ class DocstringTestCase(TestCase):
             '\n'
         ])), lookahead=3))
 
+    @replace()
     def test_parse_short_description_without_blank_line_raises_error(self):
         """Make sure there must be a blank line after the short description."""
         peaker = Peaker(lex('\n'.join([
@@ -1024,6 +1093,7 @@ class DocstringTestCase(TestCase):
         with self.assertRaises(ParserException):
             parse(peaker)
 
+    @replace()
     def test_all_nodes_have_line_numbers(self):
         """Make sure all nodes in the AST have line numbers."""
         peaker = Peaker(lex('\n'.join([
@@ -1056,6 +1126,7 @@ class DocstringTestCase(TestCase):
                 )
             )
 
+    @replace()
     def test_single_word_sections_parse_correctly(self):
         """Make sure we can have a minimal amount of words in each section."""
         contents = '\n'.join([
@@ -1092,7 +1163,7 @@ class StyleWarningsTestCase(TestCase):
     """Tests for the new style warnings.
 
     The new style warning require the ability to parse an ambiguous
-    grammare.  This means the parser will be something like a GLR parser
+    grammar.  This means the parser will be something like a GLR parser
     Since there could be multiple instances of the word "Returns" or
     something in the docstring, we could have a very large parse
     tree.  It may be worth looking into a chart parser.  (wiki/Chart_parser)
