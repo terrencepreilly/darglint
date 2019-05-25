@@ -294,3 +294,15 @@ class TranslatorTestCase(TestCase):
         '''
         tree = Parser().parse(grammar)
         Translator().translate(tree)
+
+    def test_translate_with_recursion(self):
+        grammar = r'''
+            <start> ::= <b>
+
+            <b> ::= <c> <b>
+                | <c>
+
+            <c> ::= "A"
+        '''
+        tree = Parser().parse(grammar)
+        Translator().translate(tree)

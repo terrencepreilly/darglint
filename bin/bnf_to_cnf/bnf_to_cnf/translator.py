@@ -591,7 +591,9 @@ class Translator(object):
             if is_terminal:
                 continue
             for child in graph[current]:
-                queue.appendleft(child)
+                # Ignore children we've already processed, preventing cycles.
+                if child not in encountered:
+                    queue.appendleft(child)
 
         # Remove all non-encountered nodes.
         to_remove = set(graph.keys()) - encountered
