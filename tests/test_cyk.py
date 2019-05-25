@@ -34,55 +34,7 @@ class SimpleKlingonGrammar(BaseGrammar):
     start = "sentence"
 
 
-class AKT(BaseTokenType):
-
-    # Could be a noun or a negation.
-    BE = 1
-
-    VERB = 1
-    NOUN = 2
-
-
-class AmbiguousKlingonGrammar(BaseGrammar):
-
-    productions = [
-        P('verb', AKT.VERB, ([], 'verb', 'negation')),
-        P('negation', AKT.BE),
-        P('noun', AKT.NOUN, AKT.BE),
-        P('sentence', ([], 'verb', 'noun')),
-    ]
-
-    start = 'sentence'
-
-
-class ST(BaseTokenType):
-
-    ZERO = 0
-    ONE = 1
-    EPSILON = 2
-
-
-class SmallGrammar(BaseGrammar):
-    """Represents a very small grammar."""
-
-    productions = [
-        P('one', ST.ONE),
-        P('epsilon', ST.EPSILON),
-        P('zero', ST.ZERO),
-        P(
-            'number',
-            ([], 'one', 'epsilon'),
-            ([], 'zero', 'epsilon'),
-            ([], 'one', 'number'),
-            ([], 'zero', 'number'),
-        ),
-    ]
-
-    start = 'number'
-
-
-class CykTest(TestCase):
-    """Test the CYK parse implementation."""
+class KlingonGrammarTest(TestCase):
 
     def test_parse_simple_member(self):
         """Make sure that we can recognize a valid string in the language."""
@@ -120,33 +72,6 @@ class CykTest(TestCase):
         """Make sure we don't crash with an empty list."""
         self.assertFalse(parse(SimpleKlingonGrammar, []))
 
-    def test_parse_long_sentence_small_grammar(self):
-        """Make sure we can handle a decently long string."""
-        max_string_length = 50
-        sentence = list()
-        for _ in range(max_string_length):
-            if random.random() < 0.5:
-                sentence.append(Token(
-                    value='0',
-                    token_type=ST.ZERO,
-                    line_number=0,
-                ))
-            else:
-                sentence.append(Token(
-                    value='1',
-                    token_type=ST.ONE,
-                    line_number=0,
-                ))
-        sentence.append(Token(
-            value='ε',
-            token_type=ST.EPSILON,
-            line_number=0,
-        ))
-        self.assertTrue(parse(
-            SmallGrammar,
-            sentence
-        ))
-
     def test_parse_returns_parse_tree(self):
         """Make sure the parse returned a valid tree."""
         lexed = [
@@ -168,6 +93,30 @@ class CykTest(TestCase):
         self.assertEqual(node.lchild.value, lexed[0])
         self.assertEqual(node.rchild.symbol, 'noun')
         self.assertEqual(node.rchild.value, lexed[1])
+
+
+class AKT(BaseTokenType):
+
+    # Could be a noun or a negation.
+    BE = 1
+
+    VERB = 1
+    NOUN = 2
+
+
+class AmbiguousKlingonGrammar(BaseGrammar):
+
+    productions = [
+        P('verb', AKT.VERB, ([], 'verb', 'negation')),
+        P('negation', AKT.BE),
+        P('noun', AKT.NOUN, AKT.BE),
+        P('sentence', ([], 'verb', 'noun')),
+    ]
+
+    start = 'sentence'
+
+
+class AmbiguousKlingonGrammarTest(TestCase):
 
     def test_parses_ambiguous_grammars(self):
         """Make sure it can parse an ambigous grammar."""
@@ -203,6 +152,158 @@ class CykTest(TestCase):
             ),
         ]
         self.assertTrue(parse(AmbiguousKlingonGrammar, lexed_negative))
+
+
+class EKG(BaseTokenType):
+
+    NOUN = 0
+    TRANSITIVE_VERB = 1
+    INTRANSITIVE_VERB = 2
+
+
+def ekg_lex(s):
+    lookup = {
+        'loD': EKG.NOUN,
+        'qam': EKG.NOUN,
+        'qet': EKG.INTRANSITIVE_VERB,
+        'qIp': EKG.TRANSITIVE_VERB,
+    }
+    ret = []
+    i = 0
+    for line in s.split('\n'):
+        for word in line.split():
+            ret.append(
+                Token(
+                    value=word,
+                    token_type=lookup[word],
+                    line_number=i,
+                )
+            )
+        i += 1
+    return ret
+
+
+class KlingonError(BaseException):
+    pass
+
+
+class ErrorKlingonGrammar(BaseGrammar):
+    """Represents a grammar which can handle erroneous members."""
+
+    productions = [
+        P('sentence',
+            ([], 'verb_phrase', 'noun'),
+            ([], 'intransitive_verb', 'noun')),
+        P('verb_phrase', ([], 'noun', 'transitive_verb')),
+        P('verb_phrase', ([KlingonError], 'noun', 'intransitive_verb')),
+        P('noun', EKG.NOUN),
+        P('intransitive_verb', EKG.INTRANSITIVE_VERB),
+        P('transitive_verb', EKG.TRANSITIVE_VERB),
+    ]
+
+    start = 'sentence'
+
+
+class ErrorKlingonGrammarTest(TestCase):
+
+    def has_annotation(self, node, guard=0):
+        assert guard < 100, 'We have some sort of loop.'
+        if node is None:
+            return False
+        if node.annotations:
+            return True
+        return (
+            self.has_annotation(node.lchild, guard + 1)
+            or self.has_annotation(node.rchild, guard + 1)
+        )
+
+    def _debug(self, node, indent=0):
+        print(
+            ' ' * indent
+            + node.symbol
+            + ', '.join([str(x) for x in node.annotations])
+        )
+        if node.lchild:
+            self._debug(node.lchild, indent + 2)
+        if node.rchild:
+            self._debug(node.rchild, indent + 2)
+
+    def test_valid_case(self):
+        lexed = ekg_lex('qet loD')
+        node = parse(ErrorKlingonGrammar, lexed)
+        self.assertTrue(node is not None)
+        self.assertEqual(node.symbol, 'sentence')
+        self.assertEqual(node.lchild.symbol, 'intransitive_verb')
+        self.assertEqual(node.rchild.symbol, 'noun')
+        self.assertFalse(self.has_annotation(node))
+
+    def test_invalid_case(self):
+        lexed = ekg_lex('qam qet')
+        node = parse(ErrorKlingonGrammar, lexed)
+        self.assertTrue(node is None)
+
+    def test_error_case(self):
+        lexed = ekg_lex('qam qet loD')
+        node = parse(ErrorKlingonGrammar, lexed)
+        self.assertTrue(node is not None)
+        self._debug(node)
+        self.assertTrue(self.has_annotation(node))
+
+
+class ST(BaseTokenType):
+
+    ZERO = 0
+    ONE = 1
+    EPSILON = 2
+
+
+class SmallGrammar(BaseGrammar):
+    """Represents a very small grammar."""
+
+    productions = [
+        P('one', ST.ONE),
+        P('epsilon', ST.EPSILON),
+        P('zero', ST.ZERO),
+        P(
+            'number',
+            ([], 'one', 'epsilon'),
+            ([], 'zero', 'epsilon'),
+            ([], 'one', 'number'),
+            ([], 'zero', 'number'),
+        ),
+    ]
+
+    start = 'number'
+
+
+class SimpleGrammarTest(TestCase):
+
+    def test_parse_long_sentence_small_grammar(self):
+        """Make sure we can handle a decently long string."""
+        max_string_length = 50
+        sentence = list()
+        for _ in range(max_string_length):
+            if random.random() < 0.5:
+                sentence.append(Token(
+                    value='0',
+                    token_type=ST.ZERO,
+                    line_number=0,
+                ))
+            else:
+                sentence.append(Token(
+                    value='1',
+                    token_type=ST.ONE,
+                    line_number=0,
+                ))
+        sentence.append(Token(
+            value='ε',
+            token_type=ST.EPSILON,
+            line_number=0,
+        ))
+        self.assertTrue(parse(
+            SmallGrammar,
+            sentence
+        ))
 
 
 def verify_implementation():

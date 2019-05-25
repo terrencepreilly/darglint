@@ -17,6 +17,7 @@ article, https://en.wikipedia.org/wiki/CYK_algorithm.
 """
 
 from typing import (
+    Any,
     Optional,
     List,
 )
@@ -35,13 +36,18 @@ from ..token import (
 class CykNode(object):
     """A node for use in a cyk parse."""
 
-    # TODO: Change symbol's type to NodeType.
-    def __init__(self, symbol, lchild=None, rchild=None, value=None):
-        # type: (str, Optional[CykNode], Optional[CykNode], Optional[Token]) -> None  # noqa: E501
+    def __init__(self,
+                 symbol,
+                 lchild=None,
+                 rchild=None,
+                 value=None,
+                 annotations=list()):
+        # type: (str, Optional[CykNode], Optional[CykNode], Optional[Token], List[Any]) -> None  # noqa: E501
         self.symbol = symbol
         self.lchild = lchild
         self.rchild = rchild
         self.value = value
+        self.annotations = annotations
 
 
 def parse(grammar, tokens):
@@ -69,7 +75,6 @@ def parse(grammar, tokens):
                         )
                         if is_terminal_derivation:
                             continue
-                        # TODO: Handle annotations.
                         annotations, B, C = derivation
                         b = lookup[B]
                         c = lookup[C]
@@ -77,6 +82,9 @@ def parse(grammar, tokens):
                         rchild = P[l - p - 1][s + p - 1][c]
                         if lchild and rchild:
                             P[l - 1][s - 1][a] = CykNode(
-                                production.lhs, lchild, rchild
+                                production.lhs,
+                                lchild,
+                                rchild,
+                                annotations=annotations,
                             )
     return P[n - 1][0][lookup[grammar.start]]
