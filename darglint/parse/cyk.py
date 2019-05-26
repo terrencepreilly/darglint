@@ -18,6 +18,7 @@ article, https://en.wikipedia.org/wiki/CYK_algorithm.
 
 from typing import (
     Any,
+    Iterator,
     Optional,
     List,
 )
@@ -48,6 +49,60 @@ class CykNode(object):
         self.rchild = rchild
         self.value = value
         self.annotations = annotations
+
+    def __str__(self, indent=0):
+        if self.value:
+            ret = (
+                ' ' * indent
+                + str(self.value.token_type)
+                + ': '
+                + repr(self.value.value)
+            )
+        else:
+            ret = ' ' * indent + self.symbol
+        if self.annotations:
+            ret += ': ' + ', '.join([str(x) for x in self.annotations])
+        if self.lchild:
+            ret += '\n' + self.lchild.__str__(indent + 2)
+        if self.rchild:
+            ret += '\n' + self.rchild.__str__(indent + 2)
+        return ret
+
+    # TODO: Make this imperative.
+    def in_order_traverse(self):
+        # type: () -> Iterator['CykNode']
+        if self.lchild:
+            yield from self.lchild.in_order_traverse()
+        yield self
+        if self.rchild:
+            yield from self.rchild.in_order_traverse()
+
+    def reconstruct_string(self, strictness=0):
+        # type: (int) -> str
+        """Reconstruct the docstring.
+
+        This method should rebuild the docstring while fixing style
+        errors.  The errors themselves determine how to fix the node
+        they apply to.  (If there isn't a good fix, then it's just the
+        identity function.)
+
+        Args:
+            strictness: How strictly we should correct.  If an error
+                doesn't match the strictness, we won't correct for
+                that error.
+
+        Returns:
+            The docstring, reconstructed.
+
+        """
+        ret = ''
+        for node in self.in_order_traverse():
+            if node.value:
+                # TODO: Make this into a not-gross check.
+                if ret and node.value.value != '\n':
+                    ret += ' '
+                ret += node.value.value
+        return ret
 
 
 def parse(grammar, tokens):

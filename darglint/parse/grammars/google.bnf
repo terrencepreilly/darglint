@@ -69,7 +69,8 @@
     ::= <short_description>
 
 <short_description>
-    ::= <line>
+    ::= <line> <newline>
+    | <line>
 
 <line>
     ::= <word> <line>
@@ -77,3 +78,6 @@
 
 <word>
     ::= "TokenType\.WORD"
+
+<newline>
+    ::= "TokenType\.NEWLINE"

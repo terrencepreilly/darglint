@@ -839,9 +839,24 @@ class DocstringTestCase(TestCase):
         )
 
     def test_parse_short_description_cyk(self):
-        parse_cyk(Grammar, list(lex(
-            'This is a short description.\n'
-        )))
+        short_description = 'This is a short description.\n'
+        tokens = list(lex(short_description))
+        node = parse_cyk(Grammar, tokens)
+        self.assertTrue(node is not None)
+        self.assertEqual(
+            node.reconstruct_string(),
+            short_description,
+        )
+
+    def test_short_description_can_be_without_newline(self):
+        short_description = 'This is a short description.'
+        tokens = list(lex(short_description))
+        node = parse_cyk(Grammar, tokens)
+        self.assertTrue(node is not None)
+        self.assertEqual(
+            node.reconstruct_string(),
+            short_description,
+        )
 
     @replace()
     def test_parse_whole_description(self):
