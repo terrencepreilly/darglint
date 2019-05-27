@@ -19,6 +19,9 @@ class TokenType(BaseTokenType):
     LPAREN = 7  # (
     RPAREN = 8  # )
 
+    RETURNS = 9
+    YIELDS = 10
+
 
 class Token(object):
     """A token representing anything which can appear in a docstring."""

@@ -62,22 +62,94 @@
 # colon   = ":"
 # newline = "\n"
 
+
+# No non-terminal tokens should end in a newline, except at the
+# docstring level.  This allows us to more explicitly control
+# newlines in a consistent way.
+
 <start>
     ::= <docstring>
 
 <docstring>
-    ::= <short_description>
+    ::= <short-description> <sections> <newlines>
 
-<short_description>
-    ::= <line> <newline>
+<sections>
+    ::= <split> <long-description> <sections>
+    | <split> <returns-section> <sections>
+    | <split> <yields-section> <sections>
+    | ε
+
+<short-description>
+    ::= <line>
+
+<long-description>
+    ::= <block>
+
+<returns-section>
+    ::= <returns> <colon> <newline> <block-indented>
+
+<yields-section>
+    ::= <yields> <colon> <newline> <block-indented>
+
+<block-indented>
+    ::= <paragraph-indented> <split> <block-indented>
+    | <paragraph-indented>
+
+<block>
+    ::= <paragraph> <split> <block>
+    | <paragraph>
+
+<paragraph-indented>
+    ::= <indented> <line> <newline> <paragraph-indented>
+    | <indented> <line>
+
+<paragraph>
+    ::= <line> <newline> <paragraph>
     | <line>
 
 <line>
     ::= <word> <line>
     | <word>
+    | <indent>
+
+<indented>
+    ::= <indent> <indents>
+
+<indents>
+    ::= <indent> <indents>
+    | ε
+
+<split>
+    ::= <newline> <newline> <newlines>
+
+<newlines>
+    ::= <newline> <newlines>
+    | ε
+
+<returns>
+    ::= "TokenType\.RETURNS"
+
+<yields>
+    ::= "TokenType\.YIELDS"
+
+<colon>
+    ::= "TokenType\.COLON"
+
+<lparen>
+    ::= "TokenType\.LPAREN"
+
+<rparen>
+    ::= "TokenType\.RPAREN"
 
 <word>
     ::= "TokenType\.WORD"
+    | "TokenType\.RETURNS"
+    | "TokenType\.COLON"
+    | "TokenType\.LPAREN"
+    | "TokenType\.RPAREN"
+
+<indent>
+    ::= "TokenType\.INDENT"
 
 <newline>
     ::= "TokenType\.NEWLINE"

@@ -1,5 +1,6 @@
 from unittest import (
     TestCase,
+    skip,
 )
 
 from bnf_to_cnf.translator import (
@@ -303,6 +304,29 @@ class TranslatorTestCase(TestCase):
                 | <c>
 
             <c> ::= "A"
+        '''
+        tree = Parser().parse(grammar)
+        Translator().translate(tree)
+
+    @skip('Handle this eventually.')
+    def test_translate_unending_lists(self):
+        """Make sure we can encode an optional item-neverending list.
+
+        This probably means there is something wrong with the epsilon
+        reduction step. But, really, it's not necessary that it work with
+        this rule, since it could be rewritten as
+
+            <start> ::= <A>
+            <A> ::= <B> <A> | ε
+            <B> ::= "C"
+
+        And mean the same thing.
+
+        """
+        grammar = r'''
+            <start> ::= <A>
+            <A>     ::= <B> <A> | ε
+            <B>     ::= "C"     | ε
         '''
         tree = Parser().parse(grammar)
         Translator().translate(tree)

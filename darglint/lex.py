@@ -131,3 +131,67 @@ def lex(program):
                 extra = ''
             assert len(value) > 0, "There should be non-special characters."
             yield Token(value, TokenType.WORD, line_number)
+
+
+KEYWORDS = {
+    # 'Args': NodeType.ARGUMENTS,
+    # 'Arguments': NodeType.ARGUMENTS,
+    # 'Returns': NodeType.RETURNS,
+    'Yields': TokenType.YIELDS,
+    # 'Raises': NodeType.RAISES,
+    'Returns': TokenType.RETURNS,
+}
+
+
+def condense(tokens):
+    # type: (Iterator[Token]) -> List[Token]
+    """Condense the stream of tokens into a list consumable by CYK.
+
+    This servers two purposes:
+
+    1. It minimizes the lookup table used in the CYK algorithm.
+       (The CYK algorithm is a dynamic algorithm, with one dimension
+       in the two-dimension lookup table being determined by the number
+       of tokens.)
+
+    2. It applies more discriminate token types to the tokens identified
+       by lex.  Eventually, this will be moved into the lex function.
+
+    Args:
+        tokens: The stream of tokens from the lex function.
+
+    Returns:
+        A List of tokens which have been condensed into as small a
+        representation as possible.
+
+    """
+    ret = list()  # type: List[Token]
+    try:
+        curr = next(tokens)
+    except StopIteration:
+        return ret
+
+    if curr.value in KEYWORDS:
+        curr.token_type = KEYWORDS[curr.value]
+
+    for token in tokens:
+        if token.token_type == TokenType.WORD and token.value in KEYWORDS:
+            ret.append(curr)
+            curr = Token(
+                token.value,
+                KEYWORDS[token.value],
+                token.line_number,
+            )
+        elif token.token_type == TokenType.WORD:
+            if curr.token_type == TokenType.WORD:
+                curr.value += ' {}'.format(token.value)
+            else:
+                ret.append(curr)
+                curr = token
+        else:
+            ret.append(curr)
+            curr = token
+
+    ret.append(curr)
+
+    return ret

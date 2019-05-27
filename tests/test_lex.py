@@ -1,6 +1,9 @@
 from unittest import TestCase
 from darglint.token import TokenType
-from darglint.lex import lex
+from darglint.lex import (
+    condense,
+    lex,
+)
 
 
 class LexTestCase(TestCase):
@@ -115,4 +118,39 @@ class LexTestCase(TestCase):
         self.assertEqual(
             [x.token_type for x in tokens],
             [TokenType.WORD, TokenType.LPAREN]
+        )
+
+
+class CondenseTests(TestCase):
+
+    def test_dissimilar_types_passes_directly(self):
+        tokens = list(lex('This ( returns : )'))
+        condensed = condense((x for x in tokens))
+        self.assertEqual(
+            tokens,
+            condensed,
+        )
+
+    def test_words_get_concatenated(self):
+        tokens = lex('word' + '   word' * 4)
+        condensed = condense(tokens)
+        self.assertEqual(
+            len(condensed),
+            1,
+        )
+
+    def test_condensed_words_single_spaced(self):
+        tokens = lex('word' + '   word' * 4)
+        condensed = condense(tokens)
+        self.assertEqual(
+            condensed[0].value,
+            'word' + ' word' * 4,
+        )
+
+    def test_returns_are_assigned(self):
+        tokens = lex('something something Returns something something')
+        condensed = condense(tokens)
+        self.assertEqual(
+            [x.token_type for x in condensed],
+            [TokenType.WORD, TokenType.RETURNS, TokenType.WORD]
         )

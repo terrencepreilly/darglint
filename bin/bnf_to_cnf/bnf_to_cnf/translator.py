@@ -311,6 +311,13 @@ class Translator(object):
                     mask_index += 1
                 i -= 1
 
+            # FIXME This results in a never-ending list if
+            # a symbol is self-referencing with optional symbol.
+            # That is, if there are two productions,
+            #
+            #    <A> ::= <B> <A> | ε
+            #    <B> ::= "b" | ε
+
             # Re-add an epsilon if it's otherwise empty.
             is_empty = len(new_sequence.children) == 0
             if is_empty:
@@ -609,6 +616,9 @@ class Translator(object):
         max_iterations = 100
         while max_iterations and self._eliminate_epsilon_productions(tree):
             max_iterations -= 1
+
+        if max_iterations == 0:
+            raise Exception('Reached maximum epsilon expansion.')
 
         self._eliminate_unit_productions(tree)
         self._remove_unused_productions(tree)

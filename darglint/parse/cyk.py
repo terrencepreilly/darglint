@@ -77,6 +77,10 @@ class CykNode(object):
         if self.rchild:
             yield from self.rchild.in_order_traverse()
 
+    def walk(self):
+        # type: () -> Iterator['CykNode']
+        yield from self.in_order_traverse()
+
     def reconstruct_string(self, strictness=0):
         # type: (int) -> str
         """Reconstruct the docstring.

@@ -8,7 +8,8 @@ from darglint.docstring.google import (
     Docstring,
 )
 from darglint.lex import (
-    lex
+    condense,
+    lex,
 )
 from darglint.node import (
     NodeType,
@@ -54,6 +55,12 @@ class DocstringTestCase(TestCase):
 
     # examples taken from
     # http://www.sphinx-doc.org/en/stable/ext/example_google.html
+
+    def assertContains(self, tree, symbol):
+        for child in tree.walk():
+            if child.symbol == symbol:
+                return
+        self.fail('Tree does not contain symbol "{}"'.format(symbol))
 
     @replace()
     def test_parse_noqa_for_argument(self):
@@ -118,7 +125,7 @@ class DocstringTestCase(TestCase):
             'arg1' in noqas['I101']
         )
 
-    @replace()
+    @replace('test_parses_long_description_cyk')
     def test_parses_long_description(self):
         """Make sure we can parse the long description.
 
@@ -152,6 +159,45 @@ class DocstringTestCase(TestCase):
             'Expected long description to start with "This function returns" '
             'but was {}'.format(repr(long_description[:20]))
         )
+
+    def test_parses_long_description_cyk(self):
+        func = '\n'.join([
+            'def this_function_has_a_long_description(arg1):',
+            '    """Return the arg, unchanged.',
+            '',
+            '    This function returns the arg, unchanged.  There is',
+            '    no particular reason, but this is a good place to check to ',
+            '    see that long descriptions are being parsed correctly. ',
+            '    If they are, I\'m not sure why.  There is some magic ',
+            '    going on here, in fact.',
+            '',
+            '    """',
+            '    return arg1',
+        ])
+        doc = ast.get_docstring(ast.parse(func).body[0])
+        tokens = list(lex(doc))
+        node = parse_cyk(Grammar, tokens)
+        self.assertTrue(node is not None)
+
+    def test_can_parse_long_description_multiple_sections(self):
+        func = '\n'.join([
+            'def this_function_has_multiple_long_descriptions():',
+            '    """Do some math.',
+            '',
+            '    This is the first part of the long description.',
+            '    it can be multiple lines, but doesn\'t have to be',
+            '',
+            '    This is the second half of the long description.',
+            '',
+            '    And the final part of it.',
+            '',
+            '    """',
+            '    pass',
+        ])
+        doc = ast.get_docstring(ast.parse(func).body[0])
+        tokens = list(lex(doc))
+        node = parse_cyk(Grammar, tokens)
+        self.assertTrue(node is not None)
 
     @replace()
     def test_arguments_extracted_when_extant(self):
@@ -235,7 +281,7 @@ class DocstringTestCase(TestCase):
         for arg in ['param1', 'param2', 'param3']:
             arg in args
 
-    @replace()
+    @replace('test_parse_yields_cyk')
     def test_can_parse_yields(self):
         """Make sure we can parse the yields section."""
         docstring = '\n'.join([
@@ -248,6 +294,18 @@ class DocstringTestCase(TestCase):
         ])
         doc = Docstring(docstring)
         self.assertTrue(len(doc.get_section(Sections.YIELDS_SECTION)) > 0)
+
+    def test_parse_yields_cyk(self):
+        tokens = condense(lex('\n'.join([
+            'Some sort of short description.',
+            '',
+            'Yields:',
+            '    The number 5. Always.',
+            '',
+        ])))
+        tree = parse_cyk(Grammar, tokens)
+        self.assertTrue(tree is not None)
+        self.assertContains(tree, 'yields')
 
     @replace()
     def test_can_parse_raises(self):
@@ -809,7 +867,7 @@ class DocstringTestCase(TestCase):
             NodeType.YIELDS_SECTION,
         )
 
-    @remove
+    @replace('test_can_parse_returns_cyk')
     def test_parse_returns(self):
         node = parse_returns(Peaker(lex(
             'Returns:\n'
@@ -821,6 +879,40 @@ class DocstringTestCase(TestCase):
             node.node_type,
             NodeType.RETURNS_SECTION,
         )
+
+    def test_can_parse_returns_cyk(self):
+        tokens = condense(lex('\n'.join([
+            'This is the short description.',
+            '',
+            'Returns:',
+            '    Lorem ipsum dolor.',
+            '',
+        ])))
+        node = parse_cyk(Grammar, tokens)
+        self.assertTrue(node is not None)
+        self.assertContains(node, 'returns')
+
+    def test_can_have_word_returns_in_description(self):
+        tokens = condense(lex('\n'.join([
+            'Returns the sum of squares.'
+        ])))
+        node = parse_cyk(Grammar, tokens)
+        self.assertTrue(node is not None)
+
+    def test_returns_section_can_be_multiple_indented_lines(self):
+        tokens = condense(lex('\n'.join([
+            'Returns the sum of squares.',
+            '',
+            'Returns:',
+            '    The sum of squares:',
+            '',
+            '        SSx = \\sum(x - xbar)^2',
+            '',
+            '    For all x in X.',
+        ])))
+        node = parse_cyk(Grammar, tokens)
+        self.assertTrue(node is not None)
+        self.assertContains(node, 'returns')
 
     @replace('test_parse_short_description_cyk')
     def test_parse_short_description(self):
