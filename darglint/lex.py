@@ -134,11 +134,11 @@ def lex(program):
 
 
 KEYWORDS = {
-    # 'Args': NodeType.ARGUMENTS,
+    'Args': TokenType.ARGUMENTS,
     # 'Arguments': NodeType.ARGUMENTS,
     # 'Returns': NodeType.RETURNS,
     'Yields': TokenType.YIELDS,
-    # 'Raises': NodeType.RAISES,
+    'Raises': TokenType.RAISES,
     'Returns': TokenType.RETURNS,
 }
 

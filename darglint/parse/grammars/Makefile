@@ -3,7 +3,9 @@ IMPORTS = "from darglint.parse.grammar import BaseGrammar\nfrom darglint.parse.g
 
 
 google.py: google2.py
-	echo $(IMPORTS) > google.py && cat google2.py >> google.py
+	echo $(IMPORTS) > google.py \
+		&& cat google2.py >> google.py \
+		&& rm google2.py
 
 google2.py: google.bnf
 	bnf_to_cnf -o google2.py google.bnf

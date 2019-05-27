@@ -63,21 +63,28 @@
 # newline = "\n"
 
 
-# No non-terminal tokens should end in a newline, except at the
-# docstring level.  This allows us to more explicitly control
-# newlines in a consistent way.
+# NOTES:
+#
+# - No non-terminal tokens should end in a newline, except at the
+#   docstring level.  This allows us to more explicitly control
+#   newlines in a consistent way.
 
 <start>
     ::= <docstring>
 
 <docstring>
-    ::= <short-description> <sections> <newlines>
+    ::= <short-description> <sections>
+
+
+# ---- SECTIONS ----
 
 <sections>
     ::= <split> <long-description> <sections>
     | <split> <returns-section> <sections>
     | <split> <yields-section> <sections>
-    | ε
+    | <split> <raises-section> <sections>
+    | <split> <arguments-section> <sections>
+    | <newlines>
 
 <short-description>
     ::= <line>
@@ -91,6 +98,51 @@
 <yields-section>
     ::= <yields> <colon> <newline> <block-indented>
 
+# ---- ITEM SECTIONS ----
+
+<arguments-section>
+    ::= <arguments> <colon> <newline> <items-argument>
+
+<items-argument>
+    ::= <item-argument> <newline> <items-argument>
+    | ε
+
+<item-argument>
+    ::= <head-argument> <line> <newline> <paragraph-indented-two>
+    | <head-argument> <line>
+
+<head-argument>
+    ::= <indent> <argument> <colon>
+
+<argument>
+    ::= "TokenType\.WORD"
+
+
+
+<raises-section>
+    ::= <raises> <colon> <newline> <items-exception>
+
+<items-exception>
+    ::= <item-exception> <newline> <items-exception>
+    | ε
+
+<item-exception>
+    ::= <head-exception> <line> <newline> <paragraph-indented-two>
+    | <head-exception> <line>
+
+<head-exception>
+    ::= <indent> <exception> <colon>
+
+<exception>
+    ::= "TokenType\.WORD"
+
+# ---- COMMON ----
+
+<block-indented-two>
+    ::= <paragraph-indented-two> <split> <block-indented-two>
+    | <paragraph-indented-two>
+
+
 <block-indented>
     ::= <paragraph-indented> <split> <block-indented>
     | <paragraph-indented>
@@ -98,6 +150,10 @@
 <block>
     ::= <paragraph> <split> <block>
     | <paragraph>
+
+<paragraph-indented-two>
+    ::= <indented-two> <line> <newline> <paragraph-indented-two>
+    | <indented-two> <line>
 
 <paragraph-indented>
     ::= <indented> <line> <newline> <paragraph-indented>
@@ -111,6 +167,9 @@
     ::= <word> <line>
     | <word>
     | <indent>
+
+<indented-two>
+    ::= <indent> <indent> <indents>
 
 <indented>
     ::= <indent> <indents>
@@ -126,6 +185,24 @@
     ::= <newline> <newlines>
     | ε
 
+
+# ---- TERMINALS ----
+
+<word>
+    ::= "TokenType\.WORD"
+    | <returns>
+    | <colon>
+    | <lparen>
+    | <rparen>
+    | <raises>
+    | <arguments>
+
+<arguments>
+    ::= "TokenType\.ARGUMENTS"
+
+<raises>
+    ::= "TokenType\.RAISES"
+
 <returns>
     ::= "TokenType\.RETURNS"
 
@@ -140,13 +217,6 @@
 
 <rparen>
     ::= "TokenType\.RPAREN"
-
-<word>
-    ::= "TokenType\.WORD"
-    | "TokenType\.RETURNS"
-    | "TokenType\.COLON"
-    | "TokenType\.LPAREN"
-    | "TokenType\.RPAREN"
 
 <indent>
     ::= "TokenType\.INDENT"

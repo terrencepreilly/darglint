@@ -179,7 +179,7 @@ class DocstringTestCase(TestCase):
         node = parse_cyk(Grammar, tokens)
         self.assertTrue(node is not None)
 
-    def test_can_parse_long_description_multiple_sections(self):
+    def test_parse_long_description_multiple_sections(self):
         func = '\n'.join([
             'def this_function_has_multiple_long_descriptions():',
             '    """Do some math.',
@@ -307,7 +307,7 @@ class DocstringTestCase(TestCase):
         self.assertTrue(tree is not None)
         self.assertContains(tree, 'yields')
 
-    @replace()
+    @replace('test_parse_raises_cyk')
     def test_can_parse_raises(self):
         """Make sure we can parse the raises section."""
         docstring = '\n'.join([
@@ -320,6 +320,20 @@ class DocstringTestCase(TestCase):
         self.assertTrue('Exception' in doc.get_section(
             Sections.RAISES_SECTION)
         )
+
+    def test_parse_raises_cyk(self):
+        docstring = '\n'.join([
+            'This has a problem.',
+            '',
+            'Raises:',
+            '    Exception: An exception for generic reasons.',
+            '',
+        ])
+        tokens = condense(lex(docstring))
+        tree = parse_cyk(Grammar, tokens)
+        self.assertTrue(tree is not None)
+        self.assertContains(tree, 'raises')
+        self.assertContains(tree, 'exception')
 
     @replace()
     def test_argument_types_can_be_parsed(self):
@@ -831,7 +845,7 @@ class DocstringTestCase(TestCase):
             NodeType.ITEM,
         )
 
-    @remove
+    @replace('test_parse_arguments_cyk')
     def test_parse_args(self):
         """Make sure we can parse an args section."""
         node = parse_args(Peaker(lex('\n'.join([
@@ -840,6 +854,22 @@ class DocstringTestCase(TestCase):
             '\n',
         ])), lookahead=3))
         self.assertEqual(node.node_type, NodeType.ARGS_SECTION)
+
+    def test_parse_arguments_cyk(self):
+        docstring = '\n'.join([
+            'Estimate the probability of being cool.',
+            '',
+            'Args:',
+            '    hip: How hip it is.',
+            '    hot: How hot it is.',
+            '    coolness: Modified by this function.',
+            '',
+        ])
+        tokens = condense(lex(docstring))
+        tree = parse_cyk(Grammar, tokens)
+        self.assertTrue(tree is not None)
+        self.assertContains(tree, 'arguments')
+        self.assertContains(tree, 'argument')
 
     @remove
     def test_parse_raises(self):
