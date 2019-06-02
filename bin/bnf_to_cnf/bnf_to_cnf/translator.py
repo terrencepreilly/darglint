@@ -607,7 +607,12 @@ class Translator(object):
         for production_symbol in to_remove:
             tree.remove(Node._production_with_lhs(production_symbol))
 
+    def _remove_remaining_imports(self, tree: Node):
+        assert tree.node_type == NodeType.GRAMMAR
+        tree.remove(Node.is_imports)
+
     def translate(self, tree: Node) -> Node:
+        self._remove_remaining_imports(tree)
         self._reassign_start(tree)
         self._reassign_nonsolitary_terminals(tree)
         self._eliminate_rhs_with_3plus_symbols(tree)

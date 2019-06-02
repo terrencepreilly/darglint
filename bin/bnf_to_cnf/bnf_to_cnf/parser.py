@@ -6,6 +6,7 @@ from lark import (
 
 from .node import (
     Node,
+    NodeType,
 )
 
 
@@ -14,7 +15,7 @@ class Parser(object):
     grammar = r'''
         start: grammar
 
-        grammar: production+
+        grammar: imports production+
 
         production: annotations? symbol _OPER expression
         _OPER: "::="
@@ -27,6 +28,11 @@ class Parser(object):
         ESCAPED: "\\" ("." | "," | "*" | "^" | "("
                       | ")" | "+" | "-" | "/" | "\""
                       | " " | "]" | "[" | "|")
+
+        imports: import*
+        import: _IMPORT FILENAME
+        FILENAME: /(.|\\|w+|-|_)+/
+        _IMPORT: "import"
 
         annotations: annotation+
         annotation: _AT IDENT
@@ -74,6 +80,9 @@ class Parser(object):
                 'a newline is present.'
             )
         grammar = self.parse(value)
-        production = grammar.children[0]
+        if grammar.children[0].node_type == NodeType.PRODUCTION:
+            production = grammar.children[0]
+        else:
+            production = grammar.children[1]
         grammar.children = list()
         return production

@@ -107,6 +107,23 @@ class ParserTestCase(TestCase):
             with_comments = Parser().parse('\n'.join(complete))
             self.assertTrue(without_comments.equals(with_comments))
 
+    def test_with_imports(self):
+        grammar = (
+            'import base.bnf\n'
+            'import utils.bnf\n'
+            '\n'
+            '<start> ::= <sentence>\n'
+            '<setence> ::= <verb> <noun>\n'
+            '<verb> ::= "TT\\.VERB"\n'
+            '<noun> ::= "TT\\.NOUN"'
+        )
+        node = Parser().parse(grammar)
+        self.assertEqual(
+            grammar,
+            str(node),
+            f'\nExpected:\n{grammar}\n\nBut got:\n{node}'
+        )
+
     def test_parse_single_annotation(self):
         """Make sure we can annotate a production with an error."""
         grammar = '@SE001\n<sentence> ::= <wordrun> <newline>'

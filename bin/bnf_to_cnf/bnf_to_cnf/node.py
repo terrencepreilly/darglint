@@ -31,9 +31,13 @@ class NodeType(Enum):
     EXPRESSION = 3
     SEQUENCE = 4
     TERMINAL = 5
+    IMPORTS = 8
+    IMPORT = 9
 
     ANNOTATIONS = 6
     ANNOTATION = 7
+
+    # Next: 10
 
 
 TERMINAL_NODES = {
@@ -63,7 +67,14 @@ class Node(object):
 
     def __str__(self):
         if self.node_type == NodeType.GRAMMAR:
-            return '\n'.join([str(child) for child in self.children])
+            if (
+                self.children
+                and self.children[0]
+                and self.children[0].children
+            ):
+                return '\n'.join([str(child) for child in self.children])
+            else:
+                return '\n'.join([str(child) for child in self.children[1:]])
         elif self.node_type == NodeType.PRODUCTION:
             if len(self.children) == 2:
                 return f'{self.children[0]} ::= {self.children[1]}'
@@ -84,6 +95,10 @@ class Node(object):
             return f'@{self.value}'
         elif self.node_type == NodeType.ANNOTATIONS:
             return '\n'.join([str(child) for child in self.children])
+        elif self.node_type == NodeType.IMPORTS:
+            return '\n'.join([str(child) for child in self.children]) + '\n'
+        elif self.node_type == NodeType.IMPORT:
+            return f'import {self.value}'
         else:
             raise Exception(f'Unrecognized node type {self.node_type}')
 
@@ -151,6 +166,10 @@ class Node(object):
                 x.equals(y)
                 for x, y in zip(self.children, other.children)
             ])
+        elif self.node_type == NodeType.IMPORTS:
+            # We ignore imports, since they should have been
+            # expanded before translation.
+            return True
         else:
             raise Exception('Unrecognized node type.')
 
@@ -189,9 +208,17 @@ class Node(object):
         if tree.data == 'start':
             return Node.from_lark_tree(tree.children[0])
         elif tree.data == 'grammar':
+            # Don't include an import node if there were no
+            # imports.  Imports will also be stripped out later.
+            imports = Node.from_lark_tree(tree.children[0])
+            if imports:
+                children = [imports]
+            else:
+                children = list()
+            children.extend(map(Node.from_lark_tree, tree.children[1:]))
             return Node(
                 NodeType.GRAMMAR,
-                children=list(map(Node.from_lark_tree, tree.children)),
+                children=children,
             )
         elif tree.data == 'production':
             return Node(
@@ -222,6 +249,20 @@ class Node(object):
             return Node(
                 NodeType.ANNOTATION,
                 value=tree.children[0].value,
+            )
+        elif tree.data == 'imports':
+            if tree.children:
+                return Node(
+                    NodeType.IMPORTS,
+                    children=list(map(Node.from_lark_tree, tree.children)),
+                )
+            else:
+                return None
+        elif tree.data == 'import':
+            assert len(tree.children) == 1
+            return Node(
+                NodeType.IMPORT,
+                value=tree.children[0].value.strip(),
             )
         else:
             raise Exception(
@@ -344,6 +385,14 @@ class Node(object):
     @staticmethod
     def is_annotations(x: 'Node') -> bool:
         return x.node_type == NodeType.ANNOTATIONS
+
+    @staticmethod
+    def is_imports(x: 'Node') -> bool:
+        return x.node_type == NodeType.IMPORTS
+
+    @staticmethod
+    def is_import(x: 'Node') -> bool:
+        return x.node_type == NodeType.IMPORT
 
     @staticmethod
     def has_symbol(x: str) -> Callable[['Node'], bool]:
@@ -470,3 +519,9 @@ class Node(object):
 
         lines.append('}')
         return '\n'.join(lines)
+
+    def merge(self, other: 'Node'):
+        assert self.node_type == NodeType.GRAMMAR
+        for production in other.filter(Node.is_production):
+            cloned = production.clone()
+            self.children.append(cloned)

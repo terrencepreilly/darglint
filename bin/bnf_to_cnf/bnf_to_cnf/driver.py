@@ -1,6 +1,8 @@
 import argparse
 from typing import (
+    Dict,
     Optional,
+    Iterator,
 )
 from .parser import Parser
 from .validate import Validator
@@ -76,13 +78,55 @@ class Driver(object):
         else:
             raise Exception(f'Unrecognized format type {_format}')
 
+    def get_imports(self) -> Iterator[str]:
+        assert self.tree is not None
+        for _import in self.tree.filter(Node.is_import):
+            assert _import.value is not None
+            yield _import.value
+
+    def merge(self, driver: 'Driver'):
+        """Merge in the grammar at the given filename with this grammar.
+
+        Args:
+            driver: Another driver to merge into this one.
+
+        """
+        assert self.tree is not None
+        assert driver.tree is not None
+        self.tree.merge(driver.tree)
+
+
+def load_script(filename: str, cache: Dict[str, Driver] = dict()):
+    """Recursively load a script, parsing it and adding dependencies.
+
+    Args:
+        filename: The name of the file to open.
+        cache: A cache to avoid duplicate work.
+
+    Returns:
+        The fully parsed grammar.
+
+    """
+    assert filename not in cache
+    driver = Driver().read(filename).parse()
+    cache[filename] = driver
+
+    # We know that merging doesn't introduce new imports,
+    # so it's safe to immediately merge subgrammars.
+    for filename in driver.get_imports():
+        if filename in cache:
+            subdriver = cache[filename]
+        else:
+            subdriver = load_script(filename, cache)
+        driver.merge(subdriver)
+
+    return driver
+
 
 def main():
     args = parser.parse_args()
-    driver = Driver().read(args.file[0])
-    translated = (
-        driver.parse().translate().validate()
-    ).write(args.format)
+    driver = load_script(args.file[0])
+    translated = driver.translate().validate().write(args.format)
 
     if args.output:
         with open(args.output[0], 'w') as fout:
