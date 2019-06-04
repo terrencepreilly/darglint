@@ -288,6 +288,40 @@ class IntegrityCheckerTestCase(TestCase):
         self.assertEqual(error.expected, 'int')
         self.assertEqual(error.actual, 'float')
 
+    def test_return_type_unchecked_if_not_defined_in_docstring(self):
+        program = '\n'.join([
+            'def foo() -> str:',
+            '    """Just a foobar.',
+            '',
+            '    Returns:',
+            '        bar',
+            '',
+            '    """',
+            '    return "bar"',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        self.assertEqual(len(checker.errors), 0)
+
+    def test_return_type_unchecked_if_not_defined_in_function(self):
+        program = '\n'.join([
+            'def foo():',
+            '    """Just a foobar.',
+            '',
+            '    Returns:',
+            '        str: bar',
+            '',
+            '    """',
+            '    return "bar"',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        self.assertEqual(len(checker.errors), 0)
+
     def test_return_type_checked_if_defined_in_docstring_and_function(self):
         program = '\n'.join([
             'def update_model(x: dict) -> dict:',

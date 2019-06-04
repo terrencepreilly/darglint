@@ -184,7 +184,7 @@ class IntegrityChecker(object):
         fun_type = self.function.return_type
         doc_type = self.docstring.get_types(Sections.RETURNS_SECTION)
         if not doc_type or isinstance(doc_type, list):
-            doc_type = ''
+            doc_type = None
         if fun_type is not None and doc_type is not None:
             if fun_type != doc_type:
                 line_numbers = self.docstring.get_line_numbers(
