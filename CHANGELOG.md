@@ -3,6 +3,14 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.5.6] - 2019-06-03
+
+### Fixed
+
+- Erroneous I203 was being raised for return type when one of the
+  type annotations was missing (it should only ever be raised when
+  both type signatures are present.)  Thanks to @asford!
+
 ## [0.5.5] - 2019-05-19
 
 ### Fixed

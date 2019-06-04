@@ -536,9 +536,6 @@ class DocstringForSphinxTests(TestCase):
             ':type y: List[int], optional'
             '\n',
         ])), lookahead=3))
-        from darglint.utils import generate_dot
-        with open('_data/example.dot', 'w') as fout:
-            fout.write(generate_dot(root))
         docstring = Docstring.from_sphinx(root)
         argtypes = dict(zip(
             docstring.get_items(Sections.ARGUMENTS_SECTION) or [],
