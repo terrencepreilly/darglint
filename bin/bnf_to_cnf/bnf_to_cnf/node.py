@@ -33,11 +33,12 @@ class NodeType(Enum):
     TERMINAL = 5
     IMPORTS = 8
     IMPORT = 9
+    NAME = 10
 
     ANNOTATIONS = 6
     ANNOTATION = 7
 
-    # Next: 10
+    # Next: 11
 
 
 TERMINAL_NODES = {
@@ -264,6 +265,12 @@ class Node(object):
                 NodeType.IMPORT,
                 value=tree.children[0].value.strip(),
             )
+        elif tree.data == 'name':
+            assert len(tree.children) == 1
+            return Node(
+                NodeType.NAME,
+                value=tree.children[0].value.strip(),
+            )
         else:
             raise Exception(
                 f'Unrecognized Lark type "{tree.data}".  Check grammar.'
@@ -312,6 +319,14 @@ class Node(object):
                 )
         elif self.node_type == NodeType.EXPRESSION:
             return ', '.join([x.to_python() for x in self.children])
+        elif self.node_type == NodeType.IMPORTS:
+            # Ignore imports -- these should be inlined by the
+            # translation process.
+            return ''
+        elif self.node_type == NodeType.NAME:
+            # The name is handled below, along with the grammar, to
+            # make sure it doesn't get out of order.
+            return ''
         elif self.node_type == NodeType.PRODUCTION:
             has_annotation = (
                 len(self.children) > 1
@@ -345,9 +360,13 @@ class Node(object):
             comment = (
                 f'# Generated on {datetime.datetime.now()}'
             )
+            name = 'Grammar'
+            for name_node in self.filter(Node.is_name):
+                assert name_node.value is not None
+                name = name_node.value
             values = [
                 comment,
-                'class Grammar(BaseGrammar):',
+                f'class {name}(BaseGrammar):',
                 '    productions = [',
             ]
             for production in self.children:
@@ -393,6 +412,10 @@ class Node(object):
     @staticmethod
     def is_import(x: 'Node') -> bool:
         return x.node_type == NodeType.IMPORT
+
+    @staticmethod
+    def is_name(x: 'Node') -> bool:
+        return x.node_type == NodeType.NAME
 
     @staticmethod
     def has_symbol(x: str) -> Callable[['Node'], bool]:

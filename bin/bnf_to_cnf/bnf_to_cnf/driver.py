@@ -115,10 +115,12 @@ def load_script(filename: str, cache: Dict[str, Driver] = dict()):
     # so it's safe to immediately merge subgrammars.
     for filename in driver.get_imports():
         if filename in cache:
-            subdriver = cache[filename]
+            # We skip already imported scripts, to avoid
+            # having multiple copies of the productions.
+            continue
         else:
             subdriver = load_script(filename, cache)
-        driver.merge(subdriver)
+            driver.merge(subdriver)
 
     return driver
 

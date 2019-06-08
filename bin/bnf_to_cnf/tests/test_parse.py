@@ -124,6 +124,23 @@ class ParserTestCase(TestCase):
             f'\nExpected:\n{grammar}\n\nBut got:\n{node}'
         )
 
+    def test_with_name(self):
+        grammar = '\n'.join([
+            'import base.bnf',
+            '',
+            'Grammar: MySpecialGrammar',
+            '',
+            '<A> ::= "SPECIAL"'
+        ])
+        tree = Parser().parse(grammar)
+        name = next(tree.filter(Node.is_name))
+        self.assertEqual(
+            name.value,
+            'MySpecialGrammar',
+        )
+        py_repr = tree.to_python()
+        self.assertTrue('class MySpecialGrammar' in py_repr)
+
     def test_parse_single_annotation(self):
         """Make sure we can annotate a production with an error."""
         grammar = '@SE001\n<sentence> ::= <wordrun> <newline>'

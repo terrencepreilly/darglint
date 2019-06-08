@@ -11,6 +11,7 @@ The general plan here is to parse the BNF, manipulate the tree, then
 produce the CNF of the grammar from the modified tree.
 
 """
+import re
 from typing import (
     List,
 )
@@ -87,6 +88,12 @@ class Validator(object):
         # There should be a value, if there is an import.
         return _import.value is not None
 
+    def _validate_name(self, name: Node) -> bool:
+        name_pattern = re.compile(r'\w+')
+        if name.value is None:
+            return False
+        return name_pattern.fullmatch(name.value) is not None
+
     def validate(self, grammar: Node) -> bool:
         """Validate that the given production is in CNF.
 
@@ -102,19 +109,14 @@ class Validator(object):
 
         """
         assert grammar.node_type == NodeType.GRAMMAR
-        imports = list()  # type: List[Node]
-        if (
-            grammar.children
-            and grammar.children[0].node_type == NodeType.IMPORTS
-        ):
-            imports = grammar.children[0].children
-            productions = grammar.children[1:]
-        else:
-            productions = grammar.children
-        for _import in imports:
+
+        for _import in grammar.filter(Node.is_import):
             if not self._validate_import(_import):
                 return False
-        for production in productions:
+        for name in grammar.filter(Node.is_name):
+            if not self._validate_name(name):
+                return False
+        for production in grammar.filter(Node.is_production):
             if not self._validate_production(production):
                 return False
         return True
