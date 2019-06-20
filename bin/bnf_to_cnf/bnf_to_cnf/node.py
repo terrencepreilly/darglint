@@ -37,14 +37,16 @@ class NodeType(Enum):
 
     ANNOTATIONS = 6
     ANNOTATION = 7
+    START = 11
 
-    # Next: 11
+    # Next: 12
 
 
 TERMINAL_NODES = {
     NodeType.TERMINAL,
     NodeType.SYMBOL,
     NodeType.ANNOTATION,
+    NodeType.START,
 }
 NONTERMINAL_NODES = {
     NodeType.GRAMMAR,
@@ -68,14 +70,7 @@ class Node(object):
 
     def __str__(self):
         if self.node_type == NodeType.GRAMMAR:
-            if (
-                self.children
-                and self.children[0]
-                and self.children[0].children
-            ):
-                return '\n'.join([str(child) for child in self.children])
-            else:
-                return '\n'.join([str(child) for child in self.children[1:]])
+            return '\n'.join([str(child) for child in self.children])
         elif self.node_type == NodeType.PRODUCTION:
             if len(self.children) == 2:
                 return f'{self.children[0]} ::= {self.children[1]}'
@@ -100,6 +95,8 @@ class Node(object):
             return '\n'.join([str(child) for child in self.children]) + '\n'
         elif self.node_type == NodeType.IMPORT:
             return f'import {self.value}'
+        elif self.node_type == NodeType.START:
+            return f'start: <{self.value}>'
         else:
             raise Exception(f'Unrecognized node type {self.node_type}')
 
@@ -211,15 +208,9 @@ class Node(object):
         elif tree.data == 'grammar':
             # Don't include an import node if there were no
             # imports.  Imports will also be stripped out later.
-            imports = Node.from_lark_tree(tree.children[0])
-            if imports:
-                children = [imports]
-            else:
-                children = list()
-            children.extend(map(Node.from_lark_tree, tree.children[1:]))
             return Node(
                 NodeType.GRAMMAR,
-                children=children,
+                children=list(map(Node.from_lark_tree, tree.children)),
             )
         elif tree.data == 'production':
             return Node(
@@ -270,6 +261,13 @@ class Node(object):
             return Node(
                 NodeType.NAME,
                 value=tree.children[0].value.strip(),
+            )
+        elif tree.data == 'start_expression':
+            assert len(tree.children) == 1
+            assert len(tree.children[0].children) == 1
+            return Node(
+                NodeType.START,
+                value=tree.children[0].children[0].value.strip(),
             )
         else:
             raise Exception(
@@ -460,6 +458,10 @@ class Node(object):
                 return True
         return False
 
+    @staticmethod
+    def is_start(node: 'Node') -> bool:
+        return node.node_type == NodeType.START
+
     def to_dot(self) -> str:
         """Prints the dot representation of the tree.
 
@@ -471,10 +473,12 @@ class Node(object):
         """
         name_lookup = dict()  # type: Dict['Node', str]
         names = set()  # type: Set[str]
+
         def _node_name(node: 'Node') -> str:
             if node in name_lookup:
                 return name_lookup[node]
             elif node.node_type in TERMINAL_NODES:
+                assert node.value
                 name = node.value.replace(
                     '"', 'Q',
                 ).replace(

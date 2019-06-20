@@ -8,6 +8,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    Optional,
     Set,
     Tuple,
 )
@@ -63,25 +64,30 @@ def to_symbol(value: str, count: int = None) -> str:
 class Translator(object):
     """Transforms a BNF tree to CNF."""
 
-    def _reassign_start(self, tree: Node):
+    def _reassign_start(self, tree: Node, start_symbol: Optional[Node]):
         """Factor out the start symbol from the RHS.
 
         If start is annotated, that annotation moves to the new start.
 
         Args:
             tree: The tree to transform.
+            start_symbol: The start symbol, if there is one.
 
         """
+        if not start_symbol:
+            return
+        start_value = start_symbol.value
+
         def is_start_node(x):
             return (
                 x.node_type == NodeType.SYMBOL
-                and x.value.startswith('start')
+                and x.value.startswith(start_value)
             )
 
         def is_start_production(x):
             return (
                 x.node_type == NodeType.PRODUCTION
-                and exists(x.filter(Node.has_value('start')))
+                and exists(x.filter(Node.has_value(start_value)))
             )
 
         # Gather all the symbols that start with "start",
@@ -99,7 +105,7 @@ class Translator(object):
         # Do a linear probe.  There won't be more than one or
         # two, if even that.
         start_suffix = 0
-        while f'start{start_suffix}' in start_versions:
+        while f'{start_value}{start_suffix}' in start_versions:
             start_suffix += 1
 
         # Rename the "start" symbol on the LHS.
@@ -109,15 +115,15 @@ class Translator(object):
                 parent = production.children.pop(0)
                 annotations.extend(parent.children)
             symbol = production.children[0]
-            symbol.value = f'start{start_suffix}'
+            symbol.value = f'{start_value}{start_suffix}'
 
         # Rename the "start" symbols on the RHS.
         for seq in tree.filter(lambda x: x.node_type == NodeType.SEQUENCE):
-            for symbol in tree.filter(is_start_node):
-                symbol.value = f'start{start_suffix}'
+            for symbol in seq.filter(is_start_node):
+                symbol.value = f'{start_value}{start_suffix}'
 
         new_production = Parser().parse_production(
-            f'<start> ::= <start{start_suffix}>'
+            f'<{start_value}> ::= <{start_value}{start_suffix}>'
         )
         if annotations:
             new_production.prepend(Node(
@@ -579,18 +585,22 @@ class Translator(object):
 
         return graph
 
-    def _remove_unused_productions(self, tree: Node):
-        graph = self._build_adjacency_matrix(tree)
-
+    def _remove_unused_productions(self,
+                                   tree: Node,
+                                   start_symbol: Optional[Node]
+                                   ):
         # Only simplify if the starting symbol is present,
         # since other grammars will not be used except for
         # experimenting, anyway.
-        if 'start' not in graph:
+        if not start_symbol:
             return
+
+        graph = self._build_adjacency_matrix(tree)
 
         # Walk the tree, from start, and mark all encountered nodes.
         encountered = set()  # type: Set[str]
-        queue = deque(['start'])
+        assert start_symbol.value
+        queue = deque([start_symbol.value])
         while queue:
             current = queue.pop()
             encountered.add(current)
@@ -611,9 +621,26 @@ class Translator(object):
         assert tree.node_type == NodeType.GRAMMAR
         tree.remove(Node.is_imports)
 
+    def _remove_start_symbol(self, tree: Node) -> Optional[Node]:
+        symbols = list(tree.filter(Node.is_start))
+        assert len(symbols) <= 1, 'There should only be one start.'
+        if len(symbols) == 0:
+            return None
+        else:
+            start_symbol = symbols[0]
+            tree.remove(Node.is_start)
+            return start_symbol
+
+    def _add_in_start_symbol(self, tree: Node, start_symbol: Optional[Node]):
+        if start_symbol:
+            tree.children.insert(0, start_symbol)
+
     def translate(self, tree: Node) -> Node:
+        start_symbol = self._remove_start_symbol(tree)
         self._remove_remaining_imports(tree)
-        self._reassign_start(tree)
+        self._reassign_start(tree, start_symbol)
+        if start_symbol:
+            tree.prepend(start_symbol)
         self._reassign_nonsolitary_terminals(tree)
         self._eliminate_rhs_with_3plus_symbols(tree)
 
@@ -626,7 +653,7 @@ class Translator(object):
             raise Exception('Reached maximum epsilon expansion.')
 
         self._eliminate_unit_productions(tree)
-        self._remove_unused_productions(tree)
+        self._remove_unused_productions(tree, start_symbol)
 
         # TODO: remove nodes which don't lead to terminals?
 

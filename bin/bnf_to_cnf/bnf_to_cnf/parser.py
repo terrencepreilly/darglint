@@ -15,7 +15,7 @@ class Parser(object):
     grammar = r'''
         start: grammar
 
-        grammar: imports name? production+
+        grammar: imports? start_expression? name? production+
 
         production: annotations? symbol _OPER expression
         _OPER: "::="
@@ -29,11 +29,14 @@ class Parser(object):
                       | ")" | "+" | "-" | "/" | "\""
                       | " " | "]" | "[" | "|")
 
+        start_expression: _START symbol
+        _START: "start:"
+
         name: _GRAMMAR NAME
         NAME: LETTER+
         _GRAMMAR: "Grammar:"
 
-        imports: import*
+        imports: import+
         import: _IMPORT FILENAME
         FILENAME: /(.|\\|w+|-|_)+/
         _IMPORT: "import"

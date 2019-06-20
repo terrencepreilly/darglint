@@ -34,16 +34,15 @@ class TranslatorTestCase(TestCase):
                 example,
             )
 
-    def test_start_symbol_reassigned(self):
-        """Make sure that the start symbol is reassigned, if present."""
+    def test_start_symbol_not_reassigned(self):
+        """Make sure the start symbol points to the start terminal."""
         tree = Parser().parse(
-            '<start> ::= <section>\n'
-            '<section> ::= <head> <body>\n'
+            'start: <A>\n'
+            '<A> ::= <B>\n'
+            '<B> ::= "\\."'
         )
         node = Translator().translate(tree)
-
-        # <start0> is reassigned, then removed once simplified.
-        expected = '<start> ::= <head> <body>'
+        expected = 'start: <A>\n<A> ::= "\\."'
         self.assertEqual(
             str(node),
             expected,
@@ -235,7 +234,8 @@ class TranslatorTestCase(TestCase):
 
     def test_removes_unreachable_symbols(self):
         grammar = r'''
-            <start> ::= <a> <b>
+            start: <head>
+            <head> ::= <a> <b>
             <a> ::= "-" | ε
             <b> ::= <a> <d>
             <d> ::= "1"

@@ -112,7 +112,7 @@ class ParserTestCase(TestCase):
             'import base.bnf\n'
             'import utils.bnf\n'
             '\n'
-            '<start> ::= <sentence>\n'
+            'start: <sentence>\n'
             '<setence> ::= <verb> <noun>\n'
             '<verb> ::= "TT\\.VERB"\n'
             '<noun> ::= "TT\\.NOUN"'
