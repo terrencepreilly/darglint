@@ -350,6 +350,9 @@ class Node(object):
                 + ']'
             )
 
+        elif self.node_type == NodeType.START:
+            return ''
+
         elif self.node_type == NodeType.ANNOTATION:
             assert self.value is not None
             return self.value
@@ -367,10 +370,11 @@ class Node(object):
                 f'class {name}(BaseGrammar):',
                 '    productions = [',
             ]
-            for production in self.children:
+            for production in self.filter(Node.is_production):
                 values.append(production.to_python())
             values.append('    ]')
-            values.extend(['', '    start = "start"'])
+            for start_node in self.filter(Node.is_start):
+                values.append(f'    start = "{start_node.value}"')
             return '\n'.join(values)
         else:
             raise Exception(f'Unrecognized node type, {self.node_type}')

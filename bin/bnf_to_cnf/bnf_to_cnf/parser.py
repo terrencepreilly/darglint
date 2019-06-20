@@ -15,7 +15,7 @@ class Parser(object):
     grammar = r'''
         start: grammar
 
-        grammar: imports? start_expression? name? production+
+        grammar: imports? name? start_expression? production+
 
         production: annotations? symbol _OPER expression
         _OPER: "::="
