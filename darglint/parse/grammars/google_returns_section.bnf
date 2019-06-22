@@ -1,0 +1,11 @@
+import google_base.bnf
+import google_types.bnf
+
+Grammar: ReturnsGrammar
+
+start: <returns-section>
+
+<returns-section>
+    ::= <returns> <colon> <newline> <block-indented>
+    | <returns> <colon> <newline> <indented> <type-section-returns> <line>
+    | <returns> <colon> <newline> <indented> <type-section-returns> <line> <newline> <block-indented>

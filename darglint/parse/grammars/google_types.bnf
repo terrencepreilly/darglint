@@ -1,0 +1,25 @@
+
+import google_base.bnf
+
+Grammar: TypesGrammar
+
+start: <type-section-returns>
+
+<type-section-returns>
+    ::= <type> <colon>
+
+<type-section>
+    ::= <lparen> <type> <rparen>
+
+<type>
+    ::= <type-words>
+
+# Since we're not capturing commas, this assumes that a comma is
+# present.  We'll probably want to add commas to the parsed symbols.
+<type-words>
+    ::= <type-word> <type-words>
+    | <type-word> <newline> <indents> <type-word> <type-words>
+    | ε
+
+<type-word>
+    ::= "TokenType\.WORD"

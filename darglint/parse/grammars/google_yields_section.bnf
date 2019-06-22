@@ -1,0 +1,11 @@
+import google_base.bnf
+import google_types.bnf
+
+Grammar: YieldsGrammar
+
+start: <yields-section>
+
+<yields-section>
+    ::= <yields> <colon> <newline> <block-indented>
+    | <yields> <colon> <newline> <indented> <type-section-returns> <line>
+    | <yields> <colon> <newline> <indented> <type-section-returns> <line> <newline> <block-indented>

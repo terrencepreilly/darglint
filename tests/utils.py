@@ -1,7 +1,16 @@
 
+import random
+import string
 from typing import (
     Callable,
-    Optional,
+    Iterable,
+    List,
+    Set,
+)
+
+from darglint.token import (
+    TokenType,
+    Token,
 )
 
 
@@ -55,3 +64,55 @@ def remove(fn):
         return fn(*args, **kwargs)
 
     return _inner
+
+
+def random_string(min_length=1, max_length=20):
+    # type: (int, int) -> str
+    ret = ''
+    for i in range(random.randint(min_length, max_length)):
+        ret += random.choice(string.ascii_letters)
+    return ret
+
+
+def random_tokens(min_length=1, max_length=20, exclude=set()):
+    # type: (int, int, Set[TokenType]) -> Iterable[Token]
+    allowable = [x for x in TokenType if x not in exclude]
+    ret = list()  # type: List[Token]
+    line_number = 0
+    for i in range(random.randint(min_length, max_length)):
+        _type = random.choice(allowable)  # type: TokenType
+        if _type == TokenType.ARGUMENTS:
+            value = 'Args'
+        elif _type == TokenType.COLON:
+            value = ':'
+        elif _type == TokenType.DOCTERM:
+            value = '"""'
+        elif _type == TokenType.HASH:
+            value = '#'
+        elif _type == TokenType.INDENT:
+            value = '    '
+        elif _type == TokenType.LPAREN:
+            value = '('
+        elif _type == TokenType.NEWLINE:
+            value = '\n'
+        elif _type == TokenType.RAISES:
+            value = 'Raises'
+        elif _type == TokenType.RETURNS:
+            value = 'Returns'
+        elif _type == TokenType.RPAREN:
+            value = ')'
+        elif _type == TokenType.WORD:
+            value = random_string()
+        elif _type == TokenType.YIELDS:
+            value = 'Yields'
+        else:
+            raise Exception('Unexpected token type {}'.format(
+                _type
+            ))
+        ret.append(Token(
+            token_type=_type,
+            value=value,
+            line_number=line_number,
+        ))
+        line_number += random.choice([0, 1])
+    return ret

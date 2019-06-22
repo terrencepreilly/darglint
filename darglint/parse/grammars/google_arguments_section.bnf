@@ -1,0 +1,24 @@
+import google_base.bnf
+import google_types.bnf
+
+Grammar: ArgumentsGrammar
+
+start: <arguments-section>
+
+<arguments-section>
+    ::= <arguments> <colon> <newline> <items-argument>
+
+<items-argument>
+    ::= <item-argument> <newline> <items-argument>
+    | <item-argument>
+
+<item-argument>
+    ::= <head-argument> <line> <newline> <paragraph-indented-two>
+    | <head-argument> <line>
+
+<head-argument>
+    ::= <indent> <argument> <colon>
+    | <indent> <argument> <type-section> <colon>
+
+<argument>
+    ::= "TokenType\.WORD"

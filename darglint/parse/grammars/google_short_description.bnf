@@ -1,0 +1,9 @@
+import google_base.bnf
+import google_types.bnf
+
+Grammar: ShortDescriptionGrammar
+
+start: <short-description>
+
+<short-description>
+    ::= <line>

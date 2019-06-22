@@ -50,6 +50,12 @@ class CykNode(object):
         self.value = value
         self.annotations = annotations
 
+    def __repr__(self):
+        return '<{}: {}>'.format(
+            self.symbol,
+            str(self.value.token_type)[10:] if self.value else '',
+        )
+
     def __str__(self, indent=0):
         if self.value:
             ret = (
@@ -80,6 +86,20 @@ class CykNode(object):
     def walk(self):
         # type: () -> Iterator['CykNode']
         yield from self.in_order_traverse()
+
+    def equals(self, other):
+        # type: (Optional['CykNode']) -> bool
+        if other is None:
+            return False
+        if self.symbol != other.symbol:
+            return False
+        if self.value != other.value:
+            return False
+        if self.lchild and not self.lchild.equals(other.lchild):
+            return False
+        if self.rchild and not self.rchild.equals(other.rchild):
+            return False
+        return True
 
     def reconstruct_string(self, strictness=0):
         # type: (int) -> str

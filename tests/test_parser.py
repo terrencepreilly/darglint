@@ -41,9 +41,9 @@ from darglint.peaker import (
     Peaker
 )
 
-from darglint.parse.grammars.google import (
-    Grammar,
-)
+# from darglint.parse.grammars.google import (
+#     Grammar,
+# )
 from darglint.parse.cyk import parse as parse_cyk
 from .utils import (
     replace,
@@ -61,6 +61,11 @@ class DocstringTestCase(TestCase):
             if child.symbol == symbol:
                 return
         self.fail('Tree does not contain symbol "{}"'.format(symbol))
+
+    def values_of(self, tree, symbol):
+        for child in tree.walk():
+            if child.symbol == symbol and child.value is not None:
+                yield child.value.value
 
     @replace()
     def test_parse_noqa_for_argument(self):
@@ -199,7 +204,7 @@ class DocstringTestCase(TestCase):
         node = parse_cyk(Grammar, tokens)
         self.assertTrue(node is not None)
 
-    @replace()
+    @replace('test_arguments_can_by_extracted_cyk')
     def test_arguments_extracted_when_extant(self):
         """Make sure the arguments can be parsed."""
         docstring = '\n'.join([
@@ -225,7 +230,34 @@ class DocstringTestCase(TestCase):
         self.assertTrue('param1' in args)
         self.assertTrue('param2' in args)
 
-    @replace()
+    @skip('Finish this.')
+    def test_arguments_can_be_extracted_cyk_(self):
+        docstring = '\n'.join([
+            'Example function with types documented in the docstring.',
+            '',
+            '`PEP 484`_ type annotations are supported. If attribute, parameter, and',  # noqa: E501
+            'return types are annotated according to `PEP 484`_, they do not need to be',  # noqa: E501
+            'included in the docstring:',
+            '',
+            'Args:',
+            '    param1 (int): The first parameter.',
+            '    param2 (str): The second parameter.',
+            '',
+            'Returns:',
+            '    bool: The return value. True for success, False otherwise.',
+            '',
+            '.. _PEP 484:',
+            '    https://www.python.org/dev/peps/pep-0484/',
+        ])
+        tokens = condense(lex(docstring))
+        tree = parse_cyk(Grammar, tokens)
+        args = list(self.values_of(tree, 'argument'))
+        self.assertEqual(
+            args,
+            ['param1', 'param2'],
+        )
+
+    @replace('test_arguments_with_multiple_lines_cyk')
     def test_arguments_with_multiple_lines(self):
         """Make sure multiple lines are okay in items."""
         docstring = '\n'.join([
@@ -254,6 +286,35 @@ class DocstringTestCase(TestCase):
         args = doc.get_items(Sections.ARGUMENTS_SECTION)
         for arg in 'param1', 'param2', '*args', '**kwargs':
             self.assertTrue(arg in args)
+
+    @skip('Far too slow.')
+    def test_arguments_with_multiple_lines_cyk(self):
+        docstring = '\n'.join([
+            'This is an example of a module level function.',
+            '',
+            'The format for a parameter is::',
+            '',
+            '    name (type): description',
+            '        The description may span multiple lines. Following',
+            '        lines should be indented. The "(type)" is optional.',
+            '',
+            '        Multiple paragraphs are supported in parameter',
+            '        descriptions.',
+            '',
+            'Args:',
+            '    param1 (int): The first parameter.',
+            '    param2 (:obj:`str`, optional): The second parameter. Defaults to None.',  # noqa: E501
+            '        Second line of description should be indented.',
+            '    *args: Variable length argument list.',
+            '    **kwargs: Arbitrary keyword arguments.',
+            '',
+            'Returns:',
+            '    bool: True if successful, False otherwise.',
+        ])
+        tokens = condense(lex(docstring))
+        tree = parse_cyk(Grammar, tokens)
+        self.assertTrue(tree is not None)
+        self.assertContains(tree, 'arguments')
 
     @replace()
     def test_arguments_are_last(self):
@@ -366,7 +427,7 @@ class DocstringTestCase(TestCase):
         doc = Docstring(docstring)
         self.assertEqual(doc.get_types(Sections.RETURNS_SECTION), 'Decimal')
 
-    @replace()
+    @replace('test_parse_star_arguments_cyk')
     def test_star_arguments_parsed(self):
         docstring = '\n'.join([
             'Negate a function which returns a boolean.',
@@ -381,6 +442,57 @@ class DocstringTestCase(TestCase):
         ])
         doc = Docstring(docstring)
         self.assertTrue('*fns' in doc.get_items(Sections.ARGUMENTS_SECTION))
+
+    def test_parse_multiple_sections_cyk(self):
+        sections = {
+            'arguments': '\n'.join([
+                'Args:',
+                '    x: A number.',
+                '    y: Another number, but with a much',
+                '        longer description.',
+            ]),
+            'returns': '\n'.join([
+                'Returns:',
+                '    The description of the thing returned.',
+                '    Can span multiple lines.',
+            ]),
+            'long_description': '\n'.join([
+                'A long description can appear anywhere.'
+            ]),
+            'yields': '\n'.join([
+                'Yields:',
+                '    A bunch of numbers.',
+            ])
+        }
+        keys = list(sections.keys())
+        docstring = 'Some initial section.\n\n{}\n\n{}\n'
+        for i in range(len(sections) - 1):
+            for j in range(i + 1, len(sections)):
+                section1 = sections[keys[i]]
+                section2 = sections[keys[j]]
+                tokens = condense(lex(docstring.format(section1, section2)))
+                tree = parse_cyk(Grammar, tokens)
+                self.assertTrue(tree is not None)
+                self.assertContains(tree, keys[i])
+                self.assertContains(tree, keys[j])
+
+    @skip('make sure we can parse multiple sections.')
+    def test_parse_star_arguments_cyk(self):
+        docstring = '\n'.join([
+            'Negate a function which returns a boolean.',
+            '',
+            'Args:',
+            '    *fns (int): Functions which returns a boolean.',
+            '',
+            'Returns:',
+            '    int: A function which returns fallse when any of the'
+            '        callables return true, and true will all of the ',
+            '        callables return false.',
+        ])
+        tokens = condense(lex(docstring))
+        tree = parse_cyk(Grammar, tokens)
+        self.assertTrue(tree is not None)
+        self.assertContains(tree, 'arguments')
 
     @replace()
     def test_bare_noqa_can_be_parsed(self):
@@ -439,7 +551,7 @@ class DocstringTestCase(TestCase):
             'joHwI\'',
         )
 
-    @remove
+    @replace('test_parse_primitive_type_cyk')
     def test_parse_primitive_type(self):
         """Make sure we can parse a primitive type like int or str."""
         node = parse_type(Peaker(lex('(int)')))
@@ -452,13 +564,26 @@ class DocstringTestCase(TestCase):
             'int',
         )
 
+    def test_parse_primitive_type_cyk(self):
+        docstring = '\n'.join([
+            'Capitalize the given string.',
+            '',
+            'Args:',
+            '    value (str): The string to capitalize.',
+            '',
+        ])
+        tokens = condense(lex(docstring))
+        tree = parse_cyk(Grammar, tokens)
+        self.assertTrue(tree is not None)
+        self.assertContains(tree, 'type')
+
     @remove
     def test_type_cannot_by_empty(self):
         """Make sure that if we have a type it cannot be empty."""
         with self.assertRaises(ParserException):
             parse_type(Peaker(lex('()')))
 
-    @remove
+    @replace('test_parse_compound_type_cyk')
     def test_parse_compound_type(self):
         """Make sure we can parse a type declaration with multiple items.
 
@@ -480,7 +605,21 @@ class DocstringTestCase(TestCase):
             'optional',
         )
 
-    @replace()
+    def test_parse_compound_type_cyk(self):
+        docstring = '\n'.join([
+            'Perform the given operation, if the item is present.',
+            '',
+            'Args:',
+            '    fn (Callable): The function to call.',
+            '    item (Any, Optional): The item, maybe.',
+            '',
+        ])
+        tokens = condense(lex(docstring))
+        tree = parse_cyk(Grammar, tokens)
+        self.assertTrue(tree is not None)
+        self.assertContains(tree, 'type')
+
+    @replace('test_parse_type_with_colon_in_arguments_cyk')
     def test_parse_type_with_colon(self):
         """Parse a type using the colon syntax."""
         node = parse_type(Peaker(lex('str:')))
@@ -493,7 +632,34 @@ class DocstringTestCase(TestCase):
             'str',
         )
 
-    @replace()
+    def test_parse_type_with_colon_in_yields_cyk(self):
+        docstring = '\n'.join([
+            'Get the nodes in the tree.',
+            '',
+            'Yields:',
+            '    Node: The nodes in the tree.',
+            '',
+        ])
+        tokens = condense(lex(docstring))
+        tree = parse_cyk(Grammar, tokens)
+        self.assertTrue(tree is not None)
+        self.assertContains(tree, 'type')
+
+    def test_parse_type_with_colon_in_returns_cyk(self):
+        docstring = '\n'.join([
+            'Get the nodes in the tree.',
+            '',
+            'Returns:',
+            '    Iterable[Node]: The nodes in the tree,',
+            '    in ascending order.',
+            '',
+        ])
+        tokens = condense(lex(docstring))
+        tree = parse_cyk(Grammar, tokens)
+        self.assertTrue(tree is not None)
+        self.assertContains(tree, 'type')
+
+    @remove
     def test_must_have_parentheses_around(self):
         """Make sure the type has to start with ( and end with )."""
         with self.assertRaises(ParserException):
@@ -503,7 +669,7 @@ class DocstringTestCase(TestCase):
         with self.assertRaises(ParserException):
             parse_type(Peaker(lex('( int (')))
 
-    @replace()
+    @replace('test_parse_type_with_line_continuation_cyk')
     def test_parse_type_with_line_continuation(self):
         """Make sure we allow for line continuation in types.
 
@@ -519,6 +685,30 @@ class DocstringTestCase(TestCase):
             '(int, '
             '    str)'
         ), lookahead=2))
+
+    def test_parse_type_with_line_continuation_cyk(self):
+        """Make sure we allow for line continuation in types.
+
+        See Issue 19.
+
+        """
+        # Should raise exception if not valid.  The ast module
+        # handles line continuation in docstrings, surprisingly.
+        # So, it just ends up looking like indents in random places.
+        # Probably, indents shouldn't have been lexed except
+        # immediately after newlines.
+        docstring = '\n'.join([
+            'Do something with complex array types.',
+            '',
+            'Args:',
+            '    item (AVeryLongTypeDefinitionWhichMustBeSplit,',
+            '       AcrossMultipleLines): Actually quite simple.',
+            '',
+        ])
+        tokens = condense(lex(docstring))
+        tree = parse_cyk(Grammar, tokens)
+        self.assertTrue(tree is not None)
+        self.assertContains(tree, 'type')
 
     @remove
     def test_parse_line_without_indent(self):
@@ -573,7 +763,7 @@ class DocstringTestCase(TestCase):
             ]
         )
 
-    @replace()
+    @replace('test_parse_line_with_parentheses_cyk')
     def test_parse_line_with_parentheses(self):
         """Make sure lines can have parentheses in them."""
         node = parse_line(Peaker(lex(
@@ -584,7 +774,13 @@ class DocstringTestCase(TestCase):
             NodeType.LINE,
         )
 
-    @replace()
+    def test_parse_line_with_parentheses_cyk(self):
+        docstring = 'A short (description) with parentheses.'
+        tokens = condense(lex(docstring))
+        tree = parse_cyk(Grammar, tokens)
+        self.assertTrue(tree is not None)
+
+    @replace('test_parse_line_with_multiple_indents_cyk')
     def test_parse_line_with_multiple_indents(self):
         """Make sure code snippets are okay."""
         node = parse_line(Peaker(lex(
@@ -604,6 +800,18 @@ class DocstringTestCase(TestCase):
                 NodeType.LINE,
             ]
         )
+
+    def test_parse_line_with_multiple_indents_cyk(self):
+        docstring = '\n'.join([
+            'The short description.',
+            '',
+            '            The long description.',
+            '',
+        ])
+        tokens = condense(lex(docstring))
+        tree = parse_cyk(Grammar, tokens)
+        self.assertTrue(tree is not None)
+        self.assertContains(tree, 'long-description')
 
     @replace()
     def test_parse_line_with_colons(self):

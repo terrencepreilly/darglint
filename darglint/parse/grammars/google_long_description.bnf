@@ -1,0 +1,10 @@
+import google_base.bnf
+import google_types.bnf
+
+Grammar: LongDescriptionGrammar
+
+start: <long-description>
+
+<long-description>
+    ::= <indents> <block>
+    | <block> <newline>

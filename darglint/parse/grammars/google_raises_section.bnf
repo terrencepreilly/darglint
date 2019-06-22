@@ -1,0 +1,23 @@
+import google_base.bnf
+import google_types.bnf
+
+Grammar: RaisesGrammar
+
+start: <raises-section>
+
+<raises-section>
+    ::= <raises> <colon> <newline> <items-exception>
+
+<items-exception>
+    ::= <item-exception> <newline> <items-exception>
+    | ε
+
+<item-exception>
+    ::= <head-exception> <line> <newline> <paragraph-indented-two>
+    | <head-exception> <line>
+
+<head-exception>
+    ::= <indent> <exception> <colon>
+
+<exception>
+    ::= "TokenType\.WORD"
