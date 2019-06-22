@@ -18,7 +18,7 @@ start: <arguments-section>
 
 <head-argument>
     ::= <indent> <argument> <colon>
-    | <indent> <argument> <type-section> <colon>
+    | <indent> <argument> <type-section-parens> <colon>
 
 <argument>
     ::= "TokenType\.WORD"

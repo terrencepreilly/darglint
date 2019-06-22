@@ -3,12 +3,16 @@ import google_base.bnf
 
 Grammar: TypesGrammar
 
-start: <type-section-returns>
-
-<type-section-returns>
-    ::= <type> <colon>
+start: <type-section>
 
 <type-section>
+    ::= <type-section-colon>
+    | <type-section-parens>
+
+<type-section-colon>
+    ::= <type> <colon>
+
+<type-section-parens>
     ::= <lparen> <type> <rparen>
 
 <type>

@@ -158,10 +158,32 @@ class NewGoogleParserTests(TestCase):
             'Args:',
             '    x: y',
         ])))
-        print(tokens)
         node = parse(tokens)
         self.assertEqual(
             node.symbol,
             'arguments-section',
+            str(node),
+        )
+
+    def test_parse_args_section_with_type(self):
+        tokens = condense(lex('\n'.join([
+            'Args:',
+            '    x (X): y',
+        ])))
+        node = parse(tokens)
+        self.assertEqual(
+            node.symbol,
+            'arguments-section',
+        )
+
+    def test_parse_yields_section(self):
+        tokens = condense(lex('\n'.join([
+            'Yields:',
+            '    x',
+        ])))
+        node = parse(tokens)
+        self.assertEqual(
+            node.symbol,
+            'yields-section',
             str(node),
         )

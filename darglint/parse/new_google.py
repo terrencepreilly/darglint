@@ -29,15 +29,13 @@ from .combinator import (
 #     parse as parse_cyk,
 # )
 
-from .grammars.google_long_description import LongDescriptionGrammar
-from .grammars.google_returns_section import ReturnsGrammar
-
-
 from .grammars.google_arguments_section import ArgumentsGrammar
-# from .grammars.google_raises_section import RaisesGrammar
+from .grammars.google_long_description import LongDescriptionGrammar
+from .grammars.google_raises_section import RaisesGrammar
+from .grammars.google_returns_section import ReturnsGrammar
 # from .grammars.google_short_description import ShortDescriptionGrammar
 # from .grammars.google_types import TypesGrammar
-# from .grammars.google_yields_section import YieldsGrammar
+from .grammars.google_yields_section import YieldsGrammar
 
 
 def top_parse(tokens):
@@ -76,6 +74,7 @@ def top_parse(tokens):
         else:
             # There were 2+ newlines: we're in a new section.
             ret.append(curr)
+            curr = list()
             i = j
 
     if curr:
@@ -92,6 +91,14 @@ def _match(token):
         ],
         TokenType.ARGUMENTS: [
             ArgumentsGrammar,
+            LongDescriptionGrammar,
+        ],
+        TokenType.YIELDS: [
+            YieldsGrammar,
+            LongDescriptionGrammar,
+        ],
+        TokenType.RAISES: [
+            RaisesGrammar,
             LongDescriptionGrammar,
         ],
     }

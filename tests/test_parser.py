@@ -40,6 +40,9 @@ from darglint.parse.google import (
 from darglint.peaker import (
     Peaker
 )
+from darglint.parse.new_google import (
+    parse as new_parse,
+)
 
 # from darglint.parse.grammars.google import (
 #     Grammar,
@@ -181,7 +184,7 @@ class DocstringTestCase(TestCase):
         ])
         doc = ast.get_docstring(ast.parse(func).body[0])
         tokens = list(lex(doc))
-        node = parse_cyk(Grammar, tokens)
+        node = new_parse(tokens)
         self.assertTrue(node is not None)
 
     def test_parse_long_description_multiple_sections(self):
@@ -201,7 +204,7 @@ class DocstringTestCase(TestCase):
         ])
         doc = ast.get_docstring(ast.parse(func).body[0])
         tokens = list(lex(doc))
-        node = parse_cyk(Grammar, tokens)
+        node = new_parse( tokens)
         self.assertTrue(node is not None)
 
     @replace('test_arguments_can_by_extracted_cyk')
@@ -362,11 +365,10 @@ class DocstringTestCase(TestCase):
             '',
             'Yields:',
             '    The number 5. Always.',
-            '',
         ])))
-        tree = parse_cyk(Grammar, tokens)
+        tree = new_parse(tokens)
         self.assertTrue(tree is not None)
-        self.assertContains(tree, 'yields')
+        self.assertContains(tree, 'yields-section')
 
     @replace('test_parse_raises_cyk')
     def test_can_parse_raises(self):
@@ -388,12 +390,12 @@ class DocstringTestCase(TestCase):
             '',
             'Raises:',
             '    Exception: An exception for generic reasons.',
-            '',
         ])
         tokens = condense(lex(docstring))
-        tree = parse_cyk(Grammar, tokens)
+        tree = new_parse(tokens)
+        print(tree)
         self.assertTrue(tree is not None)
-        self.assertContains(tree, 'raises')
+        self.assertContains(tree, 'raises-section')
         self.assertContains(tree, 'exception')
 
     @replace()
@@ -445,33 +447,33 @@ class DocstringTestCase(TestCase):
 
     def test_parse_multiple_sections_cyk(self):
         sections = {
-            'arguments': '\n'.join([
+            'arguments-section': '\n'.join([
                 'Args:',
                 '    x: A number.',
                 '    y: Another number, but with a much',
                 '        longer description.',
             ]),
-            'returns': '\n'.join([
+            'returns-section': '\n'.join([
                 'Returns:',
                 '    The description of the thing returned.',
                 '    Can span multiple lines.',
             ]),
-            'long_description': '\n'.join([
+            'long-description': '\n'.join([
                 'A long description can appear anywhere.'
             ]),
-            'yields': '\n'.join([
+            'yields-section': '\n'.join([
                 'Yields:',
                 '    A bunch of numbers.',
             ])
         }
         keys = list(sections.keys())
-        docstring = 'Some initial section.\n\n{}\n\n{}\n'
+        docstring = 'Some initial section.\n\n{}\n\n{}'
         for i in range(len(sections) - 1):
             for j in range(i + 1, len(sections)):
                 section1 = sections[keys[i]]
                 section2 = sections[keys[j]]
                 tokens = condense(lex(docstring.format(section1, section2)))
-                tree = parse_cyk(Grammar, tokens)
+                tree = new_parse(tokens)
                 self.assertTrue(tree is not None)
                 self.assertContains(tree, keys[i])
                 self.assertContains(tree, keys[j])
@@ -570,10 +572,9 @@ class DocstringTestCase(TestCase):
             '',
             'Args:',
             '    value (str): The string to capitalize.',
-            '',
         ])
         tokens = condense(lex(docstring))
-        tree = parse_cyk(Grammar, tokens)
+        tree = new_parse(tokens)
         self.assertTrue(tree is not None)
         self.assertContains(tree, 'type')
 
@@ -612,10 +613,9 @@ class DocstringTestCase(TestCase):
             'Args:',
             '    fn (Callable): The function to call.',
             '    item (Any, Optional): The item, maybe.',
-            '',
         ])
         tokens = condense(lex(docstring))
-        tree = parse_cyk(Grammar, tokens)
+        tree = new_parse(tokens)
         self.assertTrue(tree is not None)
         self.assertContains(tree, 'type')
 
@@ -638,10 +638,9 @@ class DocstringTestCase(TestCase):
             '',
             'Yields:',
             '    Node: The nodes in the tree.',
-            '',
         ])
         tokens = condense(lex(docstring))
-        tree = parse_cyk(Grammar, tokens)
+        tree = new_parse(tokens)
         self.assertTrue(tree is not None)
         self.assertContains(tree, 'type')
 
@@ -652,10 +651,9 @@ class DocstringTestCase(TestCase):
             'Returns:',
             '    Iterable[Node]: The nodes in the tree,',
             '    in ascending order.',
-            '',
         ])
         tokens = condense(lex(docstring))
-        tree = parse_cyk(Grammar, tokens)
+        tree = new_parse(tokens)
         self.assertTrue(tree is not None)
         self.assertContains(tree, 'type')
 
@@ -703,10 +701,9 @@ class DocstringTestCase(TestCase):
             'Args:',
             '    item (AVeryLongTypeDefinitionWhichMustBeSplit,',
             '       AcrossMultipleLines): Actually quite simple.',
-            '',
         ])
         tokens = condense(lex(docstring))
-        tree = parse_cyk(Grammar, tokens)
+        tree = new_parse(tokens)
         self.assertTrue(tree is not None)
         self.assertContains(tree, 'type')
 
@@ -777,7 +774,7 @@ class DocstringTestCase(TestCase):
     def test_parse_line_with_parentheses_cyk(self):
         docstring = 'A short (description) with parentheses.'
         tokens = condense(lex(docstring))
-        tree = parse_cyk(Grammar, tokens)
+        tree = new_parse(tokens)
         self.assertTrue(tree is not None)
 
     @replace('test_parse_line_with_multiple_indents_cyk')
@@ -806,10 +803,9 @@ class DocstringTestCase(TestCase):
             'The short description.',
             '',
             '            The long description.',
-            '',
         ])
         tokens = condense(lex(docstring))
-        tree = parse_cyk(Grammar, tokens)
+        tree = new_parse(tokens)
         self.assertTrue(tree is not None)
         self.assertContains(tree, 'long-description')
 
@@ -1071,12 +1067,11 @@ class DocstringTestCase(TestCase):
             '    hip: How hip it is.',
             '    hot: How hot it is.',
             '    coolness: Modified by this function.',
-            '',
         ])
         tokens = condense(lex(docstring))
-        tree = parse_cyk(Grammar, tokens)
+        tree = new_parse(tokens)
         self.assertTrue(tree is not None)
-        self.assertContains(tree, 'arguments')
+        self.assertContains(tree, 'arguments-section')
         self.assertContains(tree, 'argument')
 
     @remove
@@ -1124,17 +1119,16 @@ class DocstringTestCase(TestCase):
             '',
             'Returns:',
             '    Lorem ipsum dolor.',
-            '',
         ])))
-        node = parse_cyk(Grammar, tokens)
+        node = new_parse(tokens)
         self.assertTrue(node is not None)
-        self.assertContains(node, 'returns')
+        self.assertContains(node, 'returns-section')
 
     def test_can_have_word_returns_in_description(self):
         tokens = condense(lex('\n'.join([
             'Returns the sum of squares.'
         ])))
-        node = parse_cyk(Grammar, tokens)
+        node = new_parse(tokens)
         self.assertTrue(node is not None)
 
     def test_returns_section_can_be_multiple_indented_lines(self):
@@ -1148,9 +1142,9 @@ class DocstringTestCase(TestCase):
             '',
             '    For all x in X.',
         ])))
-        node = parse_cyk(Grammar, tokens)
+        node = new_parse(tokens)
         self.assertTrue(node is not None)
-        self.assertContains(node, 'returns')
+        self.assertContains(node, 'returns-section')
 
     @replace('test_parse_short_description_cyk')
     def test_parse_short_description(self):
@@ -1171,7 +1165,7 @@ class DocstringTestCase(TestCase):
     def test_parse_short_description_cyk(self):
         short_description = 'This is a short description.\n'
         tokens = list(lex(short_description))
-        node = parse_cyk(Grammar, tokens)
+        node = new_parse(tokens)
         self.assertTrue(node is not None)
         self.assertEqual(
             node.reconstruct_string(),
@@ -1181,7 +1175,7 @@ class DocstringTestCase(TestCase):
     def test_short_description_can_be_without_newline(self):
         short_description = 'This is a short description.'
         tokens = list(lex(short_description))
-        node = parse_cyk(Grammar, tokens)
+        node = new_parse(tokens)
         self.assertTrue(node is not None)
         self.assertEqual(
             node.reconstruct_string(),

@@ -10,7 +10,7 @@ start: <raises-section>
 
 <items-exception>
     ::= <item-exception> <newline> <items-exception>
-    | ε
+    | <item-exception>
 
 <item-exception>
     ::= <head-exception> <line> <newline> <paragraph-indented-two>
