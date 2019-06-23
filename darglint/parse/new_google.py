@@ -13,6 +13,7 @@ from functools import (
 from ..token import (
     Token,
     TokenType,
+    KEYWORDS,
 )
 from .cyk import (
     CykNode,
@@ -31,49 +32,75 @@ from .grammars.google_short_description import ShortDescriptionGrammar
 from .grammars.google_yields_section import YieldsGrammar
 
 
+def _get_split_end_with_indents(tokens, i):
+    # type: (List[Token], int) -> int
+    """Return the index of the end of this split, or 0.
+
+    Args:
+        tokens: A list of tokens.
+        i: The current index.
+
+    Returns:
+        If i is the start of a split, return the index of the
+        token after the end of the split (or the last token, if
+        it's the end of the docstring.)  If we're not at a split,
+        return 0.
+
+    """
+    newline_count = 0
+    indent_count = 0
+    j = i
+    while j < len(tokens):
+        if tokens[j].token_type == TokenType.NEWLINE:
+            newline_count += 1
+        elif tokens[j].token_type == TokenType.INDENT:
+            indent_count += 1
+        else:
+            break
+        j += 1
+
+    # TODO: Do we want to check for keywords before assuming a
+    # new section?  If we have line-separated sections in args,
+    # which do not have indents, then we will parse incorrectly.
+    if newline_count < 2:
+        return 0
+
+    if not indent_count:
+        return j
+
+    # TODO: Do we want to move the length check up to strip
+    # newlines out?
+    if (j < len(tokens)
+            and tokens[j].token_type in KEYWORDS
+            and tokens[j - 1].token_type == TokenType.NEWLINE):
+        return j
+
+    return 0
+
+
 def top_parse(tokens):
     # type: (List[Token]) -> List[List[Token]]
-    ret = list()
-    curr = list()  # type: List[Token]
-    i = 0
+    all_sections = list()
+    curr = 0
+    # Strip leading newlines.
+    while curr < len(tokens) and tokens[curr].token_type == TokenType.NEWLINE:
+        curr += 1
+    prev = curr
 
-    # Consume initial newlines.
-    while i < len(tokens) and tokens[i].token_type == TokenType.NEWLINE:
-        i += 1
-
-    if i >= len(tokens):
-        return list()
-
-    assert tokens[i].token_type != TokenType.NEWLINE, (
-        'i points at a non-newline token.'
-    )
-    while i < len(tokens):
-        curr.append(tokens[i])
-        j = i + 1
-        while j < len(tokens) and tokens[j].token_type == TokenType.NEWLINE:
-            j += 1
-        if j > len(tokens):
-            break
-
-        assert j == len(tokens) or tokens[j].token_type != TokenType.NEWLINE, (
-            'j points at a non-newline token'
-        )
-        assert j > i
-        if j - i == 1:
-            i += 1
-        elif j - i == 2:
-            # There was one newline: it's a part of this section.
-            i += 1
+    while curr < len(tokens):
+        split_end = _get_split_end_with_indents(tokens, curr)
+        if split_end > curr:
+            all_sections.append(
+                tokens[prev:curr]
+            )
+            curr = split_end
+            prev = curr
         else:
-            # There were 2+ newlines: we're in a new section.
-            ret.append(curr)
-            curr = list()
-            i = j
-
-    if curr:
-        ret.append(curr)
-
-    return ret
+            curr += 1
+    last_section = tokens[prev:curr]
+    if last_section:
+        all_sections.append(last_section)
+    return all_sections
 
 
 def _match(token):

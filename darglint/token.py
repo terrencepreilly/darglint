@@ -26,6 +26,14 @@ class TokenType(BaseTokenType):
     NOQA = 13
 
 
+KEYWORDS = {
+    TokenType.RETURNS,
+    TokenType.YIELDS,
+    TokenType.ARGUMENTS,
+    TokenType.RAISES,
+}
+
+
 class Token(object):
     """A token representing anything which can appear in a docstring."""
 

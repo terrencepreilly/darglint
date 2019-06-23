@@ -72,6 +72,42 @@ class NewGoogleParserTests(TestCase):
                 len(parsed) <= len(tokens)
             )
 
+    def test_expected_amount_of_sections(self):
+        docstring = '\n'.join([
+            'foobar',
+            '',
+            'Args:',
+            '    foo: foobar',
+            '',
+            'Returns:',
+            '    bar',
+        ])
+        tokens = condense(lex(docstring))
+        sections = top_parse(tokens)
+        self.assertEqual(
+            len(sections),
+            3,
+        )
+
+    def test_leading_newlines_stripped(self):
+        docstring = '\n    boDqRvgBr # Returns'
+        sections = top_parse(condense(lex(docstring)))
+        self.assertTrue(sections[0][0].token_type != TokenType.NEWLINE)
+
+    def test_top_parse_separates_by_indent_if_setion_starts(self):
+        """Make sure we an ignore indentations if between sections."""
+        docstring = '\n'.join([
+            'A short summary.',
+            '    ',
+            'Args:',
+            '    x: y.',
+            '        ',
+            'Returns:',
+            '    Something.',
+        ])
+        parsed = top_parse(condense(lex(docstring)))
+        self.assertEqual(len(parsed), 3)
+
     def test_top_parse_sections_do_not_start_with_newlines_and_nonempty(self):
         for _ in range(MAX_REPS):
             tokens = random_tokens()

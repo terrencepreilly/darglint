@@ -295,8 +295,7 @@ class DocstringTestCase(TestCase):
         self.assertTrue('param1' in args)
         self.assertTrue('param2' in args)
 
-    @skip('Finish this.')
-    def test_arguments_can_be_extracted_cyk_(self):
+    def test_arguments_can_be_extracted_cyk(self):
         docstring = '\n'.join([
             'Example function with types documented in the docstring.',
             '',
@@ -315,7 +314,7 @@ class DocstringTestCase(TestCase):
             '    https://www.python.org/dev/peps/pep-0484/',
         ])
         tokens = condense(lex(docstring))
-        tree = parse_cyk(Grammar, tokens)
+        tree = new_parse(tokens)
         args = list(self.values_of(tree, 'argument'))
         self.assertEqual(
             args,
@@ -605,7 +604,6 @@ class DocstringTestCase(TestCase):
                 self.assertContains(tree, keys[i])
                 self.assertContains(tree, keys[j])
 
-    @skip('make sure we can parse multiple sections.')
     def test_parse_star_arguments_cyk(self):
         docstring = '\n'.join([
             'Negate a function which returns a boolean.',
@@ -619,7 +617,7 @@ class DocstringTestCase(TestCase):
             '        callables return false.',
         ])
         tokens = condense(lex(docstring))
-        tree = parse_cyk(Grammar, tokens)
+        tree = new_parse(tokens)
         self.assertTrue(tree is not None)
         self.assertContains(tree, 'arguments')
 
@@ -1690,7 +1688,6 @@ class DocstringTestCase(TestCase):
             'The return section should not have been swallowed.',
         )
 
-    @skip('Not ready yet.')
     def test_only_indents_treated_as_newlines_in_compound_cyk(self):
         """Make sure that erroneous indentation is treated like newlines.
 
@@ -1877,7 +1874,8 @@ class DocstringTestCase(TestCase):
         ])
         function = ast.parse(contents).body[0]
         docstring = ast.get_docstring(function)
-        node = new_parse(condense(lex(docstring)))
+        tokens = condense(lex(docstring))
+        node = new_parse(tokens)
         self.assertTrue(node.contains('short-description'))
         self.assertTrue(node.contains('returns-section'))
         self.assertTrue(node.contains('arguments-section'))
