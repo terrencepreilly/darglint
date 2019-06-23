@@ -352,7 +352,25 @@ class DocstringTestCase(TestCase):
         for arg in 'param1', 'param2', '*args', '**kwargs':
             self.assertTrue(arg in args)
 
-    @skip('Far too slow.')
+    def test_crazy_argument_type_signatures(self):
+        possible_types = [
+            # '(int)',
+            # '(:obj:`str`, optional)',
+            '(:obj:`str`, optional)',
+            '(:obj:`str`,\n    optional)',
+        ]
+        for type_ in possible_types:
+            docstring = '\n'.join([
+                'A short summary,',
+                '',
+                'Args:',
+                '    x {}: y.'.format(type_),
+            ])
+            node = new_parse(condense(lex(docstring)))
+            print(docstring)
+            print(node)
+            self.assertTrue(node.contains('type-section-parens'))
+
     def test_arguments_with_multiple_lines_cyk(self):
         docstring = '\n'.join([
             'This is an example of a module level function.',
@@ -367,8 +385,8 @@ class DocstringTestCase(TestCase):
             '        descriptions.',
             '',
             'Args:',
-            '    param1 (int): The first parameter.',
-            '    param2 (:obj:`str`, optional): The second parameter. Defaults to None.',  # noqa: E501
+            '    param1: The first parameter.',
+            '    param2: The second parameter. Defaults to None.',  # noqa: E501
             '        Second line of description should be indented.',
             '    *args: Variable length argument list.',
             '    **kwargs: Arbitrary keyword arguments.',
@@ -377,9 +395,9 @@ class DocstringTestCase(TestCase):
             '    bool: True if successful, False otherwise.',
         ])
         tokens = condense(lex(docstring))
-        tree = parse_cyk(Grammar, tokens)
+        tree = new_parse(tokens)
         self.assertTrue(tree is not None)
-        self.assertContains(tree, 'arguments')
+        self.assertContains(tree, 'arguments-section')
 
     @replace('test_arguments_are_last_cyk')
     def test_arguments_are_last(self):
@@ -704,7 +722,7 @@ class DocstringTestCase(TestCase):
         tokens = condense(lex(docstring))
         tree = new_parse(tokens)
         self.assertTrue(tree is not None)
-        self.assertContains(tree, 'type')
+        self.assertContains(tree, 'type-section-parens')
 
     @remove
     def test_type_cannot_by_empty(self):
@@ -745,7 +763,7 @@ class DocstringTestCase(TestCase):
         tokens = condense(lex(docstring))
         tree = new_parse(tokens)
         self.assertTrue(tree is not None)
-        self.assertContains(tree, 'type')
+        self.assertContains(tree, 'type-section-parens')
 
     @replace('test_parse_type_with_colon_in_arguments_cyk')
     def test_parse_type_with_colon(self):
@@ -770,7 +788,7 @@ class DocstringTestCase(TestCase):
         tokens = condense(lex(docstring))
         tree = new_parse(tokens)
         self.assertTrue(tree is not None)
-        self.assertContains(tree, 'type')
+        self.assertContains(tree, 'type-section-colon')
 
     def test_parse_type_with_colon_in_returns_cyk(self):
         docstring = '\n'.join([
@@ -783,7 +801,7 @@ class DocstringTestCase(TestCase):
         tokens = condense(lex(docstring))
         tree = new_parse(tokens)
         self.assertTrue(tree is not None)
-        self.assertContains(tree, 'type')
+        self.assertContains(tree, 'type-section-colon')
 
     @remove
     def test_must_have_parentheses_around(self):
@@ -833,7 +851,7 @@ class DocstringTestCase(TestCase):
         tokens = condense(lex(docstring))
         tree = new_parse(tokens)
         self.assertTrue(tree is not None)
-        self.assertContains(tree, 'type')
+        self.assertContains(tree, 'type-section-parens')
 
     @remove
     def test_parse_line_without_indent(self):

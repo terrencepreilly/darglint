@@ -1,6 +1,8 @@
 
 import google_base.bnf
 
+# Since we're not capturing commas, this assumes that a comma is
+# present.  We'll probably want to add commas to the parsed symbols.
 Grammar: TypesGrammar
 
 start: <type-section>
@@ -10,19 +12,24 @@ start: <type-section>
     | <type-section-parens>
 
 <type-section-colon>
-    ::= <type> <colon>
+    ::= <type-words> <colon>
 
 <type-section-parens>
-    ::= <lparen> <type> <rparen>
+    ::= <lparen> <type-words-colon> <rparen>
 
-<type>
-    ::= <type-words>
+# The type words, but allowing colons.
+<type-words-colon>
+    ::= <type-word-colon> <type-words-colon>
+    | <type-word-colon> <newline> <indents> <type-words-colon>
+    | ε
 
-# Since we're not capturing commas, this assumes that a comma is
-# present.  We'll probably want to add commas to the parsed symbols.
+<type-word-colon>
+    ::= "TokenType\.WORD"
+    | "TokenType\.COLON"
+
 <type-words>
     ::= <type-word> <type-words>
-    | <type-word> <newline> <indents> <type-word> <type-words>
+    | <type-word> <newline> <indents> <type-words>
     | ε
 
 <type-word>
