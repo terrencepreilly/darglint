@@ -1,0 +1,16 @@
+import google_terminals.bnf
+
+<noqa-maybe>
+    ::= <noqa-statement>
+    | ε
+
+<noqa-statement>
+    ::= <noqa-head>
+    | <noqa-head> <colon> <words>
+
+<noqa-head>
+    ::= <hash> <noqa>
+
+<words>
+    ::= <word> <words>
+    | <word>

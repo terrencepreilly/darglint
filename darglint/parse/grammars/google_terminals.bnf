@@ -1,0 +1,45 @@
+<word>
+    ::= "TokenType\.WORD"
+    | <arguments>
+    | <colon>
+    | <hash>
+    | <indent>
+    | <lparen>
+    | <raises>
+    | <returns>
+    | <rparen>
+    | <yields>
+    | <noqa>
+
+<arguments>
+    ::= "TokenType\.ARGUMENTS"
+
+<colon>
+    ::= "TokenType\.COLON"
+
+<hash>
+    ::= "TokenType\.HASH"
+
+<indent>
+    ::= "TokenType\.INDENT"
+
+<lparen>
+    ::= "TokenType\.LPAREN"
+
+<newline>
+    ::= "TokenType\.NEWLINE"
+
+<raises>
+    ::= "TokenType\.RAISES"
+
+<returns>
+    ::= "TokenType\.RETURNS"
+
+<rparen>
+    ::= "TokenType\.RPAREN"
+
+<yields>
+    ::= "TokenType\.YIELDS"
+
+<noqa>
+    ::= "TokenType\.NOQA"

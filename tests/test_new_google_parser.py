@@ -187,3 +187,17 @@ class NewGoogleParserTests(TestCase):
             'yields-section',
             str(node),
         )
+
+    def test_parse_yields_short_description_for_first_line_if_possible(self):
+        tokens = condense(lex('\n'.join([
+            'Short description.',
+            '',
+            'Long description.'
+        ])))
+        node = parse(tokens)
+        self.assertTrue(
+            node.contains('short-description')
+        )
+        self.assertTrue(
+            node.contains('long-description')
+        )

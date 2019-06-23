@@ -70,7 +70,7 @@ class DocstringTestCase(TestCase):
             if child.symbol == symbol and child.value is not None:
                 yield child.value.value
 
-    @replace()
+    @replace('test_parse_noqa_for_argument_cyk')
     def test_parse_noqa_for_argument(self):
         """Make sure we can get the noqas."""
         func = '\n'.join([
@@ -92,7 +92,39 @@ class DocstringTestCase(TestCase):
         noqas = docstring.get_noqas()
         self.assertTrue('arg1' in noqas['I102'])
 
-    @replace()
+    def test_parse_noqa_for_argument_cyk(self):
+        func = '\n'.join([
+            'def my_function():',
+            '    """Has an extra argument, but thats okay.',
+            '',
+            '    Args:',
+            '        arg1: This will be defined very soon.  # noqa: I102',
+            '',
+            '    """',
+            '    print("Not done yet!")',
+        ])
+        doc = ast.get_docstring(ast.parse(func).body[0])
+        self.assertTrue(doc.startswith('Has an extra'))
+        node = new_parse(condense(lex(doc)))
+        self.assertTrue(
+            node.contains('noqa'),
+        )
+        maybe_noqa = None
+        for child in node.walk():
+            if child.symbol == 'noqa-maybe':
+                maybe_noqa = child
+                break
+        word = None
+        for child in maybe_noqa.walk():
+            if child.symbol == 'words':
+                word = child
+                break
+        self.assertEqual(
+            word.value.value,
+            'I102',
+        )
+
+    @replace('test_parse_noqa_for_global_cyk')
     def test_parse_noqa_for_global(self):
         """Make sure global targets are empty lists."""
         func = '\n'.join([
@@ -114,7 +146,22 @@ class DocstringTestCase(TestCase):
             )
         )
 
-    @replace()
+    def test_parse_noqa_for_global_cyk(self):
+        """Make sure global targets are empty lists."""
+        func = '\n'.join([
+            'def my_function():',
+            '    """Ignore missing return.',
+            '',
+            '    # noqa: I201',
+            '',
+            '    """',
+            '    return "This is ignored."',
+        ])
+        doc = ast.get_docstring(ast.parse(func).body[0])
+        node = new_parse(condense(lex(doc)))
+        self.assertTrue(node.contains('noqa'))
+
+    @replace('test_parse_global_noqa_with_target_cyk')
     def test_parse_global_noqa_with_target(self):
         """Make sure targets are present in the lists."""
         func = '\n'.join([
@@ -132,6 +179,21 @@ class DocstringTestCase(TestCase):
         self.assertTrue(
             'arg1' in noqas['I101']
         )
+
+    def test_parse_global_noqa_with_target_cyk(self):
+        """Make sure targets are present in the lists."""
+        func = '\n'.join([
+            'def my_function(arg1):',
+            '    """Ignore missing argument.',
+            '',
+            '    # noqa: I101 arg1',
+            '',
+            '    """',
+            '    pass',
+        ])
+        doc = ast.get_docstring(ast.parse(func).body[0])
+        node = new_parse(condense(lex(doc)))
+        self.assertTrue(node.contains('noqa'))
 
     @replace('test_parses_long_description_cyk')
     def test_parses_long_description(self):
@@ -319,7 +381,7 @@ class DocstringTestCase(TestCase):
         self.assertTrue(tree is not None)
         self.assertContains(tree, 'arguments')
 
-    @replace()
+    @replace('test_arguments_are_last_cyk')
     def test_arguments_are_last(self):
         """Make sure arguments can be parsed as the last section."""
         docstring = '\n'.join([
@@ -344,6 +406,30 @@ class DocstringTestCase(TestCase):
         args = doc.get_items(Sections.ARGUMENTS_SECTION)
         for arg in ['param1', 'param2', 'param3']:
             arg in args
+
+    def test_arguments_are_last_cyk(self):
+        """Make sure arguments can be parsed as the last section."""
+        docstring = '\n'.join([
+            'Example of docstring on the __init__ method.',
+            '',
+            'The __init__ method may be documented in either the class level',
+            'docstring, or as a docstring on the __init__ method itself.',
+            '',
+            'Either form is acceptable, but the two should not be mixed. Choose one',  # noqa: E501
+            'convention to document the __init__ method and be consistent with it.',  # noqa: E501
+            '',
+            'Note:',
+            '    Do not include the `self` parameter in the ``Args`` section.',
+            '',
+            'Args:',
+            '    param1: Description of `param1`.',
+            '    param2: Description of `param2`. Multiple',  # noqa: E501
+            '        lines are supported.',
+            '    param3: Description of `param3`.',
+        ])
+        node = new_parse(condense(lex(docstring)))
+        print(node)
+        self.assertTrue(node.contains('arguments-section'))
 
     @replace('test_parse_yields_cyk')
     def test_can_parse_yields(self):
@@ -398,7 +484,7 @@ class DocstringTestCase(TestCase):
         self.assertContains(tree, 'raises-section')
         self.assertContains(tree, 'exception')
 
-    @replace()
+    @replace('test_argument_types_can_be_parsed_cyk')
     def test_argument_types_can_be_parsed(self):
         docstring = '\n'.join([
             'This docstring contains types for its arguments.',
@@ -418,7 +504,19 @@ class DocstringTestCase(TestCase):
         self.assertEqual(arg_types['x'], 'int')
         self.assertEqual(arg_types['y'], 'float')
 
-    @replace()
+    def test_argument_types_can_be_parsed_cyk(self):
+        docstring = '\n'.join([
+            'This docstring contains types for its arguments.',
+            '',
+            'Args:',
+            '    x (int): The first number.',
+            '    y (float): The second number.',
+        ])
+        node = new_parse(condense(lex(docstring)))
+        self.assertTrue(node.contains('arguments-section'))
+        self.assertTrue(node.contains('type-section-parens'))
+
+    @replace('test_can_parse_return_type_cyk')
     def test_can_parse_return_type(self):
         docstring = '\n'.join([
             'Return an approximation of pi.',
@@ -428,6 +526,17 @@ class DocstringTestCase(TestCase):
         ])
         doc = Docstring(docstring)
         self.assertEqual(doc.get_types(Sections.RETURNS_SECTION), 'Decimal')
+
+    def test_can_parse_return_type_cyk(self):
+        docstring = '\n'.join([
+            'Return an approximation of pi.',
+            '',
+            'Returns:',
+            '    Decimal: An approximation of pi.',
+        ])
+        node = new_parse(condense(lex(docstring)))
+        self.assertTrue(node.contains('returns-section'))
+        self.assertTrue(node.contains('type-section-colon'))
 
     @replace('test_parse_star_arguments_cyk')
     def test_star_arguments_parsed(self):
@@ -496,7 +605,7 @@ class DocstringTestCase(TestCase):
         self.assertTrue(tree is not None)
         self.assertContains(tree, 'arguments')
 
-    @replace()
+    @replace('test_bare_noqa_can_be_parsed_cyk')
     def test_bare_noqa_can_be_parsed(self):
         docstring = '\n'.join([
             'The first line may have something, but others are missing.',
@@ -504,6 +613,25 @@ class DocstringTestCase(TestCase):
             '# noqa'
         ])
         Docstring(docstring)
+
+    def test_bare_noqa_can_be_parsed_cyk(self):
+        docstring = '\n'.join([
+            'The first line may have something, but others are missing.',
+            '',
+            '# noqa'
+        ])
+        node = new_parse(condense(lex(docstring)))
+        self.assertTrue(node.contains('noqa'))
+
+    def test_nonhash_noqa_is_word(self):
+        """Ensures we can distinguish a noqa from the word noqa."""
+        docstring = '\n'.join([
+            'The first line may have something, but others are missing.',
+            '',
+            'noqa'
+        ])
+        node = new_parse(condense(lex(docstring)))
+        self.assertFalse(node.contains('noqa'))
 
     @remove
     def test_parse_keyword(self):
@@ -721,7 +849,7 @@ class DocstringTestCase(TestCase):
             [NodeType.WORD, NodeType.WORD, NodeType.LINE],
         )
 
-    @replace()
+    @replace('test_parse_empty_line_cyk')
     def test_parse_empty_line(self):
         """Make sure we can parse a line with just an indent."""
         node = parse_line(Peaker(lex(' '*4 + '\n')))
@@ -734,6 +862,11 @@ class DocstringTestCase(TestCase):
             child_types,
             [NodeType.INDENT, NodeType.LINE],
         )
+
+    def test_parse_empty_line_cyk(self):
+        """Make sure we can parse a line with just an indent."""
+        node = new_parse(condense(lex(' '*4 + '\n')))
+        self.assertTrue(node)
 
     @remove
     def test_parse_line_with_words(self):
@@ -809,7 +942,7 @@ class DocstringTestCase(TestCase):
         self.assertTrue(tree is not None)
         self.assertContains(tree, 'long-description')
 
-    @replace()
+    @replace('test_parse_line_with_colons_cyk')
     def test_parse_line_with_colons(self):
         """Make sure lines with colons can be parsed."""
         node = parse_line(Peaker(lex(
@@ -830,7 +963,19 @@ class DocstringTestCase(TestCase):
             ]
         )
 
-    @replace()
+    def test_parse_line_with_colons_cyk(self):
+        """Make sure lines with colons can be parsed."""
+        node = new_parse(condense(lex(
+            '    ::\n'
+        )))
+        self.assertTrue(node)
+        self.assertEqual(
+            node.symbol,
+            'long-description',
+            'It can\'t be a short-description because of the indent.',
+        )
+
+    @replace('test_parse_line_which_looks_like_definition_cyk')
     def test_parse_line_which_looks_like_definition(self):
         """Make sure a line which looks like a definition can be parsed."""
         node = parse_line(Peaker(lex(
@@ -852,6 +997,14 @@ class DocstringTestCase(TestCase):
                 NodeType.LINE,
             ]
         )
+
+    def test_parse_line_which_looks_like_definition_cyk(self):
+        """Make sure a line which looks like a definition can be parsed."""
+        node = new_parse(condense(lex(
+            '    Returns: Some value.\n'
+        )))
+        self.assertTrue(node)
+        self.assertEqual(node.symbol, 'long-description')
 
     @remove
     def test_parse_returns_section(self):
@@ -882,7 +1035,7 @@ class DocstringTestCase(TestCase):
             ]
         )
 
-    @replace()
+    @replace('test_parse_line_with_type_cyk')
     def test_parse_line_with_type(self):
         """Make sure we can parse a line when it starts with a type."""
         node = parse_line_with_type(Peaker(lex(
@@ -907,14 +1060,28 @@ class DocstringTestCase(TestCase):
             ]
         )
 
-    @replace()
+    def test_parse_line_with_type_cyk(self):
+        """Make sure we can parse a line when it starts with a type."""
+        node = new_parse(condense(lex(
+            '    int: the square of something.\n'
+        )))
+        self.assertTrue(node.contains('line'))
+
+    @replace('test_parse_line_without_type_but_with_parentheses_cyk')
     def test_parse_line_without_type_but_with_parentheses(self):
         """Make sure we can have parentheses otherwise."""
         parse_line_with_type(Peaker(lex(
             '    A list of items (of type T), which pass the given test'
         )))
 
-    @replace()
+    def test_parse_line_without_type_but_with_parentheses_cyk(self):
+        """Make sure we can have parentheses otherwise."""
+        node = new_parse(condense(lex(
+            '    A list of items (of type T), which pass the given test'
+        )))
+        self.assertTrue(node)
+
+    @replace('test_parse_returns_section_with_type_cyk')
     def test_parse_returns_section_with_type(self):
         """Make sure the returns section can have a type."""
         node = parse_simple_section(Peaker(lex(
@@ -946,7 +1113,17 @@ class DocstringTestCase(TestCase):
             ]
         )
 
-    @replace()
+    def test_parse_returns_section_with_type_cyk(self):
+        """Make sure the returns section can have a type."""
+        node = new_parse(condense(lex(
+            'Returns:\n'
+            '    int: The square of something.\n'
+            '\n'
+        )))
+        self.assertTrue(node)
+        self.assertEqual(node.symbol, 'returns-section')
+
+    @replace('test_parse_yields_section_cyk')
     def test_parse_yields_section(self):
         """Make sure we can parse a yields section."""
         node = parse_simple_section(Peaker(lex(
@@ -974,6 +1151,18 @@ class DocstringTestCase(TestCase):
                 NodeType.SECTION_SIMPLE_BODY,
                 NodeType.SECTION,
             ]
+        )
+
+    def test_parse_yields_section_cyk(self):
+        """Make sure we can parse a yields section."""
+        node = new_parse(condense(lex(
+            'Yields:\n'
+            '    Nodes in a stream.\n'
+            '\n'
+        )))
+        self.assertEqual(
+            node.symbol,
+            'yields-section',
         )
 
     @remove
@@ -1182,7 +1371,7 @@ class DocstringTestCase(TestCase):
             short_description,
         )
 
-    @replace()
+    @replace('test_parse_whole_description_cyk')
     def test_parse_whole_description(self):
         """Make sure we can handle descriptions of multiple lines."""
         node = parse_description(Peaker(lex(
@@ -1216,7 +1405,21 @@ class DocstringTestCase(TestCase):
             ]
         )
 
-    @replace()
+    def test_parse_whole_description_cyk(self):
+        """Make sure we can handle descriptions of multiple lines."""
+        node = new_parse(condense(lex(
+            'Short description\n'
+            '\n'
+            'Long : (description)\n'
+            '\n'
+            '    <code></code>\n'
+            '\n'
+        )))
+        self.assertTrue(node)
+        self.assertTrue(node.contains('short-description'))
+        self.assertTrue(node.contains('long-description'))
+
+    @replace('test_description_ends_with_sections_cyk')
     def test_description_ends_with_sections(self):
         """Make sure the description section doesn't eat everything."""
         peaker = Peaker(lex(
@@ -1238,7 +1441,22 @@ class DocstringTestCase(TestCase):
             NodeType.RETURNS_SECTION,
         )
 
-    @replace()
+    def test_description_ends_with_sections_cyk(self):
+        """Make sure the description section doesn't eat everything."""
+        node = new_parse(condense(lex(
+            'Short description.\n'
+            '\n'
+            'Long Description.\n'
+            '\n'
+            'Returns:\n'
+            '    Nothing!\n'
+            '\n'
+        )))
+        self.assertTrue(node.contains('short-description'))
+        self.assertTrue(node.contains('long-description'))
+        self.assertTrue(node.contains('returns-section'))
+
+    @replace('test_long_description_can_come_between_sections_cyk')
     def test_long_description_can_come_between_sections(self):
         """Make sure non-standard parts are treated as descriptions."""
         node = parse(Peaker(lex('\n'.join([
@@ -1260,7 +1478,21 @@ class DocstringTestCase(TestCase):
             NodeType.LONG_DESCRIPTION,
         )
 
-    @replace()
+    def test_long_description_can_come_between_sections_cyk(self):
+        """Make sure non-standard parts are treated as descriptions."""
+        node = new_parse(condense(lex('\n'.join([
+            'Double the number.',
+            '',
+            'Args:',
+            '    x: The only argument..',
+            '',
+            'Requires:',
+            '    Some kind of setup.',
+            '',
+        ]))))
+        self.assertTrue(node.contains('long-description'))
+
+    @replace('test_parse_all_section_types_cyk')
     def test_parses_all_section_types(self):
         """Make sure all section types can be parsed."""
         node = parse(Peaker(lex('\n'.join([
@@ -1294,7 +1526,37 @@ class DocstringTestCase(TestCase):
             ]
         )
 
-    @replace()
+    def test_parse_all_section_types_cyk(self):
+        """Make sure all section types can be parsed."""
+        node = new_parse(condense(lex('\n'.join([
+            'Short description.',
+            '',
+            'Long Description.',
+            '',
+            'Args:',
+            '    x: The first argument with',
+            '        two lines.',
+            '    y: The second argument.',
+            '',
+            'Raises:',
+            '    SomethingException: Randomly.',
+            '',
+            'Non-Standard:'
+            '    Everything about this.',
+            '',
+            'Yields:',
+            '    Values to analyze.',
+        ]))))
+        for symbol in [
+            'short-description',
+            'long-description',
+            'arguments-section',
+            'raises-section',
+            'yields-section',
+        ]:
+            self.assertTrue(node.contains(symbol))
+
+    @replace('test_parse_bare_noqa_statement_cyk')
     def test_parse_bare_noqa_statement(self):
         """Make sure we can parse noqa statements."""
         node = parse_noqa(Peaker(lex('# noqa\n')))
@@ -1308,7 +1570,12 @@ class DocstringTestCase(TestCase):
             ]
         )
 
-    @replace()
+    def test_parse_bare_noqa_statement_cyk(self):
+        """Make sure we can parse noqa statements."""
+        node = new_parse(condense(lex('# noqa\n')))
+        self.assertTrue(node.contains('noqa'))
+
+    @replace('test_parse_noqa_with_target_cyk')
     def test_parse_noqa_with_target(self):
         """Make sure we can target a specific error message."""
         node = parse_noqa(Peaker(lex('# noqa: I203\n')))
@@ -1325,7 +1592,12 @@ class DocstringTestCase(TestCase):
             ],
         )
 
-    @replace()
+    def test_parse_noqa_with_target_cyk(self):
+        """Make sure we can target a specific error message."""
+        node = new_parse(condense(lex('# noqa: I203\n')))
+        self.assertTrue(node.contains('noqa'))
+
+    @replace('test_parse_noqa_with_target_and_argument_cyk')
     def test_parse_noqa_with_target_and_argument(self):
         """Make sure we can target specific args in a noqa."""
         node = parse_noqa(Peaker(lex('# noqa: I101 arg1, arg2\n')))
@@ -1345,7 +1617,12 @@ class DocstringTestCase(TestCase):
             ]
         )
 
-    @replace()
+    def test_parse_noqa_with_target_and_argument_cyk(self):
+        """Make sure we can target specific args in a noqa."""
+        node = new_parse(condense(lex('# noqa: I101 arg1, arg2\n')))
+        self.assertTrue(node.contains('noqa'))
+
+    @replace('test_parse_inline_noqa_statements_cyk')
     def test_parse_inline_noqa_statements(self):
         """Make sure we can parse noqa statements."""
         node = parse_line(Peaker(lex('Something something.  # noqa: I201\n')))
@@ -1366,7 +1643,14 @@ class DocstringTestCase(TestCase):
             ]
         )
 
-    @replace()
+    def test_parse_inline_noqa_statements_cyk(self):
+        """Make sure we can parse noqa statements."""
+        node = new_parse(condense(lex(
+            'Something something.  # noqa: I201\n'
+        )))
+        self.assertTrue(node.contains('noqa'))
+
+    @replace('test_only_indents_treated_as_newlines_in_compound_cyk')
     def test_only_indents_treated_as_newlines_in_compound(self):
         """Make sure that erroneous indentation is treated like newlines.
 
@@ -1388,7 +1672,26 @@ class DocstringTestCase(TestCase):
             'The return section should not have been swallowed.',
         )
 
-    @replace()
+    @skip('Not ready yet.')
+    def test_only_indents_treated_as_newlines_in_compound_cyk(self):
+        """Make sure that erroneous indentation is treated like newlines.
+
+        This is okay to do, since other tools should pick up and handle
+        erroneous newlines.  (Flake8, for example raises the W293 error.)
+
+        """
+        node = new_parse(condense(lex('\n'.join([
+            'Maintains the heap invariant.',
+            '',
+            'Args:',
+            '    heap: A something close to a heap.',
+            '    ',
+            'Returns:',
+            '    That self-same heap.',
+        ]))))
+        self.assertTrue(node.contains('returns-section'))
+
+    @replace('test_only_indents_treated_newlines_within_simple_section_cyk')
     def test_only_indents_treated_newlines_within_simple_section(self):
         """Make sure indent-only lines are treated as newlines in simple."""
         root = parse(Peaker(lex('\n'.join([
@@ -1407,7 +1710,23 @@ class DocstringTestCase(TestCase):
             raises is not None,
         )
 
-    @replace()
+    @skip('Not ready yet')
+    def test_only_indents_treated_newlines_within_simple_section_cyk(self):
+        """Make sure indent-only lines are treated as newlines in simple."""
+        node = new_parse(condense(lex('\n'.join([
+            'Get the value of pi.',
+            '',
+            'Returns:',
+            '    A value that is an approximation of pi.  This approximation',
+            '    is actually just the quotient,',
+            '    ',
+            'Raises:',
+            '    Exception: Seemingly at random.',
+            '',
+        ]))))
+        self.assertTrue(node.contains('raises-section'))
+
+    @replace('test_parse_long_description_with_noqa_cyk')
     def test_parse_long_description_with_noqa(self):
         """Make sure noqas can appear in a global scope."""
         parse(Peaker(lex('\n'.join([
@@ -1419,7 +1738,19 @@ class DocstringTestCase(TestCase):
             '\n'
         ])), lookahead=3))
 
-    @replace()
+    def test_parse_long_description_with_noqa_cyk(self):
+        """Make sure noqas can appear in a global scope."""
+        node = new_parse(condense(lex('\n'.join([
+            'Short description can\'t have a noqa.'
+            ''
+            'But a long description can.'
+            ''
+            '# noqa: I101 arg1'
+            '\n'
+        ]))))
+        self.assertTrue(node.contains('noqa'))
+
+    @replace('test_no_blank_line_swallows_sections')
     def test_parse_short_description_without_blank_line_raises_error(self):
         """Make sure there must be a blank line after the short description."""
         peaker = Peaker(lex('\n'.join([
@@ -1432,10 +1763,25 @@ class DocstringTestCase(TestCase):
         with self.assertRaises(ParserException):
             parse(peaker)
 
-    @replace()
+    def test_no_blank_line_swallows_sections(self):
+        """Make sure there must be a blank line after the short description."""
+        node = new_parse(condense(lex('\n'.join([
+            'Should not have a raises section.',
+            'Args:',
+            '    x: The divisor.',
+            '    y: The dividend.',
+            '',
+        ]))))
+        self.assertFalse(
+            node.contains('arguments-section'),
+            'The arguments section should have been eaten -- that way the '
+            'user gets a signal that they should separate the sections.'
+        )
+
+    @skip('Not ready yet.')
     def test_all_nodes_have_line_numbers(self):
         """Make sure all nodes in the AST have line numbers."""
-        peaker = Peaker(lex('\n'.join([
+        node = new_parse(condense(lex('\n'.join([
             'The short description should have line numbers.',
             '',
             'The long description should have line numbers.',
@@ -1454,9 +1800,8 @@ class DocstringTestCase(TestCase):
             '',
             'Returns:',
             '    LineNumber: The return section should have a line number.',
-        ])), lookahead=3)
-        root = parse(peaker)
-        for node in root.walk():
+        ]))))
+        for child in node.walk():
             self.assertTrue(
                 node.line_numbers is not None,
                 'The node ({}) {} does not have line numbers.'.format(
@@ -1465,7 +1810,7 @@ class DocstringTestCase(TestCase):
                 )
             )
 
-    @replace()
+    @replace('test_single_word_sections_parse_correctly_cyk')
     def test_single_word_sections_parse_correctly(self):
         """Make sure we can have a minimal amount of words in each section."""
         contents = '\n'.join([
@@ -1496,6 +1841,28 @@ class DocstringTestCase(TestCase):
             doc.get_items(Sections.ARGUMENTS_SECTION),
             ['foo'],
         )
+
+    def test_single_word_sections_parse_correctly_cyk(self):
+        """Make sure we can have a minimal amount of words in each section."""
+        contents = '\n'.join([
+            'def f(foo):',
+            '    """foobar',
+            '',
+            '    Args:',
+            '        foo: foobar',
+            '',
+            '    Returns:',
+            '        bar',
+            '',
+            '    """',
+            '    return "bar"',
+        ])
+        function = ast.parse(contents).body[0]
+        docstring = ast.get_docstring(function)
+        node = new_parse(condense(lex(docstring)))
+        self.assertTrue(node.contains('short-description'))
+        self.assertTrue(node.contains('returns-section'))
+        self.assertTrue(node.contains('arguments-section'))
 
 
 class StyleWarningsTestCase(TestCase):

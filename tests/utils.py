@@ -105,6 +105,8 @@ def random_tokens(min_length=1, max_length=20, exclude=set()):
             value = random_string()
         elif _type == TokenType.YIELDS:
             value = 'Yields'
+        elif _type == TokenType.NOQA:
+            value = 'noqa'
         else:
             raise Exception('Unexpected token type {}'.format(
                 _type

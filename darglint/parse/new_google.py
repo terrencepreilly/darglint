@@ -18,23 +18,16 @@ from .cyk import (
     CykNode,
     parse as cyk_parse,
 )
-from .grammar import (
-    BaseGrammar,
-)
 
 from .combinator import (
     parser_combinator,
 )
-# from .cyk import (
-#     parse as parse_cyk,
-# )
 
 from .grammars.google_arguments_section import ArgumentsGrammar
 from .grammars.google_long_description import LongDescriptionGrammar
 from .grammars.google_raises_section import RaisesGrammar
 from .grammars.google_returns_section import ReturnsGrammar
-# from .grammars.google_short_description import ShortDescriptionGrammar
-# from .grammars.google_types import TypesGrammar
+from .grammars.google_short_description import ShortDescriptionGrammar
 from .grammars.google_yields_section import YieldsGrammar
 
 
@@ -84,6 +77,16 @@ def top_parse(tokens):
 
 
 def _match(token):
+    """Match the given token from the given section to a set of grammars.
+
+    Args:
+        token: The token to match.  This should hint at what sections
+            could possibly be here.
+
+    Returns:
+        A list of grammars to be tried in order.
+
+    """
     tt_lookup = {
         TokenType.RETURNS: [
             ReturnsGrammar,
@@ -105,9 +108,11 @@ def _match(token):
     return tt_lookup.get(token.token_type, [LongDescriptionGrammar])
 
 
-def lookup(section):
+def lookup(section, section_index=-1):
     assert len(section) > 0
     grammars = _match(section[0])
+    if section_index == 0:
+        return [ShortDescriptionGrammar] + grammars
     return grammars
 
 
@@ -133,7 +138,7 @@ def combinator(*args):
 
 
 def parse(tokens):
-    def mapped_lookup(section):
-        for grammar in lookup(section):
+    def mapped_lookup(section, section_index=-1):
+        for grammar in lookup(section, section_index):
             yield lambda x: cyk_parse(grammar, x)
     return parser_combinator(top_parse, mapped_lookup, combinator, tokens)

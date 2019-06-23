@@ -44,9 +44,9 @@ def parser_combinator(top, lookup, combinator, tokens):
     """
     sections = top(tokens)
     parsed_sections = list()
-    for section in sections:
+    for i, section in enumerate(sections):
         parsed = None
-        for parse in lookup(section):
+        for parse in lookup(section, i):
             parsed = parse(section)
             if parsed:
                 break

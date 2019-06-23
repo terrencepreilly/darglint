@@ -7,5 +7,5 @@ start: <yields-section>
 
 <yields-section>
     ::= <yields> <colon> <newline> <block-indented>
-    | <yields> <colon> <newline> <indented> <type-section-returns> <line>
-    | <yields> <colon> <newline> <indented> <type-section-returns> <line> <newline> <block-indented>
+    | <yields> <colon> <newline> <indented> <type-section-colon> <line>
+    | <yields> <colon> <newline> <indented> <type-section-colon> <line> <newline> <block-indented>

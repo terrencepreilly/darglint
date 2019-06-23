@@ -140,6 +140,7 @@ KEYWORDS = {
     'Yields': TokenType.YIELDS,
     'Raises': TokenType.RAISES,
     'Returns': TokenType.RETURNS,
+    'noqa': TokenType.NOQA,
 }
 
 

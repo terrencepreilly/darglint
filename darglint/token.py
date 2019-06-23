@@ -23,6 +23,7 @@ class TokenType(BaseTokenType):
     YIELDS = 10
     RAISES = 11
     ARGUMENTS = 12
+    NOQA = 13
 
 
 class Token(object):

@@ -83,6 +83,24 @@ class CykNode(object):
         if self.rchild:
             yield from self.rchild.in_order_traverse()
 
+    def contains(self, symbol):
+        # type: (str) -> bool
+        """Return true if the tree contains the given symbol.
+
+        This is intended only for testing.
+
+        Args:
+            symbol: The symbol to search for.
+
+        Returns:
+            True if the symbol is in the tree, false otherwise.
+
+        """
+        for node in self.walk():
+            if node.symbol == symbol:
+                return True
+        return False
+
     def walk(self):
         # type: () -> Iterator['CykNode']
         yield from self.in_order_traverse()

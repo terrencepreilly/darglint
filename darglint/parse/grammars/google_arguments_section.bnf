@@ -1,5 +1,6 @@
 import google_base.bnf
 import google_types.bnf
+import noqa_statement.bnf
 
 Grammar: ArgumentsGrammar
 

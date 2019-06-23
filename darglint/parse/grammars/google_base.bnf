@@ -1,3 +1,6 @@
+import google_terminals.bnf
+import noqa_statement.bnf
+
 <block-indented-two>
     ::= <paragraph-indented-two> <split> <block-indented-two>
     | <paragraph-indented-two>
@@ -29,7 +32,10 @@
 
 <line>
     ::= <word> <line>
-    | <word>
+    # Noqa statements, if in a line, should be at the end.
+    | <word> <noqa-maybe>
+    # The noqa statement could be on its own.
+    | <noqa-statement>
     | <indent>
 
 <indented-two>
@@ -48,48 +54,3 @@
 <newlines>
     ::= <newline> <newlines>
     | ε
-
-
-# ---- TERMINALS ----
-
-<word>
-    ::= "TokenType\.WORD"
-    | <arguments>
-    | <colon>
-    | <hash>
-    | <indent>
-    | <lparen>
-    | <raises>
-    | <returns>
-    | <rparen>
-    | <yields>
-
-<arguments>
-    ::= "TokenType\.ARGUMENTS"
-
-<colon>
-    ::= "TokenType\.COLON"
-
-<hash>
-    ::= "TokenType\.HASH"
-
-<indent>
-    ::= "TokenType\.INDENT"
-
-<lparen>
-    ::= "TokenType\.LPAREN"
-
-<newline>
-    ::= "TokenType\.NEWLINE"
-
-<raises>
-    ::= "TokenType\.RAISES"
-
-<returns>
-    ::= "TokenType\.RETURNS"
-
-<rparen>
-    ::= "TokenType\.RPAREN"
-
-<yields>
-    ::= "TokenType\.YIELDS"
