@@ -6,6 +6,6 @@ Grammar: YieldsGrammar
 start: <yields-section>
 
 <yields-section>
-    ::= <yields> <colon> <newline> <block-indented>
-    | <yields> <colon> <newline> <indented> <type-section-colon> <line>
-    | <yields> <colon> <newline> <indented> <type-section-colon> <line> <newline> <block-indented>
+    ::= <yields> <colon> <newline> <block-indented> <newlines>
+    | <yields> <colon> <newline> <indented> <type-section-colon> <line> <newlines>
+    | <yields> <colon> <newline> <indented> <type-section-colon> <line> <newline> <block-indented> <newlines>

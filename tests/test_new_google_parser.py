@@ -134,6 +134,7 @@ class NewGoogleParserTests(TestCase):
             for section in parsed:
                 self.assertFalse(
                     self.has_double_newline(section),
+                    str(tokens),
                 )
 
     def test_specific(self):

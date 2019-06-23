@@ -6,6 +6,6 @@ Grammar: ReturnsGrammar
 start: <returns-section>
 
 <returns-section>
-    ::= <returns> <colon> <newline> <block-indented>
-    | <returns> <colon> <newline> <indented> <type-section-colon> <line>
-    | <returns> <colon> <newline> <indented> <type-section-colon> <line> <newline> <block-indented>
+    ::= <returns> <colon> <newline> <block-indented> <newlines>
+    | <returns> <colon> <newline> <indented> <type-section-colon> <line> <newlines>
+    | <returns> <colon> <newline> <indented> <type-section-colon> <line> <newline> <block-indented> <newlines>

@@ -48,13 +48,17 @@ def _get_split_end_with_indents(tokens, i):
 
     """
     newline_count = 0
-    indent_count = 0
+    newline_run = 0
+    highest_newline_run = 0
     j = i
     while j < len(tokens):
         if tokens[j].token_type == TokenType.NEWLINE:
             newline_count += 1
+            newline_run += 1
+            if newline_run > highest_newline_run:
+                highest_newline_run = newline_run
         elif tokens[j].token_type == TokenType.INDENT:
-            indent_count += 1
+            newline_run = 0
         else:
             break
         j += 1
@@ -65,7 +69,7 @@ def _get_split_end_with_indents(tokens, i):
     if newline_count < 2:
         return 0
 
-    if not indent_count:
+    if highest_newline_run > 1:
         return j
 
     # TODO: Do we want to move the length check up to strip

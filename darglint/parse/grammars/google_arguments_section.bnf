@@ -7,7 +7,7 @@ Grammar: ArgumentsGrammar
 start: <arguments-section>
 
 <arguments-section>
-    ::= <arguments> <colon> <newline> <items-argument>
+    ::= <arguments> <colon> <newline> <items-argument> <newlines>
 
 <items-argument>
     ::= <item-argument> <newline> <items-argument>

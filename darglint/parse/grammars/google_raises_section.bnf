@@ -6,7 +6,7 @@ Grammar: RaisesGrammar
 start: <raises-section>
 
 <raises-section>
-    ::= <raises> <colon> <newline> <items-exception>
+    ::= <raises> <colon> <newline> <items-exception> <newlines>
 
 <items-exception>
     ::= <item-exception> <newline> <items-exception>

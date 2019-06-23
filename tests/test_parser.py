@@ -1,5 +1,6 @@
 import ast
 from unittest import TestCase, skip
+from random import choice
 
 from darglint.docstring.base import (
     Sections,
@@ -1725,7 +1726,6 @@ class DocstringTestCase(TestCase):
             raises is not None,
         )
 
-    @skip('Not ready yet')
     def test_only_indents_treated_newlines_within_simple_section_cyk(self):
         """Make sure indent-only lines are treated as newlines in simple."""
         node = new_parse(condense(lex('\n'.join([
@@ -1737,7 +1737,6 @@ class DocstringTestCase(TestCase):
             '    ',
             'Raises:',
             '    Exception: Seemingly at random.',
-            '',
         ]))))
         self.assertTrue(node.contains('raises-section'))
 
@@ -1792,6 +1791,33 @@ class DocstringTestCase(TestCase):
             'The arguments section should have been eaten -- that way the '
             'user gets a signal that they should separate the sections.'
         )
+
+    def test_docstring_can_end_with_newlines(self):
+        sections = {
+            'arguments-section': '\n'.join([
+                'Args:',
+                '    x: y',
+            ]),
+            'returns-section': '\n'.join([
+                'Returns:',
+                '    Something.',
+            ]),
+            'yields-section': '\n'.join([
+                'Yields:',
+                '    Something.',
+            ]),
+            'raises-section': '\n'.join([
+                'Raises:',
+                '    Exception: In circumstances.',
+            ]),
+        }
+        for key in sections:
+            docstring = 'Short\n\n{}\n'.format(sections[key])
+            node = new_parse(condense(lex(docstring)))
+            self.assertTrue(
+                node.contains(key),
+                '{}:\n\n{}'.format(key, node)
+            )
 
     @skip('Not ready yet.')
     def test_all_nodes_have_line_numbers(self):
