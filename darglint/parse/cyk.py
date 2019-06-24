@@ -21,6 +21,7 @@ from typing import (
     Iterator,
     Optional,
     List,
+    Tuple,
 )
 
 from .grammar import (  # noqa: F401
@@ -32,6 +33,11 @@ from ..token import (
     Token,
     BaseTokenType,
 )
+
+
+# A best guess at the maximum height of a docstring tree,
+# for use in recursion bounds checking.
+MAX_TREE_HEIGHT = 300
 
 
 class CykNode(object):
@@ -49,6 +55,7 @@ class CykNode(object):
         self.rchild = rchild
         self.value = value
         self.annotations = annotations
+        self._line_number_cache = None  # type: Optional[Tuple[int, int]]
 
     def __repr__(self):
         return '<{}: {}>'.format(
@@ -145,6 +152,28 @@ class CykNode(object):
                     ret += ' '
                 ret += node.value.value
         return ret
+
+    def _get_line_numbers_cached(self, recurse=0):
+        # type: (int) -> Tuple[int, int]
+        if recurse > MAX_TREE_HEIGHT:
+            return (-1, -1)
+        if self.value:
+            return (self.value.line_number, self.value.line_number)
+        elif self._line_number_cache:
+            return self._line_number_cache
+        leftmost = -1
+        if self.lchild:
+            leftmost = self.lchild._get_line_numbers_cached(recurse + 1)[0]
+        rightmost = leftmost
+        if self.rchild:
+            rightmost = self.rchild._get_line_numbers_cached(recurse + 1)[1]
+        self._line_number_cache = (leftmost, rightmost)
+        return self._line_number_cache or (-1, -1)
+
+    @property
+    def line_numbers(self):
+        # type: () -> Tuple[int, int]
+        return self._get_line_numbers_cached()
 
 
 def parse(grammar, tokens):

@@ -124,7 +124,7 @@ class LexTestCase(TestCase):
 class CondenseTests(TestCase):
 
     def test_dissimilar_types_passes_directly(self):
-        tokens = list(lex('This ( returns : )'))
+        tokens = list(lex('This ( something : )'))
         condensed = condense((x for x in tokens))
         self.assertEqual(
             tokens,

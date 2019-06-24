@@ -1819,7 +1819,6 @@ class DocstringTestCase(TestCase):
                 '{}:\n\n{}'.format(key, node)
             )
 
-    @skip('Not ready yet.')
     def test_all_nodes_have_line_numbers(self):
         """Make sure all nodes in the AST have line numbers."""
         node = new_parse(condense(lex('\n'.join([
@@ -1845,9 +1844,8 @@ class DocstringTestCase(TestCase):
         for child in node.walk():
             self.assertTrue(
                 node.line_numbers is not None,
-                'The node ({}) {} does not have line numbers.'.format(
-                    node.node_type,
-                    node.value,
+                'The node {} does not have line numbers.'.format(
+                    node,
                 )
             )
 

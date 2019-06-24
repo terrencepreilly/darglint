@@ -24,13 +24,26 @@ class TokenType(BaseTokenType):
     RAISES = 11
     ARGUMENTS = 12
     NOQA = 13
+    RETURN_TYPE = 14
+    YIELD_TYPE = 15
+    VARIABLES = 16
+    VARIABLE_TYPE = 17
+    ARGUMENT_TYPE = 18
+
+    # next: 19
 
 
 KEYWORDS = {
     TokenType.RETURNS,
     TokenType.YIELDS,
-    TokenType.ARGUMENTS,
     TokenType.RAISES,
+    TokenType.ARGUMENTS,
+    TokenType.NOQA,
+    TokenType.RETURN_TYPE,
+    TokenType.YIELD_TYPE,
+    TokenType.VARIABLES,
+    TokenType.VARIABLE_TYPE,
+    TokenType.ARGUMENT_TYPE,
 }
 
 

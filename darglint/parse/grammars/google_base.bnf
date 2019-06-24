@@ -1,4 +1,4 @@
-import google_terminals.bnf
+import terminals.bnf
 import noqa_statement.bnf
 
 <block-indented-two>

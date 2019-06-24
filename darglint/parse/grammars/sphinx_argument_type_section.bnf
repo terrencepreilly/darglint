@@ -1,0 +1,15 @@
+import sphinx_base.bnf
+
+Grammar: ArgumentTypeGrammar
+
+start: <argument-type-section>
+
+<argument-type-section>
+    ::= <ahead> <abody>
+
+<ahead>
+    ::= <colon> <argument-type> <word> <colon>
+
+<abody>
+    ::= <line>
+    | <line> <block-indented>

@@ -141,6 +141,24 @@ KEYWORDS = {
     'Raises': TokenType.RAISES,
     'Returns': TokenType.RETURNS,
     'noqa': TokenType.NOQA,
+
+    # Separate these somehow by the flag.
+    'param': TokenType.ARGUMENTS,
+    'parameter': TokenType.ARGUMENTS,
+    'arg': TokenType.ARGUMENTS,
+    'argument': TokenType.ARGUMENTS,
+    'key': TokenType.VARIABLES,
+    'keyword': TokenType.VARIABLES,
+    'var': TokenType.VARIABLES,
+    'ivar': TokenType.VARIABLES,
+    'cvar': TokenType.VARIABLES,
+    'type': TokenType.ARGUMENT_TYPE,
+    'vartype': TokenType.VARIABLE_TYPE,
+    'raises': TokenType.RAISES,
+    'yield': TokenType.YIELDS,
+    'yields': TokenType.YIELDS,
+    'returns': TokenType.RETURNS,
+    'rtype': TokenType.RETURN_TYPE,
 }
 
 

@@ -1,4 +1,4 @@
-import google_base.bnf
+import sphinx_base.bnf
 
 Grammar: ShortDescriptionGrammar
 

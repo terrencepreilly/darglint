@@ -19,64 +19,39 @@ from .cyk import (
     CykNode,
     parse as cyk_parse,
 )
-
 from .combinator import (
     parser_combinator,
 )
 
-from .grammars.google_arguments_section import ArgumentsGrammar
-from .grammars.google_long_description import LongDescriptionGrammar
-from .grammars.google_raises_section import RaisesGrammar
-from .grammars.google_returns_section import ReturnsGrammar
-from .grammars.google_short_description import ShortDescriptionGrammar
-from .grammars.google_yields_section import YieldsGrammar
+from .grammars.sphinx_arguments_section import ArgumentsGrammar
+from .grammars.sphinx_argument_type_section import ArgumentTypeGrammar
+from .grammars.sphinx_long_description import LongDescriptionGrammar
+from .grammars.sphinx_variables_section import VariablesSectionGrammar
+from .grammars.sphinx_variable_type_section import VariableTypeGrammar
+from .grammars.sphinx_raises_section import RaisesGrammar
+from .grammars.sphinx_returns_section import ReturnsGrammar
+from .grammars.sphinx_return_type_section import ReturnTypeGrammar
+from .grammars.sphinx_short_description import ShortDescriptionGrammar
+from .grammars.sphinx_yields_section import YieldsGrammar
 
 
-def _get_split_end_with_indents(tokens, i):
+def two_newline_separated_or_keyword(tokens, i):
     # type: (List[Token], int) -> int
-    """Return the index of the end of this split, or 0.
-
-    Args:
-        tokens: A list of tokens.
-        i: The current index.
-
-    Returns:
-        If i is the start of a split, return the index of the
-        token after the end of the split (or the last token, if
-        it's the end of the docstring.)  If we're not at a split,
-        return 0.
-
-    """
     newline_count = 0
-    newline_run = 0
-    highest_newline_run = 0
     j = i
     while j < len(tokens):
         if tokens[j].token_type == TokenType.NEWLINE:
             newline_count += 1
-            newline_run += 1
-            if newline_run > highest_newline_run:
-                highest_newline_run = newline_run
-        elif tokens[j].token_type == TokenType.INDENT:
-            newline_run = 0
         else:
             break
         j += 1
 
-    # TODO: Do we want to check for keywords before assuming a
-    # new section?  If we have line-separated sections in args,
-    # which do not have indents, then we will parse incorrectly.
-    if newline_count < 2:
-        return 0
-
-    if highest_newline_run > 1:
+    if newline_count >= 2:
         return j
 
-    # TODO: Do we want to move the length check up to strip
-    # newlines out?
-    if (j < len(tokens)
-            and tokens[j].token_type in KEYWORDS
-            and tokens[j - 1].token_type == TokenType.NEWLINE):
+    if (j + 1 < len(tokens)
+            and tokens[j].token_type == TokenType.COLON
+            and tokens[j + 1].token_type in KEYWORDS):
         return j
 
     return 0
@@ -92,7 +67,7 @@ def top_parse(tokens):
     prev = curr
 
     while curr < len(tokens):
-        split_end = _get_split_end_with_indents(tokens, curr)
+        split_end = two_newline_separated_or_keyword(tokens, curr)
         if split_end > curr:
             if tokens[prev:curr]:
                 all_sections.append(
@@ -120,20 +95,36 @@ def _match(token):
 
     """
     tt_lookup = {
-        TokenType.RETURNS: [
-            ReturnsGrammar,
+        TokenType.VARIABLES: [
+            VariablesSectionGrammar,
             LongDescriptionGrammar,
         ],
         TokenType.ARGUMENTS: [
             ArgumentsGrammar,
             LongDescriptionGrammar,
         ],
-        TokenType.YIELDS: [
-            YieldsGrammar,
+        TokenType.ARGUMENT_TYPE: [
+            ArgumentTypeGrammar,
+            LongDescriptionGrammar,
+        ],
+        TokenType.VARIABLE_TYPE: [
+            VariableTypeGrammar,
             LongDescriptionGrammar,
         ],
         TokenType.RAISES: [
             RaisesGrammar,
+            LongDescriptionGrammar,
+        ],
+        TokenType.YIELDS: [
+            YieldsGrammar,
+            LongDescriptionGrammar,
+        ],
+        TokenType.RETURNS: [
+            ReturnsGrammar,
+            LongDescriptionGrammar,
+        ],
+        TokenType.RETURN_TYPE: [
+            ReturnTypeGrammar,
             LongDescriptionGrammar,
         ],
     }
@@ -142,7 +133,11 @@ def _match(token):
 
 def lookup(section, section_index=-1):
     assert len(section) > 0
-    grammars = _match(section[0])
+    if (section[0].token_type == TokenType.COLON
+            and len(section) > 1):
+        grammars = _match(section[1])
+    else:
+        grammars = [LongDescriptionGrammar]
     if section_index == 0:
         return [ShortDescriptionGrammar] + grammars
     return grammars

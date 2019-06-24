@@ -1,4 +1,4 @@
-import google_base.bnf
+import sphinx_base.bnf
 
 Grammar: LongDescriptionGrammar
 
@@ -6,4 +6,4 @@ start: <long-description>
 
 <long-description>
     ::= <indents> <block>
-    | <block> <newline>
+    | <block> <newlines>

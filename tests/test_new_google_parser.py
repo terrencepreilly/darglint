@@ -113,7 +113,7 @@ class NewGoogleParserTests(TestCase):
             tokens = random_tokens()
             sections = top_parse(tokens)
             for section in sections:
-                self.assertTrue(section)
+                self.assertTrue(section, '{}\n\n{}'.format(tokens, sections))
                 self.assertTrue(section[0].token_type != TokenType.NEWLINE)
 
     def has_double_newline(self, section):

@@ -1,0 +1,19 @@
+import sphinx_base.bnf
+
+Grammar: ReturnsGrammar
+
+start: <returns-section>
+
+<returns-section>
+    ::= <rethead> <retbody>
+
+<rethead>
+    ::= <colon> <returns> <colon>
+    | <colon> <returns> <return-type-section> <colon>
+
+<return-type-section>
+    ::= <word>
+
+<retbody>
+    ::= <line>
+    | <line> <block-indented>

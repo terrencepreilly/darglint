@@ -1,18 +1,27 @@
+
 <word>
     ::= "TokenType\.WORD"
     | <arguments>
+    | <argument-type>
     | <colon>
     | <hash>
     | <indent>
     | <lparen>
     | <raises>
     | <returns>
+    | <return-type>
     | <rparen>
     | <yields>
+    | <yield-type>
+    | <variables>
+    | <variable-type>
     | <noqa>
 
 <arguments>
     ::= "TokenType\.ARGUMENTS"
+
+<argument-type>
+    ::= "TokenType\.ARGUMENT_TYPE"
 
 <colon>
     ::= "TokenType\.COLON"
@@ -35,11 +44,23 @@
 <returns>
     ::= "TokenType\.RETURNS"
 
+<return-type>
+    ::= "TokenType\.RETURN_TYPE"
+
 <rparen>
     ::= "TokenType\.RPAREN"
 
 <yields>
     ::= "TokenType\.YIELDS"
+
+<yield-type>
+    ::= "TokenType\.YIELD_TYPE"
+
+<variables>
+    ::= "TokenType\.VARIABLES"
+
+<variable-type>
+    ::= "TokenType\.VARIABLE_TYPE"
 
 <noqa>
     ::= "TokenType\.NOQA"

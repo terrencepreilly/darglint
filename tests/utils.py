@@ -107,6 +107,16 @@ def random_tokens(min_length=1, max_length=20, exclude=set()):
             value = 'Yields'
         elif _type == TokenType.NOQA:
             value = 'noqa'
+        elif _type == TokenType.RETURN_TYPE:
+            value = random_string()
+        elif _type == TokenType.YIELD_TYPE:
+            value = random_string()
+        elif _type == TokenType.VARIABLES:
+            value = random.choice(['var', 'ivar', 'cvar'])
+        elif _type == TokenType.VARIABLE_TYPE:
+            value = random_string()
+        elif _type == TokenType.ARGUMENT_TYPE:
+            value = random_string()
         else:
             raise Exception('Unexpected token type {}'.format(
                 _type

@@ -1,0 +1,16 @@
+import sphinx_base.bnf
+
+
+Grammar: RaisesGrammar
+
+start: <raises-section>
+
+<raises-section>
+    ::= <rhead> <rbody>
+
+<rhead>
+    ::= <colon> <raises> <word> <colon>
+
+<rbody>
+    ::= <line>
+    | <line> <block-indented>

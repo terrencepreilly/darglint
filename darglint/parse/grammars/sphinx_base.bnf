@@ -1,0 +1,103 @@
+import terminals.bnf
+import noqa_statement.bnf
+
+#   docstring = short-description, [long-description];
+#             | short-description
+#                 , [long-description]
+#                 , item
+#                 , {[newline], item}
+#                 , newline;
+#
+#   short-description = unline
+#                     | line, newline;
+#   long-description = line, {line}, newline;
+#
+#   item = indent, item-name, item-definition;
+#   section-name = colon, keyword, [word], colon;
+#   item-definition = line, {line};
+#   line = unline, newline
+#   unline = { word
+#            , hash
+#            , colon
+#            , indent
+#            , keyword
+#            , lparen
+#            , rparen
+#            }, [noqa];
+#
+#   noqa = noqa-head, [colon, list]
+#   noqa-head = hash, noqa-keyword
+#   list = word {"," word}
+#
+#   keyword = "arg"
+#           | "argument"
+#           | "param"
+#           | "parameter"
+#           | "key"
+#           | "keyword"
+#           | "raises"
+#           | "raise"
+#           | "except"
+#           | "exception"
+#           | "var"
+#           | "ivar"
+#           | "cvar"
+#           | "returns"
+#           | "return"
+#           | "yield"
+#           | "yields"
+#           | "type"
+#           | "vartype"
+#           | "rtype"
+#           | "ytype";
+# 
+#   indent  = " " * 4;
+#   word    = ? r/[^\ \n\:\"\t]+/ ?;
+#   noqa-keyword = "noqa"
+#   hash = "#"
+#   lparen = "("
+#   rparen = ")"
+#   colon   = ":";
+#   newline = "\n";
+
+
+<block-indented>
+    ::= <paragraph-indented> <split> <block-indented>
+    | <paragraph-indented>
+
+<paragraph-indented>
+    ::= <indented> <line> <newline> <paragraph-indented>
+    | <indented> <line>
+
+<indented>
+    ::= <indent> <indents>
+
+<block>
+    ::= <paragraph> <split> <block>
+    | <paragraph>
+
+<paragraph>
+    ::= <indents> <line> <newline> <paragraph>
+    | <indents> <line>
+    | <line> <newline> <paragraph>
+    | <line>
+
+<line>
+    ::= <word> <line>
+    # Noqa statements, if in a line, should be at the end.
+    | <word> <noqa-maybe>
+    # The noqa statement could be on its own.
+    | <noqa-statement>
+    | <indent>
+
+
+<indents>
+    ::= <indent> <indents>
+    | ε
+
+<split>
+    ::= <newline> <newline> <newlines>
+
+<newlines>
+    ::= <newline> <newlines>
+    | ε
