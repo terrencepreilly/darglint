@@ -38,6 +38,12 @@ import noqa_statement.bnf
     | <noqa-statement>
     | <indent>
 
+<line-colonless>
+    ::= <word-colonless> <line-colonless>
+    | <word-colonless> <noqa-maybe>
+    | <noqa-statement>
+    | <indent>
+
 <indented-two>
     ::= <indent> <indent> <indents>
 

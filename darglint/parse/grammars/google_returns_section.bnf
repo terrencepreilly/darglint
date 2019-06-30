@@ -6,6 +6,22 @@ Grammar: ReturnsGrammar
 start: <returns-section>
 
 <returns-section>
-    ::= <returns> <colon> <newline> <block-indented> <newlines>
-    | <returns> <colon> <newline> <indented> <type-section-colon> <line> <newlines>
-    | <returns> <colon> <newline> <indented> <type-section-colon> <line> <newline> <block-indented> <newlines>
+    ::= <returns-head> <returns-body>
+
+<returns-head>
+    ::= <returns> <colon> <newline>
+
+<returns-body>
+    ::= <indented> <returns-type> <returns-content>
+    | <indented> <returns-content-colonless>
+
+<returns-type>
+    ::= <type-section-colon>
+
+<returns-content>
+    ::= <line> <newlines>
+    | <line> <newline> <block-indented> <newlines>
+
+<returns-content-colonless>
+    ::= <line-colonless> <newlines>
+    | <line-colonless> <newline> <block-indented> <newlines>

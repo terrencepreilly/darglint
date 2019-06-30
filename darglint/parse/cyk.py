@@ -16,8 +16,12 @@ article, https://en.wikipedia.org/wiki/CYK_algorithm.
 
 """
 
+from collections import (
+    deque,
+)
 from typing import (
     Any,
+    Deque,
     Iterator,
     Optional,
     List,
@@ -32,7 +36,10 @@ from .grammar import (  # noqa: F401
 from ..token import (
     Token,
     BaseTokenType,
+    TokenType,
 )
+
+WHITESPACE = {TokenType.INDENT, TokenType.NEWLINE}
 
 
 # A best guess at the maximum height of a docstring tree,
@@ -90,6 +97,23 @@ class CykNode(object):
         if self.rchild:
             yield from self.rchild.in_order_traverse()
 
+    def breadth_first_walk(self):
+        queue = deque([self])
+        while queue:
+            curr = queue.pop()
+            yield curr
+            if curr.lchild:
+                queue.appendleft(curr.lchild)
+            if curr.rchild:
+                queue.appendleft(curr.rchild)
+
+    def first_instance(self, symbol):
+        # type: (str) -> Optional['CykNode']
+        for node in self.breadth_first_walk():
+            if node.symbol == symbol:
+                return node
+        return None
+
     def contains(self, symbol):
         # type: (str) -> bool
         """Return true if the tree contains the given symbol.
@@ -144,13 +168,56 @@ class CykNode(object):
             The docstring, reconstructed.
 
         """
-        ret = ''
-        for node in self.in_order_traverse():
+        # In order to make a reasonable guess as to the whitespace
+        # to apply between characters, we use a 3-token sliding
+        # window.
+        window_size = 3
+        window = deque(maxlen=window_size)  # type: Deque[Token]
+        source = self.in_order_traverse()
+
+        # Fill the buffer.
+        while len(window) < window_size:
+            try:
+                node = next(source)
+            except StopIteration:
+                break
             if node.value:
-                # TODO: Make this into a not-gross check.
-                if ret and node.value.value != '\n':
-                    ret += ' '
-                ret += node.value.value
+                window.append(node.value)
+
+        if not window:
+            return ''
+
+        ret = window[0].value
+
+        # Slide the window, filling the return value.
+        while len(window) > 1:
+            is_whitespace = (
+                window[0].token_type in WHITESPACE
+                or window[1].token_type in WHITESPACE
+            )
+            is_colon = window[1].token_type == TokenType.COLON
+            if is_whitespace or is_colon:
+                ret += window[1].value
+            else:
+                ret += ' ' + window[1].value
+
+            found_token = False
+            for node in source:
+                if node.value:
+                    window.append(node.value)
+                    found_token = True
+                    break
+            if not found_token:
+                break
+
+        if len(window) == 3:
+            if (window[1].token_type in WHITESPACE
+                    or window[2].token_type in WHITESPACE
+                    or window[2].token_type == TokenType.COLON):
+                ret += window[2].value
+            else:
+                ret += ' ' + window[2].value
+
         return ret
 
     def _get_line_numbers_cached(self, recurse=0):

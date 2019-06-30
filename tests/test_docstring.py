@@ -58,27 +58,27 @@ class DocstringBaseMethodTests(TestCase):
         #         '',
         #     ])
         # ),
-        # (
-        #     '\n'.join([
-        #         'A docstring with types in it.',
-        #         '',
-        #         'Args:',
-        #         '    x (int): The number to double.',
-        #         '',
-        #         'Returns:',
-        #         '    int: The number, doubled.',
-        #         '',
-        #     ]),
-        #     '\n'.join([
-        #         'A docstring with types in it.',
-        #         '',
-        #         ':param x: The number to double.',
-        #         ':type x: int',
-        #         ':returns: The number, doubled.',
-        #         ':rtype: int',
-        #         '',
-        #     ])
-        # ),
+        (
+            '\n'.join([
+                'A docstring with types in it.',
+                '',
+                'Args:',
+                '    x (int): The number to double.',
+                '',
+                'Returns:',
+                '    int: The number, doubled.',
+                '',
+            ]),
+            '\n'.join([
+                'A docstring with types in it.',
+                '',
+                ':param x: The number to double.',
+                ':type x: int',
+                ':returns: The number, doubled.',
+                ':rtype: int',
+                '',
+            ])
+        ),
         (
             '\n'.join([
                 'A very complete docstring.',
@@ -132,14 +132,13 @@ class DocstringBaseMethodTests(TestCase):
         super().setUpClass(*args, **kwargs)
         cls.equivalent_docstrings = list()
         for google_doc, sphinx_doc in cls._equivalent_docstrings:
-            google_root = google.parse(Peaker(lex(google_doc), 3))
-            sphinx_root = sphinx.parse(Peaker(lex(sphinx_doc), 2))
+            # google_root = google.parse(Peaker(lex(google_doc), 3))
+            # sphinx_root = sphinx.parse(Peaker(lex(sphinx_doc), 2))
             cls.equivalent_docstrings.append((
-                Docstring.from_google(google_root),
-                Docstring.from_sphinx(sphinx_root),
+                Docstring.from_google(google_doc),
+                Docstring.from_sphinx(sphinx_doc),
             ))
 
-    # Get section (section)
     def test_get_section_equivalency(self):
         for google_doc, sphinx_doc in self.equivalent_docstrings:
             for section in [
@@ -162,6 +161,7 @@ class DocstringBaseMethodTests(TestCase):
             for section in [
                 Sections.ARGUMENTS_SECTION,
                 Sections.RETURNS_SECTION,
+                Sections.YIELDS_SECTION,
             ]:
                 self.assertEqual(
                     google_doc.get_types(section),
@@ -219,9 +219,7 @@ class DocstringBaseMethodTests(TestCase):
             '\n'.join(google_params),
         ])
 
-        google_doc = Docstring.from_google(
-            google.parse(Peaker(lex(google_docstring), 3))
-        )
+        google_doc = Docstring.from_google(google_docstring)
         sphinx_doc = Docstring.from_sphinx(
             sphinx.parse(Peaker(lex(sphinx_docstring), 2))
         )
@@ -248,30 +246,29 @@ class DocstringMethodTest(TestCase):
 
     def test_global_noqa_no_body(self):
         """Ensure an empty noqa body means ignore everything."""
-        root = google.parse(Peaker(lex('\n'.join([
+        root = '\n'.join([
             'A short explanation.',
             '',
             '    # noqa',
             '\n',
-        ])), lookahead=3))
+        ])
         docstring = Docstring.from_google(root)
         self.assertTrue(docstring.ignore_all)
 
     def test_global_noqa_star_body(self):
         """Ensure noqa with * means ignore everything."""
-        root = google.parse(Peaker(lex('\n'.join([
+        root = '\n'.join([
             'A short explanation.',
             '',
             '    # noqa: *',
             '\n',
-        ])), lookahead=3))
+        ])
         docstring = Docstring.from_google(root)
         self.assertTrue(docstring.ignore_all)
 
     def test_get_short_description(self):
         """Ensure we can get the short description."""
-        root = google.parse(
-            Peaker(lex('Nothing but a short description.'), lookahead=3))
+        root = 'Nothing but a short description.'
         docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.get_section(Sections.SHORT_DESCRIPTION),
@@ -280,12 +277,12 @@ class DocstringMethodTest(TestCase):
 
     def test_get_long_description(self):
         """Make sure we can get the long description."""
-        root = google.parse(Peaker(lex('\n'.join([
+        root = '\n'.join([
             'Ignore short.',
             '',
             'Long description should be contiguous.',
             '',
-        ])), lookahead=3))
+        ])
         docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.get_section(Sections.LONG_DESCRIPTION),
@@ -294,29 +291,30 @@ class DocstringMethodTest(TestCase):
 
     def test_get_arguments_description(self):
         """Make sure we can get the arguments description."""
-        root = google.parse(Peaker(lex('\n'.join([
+        root = '\n'.join([
             'Something.',
             '',
             'Args:',
             '    x: An integer.',
             '\n',
-        ])), lookahead=3))
+        ])
         docstring = Docstring.from_google(root)
+        section = docstring.get_section(Sections.ARGUMENTS_SECTION)
         self.assertEqual(
-            docstring.get_section(Sections.ARGUMENTS_SECTION),
+            section,
             'Args:\n    x: An integer.'
         )
 
     def test_get_argument_types(self):
         """Make sure we can get a dictionary of arguments to types."""
-        root = google.parse(Peaker(lex('\n'.join([
+        root = '\n'.join([
             'Something.',
             '',
             'Args:',
             '    x (int): The first.',
             '    y (List[int], optional): The second.',
             '\n',
-        ])), lookahead=3))
+        ])
         docstring = Docstring.from_google(root)
         argtypes = dict(zip(
             docstring.get_items(Sections.ARGUMENTS_SECTION) or [],
@@ -333,13 +331,13 @@ class DocstringMethodTest(TestCase):
 
     def test_get_return_section(self):
         """Make sure we can get the returns description."""
-        root = google.parse(Peaker(lex('\n'.join([
+        root = '\n'.join([
             'Ferment corn.',
             '',
             'Returns:',
             '    Bourbon.',
             '\n',
-        ])), lookahead=3))
+        ])
         docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.get_section(Sections.RETURNS_SECTION),
@@ -348,13 +346,13 @@ class DocstringMethodTest(TestCase):
 
     def test_get_return_type(self):
         """Make sure we can get the return type described."""
-        root = google.parse(Peaker(lex('\n'.join([
+        root = '\n'.join([
             'Ferment potato.',
             '',
             'Returns:',
             '    Alcohol: Vodka.',
             '\n',
-        ])), lookahead=3))
+        ])
         docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.get_types(Sections.RETURNS_SECTION),
@@ -363,13 +361,13 @@ class DocstringMethodTest(TestCase):
 
     def test_get_yields_description(self):
         """Make sure we can get the yields description."""
-        root = google.parse(Peaker(lex('\n'.join([
+        root = '\n'.join([
             'To pedestrians.',
             '',
             'Yields:',
             '    To pedestrians.',
             '\n',
-        ])), lookahead=3))
+        ])
         docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.get_section(Sections.YIELDS_SECTION),
@@ -378,13 +376,13 @@ class DocstringMethodTest(TestCase):
 
     def test_get_yields_type(self):
         """Make sure we can get the yields type."""
-        root = google.parse(Peaker(lex('\n'.join([
+        root = '\n'.join([
             'Get slavic cats.',
             '',
             'Yields:',
             '    Cat: The slavic ones.',
             '\n',
-        ])), lookahead=3))
+        ])
         docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.get_types(Sections.YIELDS_SECTION),
@@ -393,13 +391,13 @@ class DocstringMethodTest(TestCase):
 
     def test_get_raises_description(self):
         """Make sure we can get the raises description."""
-        root = google.parse(Peaker(lex('\n'.join([
+        root = '\n'.join([
             'Check if there\'s a problem.',
             '',
             'Raises:',
             '    ProblemException: if there is a problem.',
             '\n',
-        ])), lookahead=3))
+        ])
         docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.get_section(Sections.RAISES_SECTION),
@@ -408,14 +406,14 @@ class DocstringMethodTest(TestCase):
 
     def test_get_exception_types(self):
         """Make sure we can get the types of exceptions raised."""
-        root = google.parse(Peaker(lex('\n'.join([
+        root = '\n'.join([
             'Problematic.',
             '',
             'Raises:',
             '    IndexError: Frequently.',
             '    DoesNotExist: Always.',
             '\n',
-        ])), lookahead=3))
+        ])
         docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.get_items(Sections.RAISES_SECTION),
@@ -424,7 +422,7 @@ class DocstringMethodTest(TestCase):
 
     def test_get_noqas(self):
         """Make sure we can get all of the noqas in the docstring."""
-        root = google.parse(Peaker(lex('\n'.join([
+        root = '\n'.join([
             'Full of noqas.',
             '',
             '# noqa: I200',
@@ -433,7 +431,7 @@ class DocstringMethodTest(TestCase):
             'Args:',
             '    x: Something. # noqa: I201',
             '\n',
-        ])), lookahead=3))
+        ])
         docstring = Docstring.from_google(root)
         self.assertEqual(
             docstring.get_noqas(),
@@ -443,9 +441,30 @@ class DocstringMethodTest(TestCase):
             },
         )
 
+    def test_get_noqas_with_exception(self):
+        root = '\n'.join([
+            'Noqa-full.',
+            '',
+            '# noqa',
+            '# noqa: I325',
+            '',
+            'Raises:',
+            '    MyException: Sometimes.  # noqa: I932',
+            '',
+        ])
+        docstring = Docstring.from_google(root)
+        self.assertEqual(
+            docstring.get_noqas(),
+            {
+                '*': [],
+                'I932': ['MyException'],
+                'I325': [],
+            },
+        )
+
     def test_has_section(self):
         """Make sure the docstring can tell if it has the given sections."""
-        has_everything_root = google.parse(Peaker(lex('\n'.join([
+        has_everything_root = '\n'.join([
             'Short decscription.',
             '',
             'Long description.',
@@ -461,7 +480,7 @@ class DocstringMethodTest(TestCase):
             '',
             'Returns:',
             '    When it completes.',
-        ])), lookahead=3))
+        ])
         docstring = Docstring.from_google(has_everything_root)
         self.assertTrue(all([
             docstring.get_section(Sections.SHORT_DESCRIPTION),
@@ -471,9 +490,9 @@ class DocstringMethodTest(TestCase):
             docstring.get_section(Sections.YIELDS_SECTION),
             docstring.get_section(Sections.RETURNS_SECTION),
         ]))
-        has_only_short_description = google.parse(Peaker(lex('\n'.join([
+        has_only_short_description = '\n'.join([
             'Short description'
-        ])), lookahead=3))
+        ])
         docstring = Docstring.from_google(has_only_short_description)
         self.assertTrue(
             docstring.get_section(Sections.SHORT_DESCRIPTION),
@@ -510,9 +529,9 @@ class DocstringForSphinxTests(TestCase):
             docstring.get_section(Sections.YIELDS_SECTION),
             docstring.get_section(Sections.RETURNS_SECTION),
         ]))
-        has_only_short_description = google.parse(Peaker(lex('\n'.join([
+        has_only_short_description = '\n'.join([
             'Short description'
-        ])), lookahead=3))
+        ])
         docstring = Docstring.from_google(has_only_short_description)
         self.assertTrue(
             docstring.get_section(Sections.SHORT_DESCRIPTION),

@@ -63,17 +63,27 @@ def _get_split_end_with_indents(tokens, i):
             break
         j += 1
 
+    # Back up so that we don't remove indents on the same line as
+    # the encountered text.
+    while (j < len(tokens)
+            and j > 1
+            and tokens[j - 1].token_type == TokenType.INDENT):
+        j -= 1
+
     # TODO: Do we want to check for keywords before assuming a
     # new section?  If we have line-separated sections in args,
     # which do not have indents, then we will parse incorrectly.
     if newline_count < 2:
         return 0
 
+    # If there are two newlines in a row, we have a break, no
+    # matter what.
     if highest_newline_run > 1:
         return j
 
-    # TODO: Do we want to move the length check up to strip
-    # newlines out?
+    # If there were not 2+ newlines in a row, (i.e. there were
+    # indented lines in with these), then it's only a new section
+    # if it starts with a keyword.
     if (j < len(tokens)
             and tokens[j].token_type in KEYWORDS
             and tokens[j - 1].token_type == TokenType.NEWLINE):

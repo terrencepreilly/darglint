@@ -94,7 +94,7 @@ class NewGoogleParserTests(TestCase):
         sections = top_parse(condense(lex(docstring)))
         self.assertTrue(sections[0][0].token_type != TokenType.NEWLINE)
 
-    def test_top_parse_separates_by_indent_if_setion_starts(self):
+    def test_top_parse_separates_by_indent_if_section_starts(self):
         """Make sure we an ignore indentations if between sections."""
         docstring = '\n'.join([
             'A short summary.',
@@ -107,6 +107,24 @@ class NewGoogleParserTests(TestCase):
         ])
         parsed = top_parse(condense(lex(docstring)))
         self.assertEqual(len(parsed), 3)
+
+    def test_top_parse_only_separates_by_indent_if_followed_by_newline(self):
+        docstring = '\n'.join([
+            'Short shorts.',
+            '',
+            '    Long Description.',
+            '    ',
+            'Args:',
+            '    x: y',
+        ])
+        parsed = top_parse(condense(lex(docstring)))
+        self.assertEqual(len(parsed), 3)
+        self.assertTrue(
+            parsed[1][0].token_type == TokenType.INDENT,
+            'Expected INDENT but was {}'.format(
+                parsed[1][0].token_type,
+            )
+        )
 
     def test_top_parse_sections_do_not_start_with_newlines_and_nonempty(self):
         for _ in range(MAX_REPS):

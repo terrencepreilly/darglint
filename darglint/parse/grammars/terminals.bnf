@@ -17,6 +17,23 @@
     | <variable-type>
     | <noqa>
 
+<word-colonless>
+    ::= "TokenType\.WORD"
+    | <arguments>
+    | <argument-type>
+    | <hash>
+    | <indent>
+    | <lparen>
+    | <raises>
+    | <returns>
+    | <return-type>
+    | <rparen>
+    | <yields>
+    | <yield-type>
+    | <variables>
+    | <variable-type>
+    | <noqa>
+
 <arguments>
     ::= "TokenType\.ARGUMENTS"
 

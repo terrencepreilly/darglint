@@ -474,6 +474,30 @@ class DocstringTestCase(TestCase):
         self.assertTrue(tree is not None)
         self.assertContains(tree, 'yields-section')
 
+    def test_parse_yields_with_type(self):
+        tokens = condense(lex('\n'.join([
+            'Short.',
+            '',
+            'Yields:',
+            '    int: Some value.',
+        ])))
+        tree = new_parse(tokens)
+        self.assertTrue(tree is not None)
+        self.assertContains(tree, 'yields-type')
+
+    def test_parse_yields_with_type_and_newline(self):
+        tokens = condense(lex('\n'.join([
+            'Short',
+            '',
+            'Yields:',
+            '    int: Numbers that were calculated somehow.',
+            '',
+        ])))
+        tree = new_parse(tokens)
+        self.assertTrue(tree is not None)
+        print(tree)
+        self.assertContains(tree, 'yields-type')
+
     @replace('test_parse_raises_cyk')
     def test_can_parse_raises(self):
         """Make sure we can parse the raises section."""
@@ -554,7 +578,7 @@ class DocstringTestCase(TestCase):
         ])
         node = new_parse(condense(lex(docstring)))
         self.assertTrue(node.contains('returns-section'))
-        self.assertTrue(node.contains('type-section-colon'))
+        self.assertTrue(node.contains('returns-type'))
 
     @replace('test_parse_star_arguments_cyk')
     def test_star_arguments_parsed(self):
@@ -800,7 +824,7 @@ class DocstringTestCase(TestCase):
         tokens = condense(lex(docstring))
         tree = new_parse(tokens)
         self.assertTrue(tree is not None)
-        self.assertContains(tree, 'type-section-colon')
+        self.assertContains(tree, 'returns-type')
 
     @remove
     def test_must_have_parentheses_around(self):
