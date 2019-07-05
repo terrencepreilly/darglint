@@ -28,6 +28,9 @@ from .grammars.google_arguments_section import ArgumentsGrammar
 from .grammars.google_long_description import LongDescriptionGrammar
 from .grammars.google_raises_section import RaisesGrammar
 from .grammars.google_returns_section import ReturnsGrammar
+from .grammars.google_returns_section_without_type import (
+    ReturnsWithoutTypeGrammar,
+)
 from .grammars.google_short_description import ShortDescriptionGrammar
 from .grammars.google_yields_section import YieldsGrammar
 
@@ -132,6 +135,7 @@ def _match(token):
     tt_lookup = {
         TokenType.RETURNS: [
             ReturnsGrammar,
+            ReturnsWithoutTypeGrammar,
             LongDescriptionGrammar,
         ],
         TokenType.ARGUMENTS: [

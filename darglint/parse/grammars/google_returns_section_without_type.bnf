@@ -1,0 +1,22 @@
+import google_base.bnf
+import google_types.bnf
+
+Grammar: ReturnsWithoutTypeGrammar
+
+start: <returns-section>
+
+<returns-section>
+    ::= <returns-head> <returns-body>
+
+<returns-head>
+    ::= <returns> <colon> <newline>
+
+<returns-body>
+    ::= <indented> <returns-content>
+
+<returns-type>
+    ::= <type-section-colon>
+
+<returns-content>
+    ::= <line> <newlines>
+    | <line> <newline> <block-indented> <newlines>
