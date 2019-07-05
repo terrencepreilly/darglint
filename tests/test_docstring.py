@@ -433,8 +433,9 @@ class DocstringMethodTest(TestCase):
             '\n',
         ])
         docstring = Docstring.from_google(root)
+        noqas = docstring.get_noqas()
         self.assertEqual(
-            docstring.get_noqas(),
+            noqas,
             {
                 'I200': [],
                 'I201': ['x', 'y'],

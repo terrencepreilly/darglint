@@ -14,12 +14,17 @@ start: <arguments-section>
     | <item-argument>
 
 <item-argument>
-    ::= <head-argument> <line> <newline> <paragraph-indented-two>
-    | <head-argument> <line>
+    ::= @ArgumentItemIdentifier
+      <head-argument> <line> <newline> <paragraph-indented-two>
+    | @ArgumentItemIdentifier
+      <head-argument> <line>
 
 <head-argument>
-    ::= <indent> <argument> <colon>
-    | <indent> <argument> <type-section-parens> <colon>
+    ::= @ArgumentIdentifier
+      <indent> <argument> <colon>
+    | @ArgumentIdentifier
+      @ArgumentTypeIdentifier
+      <indent> <argument> <type-section-parens> <colon>
 
 <argument>
     ::= "TokenType\.WORD"

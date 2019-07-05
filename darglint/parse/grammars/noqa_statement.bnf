@@ -5,8 +5,8 @@ import terminals.bnf
     | ε
 
 <noqa-statement>
-    ::= <noqa-head>
-    | <noqa-head> <colon> <words>
+    ::= @NoqaIdentifier <noqa-head>
+    | @NoqaIdentifier <noqa-head> <colon> <words>
 
 <noqa-head>
     ::= <hash> <noqa>

@@ -13,11 +13,13 @@ start: <raises-section>
     | <item-exception>
 
 <item-exception>
-    ::= <head-exception> <line> <newline> <paragraph-indented-two>
-    | <head-exception> <line>
+    ::= @ExceptionItemIdentifier
+      <head-exception> <line> <newline> <paragraph-indented-two>
+    | @ExceptionItemIdentifier
+      <head-exception> <line>
 
 <head-exception>
-    ::= <indent> <exception> <colon>
+    ::= @ExceptionIdentifier <indent> <exception> <colon>
 
 <exception>
     ::= "TokenType\.WORD"

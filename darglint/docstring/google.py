@@ -36,6 +36,55 @@ from ..lex import (
     lex,
 )
 # from ..peaker import Peaker
+from ..parse.identifiers import (
+    ArgumentIdentifier,
+    ArgumentItemIdentifier,
+    ArgumentTypeIdentifier,
+    ExceptionIdentifier,
+    ExceptionItemIdentifier,
+    Identifier,
+    NoqaIdentifier,
+)
+
+
+class _CykVisitor(object):
+    """A class for walking the CYK tree.
+
+    This visitor can mark branches of the tree with an arbitrary
+    string.  This is useful for giving context to leaf nodes which
+    must be interpreted in the context of their branch root.
+
+    """
+
+    def __init__(self, root):
+        self.stack = deque([root])
+        self.marks = deque([])
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.stack:
+            curr = self.stack.pop()
+            if self.marks:
+                mark = self.marks.pop()
+            else:
+                mark = None
+            if curr.lchild:
+                self.stack.append(curr.lchild)
+                if mark:
+                    self.marks.append(mark)
+            if curr.rchild:
+                self.stack.append(curr.rchild)
+                if mark:
+                    self.marks.append(mark)
+            return (curr, mark)
+        else:
+            raise StopIteration()
+
+    def mark(self, mark):
+        assert not self.marks, 'Marks should be non-overlapping.'
+        self.marks.append(mark)
 
 
 class Docstring(BaseDocstring):
@@ -72,6 +121,10 @@ class Docstring(BaseDocstring):
             lambda: list()
         )  # type: Dict[str, List[CykNode]]
         for node in self.root.in_order_traverse():
+            if node.annotations:
+                for annotation in node.annotations:
+                    if issubclass(annotation, Identifier):
+                        lookup[annotation.key].append(node)
             lookup[node.symbol].append(node)
         return lookup
 
@@ -169,22 +222,14 @@ class Docstring(BaseDocstring):
             return None
 
         item_types = dict()  # type: Dict[str, Optional[str]]
-        for node in self._lookup[node_type]:
-            for item_name in node.breadth_first_walk():
-                if item_name.symbol not in {
-                    'head-argument1', 'head-exception0'
-                }:
-                    continue
-                name = item_name.lchild.value
-                if not name or not name.value:
-                    continue
-                _type = item_name.first_instance('type-section-parens')
-                if _type is None:
-                    item_types[name.value] = None
-                else:
-                    _type_repr = _type.reconstruct_string()
-                    _type_repr = _type_repr[1:-1].strip()
-                    item_types[name.value] = _type_repr
+        for item in self._lookup[ArgumentTypeIdentifier.key]:
+            item_types[
+                ArgumentIdentifier.extract(item)
+            ] = ArgumentTypeIdentifier.extract(item)
+        for item in self._lookup[ArgumentIdentifier.key]:
+            name = ArgumentIdentifier.extract(item)
+            if name not in item_types:
+                item_types[name] = None
         return item_types
 
     def _get_compound_items(self, symbol):
@@ -194,12 +239,19 @@ class Docstring(BaseDocstring):
             return None
         return sorted(lookup.keys())
 
+    def _get_raises_section_items(self):
+        # type: () -> Optional[List[str]]
+        items = list()
+        for item in self._lookup[ExceptionIdentifier.key]:
+            items.append(ExceptionIdentifier.extract(item))
+        return sorted(items) or None
+
     def get_items(self, section):
         # type: (Sections) -> Optional[List[str]]
         if section == Sections.ARGUMENTS_SECTION:
             return self._get_compound_items('arguments-section')
         elif section == Sections.RAISES_SECTION:
-            return self._get_compound_items('raises-section')
+            return self._get_raises_section_items()
         else:
             raise Exception(
                 'Section type {} does not have items, '.format(
@@ -222,13 +274,7 @@ class Docstring(BaseDocstring):
             return type_node.lchild.value.value
         return None
 
-    # TODO: Refactor.
-    # Some ideas for how to refactor:
-    # -   Define a query selector for Cyk nodes,
-    #     to make getting a child easier.
-    # -   Do a DFS storing nodes, and when you encounter
-    #     a noqa, record the parent items, if they exist.
-    #     Then operate entirely off of this list.
+    # TODO: Refactor using NoqaIdentifier
     def get_noqas(self):
         # type: () -> Dict[str, List[str]]
         """Get a map of the errors ignored to their targets.
@@ -239,107 +285,44 @@ class Docstring(BaseDocstring):
             the values.  A blank list implies a global noqa.
 
         """
-        item_symbols = {'head-argument', 'head-exception'}
+        def _get_branch_name(node):
+            for child in node.walk():
+                for annotation in child.annotations:
+                    if (
+                        issubclass(annotation, ArgumentIdentifier)
+                        or issubclass(annotation, ExceptionIdentifier)
+                    ):
+                        return annotation.extract(child)
 
-        def _is_noqa_parent(node):
-            return (
-                node.symbol == 'noqa-maybe'
-                or (node.lchild and 'noqa-statement' in node.lchild.symbol)
-                or (node.rchild and 'noqa-statement' in node.rchild.symbol)
-            )
-
-        def _get_noqa_target(node):
-            noqa_statement0 = node.rchild
-            assert noqa_statement0 and noqa_statement0.rchild
-            word = noqa_statement0.rchild
-            assert word.value
-            words = word.value.value.split()
-            return words[0], words[1:]
-
-        def _is_item(node):
-            return (
-                (node.rchild and node.rchild.symbol in item_symbols)
-                or (node.lchild and node.lchild.symbol in item_symbols)
-            )
-
-        def _get_item(node):
-            if node.lchild and node.lchild.symbol in item_symbols:
-                head_item = node.lchild
-            else:
-                assert node.rchild
-                head_item = node.rchild
-            head_item0 = head_item.rchild
-            assert head_item0
-            word = head_item0.lchild
-            assert word and word.value
-            return word.value.value
-
-        global_noqas = set()  # type: Set[str]
         noqas = defaultdict(lambda: set())  # type: Dict[str, Set[str]]
 
-        sections = list()
-        sections.extend(self._lookup['arguments-section'])
-        sections.extend(self._lookup['raises-section'])
+        for node in self._lookup[NoqaIdentifier.key]:
+            error = NoqaIdentifier.extract(node)
+            if error:
+                noqas[error] |= set(NoqaIdentifier.extract_targets(node))
+            else:
+                noqas['*'] = set()
 
-        # Perform an in-order DFS of the tree.
-        # This way, we can mark when we're in an item, and
-        # we can ensure we encounter an item name before the noqa.
-        for args_section in sections:
-            stack = deque([args_section])  # type: Deque[Any]
-            item = None
-            while stack:
-                curr = stack.pop()
+        # If the noqa did not have a target, but it had an error and was
+        # in an item or error description, then the item or error in question
+        # is the target.
+        for section in (
+            self._lookup['arguments-section'] + self._lookup['raises-section']
+        ):
+            visitor = _CykVisitor(section)
+            for node, mark in visitor:
+                for annotation in node.annotations:
+                    if issubclass(annotation, ArgumentItemIdentifier):
+                        visitor.mark(_get_branch_name(node))
+                    elif issubclass(annotation, ExceptionItemIdentifier):
+                        visitor.mark(_get_branch_name(node))
+                    elif issubclass(annotation, NoqaIdentifier):
+                        error = annotation.extract(node)
+                        if error and mark:
+                            noqas[error].add(mark)
 
-                # Leave the context of this argument.
-                if isinstance(curr, str):
-                    item = None
-                    continue
-
-                if _is_item(curr):
-                    item = _get_item(curr)
-                    stack.append(item)
-                elif _is_noqa_parent(curr):
-                    exception, targets = _get_noqa_target(curr)
-                    if not targets and item:
-                        targets = [item]
-                    elif not targets:
-                        global_noqas.add(exception)
-
-                    for target in targets:
-                        noqas[exception].add(target)
-
-                if curr.rchild:
-                    stack.append(curr.rchild)
-                if curr.lchild:
-                    stack.append(curr.lchild)
-
-        sections = list()
-        sections.extend(self._lookup['long-description'])
-        sections.extend(self._lookup['short-description'])
-
-        for section in sections:
-            stack = deque([section])
-            while stack:
-                curr = stack.pop()
-                if _is_noqa_parent(curr):
-                    exception, targets = _get_noqa_target(curr)
-                    noqas[exception] |= set(targets)
-
-                    # Don't add the children -- that way we
-                    # capture universal noqas.
-                    continue
-                if curr.symbol == 'noqa':
-                    global_noqas.add('*')
-
-                if curr.rchild:
-                    stack.append(curr.rchild)
-                if curr.lchild:
-                    stack.append(curr.lchild)
-
-        # We overwrite any previous targets, because it was defined
-        # as a global. (This could happen before a target is defined.)
-        for global_noqa in global_noqas:
-            noqas[global_noqa] = set()
+        for section in self._lookup['raises-section']:
+            pass
 
         return {
             key: sorted(values)

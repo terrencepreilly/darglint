@@ -1,5 +1,5 @@
 
-IMPORTS = "from darglint.parse.grammar import BaseGrammar\nfrom darglint.parse.grammar import Production as P\nfrom darglint.token import TokenType\n"
+IMPORTS = "from darglint.parse.grammar import BaseGrammar\nfrom darglint.parse.grammar import Production as P\nfrom darglint.token import TokenType\nfrom darglint.parse.identifiers import (\n    ArgumentIdentifier,\n    ArgumentTypeIdentifier,\n    ExceptionIdentifier,\n    NoqaIdentifier,\n    ArgumentItemIdentifier,\n    ExceptionItemIdentifier,\n)\n\n"
 
 sections = google_arguments_section.py \
 		   google_long_description.py \

@@ -193,20 +193,28 @@ def condense(tokens):
     if curr.value in KEYWORDS:
         curr.token_type = KEYWORDS[curr.value]
 
+    encountered_noqa = False
+
     for token in tokens:
         if token.token_type == TokenType.WORD and token.value in KEYWORDS:
             ret.append(curr)
+            if token.value == 'noqa':
+                encountered_noqa = True
             curr = Token(
                 token.value,
                 KEYWORDS[token.value],
                 token.line_number,
             )
         elif token.token_type == TokenType.WORD:
-            if curr.token_type == TokenType.WORD:
+            if curr.token_type == TokenType.WORD and not encountered_noqa:
                 curr.value += ' {}'.format(token.value)
             else:
                 ret.append(curr)
                 curr = token
+        elif token.token_type == TokenType.NEWLINE:
+            ret.append(curr)
+            curr = token
+            encountered_noqa = False
         else:
             ret.append(curr)
             curr = token
