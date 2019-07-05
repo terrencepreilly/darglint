@@ -399,7 +399,8 @@ class DocstringTestCase(TestCase):
         self.assertTrue(tree is not None)
         self.assertContains(tree, 'arguments-section')
 
-    @replace('test_arguments_are_last_cyk')
+    @remove
+    @skip('Nested parentheses in type is invalid.')
     def test_arguments_are_last(self):
         """Make sure arguments can be parsed as the last section."""
         docstring = '\n'.join([
@@ -811,7 +812,7 @@ class DocstringTestCase(TestCase):
         tokens = condense(lex(docstring))
         tree = new_parse(tokens)
         self.assertTrue(tree is not None)
-        self.assertContains(tree, 'type-section-colon')
+        self.assertContains(tree, 'yields-type')
 
     def test_parse_type_with_colon_in_returns_cyk(self):
         docstring = '\n'.join([

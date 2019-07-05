@@ -9,6 +9,7 @@ sections = google_arguments_section.py \
 		   google_short_description.py \
 		   google_types.py \
 		   google_yields_section.py \
+		   google_yields_section_without_type.py \
 		   sphinx_argument_type_section.py \
 		   sphinx_arguments_section.py \
 		   sphinx_base.py \

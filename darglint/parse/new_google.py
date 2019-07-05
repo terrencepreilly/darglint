@@ -33,6 +33,9 @@ from .grammars.google_returns_section_without_type import (
 )
 from .grammars.google_short_description import ShortDescriptionGrammar
 from .grammars.google_yields_section import YieldsGrammar
+from .grammars.google_yields_section_without_type import (
+    YieldsWithoutTypeGrammar,
+)
 
 
 def _get_split_end_with_indents(tokens, i):
@@ -144,6 +147,7 @@ def _match(token):
         ],
         TokenType.YIELDS: [
             YieldsGrammar,
+            YieldsWithoutTypeGrammar,
             LongDescriptionGrammar,
         ],
         TokenType.RAISES: [

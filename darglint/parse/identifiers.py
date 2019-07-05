@@ -76,8 +76,10 @@ class ArgumentTypeIdentifier(Identifier):
         assert node.rchild.rchild.lchild
         assert node.rchild.rchild.lchild.rchild
         assert node.rchild.rchild.lchild.rchild.lchild
-        assert node.rchild.rchild.lchild.rchild.lchild.value
-        return node.rchild.rchild.lchild.rchild.lchild.value.value
+        if node.rchild.rchild.lchild.rchild.lchild.value:
+            return node.rchild.rchild.lchild.rchild.lchild.value.value
+        else:
+            return node.rchild.rchild.lchild.rchild.lchild.reconstruct_string()
 
 
 class ExceptionItemIdentifier(Identifier):
