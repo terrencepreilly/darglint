@@ -1929,6 +1929,31 @@ class DocstringTestCase(TestCase):
         self.assertTrue(node.contains('returns-section'))
         self.assertTrue(node.contains('arguments-section'))
 
+    def test_type_with_multiple_words_multiple_lines(self):
+        docstring = '\n'.join([
+            'Test.',
+            '',
+            'Args:',
+            '    input (:obj:`DataFrame <pandas.DataFrame>`, \\',
+            '        :obj:`ndarray <numpy.ndarray>`, list): test',
+        ])
+        tokens = condense(lex(docstring))
+        node = new_parse(tokens)
+        self.assertTrue(node.contains('arguments-section'))
+
+    def test_type_can_have_indents(self):
+        docstring = '\n'.join([
+            'Test.',
+            '',
+            'Args:',
+            '    input (a,       b): test',
+            '',
+            '# noqa: S001'
+        ])
+        tokens = condense(lex(docstring))
+        node = new_parse(tokens)
+        self.assertTrue(node.contains('arguments-section'))
+
 
 class StyleWarningsTestCase(TestCase):
     """Tests for the new style warnings.

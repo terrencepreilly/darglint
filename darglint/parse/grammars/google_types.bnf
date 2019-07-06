@@ -26,6 +26,7 @@ start: <type-section>
 <type-word-colon>
     ::= "TokenType\.WORD"
     | "TokenType\.COLON"
+    | "TokenType\.INDENT"
 
 <type-words>
     ::= <type-word> <type-words>

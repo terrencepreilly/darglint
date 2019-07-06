@@ -18,10 +18,9 @@ from .base import (  # noqa: F401
     DocstringStyle,
     Sections,
 )
-# from ..node import (
-#     Node,
-#     NodeType,
-# )
+from ..node import (
+    NodeType,
+)
 from ..parse.cyk import (
     CykNode,
 )
@@ -329,31 +328,34 @@ class Docstring(BaseDocstring):
             for key, values in noqas.items()
         }
 
-    def get_line_numbers(self, node_type):
-        # type: (NodeType) -> Optional[Tuple[int, int]]
+    def get_line_numbers(self, symbol):
+        # type: (Union[NodeType, str]) -> Optional[Tuple[int, int]]
         """Get the line numbers for the first instance of the given section.
 
         Args:
-            node_type: The NodeType which we want line numbers for.
+            symbol: The type of node which we want line numbers for.
                 These should be unique instances. (I.e. they should be
                 in the set of compound NodeTypes which only occur
-                once in a docstring. For example, "Raises" and "Args".
+                once in a docstring. For example, "raises-section" and
+                "arguments-section".
 
         Returns:
             The line numbers for the first instance of the given node type.
 
         """
-        nodes = self._lookup[node_type]
+        if isinstance(symbol, NodeType):
+            return None
+        nodes = self._lookup[symbol]
         if nodes:
             return nodes[0].line_numbers
         return None
 
-    def get_line_numbers_for_value(self, node_type, value):
-        # type: (NodeType, str) -> Optional[Tuple[int, int]]
+    def get_line_numbers_for_value(self, symbol, value):
+        # type: (Union[NodeType, str], str) -> Optional[Tuple[int, int]]
         """Get the line number for a node with the given value.
 
         Args:
-            node_type: The compound node which should contain the
+            symbol: The compound node which should contain the
                 node we are searching for.
             value: The value of the node.
 
@@ -362,10 +364,14 @@ class Docstring(BaseDocstring):
             parameters.
 
         """
-        nodes = self._lookup[node_type]
+        if isinstance(symbol, NodeType):
+            return None
+        nodes = self._lookup[symbol]
         for node in nodes:
             for child in node.walk():
-                if child.value == value and child.line_numbers:
+                if (child.value
+                        and child.value.value == value
+                        and child.line_numbers):
                     return child.line_numbers
         return None
 
@@ -381,15 +387,5 @@ class Docstring(BaseDocstring):
             True if we should ignore everything, otherwise false.
 
         """
-        for node in self._lookup['noqa-maybe']:
-            body = list()
-            for child in node.walk():
-                if child.symbol == 'words':
-                    body.append(child)
-
-            if not body or any([
-                x.value and x.value.value == '*' for x in body
-            ]):
-                return True
-
-        return False
+        noqas = self.get_noqas()
+        return '*' in noqas

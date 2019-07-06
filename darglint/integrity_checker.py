@@ -159,13 +159,24 @@ class IntegrityChecker(object):
             noqa_exists = error_code in noqa_lookup
             name_has_noqa = noqa_exists and name in noqa_lookup[error_code]
             if not (expected == actual or name_has_noqa):
-                default_line_numbers = self.docstring.get_line_numbers(
-                    NodeType.ARGS_SECTION,
-                )
-                line_numbers = self.docstring.get_line_numbers_for_value(
-                    NodeType.ITEM_NAME,
-                    name,
-                ) or default_line_numbers
+                if self.config.style == DocstringStyle.GOOGLE:
+                    default_line_numbers = self.docstring.get_line_numbers(
+                        'arguments-section'
+                    )
+                else:
+                    default_line_numbers = self.docstring.get_line_numbers(
+                        NodeType.ARGS_SECTION,
+                    )
+                if self.config.style == DocstringStyle.GOOGLE:
+                    line_numbers = self.docstring.get_line_numbers_for_value(
+                        'argument',
+                        name,
+                    ) or default_line_numbers
+                else:
+                    line_numbers = self.docstring.get_line_numbers_for_value(
+                        NodeType.ITEM_NAME,
+                        name,
+                    ) or default_line_numbers
                 self.errors.append(
                     ParameterTypeMismatchError(
                         self.function.function,
@@ -187,9 +198,14 @@ class IntegrityChecker(object):
             doc_type = ''
         if fun_type is not None and doc_type is not None:
             if fun_type != doc_type:
-                line_numbers = self.docstring.get_line_numbers(
-                    NodeType.RETURNS_SECTION,
-                )
+                if self.config.style == DocstringStyle.GOOGLE:
+                    line_numbers = self.docstring.get_line_numbers(
+                        'returns-section',
+                    )
+                else:
+                    line_numbers = self.docstring.get_line_numbers(
+                        NodeType.RETURNS_SECTION,
+                    )
                 self.errors.append(
                     ReturnTypeMismatchError(
                         self.function.function,
@@ -210,9 +226,14 @@ class IntegrityChecker(object):
                 MissingYieldError(self.function.function)
             )
         elif doc_yield and not fun_yield and not ignore_excess:
-            line_numbers = self.docstring.get_line_numbers(
-                NodeType.YIELDS_SECTION,
-            )
+            if self.config.style == DocstringStyle.GOOGLE:
+                line_numbers = self.docstring.get_line_numbers(
+                    'yields-section',
+                )
+            else:
+                line_numbers = self.docstring.get_line_numbers(
+                    NodeType.YIELDS_SECTION,
+                )
             self.errors.append(
                 ExcessYieldError(
                     self.function.function,
@@ -231,9 +252,14 @@ class IntegrityChecker(object):
                 MissingReturnError(self.function.function)
             )
         elif doc_return and not fun_return and not ignore_excess:
-            line_numbers = self.docstring.get_line_numbers(
-                NodeType.RETURNS_SECTION,
-            )
+            if self.config.style == DocstringStyle.GOOGLE:
+                line_numbers = self.docstring.get_line_numbers(
+                    'returns-section',
+                )
+            else:
+                line_numbers = self.docstring.get_line_numbers(
+                    NodeType.RETURNS_SECTION,
+                )
             self.errors.append(
                 ExcessReturnError(
                     self.function.function,
@@ -256,9 +282,14 @@ class IntegrityChecker(object):
         )
 
         # Get a default line number.
-        default_line_numbers = self.docstring.get_line_numbers(
-            NodeType.ARGS_SECTION
-        )
+        if self.config.style == DocstringStyle.GOOGLE:
+            default_line_numbers = self.docstring.get_line_numbers(
+                'arguments-section'
+            )
+        else:
+            default_line_numbers = self.docstring.get_line_numbers(
+                NodeType.ARGS_SECTION
+            )
 
         for missing in missing_in_doc:
             # We use the default line numbers because a missing
@@ -277,10 +308,16 @@ class IntegrityChecker(object):
             ExcessParameterError,
         )
         for missing in missing_in_function:
-            line_numbers = self.docstring.get_line_numbers_for_value(
-                NodeType.ARGS_SECTION,
-                missing,
-            ) or default_line_numbers
+            if self.config.style == DocstringStyle.GOOGLE:
+                line_numbers = self.docstring.get_line_numbers_for_value(
+                    'arguments-section',
+                    missing,
+                ) or default_line_numbers
+            else:
+                line_numbers = self.docstring.get_line_numbers_for_value(
+                    NodeType.ARGS_SECTION,
+                    missing,
+                ) or default_line_numbers
             self.errors.append(
                 ExcessParameterError(
                     self.function.function,
@@ -391,14 +428,25 @@ class IntegrityChecker(object):
             missing_in_function,
             ExcessRaiseError,
         )
-        default_line_numbers = self.docstring.get_line_numbers(
-            NodeType.RAISES_SECTION,
-        )
-        for missing in missing_in_function:
-            line_numbers = self.docstring.get_line_numbers_for_value(
+        if self.config.style == DocstringStyle.GOOGLE:
+            default_line_numbers = self.docstring.get_line_numbers(
+                'raises-section',
+            )
+        else:
+            default_line_numbers = self.docstring.get_line_numbers(
                 NodeType.RAISES_SECTION,
-                missing,
-            ) or default_line_numbers
+            )
+        for missing in missing_in_function:
+            if self.config.style == DocstringStyle.GOOGLE:
+                line_numbers = self.docstring.get_line_numbers_for_value(
+                    'raises-section',
+                    missing,
+                ) or default_line_numbers
+            else:
+                line_numbers = self.docstring.get_line_numbers_for_value(
+                    NodeType.RAISES_SECTION,
+                    missing,
+                ) or default_line_numbers
             self.errors.append(
                 ExcessRaiseError(
                     self.function.function,
