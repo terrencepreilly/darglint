@@ -111,7 +111,7 @@ class Node(object):
             return '\n'.join(map(str, self.children)) + '\n'
         elif self.node_type == NodeType.EXTERNAL_IMPORT:
             source = self.children[0].value
-            filenames = [x.value for x in self.children[1].children]
+            filenames = sorted([x.value for x in self.children[1].children])
             ret = f'from {source} import (\n'
             for filename in filenames:
                 ret += f'    {filename},\n'
@@ -305,11 +305,19 @@ class Node(object):
             )
         elif tree.data == 'items':
             assert len(tree.children) > 0
+            filenames = list()
+            stack = deque(tree.children)
+            while stack:
+                curr = stack.pop()
+                if hasattr(curr, 'type') and curr.type == 'ITEM':
+                    filenames.append(curr.value)
+                if hasattr(curr, 'children'):
+                    stack.extend(curr.children)
             return Node(
                 NodeType.FILENAMES,
                 children=[
-                    Node(NodeType.FILENAME, value=child.value)
-                    for child in tree.children
+                    Node(NodeType.FILENAME, value=filename)
+                    for filename in filenames
                 ]
             )
         else:
@@ -402,7 +410,7 @@ class Node(object):
         elif self.node_type == NodeType.GRAMMAR:
             import datetime
             comment = (
-                f'# Generated on {datetime.datetime.now()}'
+                f'# Generated on {datetime.datetime.now()}\n'
             )
             name = 'Grammar'
             for name_node in self.filter(Node.is_name):
@@ -427,10 +435,10 @@ class Node(object):
                 values.append(f'    start = "{start_node.value}"')
             return '\n'.join(values)
         elif self.node_type == NodeType.EXTERNAL_IMPORTS:
-            return '\n'.join([x.to_python() for x in self.children]) + '\n'
+            return '\n'.join([x.to_python() for x in self.children])
         elif self.node_type == NodeType.EXTERNAL_IMPORT:
             source = self.children[0].value
-            filenames = [x.value for x in self.children[1].children]
+            filenames = sorted([x.value for x in self.children[1].children])
             ret = f'from {source} import (\n'
             for filename in filenames:
                 ret += f'    {filename},\n'
@@ -617,6 +625,9 @@ class Node(object):
 
     def merge(self, other: 'Node'):
         assert self.node_type == NodeType.GRAMMAR
+        for external_imports in other.filter(Node.is_external_imports):
+            cloned = external_imports.clone()
+            self.children.insert(0, external_imports)
         for production in other.filter(Node.is_production):
             cloned = production.clone()
             self.children.append(cloned)

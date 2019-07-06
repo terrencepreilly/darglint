@@ -2,6 +2,12 @@ import google_base.bnf
 import google_types.bnf
 import noqa_statement.bnf
 
+from darglint.parse.identifiers import (
+    ArgumentIdentifier,
+    ArgumentItemIdentifier,
+    ArgumentTypeIdentifier,
+)
+
 Grammar: ArgumentsGrammar
 
 start: <arguments-section>

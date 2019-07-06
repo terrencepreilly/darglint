@@ -39,6 +39,10 @@ class Production(object):
         return cls(lhs, annotations=annotations, *rhs)
 
 
+# Convenience name.
+P = Production
+
+
 class BaseGrammar(abc.ABC):
 
     @property

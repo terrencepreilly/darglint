@@ -150,6 +150,31 @@ class EmptyDescriptionError(DarglintError):
         )
 
 
+class ItemIndentationError(DarglintError):
+    """Describes when an argument's/exception's second line is under-indented.
+    """
+
+    error_code = 'S003'
+
+    def __init__(self, function, message, line_numbers=None):
+        # type: (ast.FunctionDef, str, Tuple[int, int]) -> None
+        """Instantiate the eror's message.
+
+        Args:
+            function: An ast node for the function.
+            message: The parser error's message.
+            line_numbers: The line numbers where this error occurs.
+
+        """
+        self.general_message = 'Underindented'
+        self.terse_message = '<< {}'.format(message)
+
+        super(ItemIndentationError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
+
+
 class MissingParameterError(DarglintError):
     """Describes when a docstring is missing a parameter in the definition."""
 

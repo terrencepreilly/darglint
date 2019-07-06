@@ -1,6 +1,11 @@
 import google_base.bnf
 import google_types.bnf
 
+from darglint.parse.identifiers import (
+    ExceptionIdentifier,
+    ExceptionItemIdentifier,
+)
+
 Grammar: RaisesGrammar
 
 start: <raises-section>

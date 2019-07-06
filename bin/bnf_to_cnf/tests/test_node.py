@@ -141,7 +141,8 @@ class NodeTest(TestCase):
         external = (
             'from darglint.parse.identifiers import (\n'
             '    ArgumentIdentifier,\n'
-            ')\n'
+            '    NoqaIdentifier,\n'
+            ')'
         )
         grammar = f'''
         {external}

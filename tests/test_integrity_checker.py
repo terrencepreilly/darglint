@@ -21,6 +21,7 @@ from darglint.errors import (
     MissingYieldError,
     ParameterTypeMismatchError,
     ReturnTypeMismatchError,
+    ItemIndentationError,
 )
 from darglint.parse.common import ParserException
 from .utils import (
@@ -555,6 +556,30 @@ class IntegrityCheckerTestCase(TestCase):
         checker.run_checks(functions[0])
         errors = checker.errors
         self.assertTrue(isinstance(errors[0], GenericSyntaxError))
+
+    def test_error_if_no_colon_in_parameter_line_cyk(self):
+        program = '\n'.join([
+            'def hash_integer(value):',
+            '    """Return the hash value of an integer.',
+            '',
+            '    Args:',
+            '        value: The integer that we want',
+            # This line should cause an error because it is at the
+            # level for parameter identifiers.
+            '        to make a hashed value of.',
+            '',
+            '    Returns:',
+            '        The hashed value.',
+            '',
+            '    """',
+            '    return value % 7',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertTrue(isinstance(errors[0], ItemIndentationError))
 
     @replace('test_throws_assertion_if_no_content_after_colon_cyk')
     @skip('Replace this!')

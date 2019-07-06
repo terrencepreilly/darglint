@@ -1,6 +1,13 @@
 import terminals.bnf
 import noqa_statement.bnf
 
+# The base grammar could be different for different docstrings.
+# So we import it here.
+from darglint.parse.grammar import (
+    BaseGrammar,
+    P,
+)
+
 <block-indented-two>
     ::= <paragraph-indented-two> <split> <block-indented-two>
     | <paragraph-indented-two>
