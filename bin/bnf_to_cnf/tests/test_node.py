@@ -136,3 +136,18 @@ class NodeTest(TestCase):
                     Node(node_type, children=[])
                 ),
             )
+
+    def test_external_filename_preserved_in_both_python_and_bnf(self):
+        external = (
+            'from darglint.parse.identifiers import (\n'
+            '    ArgumentIdentifier,\n'
+            ')\n'
+        )
+        grammar = f'''
+        {external}
+
+        <A> ::= "A"
+        '''
+        node = Parser().parse(grammar)
+        self.assertTrue(external in str(node))
+        self.assertTrue(external in node.to_python())

@@ -330,3 +330,16 @@ class TranslatorTestCase(TestCase):
         '''
         tree = Parser().parse(grammar)
         Translator().translate(tree)
+
+    def test_external_imports_transferred_verbatim(self):
+        grammar = r'''
+            from darglint.errors import (
+                ItemIndentationError,
+            )
+
+            <start> ::= @ItemIndentationError <A>
+            <A> ::= "A"
+        '''
+        tree = Parser().parse(grammar)
+        node = Translator().translate(tree)
+        self.assertTrue(node.equals(tree))

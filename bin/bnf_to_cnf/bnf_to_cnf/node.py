@@ -34,12 +34,17 @@ class NodeType(Enum):
     IMPORTS = 8
     IMPORT = 9
     NAME = 10
+    EXTERNAL_IMPORTS = 12
+    EXTERNAL_IMPORT = 13
+    SOURCE = 14
+    FILENAMES = 15
+    FILENAME = 16
 
     ANNOTATIONS = 6
     ANNOTATION = 7
     START = 11
 
-    # Next: 12
+    # Next: 17
 
 
 TERMINAL_NODES = {
@@ -47,6 +52,8 @@ TERMINAL_NODES = {
     NodeType.SYMBOL,
     NodeType.ANNOTATION,
     NodeType.START,
+    NodeType.SOURCE,
+    NodeType.FILENAME,
 }
 NONTERMINAL_NODES = {
     NodeType.GRAMMAR,
@@ -54,6 +61,9 @@ NONTERMINAL_NODES = {
     NodeType.EXPRESSION,
     NodeType.SEQUENCE,
     NodeType.ANNOTATIONS,
+    NodeType.EXTERNAL_IMPORTS,
+    NodeType.EXTERNAL_IMPORT,
+    NodeType.FILENAMES,
 }
 
 
@@ -97,6 +107,16 @@ class Node(object):
             return f'import {self.value}'
         elif self.node_type == NodeType.START:
             return f'start: <{self.value}>'
+        elif self.node_type == NodeType.EXTERNAL_IMPORTS:
+            return '\n'.join(map(str, self.children)) + '\n'
+        elif self.node_type == NodeType.EXTERNAL_IMPORT:
+            source = self.children[0].value
+            filenames = [x.value for x in self.children[1].children]
+            ret = f'from {source} import (\n'
+            for filename in filenames:
+                ret += f'    {filename},\n'
+            ret += ')\n'
+            return ret
         else:
             raise Exception(f'Unrecognized node type {self.node_type}')
 
@@ -169,7 +189,7 @@ class Node(object):
             # expanded before translation.
             return True
         else:
-            raise Exception('Unrecognized node type.')
+            raise Exception(f'Unrecognized node type. {self.node_type}')
 
     def filter(self, filt: Callable[['Node'], bool]) -> Iterator['Node']:
         for node in self._bfs():
@@ -269,6 +289,29 @@ class Node(object):
                 NodeType.START,
                 value=tree.children[0].children[0].value.strip(),
             )
+        elif tree.data == 'external_imports':
+            return Node(
+                NodeType.EXTERNAL_IMPORTS,
+                children=list(map(Node.from_lark_tree, tree.children)),
+            )
+        elif tree.data == 'external_import':
+            assert len(tree.children) == 2
+            return Node(
+                NodeType.EXTERNAL_IMPORT,
+                children=[
+                    Node(NodeType.SOURCE, tree.children[0].value),
+                    Node.from_lark_tree(tree.children[1]),
+                ],
+            )
+        elif tree.data == 'items':
+            assert len(tree.children) > 0
+            return Node(
+                NodeType.FILENAMES,
+                children=[
+                    Node(NodeType.FILENAME, value=child.value)
+                    for child in tree.children
+                ]
+            )
         else:
             raise Exception(
                 f'Unrecognized Lark type "{tree.data}".  Check grammar.'
@@ -365,17 +408,34 @@ class Node(object):
             for name_node in self.filter(Node.is_name):
                 assert name_node.value is not None
                 name = name_node.value
+
             values = [
                 comment,
+            ]
+
+            for node in self.filter(Node.is_external_imports):
+                values.append(node.to_python())
+
+            values.extend([
                 f'class {name}(BaseGrammar):',
                 '    productions = [',
-            ]
+            ])
             for production in self.filter(Node.is_production):
                 values.append(production.to_python())
             values.append('    ]')
             for start_node in self.filter(Node.is_start):
                 values.append(f'    start = "{start_node.value}"')
             return '\n'.join(values)
+        elif self.node_type == NodeType.EXTERNAL_IMPORTS:
+            return '\n'.join([x.to_python() for x in self.children]) + '\n'
+        elif self.node_type == NodeType.EXTERNAL_IMPORT:
+            source = self.children[0].value
+            filenames = [x.value for x in self.children[1].children]
+            ret = f'from {source} import (\n'
+            for filename in filenames:
+                ret += f'    {filename},\n'
+            ret += ')\n'
+            return ret
         else:
             raise Exception(f'Unrecognized node type, {self.node_type}')
 
@@ -418,6 +478,10 @@ class Node(object):
     @staticmethod
     def is_name(x: 'Node') -> bool:
         return x.node_type == NodeType.NAME
+
+    @staticmethod
+    def is_external_imports(x: 'Node') -> bool:
+        return x.node_type == NodeType.EXTERNAL_IMPORTS
 
     @staticmethod
     def has_symbol(x: str) -> Callable[['Node'], bool]:

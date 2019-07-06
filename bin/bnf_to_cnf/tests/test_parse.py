@@ -193,3 +193,27 @@ class ParserTestCase(TestCase):
             annotation.value,
             'Q',
         )
+
+    def test_parse_from_import(self):
+        grammar = '''
+            from darglint.errors import (
+                ItemIndentationError,
+            )
+            <A> ::= "A"
+        '''
+        tree = Parser().parse(grammar)
+        self.assertTrue(tree)
+
+    def test_parse_multiple_external_imports(self):
+        grammar = '''
+            from darglint.errors import (
+                ItemIndentationError,
+            )
+            from darglint.parse.identifiers import (
+                ArgumentIdentifier,
+            )
+
+            <A> ::= "A"
+        '''
+        tree = Parser().parse(grammar)
+        self.assertTrue(tree)
