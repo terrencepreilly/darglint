@@ -150,8 +150,8 @@ class EmptyDescriptionError(DarglintError):
         )
 
 
-class ItemIndentationError(DarglintError):
-    """Describes when an argument's/exception's second line is under-indented.
+class IndentError(DarglintError):
+    """Describes when a line is under-indented or over-indented.
     """
 
     error_code = 'S003'
@@ -169,7 +169,7 @@ class ItemIndentationError(DarglintError):
         self.general_message = 'Underindented'
         self.terse_message = '<< {}'.format(message)
 
-        super(ItemIndentationError, self).__init__(
+        super(IndentError, self).__init__(
             function,
             line_numbers=line_numbers,
         )

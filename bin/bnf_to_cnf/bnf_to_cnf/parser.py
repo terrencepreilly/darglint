@@ -22,12 +22,14 @@ class Parser(object):
 
         expression: sequence (_BAR sequence)*
         _BAR: "|"
-        sequence: annotations? (symbol | TERMINAL) (_WHITESPACE (symbol | TERMINAL))*
+        sequence: probability? annotations? (symbol | TERMINAL) (_WHITESPACE (symbol | TERMINAL))*
         TERMINAL: "\"" (LETTER | ESCAPED | NUMBER | "_" | "-" | ":")+ "\""
             | "ε"
         ESCAPED: "\\" ("." | "," | "*" | "^" | "("
                       | ")" | "+" | "-" | "/" | "\""
                       | " " | "]" | "[" | "|")
+
+        probability: NUMBER+
 
         start_expression: _START symbol
         _START: "start:"

@@ -15,13 +15,13 @@ from darglint.errors import (
     ExcessVariableError,
     ExcessYieldError,
     GenericSyntaxError,
+    IndentError,
     MissingParameterError,
     MissingRaiseError,
     MissingReturnError,
     MissingYieldError,
     ParameterTypeMismatchError,
     ReturnTypeMismatchError,
-    ItemIndentationError,
 )
 from darglint.parse.common import ParserException
 from .utils import (
@@ -579,7 +579,7 @@ class IntegrityCheckerTestCase(TestCase):
         checker = IntegrityChecker()
         checker.run_checks(functions[0])
         errors = checker.errors
-        self.assertTrue(isinstance(errors[0], ItemIndentationError))
+        self.assertTrue(isinstance(errors[0], IndentError))
 
     @replace('test_throws_assertion_if_no_content_after_colon_cyk')
     @skip('Replace this!')

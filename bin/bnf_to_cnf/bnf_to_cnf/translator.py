@@ -536,6 +536,8 @@ class Translator(object):
                     ):
                         continue
                     cloned = sequence.clone()
+                    if unit_sequence.probability:
+                        cloned.probability = unit_sequence.probability
                     # Add the annotation, if there was one.
                     if Node.has_annotation(unit_sequence):
                         annotations = unit_sequence.children[0]

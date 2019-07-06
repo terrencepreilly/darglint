@@ -152,3 +152,18 @@ class NodeTest(TestCase):
         node = Parser().parse(grammar)
         self.assertTrue(external in str(node))
         self.assertTrue(external in node.to_python())
+
+    def test_probability_passed_to_python_production(self):
+        grammar = f'''
+        <start>
+            ::= 70 <A> <A>
+              | 30 <A> <B>
+
+        <A> ::= "A"
+        <B> ::= "B"
+        '''
+        node = Parser().parse(grammar)
+        self.assertEqual(
+            '([], "A", "A", 70)',
+            node.children[0].children[1].children[0].to_python(),
+        )

@@ -267,6 +267,28 @@ class TranslatorTestCase(TestCase):
             f'Expected:\n{expected}\n\nBut got:\n{node}'
         )
 
+    def test_translate_retains_probability(self):
+        """Make sure that probabilities are retained in the grammar."""
+        grammar = r'''
+            <start> ::= <A>
+            <A> ::= 70 <B> <B> <C> | 20 <B> <B> | 10 <B>
+            <B> ::= "B"
+            <C> ::= "C"
+        '''
+        tree = Parser().parse(grammar)
+        node = Translator().translate(tree)
+        expected = Parser().parse(r'''
+            <start> ::= 70 <B> <A0> | 20 <B> <B> | 10 "B"
+            <A> ::= 70 <B> <A0> | 20 <B> <B> | 10 "B"
+            <B> ::= "B"
+            <C> ::= "C"
+            <A0> ::= <B> <C>
+        ''')
+        self.assertTrue(
+            node.equals(expected),
+            f'Expected:\n{expected}\n\nBut got:\n{node}',
+        )
+
     def test_translate_retains_start_annotation(self):
         """Make sure that an annotation on start is saved."""
         grammar = r'''

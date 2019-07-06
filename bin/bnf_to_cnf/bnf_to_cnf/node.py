@@ -72,11 +72,13 @@ class Node(object):
     def __init__(self,
                  node_type: NodeType,
                  value: Optional[str] = None,
-                 children: List['Node'] = list()):
+                 children: List['Node'] = list(),
+                 probability: Optional[int] = None):
         self.node_type = node_type
         self.value = value
         self.children = children
         self.cached_symbols = set()  # type: Set[str]
+        self.probability = probability
 
     def __str__(self):
         if self.node_type == NodeType.GRAMMAR:
@@ -94,7 +96,12 @@ class Node(object):
         elif self.node_type == NodeType.EXPRESSION:
             return ' | '.join(map(str, self.children))
         elif self.node_type == NodeType.SEQUENCE:
-            return ' '.join(map(str, self.children))
+            if self.probability:
+                ret = f'{self.probability} '
+            else:
+                ret = ''
+            ret += ' '.join(map(str, self.children))
+            return ret
         elif self.node_type == NodeType.TERMINAL:
             return self.value
         elif self.node_type == NodeType.ANNOTATION:
@@ -179,6 +186,14 @@ class Node(object):
             return False
         if self.node_type in TERMINAL_NODES:
             return self.value == other.value
+        elif self.node_type == NodeType.SEQUENCE:
+            return (
+                self.probability == other.probability
+                and all([
+                    x.equals(y)
+                    for x, y in zip(self.children, other.children)
+                ])
+            )
         elif self.node_type in NONTERMINAL_NODES:
             return all([
                 x.equals(y)
@@ -248,9 +263,20 @@ class Node(object):
                 children=list(map(Node.from_lark_tree, tree.children)),
             )
         elif tree.data == 'sequence':
+            if (hasattr(tree, 'children')
+                    and hasattr(tree.children[0], 'data')
+                    and tree.children[0].data == 'probability'):
+                first_child = 1
+                probability = tree.children[0].children[0].value
+            else:
+                first_child = 0
+                probability = None
             return Node(
                 NodeType.SEQUENCE,
-                children=list(map(Node.from_lark_tree, tree.children)),
+                children=list(map(
+                    Node.from_lark_tree, tree.children[first_child:]
+                )),
+                probability=probability,
             )
         elif tree.data == 'annotations':
             return Node(
@@ -341,6 +367,7 @@ class Node(object):
             node_type=self.node_type,
             children=[child.clone() for child in self.children],
             value=self.value,
+            probability=self.probability,
         )
 
     def to_python(self) -> str:
@@ -353,9 +380,40 @@ class Node(object):
             assert self.value is not None
             return f'"{self.value}"'
         elif self.node_type == NodeType.SEQUENCE:
+            # If the node has undergone translation, it will have
+            # only one or two children.
+            #
+            # If the node has probability, that will be the last element.
+            # Therefore, we have the partitioning
+            #
+            # +----------+-----------------+----------+
+            # | Children | Has Probability | Length   |
+            # +----------+-----------------+----------+
+            # |    1     |        N        |    1     |
+            # +----------+-----------------+----------+
+            # |    1     |        Y        |    2     |
+            # +----------+-----------------+----------+
+            # |    2     |        N        |    3     |
+            # +----------+-----------------+----------+
+            # |    2     |        Y        |    4     |
+            # +----------+-----------------+----------+
+            #
+            # Which will allow the consumer to distinguish between all of
+            # these without introducing a new type.
+            #
             if len(self.children) == 1:
+                if self.probability:
+                    return (
+                        f'({self.children[0].to_python()}, '
+                        '{self.probability})'
+                    )
                 return self.children[0].to_python()
             elif len(self.children) == 2:
+                if self.probability:
+                    return (
+                        f'([], {self.children[0].to_python()}, '
+                        f'{self.children[1].to_python()}, {self.probability})'
+                    )
                 return (
                     f'([], {self.children[0].to_python()}, '
                     f'{self.children[1].to_python()})'

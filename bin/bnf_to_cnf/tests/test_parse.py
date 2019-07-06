@@ -217,3 +217,15 @@ class ParserTestCase(TestCase):
         '''
         tree = Parser().parse(grammar)
         self.assertTrue(tree)
+
+    def test_parse_probability(self):
+        grammar = '''
+            <start>
+                ::= 90 <A>
+                | 10 <B>
+
+            <A> ::= "A"
+            <B> ::= "B"
+        '''
+        tree = Parser().parse(grammar)
+        self.assertTrue(tree)
