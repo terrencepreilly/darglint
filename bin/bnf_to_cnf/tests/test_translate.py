@@ -8,6 +8,7 @@ from bnf_to_cnf.translator import (
 )
 from bnf_to_cnf.parser import (
     Parser,
+    NodeType,
 )
 from bnf_to_cnf.validate import (
     Validator,
@@ -267,10 +268,41 @@ class TranslatorTestCase(TestCase):
             f'Expected:\n{expected}\n\nBut got:\n{node}'
         )
 
+    def test_translate_retains_annotations_up(self):
+        """Make sure we retain annotations when moving up."""
+        grammar = r'''
+            start: <phone-number>
+
+            <phone-number>
+                ::= <confusion-number>
+
+            <confusion-number>
+                ::= @ConfusionError <number-group> <dot> <confusion-number>
+                |   @ConfusionError <number-group> <dash> <confusion-number>
+                |   <number-group>
+
+            <number-group>
+                ::= <number> <number-group>
+                |   <number>
+
+            <number> ::= "PN\.NUMBER"
+            <dash> ::= "PN\.DASH"
+            <dot> ::= "PN\.DOT"
+        '''
+        tree = Parser().parse(grammar)
+        node = Translator().translate(tree)
+        encountered_annotation = False
+        for child in node.walk():
+            if child.node_type in [NodeType.ANNOTATION, NodeType.ANNOTATIONS]:
+                encountered_annotation = True
+        self.assertTrue(
+            encountered_annotation,
+        )
+
     def test_translate_retains_probability(self):
         """Make sure that probabilities are retained in the grammar."""
         grammar = r'''
-            <start> ::= <A>
+            start: <A>
             <A> ::= 70 <B> <B> <C> | 20 <B> <B> | 10 <B>
             <B> ::= "B"
             <C> ::= "C"
@@ -278,11 +310,11 @@ class TranslatorTestCase(TestCase):
         tree = Parser().parse(grammar)
         node = Translator().translate(tree)
         expected = Parser().parse(r'''
-            <start> ::= 70 <B> <A0> | 20 <B> <B> | 10 "B"
-            <A> ::= 70 <B> <A0> | 20 <B> <B> | 10 "B"
+            start: <A>
+            <A> ::= 70 <B> <A1> | 20 <B> <B> | 10 "B"
             <B> ::= "B"
             <C> ::= "C"
-            <A0> ::= <B> <C>
+            <A1> ::= <B> <C>
         ''')
         self.assertTrue(
             node.equals(expected),

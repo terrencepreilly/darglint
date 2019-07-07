@@ -436,7 +436,7 @@ class Translator(object):
         }
 
     def _eliminate_unit_productions(self, tree: Node):
-        """Remove all unit productions from the tree.
+        r"""Remove all unit productions from the tree.
 
         A unit production is a production matching
 
@@ -447,24 +447,36 @@ class Translator(object):
         B in the above unit production with the non-unit products of
         B.
 
-            Algorithm UnitRemoval
-              Find all unit productions.
-              Build a lookup (U) of unit productions to terminals/sequences.
-              Build a lookup (P) of all productions.
+        The algorithm is a little complicated, so it's summarized below.
+        In this pseudocode, we have elements following
 
-              Algorithm Simplify(n)
-                // Does a Post-Order Traversal of U (LRN)
-                Remove n from U.
-                Remove product from production n.
-                for c in { x in children(n) | x in U }
-                  Simplify(c)
-                  for d in {
-                      x in children(c) | ~(x in U) ∧ ~(x in c.children)
-                  }
-                    c.children.append(d)
+            G = { p₁, p₂, ..., pₙ }
+            pᵢ = [ "lhs" ⇸ sᵢ, "rhs" ⇸ { s₁, s₂, ..., sₘ } ]
+            sᵢ ∈ { 〈sⱼ 〉, 〈sⱼ, sₛ〉, v }
+                where
+                    |v| = 0.
 
-              while n = head(U):
-                Simplify(n)
+        where G is a grammar, p is a production, s is a sequence, and
+        v is a value.
+
+            Algorithm UnitRemoval(G)
+                U ← { p ∈ G : is_unit(p) }
+                φ ← [ p.lhs ∈ G ⇸ p ]
+
+                Procedure Simplify(p)
+                    // Does a Post-Order Traversal of U (LRN)
+                    if p ∉ U then return
+                    U ← U \ { p }
+                    R ← { s ∈ p.rhs : |s| = 1 }
+                    p.rhs ← p.rhs \ R
+                    for s ∈ R do
+                        Simplify(φ(s))
+                        for z ∈ φ(s).rhs do
+                            p.rhs ← p.rhs ∪ { z }
+
+                while |U| > 0 do
+                    let p ∈ U
+                    Simplify(p.lhs)
 
         """
         def is_unit_sequence(x: Node) -> bool:
@@ -488,70 +500,40 @@ class Translator(object):
                 and exists(x.filter(is_unit_sequence))
             )
 
-        # A map of symbols K to a list of sequences, [S_1, ..., S_n]
-        # where each K -> S_k is a unit production.
-        unit_productions = defaultdict(
-            lambda: list()
-        )  # type: Dict[str, List[Node]]
-        for production in tree.filter(is_unit_production):
-            symbol = Node.get_symbol(production)
-            assert symbol is not None and Node.is_symbol(symbol)
-            assert symbol.value is not None
-            unit_productions[symbol.value].extend(list(
-                production.filter(is_unit_sequence)
-            ))
-
-        # A lookup for the grammar of symbols to expressions.
+        # A Lookup from symbols to productions.
         lookup = {
-            Node.get_symbol(production).value: next(
-                production.filter(Node.is_expression)
-            )
+            Node.get_symbol(production).value: production
             for production in tree.filter(Node.is_production)
         }
+        unit_productions = set(tree.filter(is_unit_production))
 
-        symbol_lookup = dict()  # type: Dict[str, Node]
-        for production in tree.filter(Node.is_production):
-            symbol = Node.get_symbol(production)
-            assert symbol.value is not None
-            symbol_lookup[symbol.value] = symbol
-
-        def simplify(node: str):
-            n = symbol_lookup[node]
-            if node not in unit_productions:
+        def simplify(production):
+            if production not in unit_productions:
                 return
-            for unit_sequence in unit_productions.pop(node):
-                if Node.has_annotation(unit_sequence):
-                    child = unit_sequence.children[1]
+            unit_productions.remove(production)
+            unit_sequences = list(production.filter(is_unit_sequence))
+            production.remove(is_unit_sequence)
+            for unit_sequence in unit_sequences:
+                if Node.is_annotations(unit_sequence.children[0]):
+                    probability = unit_sequence.probability
+                    annotations = unit_sequence.children[0]
+                    symbol = unit_sequence.children[1].value
                 else:
-                    child = unit_sequence.children[0]
-                assert child.value is not None
-                simplify(child.value)
-
-                target = lookup[n.value]
-                target.children.remove(unit_sequence)
-                source = lookup[child.value]
-                for sequence in source.children:
-                    if is_unit_sequence(sequence) or Node.has_sequence(
-                        target, sequence
-                    ):
-                        continue
-                    cloned = sequence.clone()
-                    if unit_sequence.probability:
-                        cloned.probability = unit_sequence.probability
-                    # Add the annotation, if there was one.
-                    if Node.has_annotation(unit_sequence):
-                        annotations = unit_sequence.children[0]
-                        if Node.has_annotation(cloned):
-                            cloned.children[0].children.extend([
-                                x.clone() for x in annotations.children
-                            ])
-                        else:
-                            cloned.children.insert(0, annotations.clone())
-                    target.append(cloned)
+                    probability = unit_sequence.probability
+                    annotations = None
+                    symbol = unit_sequence.children[0].value
+                simplify(lookup[symbol])
+                for sequence in lookup[symbol].filter(Node.is_sequence):
+                    expression = next(production.filter(Node.is_expression))
+                    if not Node.has_sequence(expression, sequence):
+                        cloned = sequence.clone()
+                        cloned.probability = probability or cloned.probability
+                        if annotations:
+                            cloned.merge_annotations(annotations)
+                        expression.children.append(cloned)
 
         while unit_productions:
-            keys = list(unit_productions.keys())
-            head = keys[0]
+            head = list(unit_productions)[0]
             simplify(head)
 
     def _build_adjacency_matrix(self, tree: Node) -> Dict[str, Set[str]]:
@@ -654,6 +636,7 @@ class Translator(object):
         if max_iterations == 0:
             raise Exception('Reached maximum epsilon expansion.')
 
+        # FIXME: Removes annotations!
         self._eliminate_unit_productions(tree)
         self._remove_unused_productions(tree, start_symbol)
 

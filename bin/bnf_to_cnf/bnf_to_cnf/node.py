@@ -144,6 +144,9 @@ class Node(object):
                 queue.appendleft(child)
             yield current
 
+    def walk(self) -> Iterator['Node']:
+        return self._bfs()
+
     def defines(self, value: Any) -> bool:
         """Return whether this grammar defines the given symbol.
 
@@ -402,12 +405,10 @@ class Node(object):
             # these without introducing a new type.
             #
             if len(self.children) == 1:
-                if self.probability:
-                    return (
-                        f'({self.children[0].to_python()}, '
-                        '{self.probability})'
-                    )
-                return self.children[0].to_python()
+                return (
+                    f'({self.children[0].to_python()}, '
+                    f'{self.probability if self.probability else 0})'
+                )
             elif len(self.children) == 2:
                 if self.probability:
                     return (
@@ -416,12 +417,13 @@ class Node(object):
                     )
                 return (
                     f'([], {self.children[0].to_python()}, '
-                    f'{self.children[1].to_python()})'
+                    f'{self.children[1].to_python()}, 0)'
                 )
             else:
                 return (
                     '('
                     + ', '.join([x.to_python() for x in self.children])
+                    + (f', {self.probability}' if self.probability else ', 0')
                     + ')'
                 )
         elif self.node_type == NodeType.EXPRESSION:
@@ -680,6 +682,27 @@ class Node(object):
 
         lines.append('}')
         return '\n'.join(lines)
+
+    def merge_annotations(self, other: 'Node'):
+        assert self.node_type == NodeType.SEQUENCE
+        assert other.node_type == NodeType.ANNOTATIONS
+        has_annotations = (
+            self.children
+            and Node.is_annotations(self.children[0])
+        )
+        if not has_annotations:
+            self.children.insert(0, other.clone())
+            return
+
+        for annotation in other.children:
+            assert annotation.node_type == NodeType.ANNOTATION
+            already_defined = False
+            for existing in self.filter(Node.is_annotation):
+                if existing.value == annotation.value:
+                    already_defined = True
+                    break
+            if not already_defined:
+                self.children[0].children.append(annotation.clone())
 
     def merge(self, other: 'Node'):
         assert self.node_type == NodeType.GRAMMAR
