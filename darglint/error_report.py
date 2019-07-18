@@ -7,6 +7,7 @@ from typing import (  # noqa
     Iterator,
     List,
     Tuple,
+    Union,
 )
 from .function_description import (
     get_line_number_from_function,
@@ -52,7 +53,7 @@ class ErrorReport(object):
         self.errors.sort(key=lambda x: x.function.lineno)
 
     def _group_errors_by_function(self):
-        # type: () -> Dict[ast.FunctionDef, List[DarglintError]]
+        # type: () -> Dict[Union[ast.FunctionDef, ast.AsyncFunctionDef], List[DarglintError]]
         """Sort the current errors by function, and put into an OrderedDict.
 
         Returns:
