@@ -24,6 +24,7 @@ I101.
 import ast  # noqa: F401
 from typing import (  # noqa: F401
     Tuple,
+    Union,
 )
 
 
@@ -76,7 +77,7 @@ class DarglintError(BaseException):
                 verbosity))
 
     def __init__(self, function, line_numbers=None):
-        # type: (ast.FunctionDef, Tuple[int, int]) -> None
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Tuple[int, int]) -> None
         """Create a new exception with a message and line number.
 
         Raises:
@@ -107,7 +108,7 @@ class GenericSyntaxError(DarglintError):
     error_code = 'S001'
 
     def __init__(self, function, message, line_numbers=None):
-        # type: (ast.FunctionDef, str, Tuple[int, int]) -> None
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
@@ -131,7 +132,7 @@ class EmptyDescriptionError(DarglintError):
     error_code = 'S002'
 
     def __init__(self, function, message, line_numbers=None):
-        # type: (ast.FunctionDef, str, Tuple[int, int]) -> None
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
@@ -156,7 +157,7 @@ class MissingParameterError(DarglintError):
     error_code = 'I101'
 
     def __init__(self, function, name, line_numbers=None):
-        # type: (ast.FunctionDef, str, Tuple[int, int]) -> None
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
@@ -179,7 +180,7 @@ class ExcessParameterError(DarglintError):
     error_code = 'I102'
 
     def __init__(self, function, name, line_numbers=None):
-        # type: (ast.FunctionDef, str, Tuple[int, int]) -> None
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
@@ -202,7 +203,7 @@ class ParameterTypeMismatchError(DarglintError):
     error_code = 'I103'
 
     def __init__(self, function, name, expected, actual, line_numbers=None):
-        # type: (ast.FunctionDef, str, str, str, Tuple[int, int]) -> None
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, str, str, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
@@ -234,7 +235,7 @@ class MissingReturnError(DarglintError):
     error_code = 'I201'
 
     def __init__(self, function, line_numbers=None):
-        # type: (ast.FunctionDef, Tuple[int, int]) -> None
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
@@ -257,7 +258,7 @@ class ExcessReturnError(DarglintError):
     error_code = 'I202'
 
     def __init__(self, function, line_numbers=None):
-        # type: (ast.FunctionDef, Tuple[int, int]) -> None
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
@@ -280,7 +281,7 @@ class ReturnTypeMismatchError(DarglintError):
     error_code = 'I203'
 
     def __init__(self, function, expected, actual, line_numbers=None):
-        # type: (ast.FunctionDef, str, str, Tuple[int, int]) -> None
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, str, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
@@ -309,7 +310,7 @@ class MissingYieldError(DarglintError):
     error_code = 'I301'
 
     def __init__(self, function, line_numbers=None):
-        # type: (ast.FunctionDef, Tuple[int, int]) -> None
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
@@ -332,7 +333,7 @@ class ExcessYieldError(DarglintError):
     error_code = 'I302'
 
     def __init__(self, function, line_numbers=None):
-        # type: (ast.FunctionDef, Tuple[int, int]) -> None
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
@@ -355,7 +356,7 @@ class MissingRaiseError(DarglintError):
     error_code = 'I401'
 
     def __init__(self, function, name, line_numbers=None):
-        # type: (ast.FunctionDef, str, Tuple[int, int]) -> None
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
@@ -386,7 +387,7 @@ class ExcessRaiseError(DarglintError):
     error_code = 'I402'
 
     def __init__(self, function, name, line_numbers=None):
-        # type: (ast.FunctionDef, str, Tuple[int, int]) -> None
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
@@ -410,7 +411,7 @@ class ExcessVariableError(DarglintError):
     error_code = 'I501'
 
     def __init__(self, function, name, line_numbers=None):
-        # type: (ast.FunctionDef, str, Tuple[int, int]) -> None
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
         """Instantiate the error's message.
 
         Args:
