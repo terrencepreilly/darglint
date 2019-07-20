@@ -2,16 +2,21 @@ from abc import ABC, abstractmethod
 import enum
 from typing import (  # noqa
     Any,
+    Callable,
     Dict,
     List,
     Optional,
     Set,
     Tuple,
     Union,
+    Iterable,
 )
 from ..node import (  # noqa
     Node,
     NodeType,
+)
+from ..errors import (  # noqa
+    DarglintError,
 )
 
 
@@ -106,6 +111,19 @@ class BaseDocstring(ABC):
 
         # noqa: I202
         # noqa: I402
+
+        """
+        pass
+
+    @abstractmethod
+    def get_style_errors(self):
+        # type: () -> Iterable[Tuple[Callable, Tuple[int, int]]]
+        """Get any style errors annotated on the tree.
+
+        Yields:
+            Instances of DarglintErrors for style issues.
+
+        # noqa: I302
 
         """
         pass

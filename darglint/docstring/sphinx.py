@@ -1,11 +1,13 @@
 from collections import defaultdict
 from typing import (  # noqa
+    Callable,
     Dict,
+    Iterable,
     List,
-    Set,
-    Union,
-    Tuple,
     Optional,
+    Set,
+    Tuple,
+    Union,
 )
 
 from .base import (
@@ -339,3 +341,16 @@ class Docstring(BaseDocstring):
                 return True
 
         return False
+
+    def get_style_errors(self):
+        # type: () -> Iterable[Tuple[Callable, Tuple[int, int]]]
+        """Get any style errors annotated on the tree.
+
+        Yields:
+            Instances of DarglintErrors for style issues.
+
+        # noqa: I302
+
+        """
+        # TODO: Implement me!
+        return (x for x in tuple())

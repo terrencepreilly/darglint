@@ -156,18 +156,17 @@ class IndentError(DarglintError):
 
     error_code = 'S003'
 
-    def __init__(self, function, message, line_numbers=None):
-        # type: (ast.FunctionDef, str, Tuple[int, int]) -> None
+    def __init__(self, function, line_numbers=None):
+        # type: (ast.FunctionDef, Tuple[int, int]) -> None
         """Instantiate the eror's message.
 
         Args:
             function: An ast node for the function.
-            message: The parser error's message.
             line_numbers: The line numbers where this error occurs.
 
         """
-        self.general_message = 'Underindented'
-        self.terse_message = '<< {}'.format(message)
+        self.general_message = 'Incorrect indentation'
+        self.terse_message = '<< I'
 
         super(IndentError, self).__init__(
             function,

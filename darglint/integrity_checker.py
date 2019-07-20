@@ -112,6 +112,7 @@ class IntegrityChecker(object):
                 self._check_return_type()
                 self._check_yield()
                 self._check_raises()
+                self._check_style()
                 self._sorted = False
             except ParserException as exception:
                 # If a syntax exception was raised, we may still
@@ -399,6 +400,14 @@ class IntegrityChecker(object):
 
         # We are to ignore specific instances.
         return missing - set(noqa_lookup[error_code])
+
+    def _check_style(self):
+        # type: () -> None
+        for StyleError, line_numbers in self.docstring.get_style_errors():
+            self.errors.append(StyleError(
+                self.function.function,
+                line_numbers,
+            ))
 
     def _check_raises(self):
         # type: () -> None

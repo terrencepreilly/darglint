@@ -29,6 +29,9 @@ start: <arguments-section>
         <head-argument> <line> <newline> <paragraph-indented-two>
       | 1 @ArgumentItemIdentifier
         <head-argument> <line>
+      | @ArgumentItemIdentifier
+        @IndentError
+        <head-argument> <line> <newline> <paragraph-indented>
 
 <head-argument>
     ::= @ArgumentIdentifier

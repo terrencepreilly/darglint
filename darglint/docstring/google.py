@@ -4,13 +4,15 @@ from collections import (
 )
 from typing import (  # noqa: F401
     Any,
-    Dict,
+    Callable,
     Deque,
+    Dict,
+    Iterable,
     List,
-    Set,
-    Union,
-    Tuple,
     Optional,
+    Set,
+    Tuple,
+    Union,
 )
 
 from .base import (  # noqa: F401
@@ -33,6 +35,9 @@ from ..parse.new_google import (
 from ..lex import (
     condense,
     lex,
+)
+from ..errors import (
+    DarglintError,
 )
 # from ..peaker import Peaker
 from ..parse.identifiers import (
@@ -327,6 +332,21 @@ class Docstring(BaseDocstring):
             key: sorted(values)
             for key, values in noqas.items()
         }
+
+    def get_style_errors(self):
+        # type: () -> Iterable[Tuple[Callable, Tuple[int, int]]]
+        """Get any style errors annotated on the tree.
+
+        Yields:
+            Instances of DarglintErrors for style issues.
+
+        # noqa: I302
+
+        """
+        for node, _ in _CykVisitor(self.root):
+            for annotation in node.annotations:
+                if issubclass(annotation, DarglintError):
+                    yield annotation, node.line_numbers
 
     def get_line_numbers(self, symbol):
         # type: (Union[NodeType, str]) -> Optional[Tuple[int, int]]
