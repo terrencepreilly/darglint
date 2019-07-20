@@ -1,5 +1,8 @@
 """Tests darglint's implementation of CYK."""
 
+from collections import (
+    deque,
+)
 from unittest import (
     TestCase,
 )
@@ -26,9 +29,9 @@ class KT(BaseTokenType):
 
 class SimpleKlingonGrammar(BaseGrammar):
     productions = [
-        P('noun', KT.NOUN),
-        P('verb', KT.VERB),
-        P('sentence', ([], 'verb', 'noun')),
+        P('noun', (KT.NOUN, 0)),
+        P('verb', (KT.VERB, 0)),
+        P('sentence', ([], 'verb', 'noun', 0)),
     ]
 
     start = "sentence"
@@ -107,10 +110,10 @@ class AKT(BaseTokenType):
 class AmbiguousKlingonGrammar(BaseGrammar):
 
     productions = [
-        P('verb', AKT.VERB, ([], 'verb', 'negation')),
-        P('negation', AKT.BE),
-        P('noun', AKT.NOUN, AKT.BE),
-        P('sentence', ([], 'verb', 'noun')),
+        P('verb', (AKT.VERB, 0), ([], 'verb', 'negation', 0)),
+        P('negation', (AKT.BE, 0)),
+        P('noun', (AKT.NOUN, 0), (AKT.BE, 0)),
+        P('sentence', ([], 'verb', 'noun', 0)),
     ]
 
     start = 'sentence'
@@ -192,13 +195,13 @@ class ErrorKlingonGrammar(BaseGrammar):
 
     productions = [
         P('sentence',
-            ([], 'verb_phrase', 'noun'),
-            ([], 'intransitive_verb', 'noun')),
-        P('verb_phrase', ([], 'noun', 'transitive_verb')),
-        P('verb_phrase', ([KlingonError], 'noun', 'intransitive_verb')),
-        P('noun', EKG.NOUN),
-        P('intransitive_verb', EKG.INTRANSITIVE_VERB),
-        P('transitive_verb', EKG.TRANSITIVE_VERB),
+            ([], 'verb_phrase', 'noun', 0),
+            ([], 'intransitive_verb', 'noun', 0)),
+        P('verb_phrase', ([], 'noun', 'transitive_verb', 0)),
+        P('verb_phrase', ([KlingonError], 'noun', 'intransitive_verb', 0)),
+        P('noun', (EKG.NOUN, 0)),
+        P('intransitive_verb', (EKG.INTRANSITIVE_VERB, 0)),
+        P('transitive_verb', (EKG.TRANSITIVE_VERB, 0)),
     ]
 
     start = 'sentence'
@@ -261,15 +264,15 @@ class SmallGrammar(BaseGrammar):
     """Represents a very small grammar."""
 
     productions = [
-        P('one', ST.ONE),
-        P('epsilon', ST.EPSILON),
-        P('zero', ST.ZERO),
+        P('one', (ST.ONE, 0)),
+        P('epsilon', (ST.EPSILON, 0)),
+        P('zero', (ST.ZERO, 0)),
         P(
             'number',
-            ([], 'one', 'epsilon'),
-            ([], 'zero', 'epsilon'),
-            ([], 'one', 'number'),
-            ([], 'zero', 'number'),
+            ([], 'one', 'epsilon', 0),
+            ([], 'zero', 'epsilon', 0),
+            ([], 'one', 'number', 0),
+            ([], 'zero', 'number', 0),
         ),
     ]
 
@@ -304,6 +307,151 @@ class SimpleGrammarTest(TestCase):
             SmallGrammar,
             sentence
         ))
+
+
+class ConfusionError(object):
+    pass
+
+
+class PN(BaseTokenType):
+    r"""Tokens for the following grammar:
+
+        Grammar: PhoneNumberGrammar
+
+        start: <phone-number>
+
+        <phone-number>
+            ::= 40 <american-number>
+            |   40 <french-number>
+            |   20 <confusion-number>
+        <american-number>
+            ::= <number-group> <dash> <american-number>
+            |   <number-group>
+        <french-number>
+            ::= <number-group> <dot> <french-number>
+            |   <number-group>
+        <confusion-number>
+            ::= @ConfusionError <number-group> <dot> <confusion-number>
+            |   @ConfusionError <number-group> <dash> <confusion-number>
+            |   <number-group>
+
+        <number-group>
+            ::= <number> <number-group>
+            |   <number>
+
+        <number> ::= "PN\.NUMBER"
+        <dash> ::= "PN\.DASH"
+        <dot> ::= "PN\.DOT"
+
+    """
+
+    NUMBER = 0
+    DASH = 1
+    DOT = 2
+
+
+def pn_lex(source):
+    tokens = list()
+    for letter in source:
+        if letter.isspace():
+            continue
+        elif letter == '.':
+            tokens.append(Token(
+                token_type=PN.DOT,
+                value='.',
+                line_number=0,
+            ))
+        elif letter == '-':
+            tokens.append(Token(
+                token_type=PN.DASH,
+                value='-',
+                line_number=0,
+            ))
+        elif letter.isdigit:
+            tokens.append(Token(
+                token_type=PN.NUMBER,
+                value=letter,
+                line_number=0,
+            ))
+    return tokens
+
+
+# Generated on 2019-07-07 13:31:04.922045
+class PhoneNumberGrammar(BaseGrammar):
+    productions = [
+        P("phone-number",
+            ([], "number-group", "american-number0", 40),
+            ([], "number", "number-group", 40),
+            (PN.NUMBER, 40),
+            ([], "number-group", "french-number0", 40),
+            ([ConfusionError], "number-group", "confusion-number1", 20),
+            ([ConfusionError], "number-group", "confusion-number3", 20),
+            ([], "number", "number-group", 20),
+            (PN.NUMBER, 20)),
+        P("american-number",
+            ([], "number-group", "american-number0", 0),
+            ([], "number", "number-group", 0),
+            (PN.NUMBER, 0)),
+        P("french-number",
+            ([], "number-group", "french-number0", 0),
+            ([], "number", "number-group", 0),
+            (PN.NUMBER, 0)),
+        P("confusion-number",
+            ([ConfusionError], "number-group", "confusion-number1", 0),
+            ([ConfusionError], "number-group", "confusion-number3", 0),
+            ([], "number", "number-group", 0),
+            (PN.NUMBER, 0)),
+        P("number-group", ([], "number", "number-group", 0), (PN.NUMBER, 0)),
+        P("number", (PN.NUMBER, 0)),
+        P("dash", (PN.DASH, 0)),
+        P("dot", (PN.DOT, 0)),
+        P("american-number0", ([], "dash", "american-number", 0)),
+        P("french-number0", ([], "dot", "french-number", 0)),
+        P("confusion-number1", ([], "dot", "confusion-number", 0)),
+        P("confusion-number3", ([], "dash", "confusion-number", 0)),
+    ]
+    start = "phone-number"
+
+
+class PhoneNumberTests(TestCase):
+
+    def contains_annotation(self, node, target):
+        queue = deque([node])
+        while queue:
+            curr = queue.pop()
+            if curr.annotations:
+                for annotation in curr.annotations:
+                    if issubclass(annotation, target):
+                        return True
+            if curr.lchild:
+                queue.appendleft(curr.lchild)
+            if curr.rchild:
+                queue.appendleft(curr.rchild)
+        return False
+
+    def test_correct_number_prefered(self):
+        for number in [
+            '983-32',
+            '38-328-288',
+            '1-1-1-1',
+            '3829279-32879',
+        ]:
+            tokens = pn_lex(number)
+            node = parse(PhoneNumberGrammar, tokens)
+            self.assertTrue(node, 'Unable to parse {}'.format(number))
+            self.assertFalse(self.contains_annotation(node, ConfusionError))
+
+    def test_backup_determined_by_weight(self):
+        for number in [
+            '983-32.1',
+            '38.328-288',
+            '1-1.1-1',
+            '3829279-32879.1',
+        ]:
+            tokens = pn_lex(number)
+            node = parse(PhoneNumberGrammar, tokens)
+            self.assertTrue(node, 'Unable to parse {}'.format(number))
+            self.assertTrue(self.contains_annotation(node, ConfusionError))
 
 
 def verify_implementation():

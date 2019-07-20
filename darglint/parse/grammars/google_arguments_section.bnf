@@ -2,6 +2,9 @@ import google_base.bnf
 import google_types.bnf
 import noqa_statement.bnf
 
+from darglint.errors import (
+    IndentError,
+)
 from darglint.parse.identifiers import (
     ArgumentIdentifier,
     ArgumentItemIdentifier,
@@ -20,10 +23,12 @@ start: <arguments-section>
     | <item-argument>
 
 <item-argument>
-    ::= @ArgumentItemIdentifier
-      <head-argument> <line> <newline> <paragraph-indented-two>
-    | @ArgumentItemIdentifier
-      <head-argument> <line>
+    ::= 98 @ArgumentItemIdentifier
+        <head-argument> <line> <newline> <paragraph-indented-two>
+      | 1 @ArgumentItemIdentifier
+        <head-argument> <line> <newline> <paragraph-indented-two>
+      | 1 @ArgumentItemIdentifier
+        <head-argument> <line>
 
 <head-argument>
     ::= @ArgumentIdentifier

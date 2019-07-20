@@ -55,14 +55,30 @@ class CykNode(object):
                  lchild=None,
                  rchild=None,
                  value=None,
-                 annotations=list()):
-        # type: (str, Optional[CykNode], Optional[CykNode], Optional[Token], List[Any]) -> None  # noqa: E501
+                 annotations=list(),
+                 weight=0):
+        # type: (str, Optional[CykNode], Optional[CykNode], Optional[Token], List[Any], int) -> None  # noqa: E501
         self.symbol = symbol
         self.lchild = lchild
         self.rchild = rchild
         self.value = value
         self.annotations = annotations
         self._line_number_cache = None  # type: Optional[Tuple[int, int]]
+
+        # If there is an explicit weight, we definitely want to use
+        # that (there was probably a good reason it was given.)
+        #
+        # If no weight was given, but the children have weights, then
+        # we probably want to give preference to this node over a node
+        # which has no weights at all.
+        if weight:
+            self.weight = weight
+        else:
+            self.weight = max([
+                0,
+                self.lchild.weight if self.lchild else 0,
+                self.rchild.weight if self.rchild else 0,
+            ])
 
     def __repr__(self):
         return '<{}: {}>'.format(
@@ -256,28 +272,38 @@ def parse(grammar, tokens):
     lookup = grammar.get_symbol_lookup()
     for s, token in enumerate(tokens):
         for v, production in enumerate(grammar.productions):
-            if token.token_type in production.rhs:
-                P[0][s][v] = CykNode(production.lhs, value=token)
+            for rhs in production.rhs:
+                if len(rhs) > 2:
+                    continue
+                token_type, weight = rhs
+                if token.token_type == token_type:
+                    P[0][s][v] = CykNode(
+                        production.lhs,
+                        value=token,
+                        weight=weight,
+                    )
     for l in range(2, n + 1):
         for s in range(n - l + 2):
             for p in range(l):
                 for a, production in enumerate(grammar.productions):
                     for derivation in production.rhs:
-                        is_terminal_derivation = isinstance(
-                            derivation, BaseTokenType
-                        )
+                        is_terminal_derivation = len(derivation) <= 2
                         if is_terminal_derivation:
                             continue
-                        annotations, B, C = derivation
+                        annotations, B, C, weight = derivation
                         b = lookup[B]
                         c = lookup[C]
                         lchild = P[p - 1][s - 1][b]
                         rchild = P[l - p - 1][s + p - 1][c]
                         if lchild and rchild:
+                            old = P[l - 1][s - 1][a]
+                            if old and old.weight > weight:
+                                continue
                             P[l - 1][s - 1][a] = CykNode(
                                 production.lhs,
                                 lchild,
                                 rchild,
                                 annotations=annotations,
+                                weight=weight,
                             )
     return P[n - 1][0][lookup[grammar.start]]

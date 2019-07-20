@@ -28,19 +28,19 @@ class PoetryTokenType(BaseTokenType):
 class TotalPoetryGrammar(BaseGrammar):
 
     productions = [
-        P('word', PoetryTokenType.WORD),
-        P('newline', PoetryTokenType.NEWLINE),
+        P('word', (PoetryTokenType.WORD, 0)),
+        P('newline', (PoetryTokenType.NEWLINE, 0)),
         P('line',
-            ([], 'word', 'newline'),
-            ([], 'word', 'line')),
+            ([], 'word', 'newline', 0),
+            ([], 'word', 'line', 0)),
         P('stanza',
-            ([], 'line', 'newline'),
-            ([], 'line', 'stanza')),
+            ([], 'line', 'newline', 0),
+            ([], 'line', 'stanza', 0)),
         P('poem',
             # A single-stanza poem.
-            ([], 'line', 'stanza'),
+            ([], 'line', 'stanza', 0),
             # A multi-stanza poem.
-            ([], 'stanza', 'stanza'))
+            ([], 'stanza', 'stanza', 0))
     ]
 
     start = 'poem'
@@ -49,10 +49,10 @@ class TotalPoetryGrammar(BaseGrammar):
 class StanzaGrammar(BaseGrammar):
 
     productions = [
-        P('word', PoetryTokenType.WORD),
-        P('newline', PoetryTokenType.NEWLINE),
-        P('line', ([], 'word', 'newline'), ([], 'word', 'line')),
-        P('stanza', ([], 'line', 'newline'), ([], 'line', 'stanza')),
+        P('word', (PoetryTokenType.WORD, 0)),
+        P('newline', (PoetryTokenType.NEWLINE, 0)),
+        P('line', ([], 'word', 'newline', 0), ([], 'word', 'line', 0)),
+        P('stanza', ([], 'line', 'newline', 0), ([], 'line', 'stanza', 0)),
     ]
 
     start = 'stanza'
