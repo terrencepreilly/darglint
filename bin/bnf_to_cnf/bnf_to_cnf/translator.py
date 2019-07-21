@@ -271,7 +271,10 @@ class Translator(object):
         def _production_is_empty(x: Node) -> bool:
             return (
                 Node.is_production(x)
-                and _expression_is_empty(x.children[1])
+                and all([
+                    _expression_is_empty(expression)
+                    for expression in x.filter(Node.is_expression)
+                ])
             )
 
         # This could be far more efficient by doing a BFS,
@@ -557,10 +560,7 @@ class Translator(object):
             if symbol not in graph:
                 graph[symbol] = set()
 
-            if has_annotations:
-                expression = production.children[2]
-            else:
-                expression = production.children[1]
+            expression = next(production.filter(Node.is_expression))
             for child in expression.filter(
                 or_(Node.is_symbol, Node.is_terminal)
             ):

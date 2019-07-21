@@ -397,3 +397,19 @@ class TranslatorTestCase(TestCase):
         tree = Parser().parse(grammar)
         node = Translator().translate(tree)
         self.assertTrue(node.equals(tree))
+
+    def test_sequence_annotation(self):
+        grammar = r'''
+        start: <a>
+
+        <a>
+            ::= 100 <d>
+            | @A <b> <c> <d>
+
+        <c> ::= <b> <c> | <b>
+        <d> ::= "d"
+        <b> ::= "b"
+        '''
+        tree = Parser().parse(grammar)
+        node = Translator().translate(tree)
+        self.assertTrue(node)

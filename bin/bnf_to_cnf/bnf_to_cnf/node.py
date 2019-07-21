@@ -452,7 +452,7 @@ class Node(object):
                 )
             else:
                 symbol = self.children[0].to_python()
-                expression = self.children[1].to_python()
+                expression = next(self.filter(Node.is_expression)).to_python()
                 return ' ' * 8 + f'P({symbol}, {expression}),'
         elif self.node_type == NodeType.ANNOTATIONS:
             return (

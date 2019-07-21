@@ -166,9 +166,24 @@ class IndentError(DarglintError):
 
         """
         self.general_message = 'Incorrect indentation'
-        self.terse_message = '<< I'
+        self.terse_message = '~<'
 
         super(IndentError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
+
+
+class ExcessNewlineError(DarglintError):
+    """Describes when a docstring has an extra newline where it shouldn't."""
+
+    error_code = 'S004'
+
+    def __init__(self, function, line_numbers=None):
+        # type: (ast.FunctionDef, Tuple[int, int]) -> None
+        self.general_message = 'Excess newline.'
+        self.terse_message = '+>'
+        super(ExcessNewlineError, self).__init__(
             function,
             line_numbers=line_numbers,
         )

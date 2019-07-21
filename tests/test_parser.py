@@ -41,6 +41,9 @@ from darglint.parse.google import (
 from darglint.peaker import (
     Peaker
 )
+from darglint.errors import (
+    ExcessNewlineError,
+)
 from darglint.parse.new_google import (
     parse as new_parse,
 )
@@ -1956,15 +1959,14 @@ class DocstringTestCase(TestCase):
 
 
 class StyleWarningsTestCase(TestCase):
-    """Tests for the new style warnings.
+    """Tests for the new style warnings."""
 
-    The new style warning require the ability to parse an ambiguous
-    grammar.  This means the parser will be something like a GLR parser
-    Since there could be multiple instances of the word "Returns" or
-    something in the docstring, we could have a very large parse
-    tree.  It may be worth looking into a chart parser.  (wiki/Chart_parser)
-
-    """
+    def assert_has_annotation(self, node, annotation):
+        for child in node.walk():
+            for a in child.annotations:
+                if a == annotation:
+                    return
+        self.fail('Could not find annotation {}'.format(annotation.__name__))
 
     @skip('Finish me!')
     def test_excess_blank_lines_raise_style_error(self):
@@ -1974,11 +1976,6 @@ class StyleWarningsTestCase(TestCase):
         sections, or at the end of a docstring.
 
         """
-        self.fail('Finish me!')
-
-    @skip('Finish me!')
-    def test_short_description_on_wrong_lines_raises_error_but_finishes(self):
-        """Make sure no short descr. doesn't kill the parser."""
         self.fail('Finish me!')
 
     @skip('Finish me!')
