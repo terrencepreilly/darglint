@@ -5,10 +5,14 @@ Grammar: YieldsGrammar
 start: <yields-section>
 
 <yields-section>
-    ::= <yhead> <ybody>
+    ::= <yhead> <ybody> <newlines>
+
+<yield-type-section>
+    ::= <word>
 
 <yhead>
-    ::= <colon> <yields> <word> <colon>
+    ::= <colon> <yields> <colon>
+    | <colon> <yields> <yield-type-section> <colon>
 
 <ybody>
     ::= <line>

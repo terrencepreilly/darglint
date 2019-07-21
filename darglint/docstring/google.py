@@ -20,18 +20,12 @@ from .base import (  # noqa: F401
     DocstringStyle,
     Sections,
 )
-from ..node import (
-    NodeType,
-)
 from ..parse.cyk import (
     CykNode,
 )
 from ..parse.new_google import (
     parse,
 )
-# from ..parse import (
-#     google,
-# )
 from ..lex import (
     condense,
     lex,
@@ -39,7 +33,6 @@ from ..lex import (
 from ..errors import (
     DarglintError,
 )
-# from ..peaker import Peaker
 from ..parse.identifiers import (
     ArgumentIdentifier,
     ArgumentItemIdentifier,
@@ -109,7 +102,6 @@ class Docstring(BaseDocstring):
         if isinstance(root, CykNode):
             self.root = root
         else:
-            # self.root = google.parse(Peaker(lex(root), lookahead=3))
             self.root = parse(condense(lex(root)))
         self._lookup = self._discover()
 
@@ -349,7 +341,7 @@ class Docstring(BaseDocstring):
                     yield annotation, node.line_numbers
 
     def get_line_numbers(self, symbol):
-        # type: (Union[NodeType, str]) -> Optional[Tuple[int, int]]
+        # type: (str) -> Optional[Tuple[int, int]]
         """Get the line numbers for the first instance of the given section.
 
         Args:
@@ -363,15 +355,13 @@ class Docstring(BaseDocstring):
             The line numbers for the first instance of the given node type.
 
         """
-        if isinstance(symbol, NodeType):
-            return None
         nodes = self._lookup[symbol]
         if nodes:
             return nodes[0].line_numbers
         return None
 
     def get_line_numbers_for_value(self, symbol, value):
-        # type: (Union[NodeType, str], str) -> Optional[Tuple[int, int]]
+        # type: (str, str) -> Optional[Tuple[int, int]]
         """Get the line number for a node with the given value.
 
         Args:
@@ -384,8 +374,6 @@ class Docstring(BaseDocstring):
             parameters.
 
         """
-        if isinstance(symbol, NodeType):
-            return None
         nodes = self._lookup[symbol]
         for node in nodes:
             for child in node.walk():

@@ -5,7 +5,7 @@ Grammar: ReturnsGrammar
 start: <returns-section>
 
 <returns-section>
-    ::= <rethead> <retbody>
+    ::= <rethead> <retbody> <newlines>
 
 <rethead>
     ::= <colon> <returns> <colon>

@@ -5,7 +5,7 @@ Grammar: ReturnTypeGrammar
 start: <return-type-section>
 
 <return-type-section>
-    ::= <rthead> <rtbody>
+    ::= <rthead> <rtbody> <newlines>
 
 <rthead>
     ::= <colon> <return-type> <colon>

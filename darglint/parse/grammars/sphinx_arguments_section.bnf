@@ -1,6 +1,5 @@
 import sphinx_base.bnf
 
-
 Grammar: ArgumentsGrammar
 
 start: <arguments-section>

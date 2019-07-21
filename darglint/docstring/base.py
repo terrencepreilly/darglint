@@ -11,10 +11,6 @@ from typing import (  # noqa
     Union,
     Iterable,
 )
-from ..node import (  # noqa
-    Node,
-    NodeType,
-)
 from ..errors import (  # noqa
     DarglintError,
 )
@@ -135,12 +131,12 @@ class BaseDocstring(ABC):
 
     @abstractmethod
     def get_line_numbers(self, node_type):
-        # type: (Union[NodeType, str]) -> Optional[Tuple[int, int]]
+        # type: (str) -> Optional[Tuple[int, int]]
         pass
 
     @abstractmethod
     def get_line_numbers_for_value(self, node_type, value):
-        # type: (Union[NodeType, str], str) -> Optional[Tuple[int, int]]
+        # type: (str, str) -> Optional[Tuple[int, int]]
         pass
 
     @property

@@ -132,8 +132,6 @@ class DocstringBaseMethodTests(TestCase):
         super().setUpClass(*args, **kwargs)
         cls.equivalent_docstrings = list()
         for google_doc, sphinx_doc in cls._equivalent_docstrings:
-            # google_root = google.parse(Peaker(lex(google_doc), 3))
-            # sphinx_root = sphinx.parse(Peaker(lex(sphinx_doc), 2))
             cls.equivalent_docstrings.append((
                 Docstring.from_google(google_doc),
                 Docstring.from_sphinx(sphinx_doc),
@@ -165,7 +163,10 @@ class DocstringBaseMethodTests(TestCase):
             ]:
                 self.assertEqual(
                     google_doc.get_types(section),
-                    sphinx_doc.get_types(section)
+                    sphinx_doc.get_types(section),
+                    'Sections differ for {} type.'.format(
+                        section
+                    ),
                 )
 
     def test_get_items_equivalency(self):
@@ -220,9 +221,7 @@ class DocstringBaseMethodTests(TestCase):
         ])
 
         google_doc = Docstring.from_google(google_docstring)
-        sphinx_doc = Docstring.from_sphinx(
-            sphinx.parse(Peaker(lex(sphinx_docstring), 2))
-        )
+        sphinx_doc = Docstring.from_sphinx(sphinx_docstring)
 
         items = google_doc.get_items(Sections.ARGUMENTS_SECTION)
         self.assertTrue(
@@ -510,7 +509,7 @@ class DocstringMethodTest(TestCase):
 class DocstringForSphinxTests(TestCase):
 
     def test_has_everything_for_sphinx(self):
-        has_everything_root = sphinx.parse(Peaker(lex('\n'.join([
+        has_everything_root = '\n'.join([
             'Short decscription.',
             '',
             'Long description.',
@@ -520,16 +519,22 @@ class DocstringForSphinxTests(TestCase):
             ':yields: The occasional value.',
             ':returns: When it completes.',
             ''
-        ])), lookahead=3))
+        ])
         docstring = Docstring.from_sphinx(has_everything_root)
-        self.assertTrue(all([
-            docstring.get_section(Sections.SHORT_DESCRIPTION),
-            docstring.get_section(Sections.LONG_DESCRIPTION),
-            docstring.get_section(Sections.ARGUMENTS_SECTION),
-            docstring.get_section(Sections.RAISES_SECTION),
-            docstring.get_section(Sections.YIELDS_SECTION),
-            docstring.get_section(Sections.RETURNS_SECTION),
-        ]))
+        for section in [
+            Sections.SHORT_DESCRIPTION,
+            Sections.LONG_DESCRIPTION,
+            Sections.ARGUMENTS_SECTION,
+            Sections.RAISES_SECTION,
+            Sections.YIELDS_SECTION,
+            Sections.RETURNS_SECTION,
+        ]:
+            self.assertTrue(
+                docstring.get_section(section),
+                'Expected to have section {}, but it did not.'.format(
+                    section,
+                )
+            )
         has_only_short_description = '\n'.join([
             'Short description'
         ])
@@ -547,7 +552,7 @@ class DocstringForSphinxTests(TestCase):
 
     def test_get_argument_types(self):
         """Make sure we can get a dictionary of arguments to types."""
-        root = sphinx.parse(Peaker(lex('\n'.join([
+        root = '\n'.join([
             'Something.',
             '',
             ':param x: The first.',
@@ -555,7 +560,7 @@ class DocstringForSphinxTests(TestCase):
             ':type x: int',
             ':type y: List[int], optional'
             '\n',
-        ])), lookahead=3))
+        ])
         docstring = Docstring.from_sphinx(root)
         argtypes = dict(zip(
             docstring.get_items(Sections.ARGUMENTS_SECTION) or [],

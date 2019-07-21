@@ -157,6 +157,8 @@ KEYWORDS = {
     'raises': TokenType.RAISES,
     'yield': TokenType.YIELDS,
     'yields': TokenType.YIELDS,
+    'ytype': TokenType.YIELD_TYPE,
+    'return': TokenType.RETURNS,
     'returns': TokenType.RETURNS,
     'rtype': TokenType.RETURN_TYPE,
 }

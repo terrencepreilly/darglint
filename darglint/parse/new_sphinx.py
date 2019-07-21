@@ -1,10 +1,5 @@
 from typing import (
-    Any,
-    Callable,
-    Iterable,
-    Optional,
     List,
-    Tuple,
 )
 from functools import (
     reduce,
@@ -33,6 +28,7 @@ from .grammars.sphinx_returns_section import ReturnsGrammar
 from .grammars.sphinx_return_type_section import ReturnTypeGrammar
 from .grammars.sphinx_short_description import ShortDescriptionGrammar
 from .grammars.sphinx_yields_section import YieldsGrammar
+from .grammars.sphinx_yield_type_section import YieldTypeGrammar
 
 
 def two_newline_separated_or_keyword(tokens, i):
@@ -117,6 +113,10 @@ def _match(token):
         ],
         TokenType.YIELDS: [
             YieldsGrammar,
+            LongDescriptionGrammar,
+        ],
+        TokenType.YIELD_TYPE: [
+            YieldTypeGrammar,
             LongDescriptionGrammar,
         ],
         TokenType.RETURNS: [

@@ -642,6 +642,27 @@ class SphinxParserTest(TestCase):
             node,
         )
 
+    def test_parser_sections_correctly(self):
+        program = '\n'.join([
+            'def func(x, l):',
+            '    """Add an item to the head of the list.',
+            '    ',
+            '    :param x: The item to add to the list.',
+            '    :return: The list with the item attached.',
+            '    ',
+            '    """',
+            '    return l.appendleft(x)',
+        ])
+        doc = ast.get_docstring(ast.parse(program).body[0])
+        tokens = condense(lex(doc))
+        node = new_parse(tokens)
+        self.assertTrue(
+            node.contains('returns-section'),
+        )
+        self.assertTrue(
+            node.contains('arguments-section'),
+        )
+
 
 class CompatibilityTest(TestCase):
     """Tests against real-world docstrings."""
