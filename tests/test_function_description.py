@@ -172,3 +172,13 @@ class GetFunctionsAndDocstrings(TestCase):
         tree = ast.parse(program)
         function = get_function_descriptions(tree)[0]
         self.assertTrue(function.has_return)
+
+    def test_keyword_only_arguments(self):
+        """PEP 3102"""
+        program = '\n'.join([
+            'def random_function(a, b, *, key=None):'
+            '   pass'
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        self.assertEqual(function.argument_names, ["a", "b", "key"])

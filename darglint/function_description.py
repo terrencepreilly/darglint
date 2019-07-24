@@ -58,6 +58,9 @@ def _get_arguments(fn):
     for arg in fn.args.args:
         add_arg_by_name(arg.arg, arg)
 
+    for arg in fn.args.kwonlyargs:
+        add_arg_by_name(arg.arg, arg)
+
     # Handle single-star arguments.
     if fn.args.vararg is not None:
         name = '*' + fn.args.vararg.arg
