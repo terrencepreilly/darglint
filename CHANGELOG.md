@@ -3,6 +3,13 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.5.7] - 2019-07-20
+
+### Fixed
+
+- Handle async function definitions.  Previously they were simply skipped.
+  Thanks to @zeebonk!
+
 ## [0.5.6] - 2019-06-03
 
 ### Fixed

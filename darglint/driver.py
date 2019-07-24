@@ -154,7 +154,7 @@ def print_error_list():
 
 
 def print_version():
-    print('0.5.1')
+    print('0.5.7')
 
 
 def main():
