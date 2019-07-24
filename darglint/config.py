@@ -88,7 +88,8 @@ def load_config_file(filename):  # type: (str) -> Configuration
                     )
                 )
         if 'raise_on_missing_docstrings' in config['darglint']:
-            raise_on_missing_docstrings = config['darglint']['raise_on_missing_docstrings']
+            raise_on_missing_docstrings = config.getboolean(
+                'darglint', 'raise_on_missing_docstrings')
 
     return Configuration(
         ignore=ignore,
