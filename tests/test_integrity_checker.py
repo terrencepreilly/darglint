@@ -30,7 +30,8 @@ class IntegrityCheckerSphinxTestCase(TestCase):
         self.config = Configuration(
             ignore=[],
             message_template=None,
-            style=DocstringStyle.SPHINX
+            style=DocstringStyle.SPHINX,
+            raise_on_missing_docstrings=False
         )
 
     def test_missing_parameter(self):
