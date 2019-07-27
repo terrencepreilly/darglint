@@ -1,6 +1,7 @@
 """Defines the command line interface for darglint."""
 import argparse
 import ast
+import pathlib
 import sys
 
 from .function_description import (
@@ -175,6 +176,16 @@ def main():
     if args.version:
         print_version()
 
+    # Expand directories.
+    files = []
+    for f in args.files:
+        p = pathlib.Path(f)
+        if not p.is_dir():
+            files.append(f)
+        # Convert back to strings to not require modifications of any
+        # subsequent code.
+        files.extend(str(i) for i in p.glob('**/*.py'))
+
     try:
         config = get_config()
         if args.docstring_style == 'sphinx':
@@ -182,7 +193,7 @@ def main():
         elif args.docstring_style == 'google':
             config.style = DocstringStyle.GOOGLE
         raise_errors_for_syntax = args.raise_syntax or False
-        for filename in args.files:
+        for filename in files:
             error_report = get_error_report(
                 filename,
                 args.verbosity,
