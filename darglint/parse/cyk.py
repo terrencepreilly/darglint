@@ -26,6 +26,7 @@ from typing import (
     Optional,
     List,
     Tuple,
+    Set,
 )
 
 from .grammar import (  # noqa: F401
@@ -130,21 +131,27 @@ class CykNode(object):
                 return node
         return None
 
-    def contains(self, symbol):
-        # type: (str) -> bool
+    def contains(self, symbol=None, value=None):
+        # type: (Optional[str], Optional[str]) -> bool
         """Return true if the tree contains the given symbol.
 
         This is intended only for testing.
 
         Args:
             symbol: The symbol to search for.
+            value: If defined, the string value the node should
+                have in order to match.
 
         Returns:
-            True if the symbol is in the tree, false otherwise.
+            True if the symbol/value is in the tree, false otherwise.
 
         """
+        def _match(n):
+            symbol_match = symbol is None or n.symbol == symbol
+            value_match = value is None or n.value == value
+            return symbol_match and value_match
         for node in self.walk():
-            if node.symbol == symbol:
+            if _match(node):
                 return True
         return False
 
@@ -234,6 +241,76 @@ class CykNode(object):
             else:
                 ret += ' ' + window[2].value
 
+        return ret
+
+    # TODO: Move to test-only, so it's not loaded when
+    # running.
+    def to_dot(self, is_root=True, encountered=set()):
+        # type: (bool, Set[str]) -> str
+        def _get_name(node):
+            i = 0
+            name = node.symbol
+            if node.value:
+                if node.value.value:
+                    name += '_' + node.value.value
+                else:
+                    name += '_' + str(node.value)
+            for x in '.*!@#$%^*,- ;:\'"\n\t{}[]()':
+                name = name.replace(x, '_')
+            while name.replace('__', '_') != name:
+                name = name.replace('__', '_')
+            name = name.lower()
+            while name + str(i) in encountered:
+                i += 1
+            return name + str(i)
+
+        def _get_value(node):
+            if self.value and self.value.value:
+                if self.value.value.isspace():
+                    return repr(self.value.value).replace('\\', '\\\\')
+                return self.value.value
+            elif self.value:
+                return str(self.value)
+            else:
+                return self.symbol
+
+        if is_root:
+            ret = 'digraph G {\n'
+        else:
+            ret = ''
+
+        # Print this node's relationship with its children.
+        name = _get_name(self)
+        encountered.add(name)
+        if self.lchild or self.rchild:
+            ret += name + (
+                '  [shape="oval", style="filled", '
+                ' label="{}",'
+                ' fillcolor="#fffde7"];\n'
+            ).format(_get_value(self))
+            if self.lchild:
+                childname = _get_name(self.lchild)
+                ret += '{} -> {};\n'.format(name, childname)
+            if self.rchild:
+                childname = _get_name(self.rchild)
+                if self.lchild and _get_name(self.lchild) == childname:
+                    childname += '_'
+                ret += '{} -> {};\n'.format(name, childname)
+        else:
+            ret += name + (
+                ' [shape="rectangle", style="filled",'
+                ' label="{}"'
+                ' fillcolor="#80deea"];\n'
+            ).format(_get_value(self))
+
+        # Add all of the children's relationships.
+        if self.lchild:
+            ret += self.lchild.to_dot(False, encountered) + '\n'
+        if self.rchild:
+            ret += self.rchild.to_dot(False, encountered) + '\n'
+
+        if is_root:
+            ret += '}'
         return ret
 
     def _get_line_numbers_cached(self, recurse=0):

@@ -1,4 +1,7 @@
 import ast
+from collections import (
+    defaultdict,
+)
 from unittest import TestCase, skip
 from random import choice
 
@@ -37,6 +40,9 @@ from darglint.parse.google import (
     parse_type,
     parse_yields,
     KEYWORDS,
+)
+from darglint.parse.identifiers import (
+    ArgumentIdentifier,
 )
 from darglint.peaker import (
     Peaker
@@ -270,7 +276,7 @@ class DocstringTestCase(TestCase):
         ])
         doc = ast.get_docstring(ast.parse(func).body[0])
         tokens = list(lex(doc))
-        node = new_parse( tokens)
+        node = new_parse(tokens)
         self.assertTrue(node is not None)
 
     @replace('test_arguments_can_by_extracted_cyk')
@@ -1956,6 +1962,91 @@ class DocstringTestCase(TestCase):
         tokens = condense(lex(docstring))
         node = new_parse(tokens)
         self.assertTrue(node.contains('arguments-section'))
+
+    def get_annotation_lookup(self, root):
+        annotation_lookup = defaultdict(lambda: list())
+        for child in root.walk():
+            for annotation in child.annotations:
+                annotation_lookup[annotation].append(child)
+        return annotation_lookup
+
+    def test_parse_sole_argument_with_two_lines(self):
+        docstring = '\n'.join([
+            'Short.',
+            '',
+            'Args:',
+            '    x: Something something something.',
+            '        Something something.',
+            '        Something, something, something.',
+            '',
+            'Returns:',
+            '    A value.',
+        ])
+        tokens = condense(lex(docstring))
+        node = new_parse(tokens)
+        self.assertTrue(node.contains('arguments-section'))
+        annotation_lookup = self.get_annotation_lookup(node)
+        values = {
+            ArgumentIdentifier.extract(x)
+            for x in annotation_lookup[ArgumentIdentifier]
+        }
+        self.assertEqual(
+            values,
+            {'x'},
+        )
+
+    def test_parse_sole_argument_with_two_lines_indent_error(self):
+        docstring = '\n'.join([
+            'Short.',
+            '',
+            'Args:',
+            '    x: Something something something.',
+            '    Something something.',
+            '    Something, something, something.',
+            '',
+            'Returns:',
+            '    A value.',
+        ])
+        tokens = condense(lex(docstring))
+        node = new_parse(tokens)
+        self.assertTrue(node.contains('arguments-section'))
+
+    def test_parse_argument_with_two_lines(self):
+        program = ('''
+class _BaseError(object):
+    def message(self, verbosity=1, raises=True):  # type: (int, bool) -> str
+        """Get the message for this error, according to the verbosity.
+
+        Args:
+            verbosity: An integer in the set {1,2}, where 1 is a more
+                terse message, and 2 includes a general description.
+            raises: True if it should raise an exception.
+
+        Raises:
+            Exception: If the verbosity level is not recognized.
+
+        Returns:
+            An error message.
+
+        """
+        pass
+''')
+        docstring = ast.get_docstring(ast.parse(program).body[0].body[0])
+        tokens = condense(lex(docstring))
+        node = new_parse(tokens)
+        self.assertTrue(node.contains('arguments-section'))
+        with open('/tmp/doc.dot', 'w') as fout:
+            fout.write(node.to_dot())
+        annotation_lookup = self.get_annotation_lookup(node)
+        self.assertEqual(len(annotation_lookup[ArgumentIdentifier]), 2)
+        values = {
+            ArgumentIdentifier.extract(x)
+            for x in annotation_lookup[ArgumentIdentifier]
+        }
+        self.assertEqual(
+            values,
+            {'v', 'r'},
+        )
 
 
 class StyleWarningsTestCase(TestCase):

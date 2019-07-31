@@ -22,16 +22,29 @@ start: <arguments-section>
     ::= <item-argument> <newline> <items-argument>
     | <item-argument>
 
+# The normal <paragraph> can be indented any number of times,
+# but <paragraph-indented-two> has at least two indents.  By
+# weighing it more in the grammar, we capture under-indented
+# lines.
+#
+# We also need to have a version with a newline and one without
+# a newline, so that we can handle the last line in the arguments
+# section as well as all other lines.
 <item-argument>
-    ::= 98 @ArgumentItemIdentifier
-        <head-argument> <line> <newline> <paragraph-indented-two>
-      | 1 @ArgumentItemIdentifier
-        <head-argument> <line> <newline> <paragraph-indented-two>
-      | 1 @ArgumentItemIdentifier
-        <head-argument> <line>
-      | @ArgumentItemIdentifier
-        @IndentError
-        <head-argument> <line> <newline> <paragraph-indented>
+    ::= 2 @ArgumentItemIdentifier
+      <head-argument> <line> <newline> <paragraph-indented-two>
+    | 2 @ArgumentItemIdentifier
+      <head-argument> <line> <newline> <paragraph-indented-two> <newline>
+    | 2 @ArgumentItemIdentifier
+      <head-argument> <line> <newline>
+    | 2 @ArgumentItemIdentifier
+      <head-argument> <line>
+    | @IndentError
+      @ArgumentItemIdentifier
+      <head-argument> <line> <newline> <paragraph>
+    | @IndentError
+      @ArgumentItemIdentifier
+      <head-argument> <line> <newline> <paragraph> <newline>
 
 <head-argument>
     ::= @ArgumentIdentifier
