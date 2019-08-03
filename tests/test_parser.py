@@ -320,7 +320,7 @@ class DocstringTestCase(TestCase):
         ])
         tokens = condense(lex(docstring))
         tree = new_parse(tokens)
-        args = list(self.values_of(tree, 'argument'))
+        args = list(self.values_of(tree, 'ident'))
         self.assertEqual(
             args,
             ['param1', 'param2'],
@@ -1355,7 +1355,7 @@ class DocstringTestCase(TestCase):
         tree = new_parse(tokens)
         self.assertTrue(tree is not None)
         self.assertContains(tree, 'arguments-section')
-        self.assertContains(tree, 'argument')
+        self.assertContains(tree, 'ident')
 
     @remove
     def test_parse_raises(self):

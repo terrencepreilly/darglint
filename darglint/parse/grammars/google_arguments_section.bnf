@@ -48,21 +48,7 @@ start: <arguments-section>
 
 <head-argument>
     ::= @ArgumentIdentifier
-      <indent> <argument> <colon>
+      <indent> <ident> <colon>
     | @ArgumentIdentifier
       @ArgumentTypeIdentifier
-      <indent> <argument> <type-section-parens> <colon>
-
-<argument>
-    ::= "TokenType\.WORD"
-    | <raises>
-    | <arguments>
-    | <argument-type>
-    | <raises>
-    | <returns>
-    | <return-type>
-    | <yields>
-    | <yield-type>
-    | <variables>
-    | <variable-type>
-    | <noqa>
+      <indent> <ident> <type-section-parens> <colon>

@@ -170,7 +170,7 @@ class IntegrityChecker(object):
                     )
                 if self.config.style == DocstringStyle.GOOGLE:
                     line_numbers = self.docstring.get_line_numbers_for_value(
-                        'argument',
+                        'ident',
                         name,
                     ) or default_line_numbers
                 else:

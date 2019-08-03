@@ -1,0 +1,15 @@
+import sphinx_base.bnf
+
+Grammar: YieldTypeGrammar
+
+start: <yield-type-section>
+
+<yield-type-section>
+    ::= <ythead> <ytbody> <newlines>
+
+<ythead>
+    ::= <colon> <yield-type> <colon>
+
+<ytbody>
+    ::= <line>
+    | <line> <block-indented>
