@@ -3,7 +3,6 @@ from collections import (
     defaultdict,
 )
 from unittest import TestCase, skip
-from random import choice
 
 from darglint.docstring.base import (
     Sections,
@@ -43,21 +42,17 @@ from darglint.parse.google import (
 )
 from darglint.parse.identifiers import (
     ArgumentIdentifier,
+    ExceptionIdentifier,
 )
 from darglint.peaker import (
     Peaker
 )
-from darglint.errors import (
-    ExcessNewlineError,
-)
 from darglint.parse.new_google import (
     parse as new_parse,
 )
-
-# from darglint.parse.grammars.google import (
-#     Grammar,
-# )
-from darglint.parse.cyk import parse as parse_cyk
+from darglint.errors import (
+    IndentError,
+)
 from .utils import (
     replace,
     remove,
@@ -376,8 +371,6 @@ class DocstringTestCase(TestCase):
                 '    x {}: y.'.format(type_),
             ])
             node = new_parse(condense(lex(docstring)))
-            print(docstring)
-            print(node)
             self.assertTrue(node.contains('type-section-parens'))
 
     def test_arguments_with_multiple_lines_cyk(self):
@@ -456,7 +449,6 @@ class DocstringTestCase(TestCase):
             '    param3: Description of `param3`.',
         ])
         node = new_parse(condense(lex(docstring)))
-        print(node)
         self.assertTrue(node.contains('arguments-section'))
 
     @replace('test_parse_yields_cyk')
@@ -505,7 +497,6 @@ class DocstringTestCase(TestCase):
         ])))
         tree = new_parse(tokens)
         self.assertTrue(tree is not None)
-        print(tree)
         self.assertContains(tree, 'yields-type')
 
     @replace('test_parse_raises_cyk')
@@ -531,10 +522,62 @@ class DocstringTestCase(TestCase):
         ])
         tokens = condense(lex(docstring))
         tree = new_parse(tokens)
-        print(tree)
         self.assertTrue(tree is not None)
         self.assertContains(tree, 'raises-section')
         self.assertContains(tree, 'exception')
+
+    def test_parse_raises_multiple_lines(self):
+        docstring = '\n'.join([
+            'Iterates through the records.',
+            '',
+            'Args:',
+            '    address: The address of the database.',
+            '',
+            'Raises:',
+            '    StopIteration:  Once there are no more records,',
+            '        or possible if there were never any records.',
+            '    ConnectionError: If we were unable to establish a',
+            '        connection.',
+        ])
+        tokens = condense(lex(docstring))
+        tree = new_parse(tokens)
+        annotation_lookup = self.get_annotation_lookup(tree)
+        values = {
+            ExceptionIdentifier.extract(x)
+            for x in annotation_lookup[ExceptionIdentifier]
+        }
+        self.assertEqual(
+            values,
+            {'StopIteration', 'ConnectionError'},
+        )
+
+    def test_parse_underindented_raises_section(self):
+        docstring = '\n'.join([
+            'Iterates through the records.',
+            '',
+            'Args:',
+            '    address: The address of the database.',
+            '',
+            'Raises:',
+            '    StopIteration:  Once there are no more records,',
+            '    or possible if there were never any records.',
+            '',
+        ])
+        tokens = condense(lex(docstring))
+        tree = new_parse(tokens)
+        annotation_lookup = self.get_annotation_lookup(tree)
+        self.assertEqual(
+            len(annotation_lookup[IndentError]),
+            1
+        )
+        values = {
+            ExceptionIdentifier.extract(x)
+            for x in annotation_lookup[ExceptionIdentifier]
+        }
+        self.assertEqual(
+            values,
+            {'StopIteration'},
+        )
 
     @replace('test_argument_types_can_be_parsed_cyk')
     def test_argument_types_can_be_parsed(self):
@@ -2035,8 +2078,6 @@ class _BaseError(object):
         tokens = condense(lex(docstring))
         node = new_parse(tokens)
         self.assertTrue(node.contains('arguments-section'))
-        with open('/tmp/doc.dot', 'w') as fout:
-            fout.write(node.to_dot())
         annotation_lookup = self.get_annotation_lookup(node)
         self.assertEqual(len(annotation_lookup[ArgumentIdentifier]), 2)
         values = {
@@ -2045,7 +2086,7 @@ class _BaseError(object):
         }
         self.assertEqual(
             values,
-            {'v', 'r'},
+            {'verbosity', 'raises'},
         )
 
 

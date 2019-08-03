@@ -55,3 +55,14 @@ start: <arguments-section>
 
 <argument>
     ::= "TokenType\.WORD"
+    | <raises>
+    | <arguments>
+    | <argument-type>
+    | <raises>
+    | <returns>
+    | <return-type>
+    | <yields>
+    | <yield-type>
+    | <variables>
+    | <variable-type>
+    | <noqa>

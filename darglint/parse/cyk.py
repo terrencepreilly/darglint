@@ -290,7 +290,13 @@ class CykNode(object):
             ).format(_get_value(self))
             if self.lchild:
                 childname = _get_name(self.lchild)
-                ret += '{} -> {};\n'.format(name, childname)
+                ret += '{} -> {}'.format(name, childname)
+                if self.annotations:
+                    ret += '[label="'
+                    for annotation in self.annotations:
+                        ret += annotation.__name__ + ',\\n'
+                    ret += '"]'
+                ret += ';\n'
             if self.rchild:
                 childname = _get_name(self.rchild)
                 if self.lchild and _get_name(self.lchild) == childname:

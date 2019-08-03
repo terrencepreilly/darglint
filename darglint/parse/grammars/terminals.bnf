@@ -2,35 +2,32 @@ from darglint.token import (
     TokenType,
 )
 
+# TODO: Come up with common set of prefixes to handle possibly empty,
+# indented, possibly-newline-terminated, strict, etc.
+
 <word>
-    ::= "TokenType\.WORD"
-    | <arguments>
-    | <argument-type>
-    | <colon>
+    ::= <colon>
     | <hash>
     | <indent>
     | <lparen>
-    | <raises>
-    | <returns>
-    | <return-type>
     | <rparen>
-    | <yields>
-    | <yield-type>
-    | <variables>
-    | <variable-type>
-    | <noqa>
+    | <ident>
 
 <word-colonless>
-    ::= "TokenType\.WORD"
-    | <arguments>
-    | <argument-type>
+    ::= <ident>
     | <hash>
     | <indent>
     | <lparen>
+    | <rparen>
+
+<ident>
+    ::= "TokenType\.WORD"
+    | <raises>
+    | <arguments>
+    | <argument-type>
     | <raises>
     | <returns>
     | <return-type>
-    | <rparen>
     | <yields>
     | <yield-type>
     | <variables>

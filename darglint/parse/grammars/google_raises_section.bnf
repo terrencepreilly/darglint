@@ -1,6 +1,9 @@
 import google_base.bnf
 import google_types.bnf
 
+from darglint.errors import (
+    IndentError,
+)
 from darglint.parse.identifiers import (
     ExceptionIdentifier,
     ExceptionItemIdentifier,
@@ -18,10 +21,16 @@ start: <raises-section>
     | <item-exception>
 
 <item-exception>
-    ::= @ExceptionItemIdentifier
+    ::= 2 @ExceptionItemIdentifier
       <head-exception> <line> <newline> <paragraph-indented-two>
-    | @ExceptionItemIdentifier
+    | 2 @ExceptionItemIdentifier
       <head-exception> <line>
+    | @IndentError
+      @ExceptionItemIdentifier
+      <head-exception> <line> <newline> <paragraph>
+    | @IndentError
+      @ExceptionItemIdentifier
+      <head-exception> <line> <newline> <paragraph> <newline>
 
 <head-exception>
     ::= @ExceptionIdentifier <indent> <exception> <colon>
