@@ -586,7 +586,6 @@ class IntegrityCheckerTestCase(TestCase):
         ])
         self.has_no_errors(program)
 
-    @skip('Fix this!')
     def test_global_noqa_works_for_syntax_errors(self):
         program = '\n'.join([
             'def test_dataframe(input):',

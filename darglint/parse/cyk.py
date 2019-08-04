@@ -21,7 +21,6 @@ from collections import (
 )
 from typing import (
     Any,
-    Deque,
     Iterator,
     Optional,
     List,
@@ -36,7 +35,6 @@ from .grammar import (  # noqa: F401
 )
 from ..token import (
     Token,
-    BaseTokenType,
     TokenType,
 )
 
@@ -195,7 +193,7 @@ class CykNode(object):
         # to apply between characters, we use a 3-token sliding
         # window.
         window_size = 3
-        window = deque(maxlen=window_size)  # type: Deque[Token]
+        window = deque(maxlen=window_size)  # type: deque
         source = self.in_order_traverse()
 
         # Fill the buffer.

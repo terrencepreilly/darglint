@@ -3,9 +3,7 @@ from collections import (
     deque,
 )
 from typing import (  # noqa: F401
-    Any,
     Callable,
-    Deque,
     Dict,
     Iterable,
     List,
