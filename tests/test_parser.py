@@ -12,7 +12,7 @@ from darglint.parse.identifiers import (
     ArgumentIdentifier,
     ExceptionIdentifier,
 )
-from darglint.parse.new_google import (
+from darglint.parse.google import (
     parse,
 )
 from darglint.errors import (

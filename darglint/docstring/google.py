@@ -23,7 +23,7 @@ from .base import (  # noqa: F401
 from ..parse.cyk import (
     CykNode,
 )
-from ..parse.new_google import (
+from ..parse.google import (
     parse,
 )
 from ..lex import (

@@ -5,23 +5,8 @@ from darglint.lex import (
     condense,
     lex,
 )
-from darglint.node import NodeType
-from darglint.peaker import Peaker
-from darglint.parse.common import (
-    ParserException,
-)
-from darglint.parse.common import (
-    parse_keyword,
-)
 from darglint.parse.sphinx import (
-    KEYWORDS,
     parse,
-    parse_item,
-    parse_long_description,
-    parse_short_description,
-)
-from darglint.parse.new_sphinx import (
-    parse as new_parse,
 )
 from .sphinx_docstrings import docstrings
 
@@ -31,25 +16,25 @@ class SphinxParserTest(TestCase):
     def test_parse_short_description_is_line_cyk(self):
         """Make sure a short description is just a single line."""
         content = 'Description!'
-        node = new_parse(condense(lex(content)))
+        node = parse(condense(lex(content)))
         self.assertTrue(node.contains('short-description'))
 
     def test_parse_short_description_one_word_cyk(self):
         """Make sure a single word can suffice."""
         content = 'Kills.'
-        node = new_parse(condense(lex(content)))
+        node = parse(condense(lex(content)))
         self.assertTrue(node.contains('short-description'))
 
     def test_parse_short_description_multiple_words_cyk(self):
         """Make sure we can have a normal short description."""
         content = 'Flips the pancake.'
-        node = new_parse(condense(lex(content)))
+        node = parse(condense(lex(content)))
         self.assertTrue(node.contains('short-description'))
 
     def test_short_description_can_have_colons_cyk(self):
         """Make sure special characters are fine."""
         content = ":param Something: Should be okay, I guess."
-        node = new_parse(condense(lex(content)))
+        node = parse(condense(lex(content)))
         self.assertTrue(
             node.contains('short-description')
         )
@@ -76,7 +61,7 @@ class SphinxParserTest(TestCase):
                 docstring = 'Short description.\n\n:{} a: something'.format(
                     keyword,
                 )
-                node = new_parse(condense(lex(docstring)))
+                node = parse(condense(lex(docstring)))
                 self.assertTrue(
                     node.contains(keyword_section),
                     '{}: {}'.format(keyword_section, node)
@@ -90,7 +75,7 @@ class SphinxParserTest(TestCase):
         for keyword_section in keywords:
             for keyword in keywords[keyword_section]:
                 docstring = 'Short.\n\n:{}: something'.format(keyword)
-                node = new_parse(condense(lex(docstring)))
+                node = parse(condense(lex(docstring)))
                 self.assertTrue(
                     node.contains(keyword_section),
                     '{}: {}'.format(keyword_section, node),
@@ -98,17 +83,17 @@ class SphinxParserTest(TestCase):
 
     def test_item_without_argument_cyk(self):
         """Test that we can parse an item without an argument."""
-        node = new_parse(condense(lex('a\n\n:returns: A value.')))
+        node = parse(condense(lex('a\n\n:returns: A value.')))
         self.assertTrue(node.contains('returns-section'))
 
     def test_parse_argument_item_cyk(self):
         """Make sure we can parse an item with an arity of 1."""
-        node = new_parse(condense(lex('SD\n\n:param x: A vector.')))
+        node = parse(condense(lex('SD\n\n:param x: A vector.')))
         self.assertTrue(node.contains('arguments-section'))
 
     def test_parse_type_item_cyk(self):
         """Ensure we can parse a type item correctly."""
-        node = new_parse(condense(lex('a\n\n:type priorities: List[int]')))
+        node = parse(condense(lex('a\n\n:type priorities: List[int]')))
         self.assertTrue(
             node.contains('argument-type-section'),
             str(node),
@@ -116,14 +101,14 @@ class SphinxParserTest(TestCase):
 
     def test_inline_item_type_cyk(self):
         """Make sure we can get the type of the item in its definition."""
-        node = new_parse(condense(lex('short\n\n:param int x: A number.')))
+        node = parse(condense(lex('short\n\n:param int x: A number.')))
         self.assertTrue(
             node.contains('arguments-section'),
             node,
         )
 
     def test_definition_with_colon_not_mistaken_for_inline_type_cyk(self):
-        node = new_parse(condense(lex(
+        node = parse(condense(lex(
             'short description\n'
             '\n'
             ':param x: : That shouldn\'t be there.'
@@ -134,7 +119,7 @@ class SphinxParserTest(TestCase):
 
     def test_item_name_with_return_can_have_type_but_not_argument_cyk(self):
         """Make sure the return item can can a type."""
-        node = new_parse(condense(lex(
+        node = parse(condense(lex(
             'short\n\n:returns int: Whoa.'
         )))
         self.assertTrue(
@@ -143,7 +128,7 @@ class SphinxParserTest(TestCase):
 
     def test_parse_vartype_item_cyk(self):
         """Ensure we can parse a variable type description."""
-        node = new_parse(condense(lex(
+        node = parse(condense(lex(
             'short\n\n:vartype foo: Dict[str][str]'
         )))
         self.assertTrue(
@@ -153,7 +138,7 @@ class SphinxParserTest(TestCase):
 
     def test_parse_long_description_cyk(self):
         """Make sure we can parse a long description."""
-        node = new_parse(condense(lex('\n'.join([
+        node = parse(condense(lex('\n'.join([
             'Short descr.',
             '',
             'A long description should be ',
@@ -167,7 +152,7 @@ class SphinxParserTest(TestCase):
 
     def test_parse_whole_docstring_cyk(self):
         """Make sure we can parse a whole docstring."""
-        node = new_parse(condense(lex('\n'.join([
+        node = parse(condense(lex('\n'.join([
             'Format the exception with a traceback.',
             '',
             ':param etype: exception type',
@@ -197,7 +182,7 @@ class SphinxParserTest(TestCase):
             '    pass',
         ])
         doc = ast.get_docstring(ast.parse(func).body[0])
-        node = new_parse(condense(lex(doc)))
+        node = parse(condense(lex(doc)))
         self.assertTrue(
             node.contains('arguments-section'),
             node,
@@ -227,7 +212,7 @@ class SphinxParserTest(TestCase):
             '    return foo + bar',
         ])
         doc = ast.get_docstring(ast.parse(func).body[0])
-        node = new_parse(condense(lex(doc)))
+        node = parse(condense(lex(doc)))
         self.assertTrue(
             node.contains('arguments-section'),
             node,
@@ -250,7 +235,7 @@ class SphinxParserTest(TestCase):
         ])
         doc = ast.get_docstring(ast.parse(program).body[0])
         tokens = condense(lex(doc))
-        node = new_parse(tokens)
+        node = parse(tokens)
         self.assertTrue(
             node.contains('returns-section'),
         )
@@ -264,5 +249,5 @@ class CompatibilityTest(TestCase):
 
     def test_parser_can_parse_all_docstrings_cyk(self):
         for docstring in docstrings():
-            node = new_parse(condense(lex(docstring)))
+            node = parse(condense(lex(docstring)))
             self.assertTrue(node)

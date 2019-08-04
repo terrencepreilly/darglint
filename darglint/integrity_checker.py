@@ -11,9 +11,6 @@ from typing import (  # noqa: F401
 from .function_description import (  # noqa: F401
     FunctionDescription,
 )
-from .parse.common import (
-    ParserException,
-)
 from .docstring.base import (  # noqa: F401
     BaseDocstring,
     DocstringStyle,
@@ -78,6 +75,8 @@ class IntegrityChecker(object):
                 propagate, crashing darglint.  This is mostly useful
                 for development.
 
+        TODO: Remove reference to ParserExceptions.
+
         """
         self.errors = list()  # type: List[DarglintError]
         self._sorted = True
@@ -94,44 +93,25 @@ class IntegrityChecker(object):
         """
         self.function = function
         if function.docstring is not None:
-            try:
-                if self.config.style == DocstringStyle.GOOGLE:
-                    self.docstring = Docstring.from_google(
-                        function.docstring,
-                    )
-                elif self.config.style == DocstringStyle.SPHINX:
-                    self.docstring = Docstring.from_sphinx(
-                        function.docstring,
-                    )
-                    self._check_variables()
-                if self.docstring.ignore_all:
-                    return
-                self._check_parameters()
-                self._check_parameter_types()
-                self._check_return()
-                self._check_return_type()
-                self._check_yield()
-                self._check_raises()
-                self._check_style()
-                self._sorted = False
-            except ParserException as exception:
-                # If a syntax exception was raised, we may still
-                # want to ignore it, if we place a noqa statement.
-                if (
-                    SYNTAX_NOQA.search(function.docstring)
-                    or EXPLICIT_GLOBAL_NOQA.search(function.docstring)
-                    or BARE_NOQA.search(function.docstring)
-                ):
-                    return
-                if self.raise_errors:
-                    raise
-                self.errors.append(
-                    exception.style_error(
-                        self.function.function,
-                        message=str(exception),
-                        line_numbers=exception.line_numbers,
-                    ),
+            if self.config.style == DocstringStyle.GOOGLE:
+                self.docstring = Docstring.from_google(
+                    function.docstring,
                 )
+            elif self.config.style == DocstringStyle.SPHINX:
+                self.docstring = Docstring.from_sphinx(
+                    function.docstring,
+                )
+                self._check_variables()
+            if self.docstring.ignore_all:
+                return
+            self._check_parameters()
+            self._check_parameter_types()
+            self._check_return()
+            self._check_return_type()
+            self._check_yield()
+            self._check_raises()
+            self._check_style()
+            self._sorted = False
 
     def _check_parameter_types(self):
         # type: () -> None

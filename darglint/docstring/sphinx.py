@@ -21,7 +21,7 @@ from ..parse.cyk import (
 from ..parse.identifiers import (
     Identifier,
 )
-from ..parse.new_sphinx import (
+from ..parse.sphinx import (
     parse,
 )
 from ..lex import (

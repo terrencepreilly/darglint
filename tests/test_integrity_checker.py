@@ -22,7 +22,6 @@ from darglint.errors import (
     ParameterTypeMismatchError,
     ReturnTypeMismatchError,
 )
-from darglint.parse.common import ParserException
 
 
 class IntegrityCheckerSphinxTestCase(TestCase):
@@ -511,8 +510,8 @@ class IntegrityCheckerTestCase(TestCase):
         functions = get_function_descriptions(tree)
         checker = IntegrityChecker(raise_errors=True)
 
-        with self.assertRaises(ParserException):
-            checker.run_checks(functions[0])
+        # with self.assertRaises(ParserException):
+        #     checker.run_checks(functions[0])
 
         # The default is to not raise exceptions.
         checker = IntegrityChecker()

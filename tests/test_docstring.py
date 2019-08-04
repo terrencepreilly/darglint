@@ -5,10 +5,6 @@ from random import shuffle
 
 from darglint.docstring.base import Sections
 from darglint.docstring.docstring import Docstring
-from darglint.lex import lex
-from darglint.parse import google
-from darglint.parse import sphinx
-from darglint.peaker import Peaker
 
 
 class DocstringBaseMethodTests(TestCase):

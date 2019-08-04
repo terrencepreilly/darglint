@@ -4,13 +4,10 @@ from random import (
     randint,
 )
 
-from darglint.parse.new_google import (
+from darglint.parse.google import (
     top_parse,
     lookup,
     parse,
-)
-from darglint.parse.grammars.google_long_description import (
-    LongDescriptionGrammar,
 )
 from darglint.token import (
     Token,
