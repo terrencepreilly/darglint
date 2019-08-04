@@ -9,7 +9,6 @@ from darglint.docstring.base import DocstringStyle
 from darglint.integrity_checker import IntegrityChecker
 from darglint.function_description import get_function_descriptions
 from darglint.errors import (
-    EmptyDescriptionError,
     ExcessParameterError,
     ExcessRaiseError,
     ExcessVariableError,
@@ -24,10 +23,6 @@ from darglint.errors import (
     ReturnTypeMismatchError,
 )
 from darglint.parse.common import ParserException
-from .utils import (
-    replace,
-    remove,
-)
 
 
 class IntegrityCheckerSphinxTestCase(TestCase):
@@ -525,38 +520,6 @@ class IntegrityCheckerTestCase(TestCase):
         errors = checker.errors
         self.assertTrue(isinstance(errors[0], GenericSyntaxError))
 
-    @replace('test_error_if_no_colon_in_parameter_line_cyk')
-    @skip('Replace this!')
-    def test_throws_assertion_if_no_colon_in_parameter_line(self):
-        program = '\n'.join([
-            'def hash_integer(value):',
-            '    """Return the hash value of an integer.',
-            '',
-            '    Args:',
-            '        value: The integer that we want',
-            # This line should cause an error because it is at the
-            # level for parameter identifiers.
-            '        to make a hashed value of.',
-            '',
-            '    Returns:',
-            '        The hashed value.',
-            '',
-            '    """',
-            '    return value % 7',
-        ])
-        tree = ast.parse(program)
-        functions = get_function_descriptions(tree)
-
-        checker = IntegrityChecker(raise_errors=True)
-
-        with self.assertRaises(ParserException):
-            checker.run_checks(functions[0])
-
-        checker = IntegrityChecker()
-        checker.run_checks(functions[0])
-        errors = checker.errors
-        self.assertTrue(isinstance(errors[0], GenericSyntaxError))
-
     def test_error_if_no_colon_in_parameter_line_cyk(self):
         program = '\n'.join([
             'def hash_integer(value):',
@@ -581,9 +544,8 @@ class IntegrityCheckerTestCase(TestCase):
         errors = checker.errors
         self.assertTrue(isinstance(errors[0], IndentError))
 
-    @replace('test_throws_assertion_if_no_content_after_colon_cyk')
-    @skip('Replace this!')
-    def test_throws_assertion_if_no_content_after_colon(self):
+    @skip('Implement me!')
+    def test_raises_style_error_if_no_content_after_colon(self):
         program = '\n'.join([
             'def hello_world(name):',
             '    """Tell the person hello.',
@@ -596,15 +558,10 @@ class IntegrityCheckerTestCase(TestCase):
         ])
         tree = ast.parse(program)
         functions = get_function_descriptions(tree)
-        checker = IntegrityChecker(raise_errors=True)
-
-        with self.assertRaises(ParserException):
-            checker.run_checks(functions[0])
-
         checker = IntegrityChecker()
         checker.run_checks(functions[0])
-        errors = checker.errors
-        self.assertTrue(isinstance(errors[0], EmptyDescriptionError))
+        # errors = checker.errors
+        # self.assertTrue(isinstance(errors[0], EmptyDescriptionError))
 
     def test_bare_noqa(self):
         program = '\n'.join([

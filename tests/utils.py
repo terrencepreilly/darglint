@@ -14,7 +14,7 @@ from darglint.token import (
 )
 
 
-REFACTORING_COMPLETE = False
+REFACTORING_COMPLETE = True
 
 
 def replace(name=''):
