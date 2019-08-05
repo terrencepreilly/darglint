@@ -1,0 +1,73 @@
+.main-content {
+    width: 800px;
+    height: 500px;
+    border: 1px dotted grey;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.actions {
+    display: flex;
+    flex-direction: row;
+}
+
+.actions .delete {
+    margin-left: auto;
+}
+
+.docstring-container {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+}
+
+.docstring-container .docstring {
+    margin: auto;
+}
+
+.docstring-container .metadata {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    margin: 20px;
+}
+
+.docstring-container .metadata .dropbox {
+    display: flex;
+    flex-direction: column;
+    box-shadow: inset 0px 0px 1px 1px rgba(0, 0, 0, 0.3);
+    width: 200px;
+	min-height: 100px;
+    margin: 4px;
+}
+
+.docstring-container .metadata .dropbox .section-title {
+    margin-left: auto;
+    margin-right: auto;
+    font-style: italic;
+}
+
+.selector {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    margin-top: auto;
+}
+
+.selector .page-number {
+    display: flex;
+    flex-direction: row;
+}
+
+.selector input {
+    -webkit-appearance: none;
+    -moz-appearance:textfield;
+    margin: 0;
+    width: 25px;
+}
+
+.metadata {
+    display: flex;
+    flex-direction: column;
+}
