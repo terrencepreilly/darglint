@@ -210,7 +210,7 @@ def _get_exception_name(raises):  # type: (ast.Raise) -> str
         else:
             logger.error(
                 'Raises function call has neither id nor attr.'
-                'has only: %s' % str(dir(raises.ecx.func))
+                'has only: %s' % str(dir(raises.exc.func))
             )
     else:
         raise Exception('Unexpected type in raises expression: {}'.format(
