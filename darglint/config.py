@@ -118,11 +118,11 @@ def load_config_file(filename):  # type: (str) -> Configuration
                 )
         if 'strictness' in config['darglint']:
             raw_strictness = config['darglint']['strictness'].lower().strip()
-            if raw_strictness == 'one_liners':
-                strictness = Strictness.ONE_LINERS
-            elif raw_strictness == 'long_description':
+            if raw_strictness in {'short_description', 'short'}:
+                strictness = Strictness.SHORT_DESCRIPTION
+            elif raw_strictness == {'long_description', 'long'}:
                 strictness = Strictness.LONG_DESCRIPTION
-            elif raw_strictness == 'full_description':
+            elif raw_strictness == {'full_description', 'full'}:
                 strictness = Strictness.FULL_DESCRIPTION
             else:
                 raise Exception(

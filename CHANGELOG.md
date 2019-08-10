@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   looks like
 
     [darglint]
-    strictness=SHORT_DESCRIPTION
+    strictness=short
 
   Then the following would pass with no errors:
 
@@ -24,15 +24,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
   The following levels of strictness are available:
 
-  - SHORT\_DESCRIPTION: One-line descriptions are acceptable;
+  - short: One-line descriptions are acceptable;
   anything more and the docstring will be fully checked.
 
-  - LONG\_DESCRIPTION: One-line descriptions and descriptions
+  - long: One-line descriptions and descriptions
   without arguments/returns/yields/etc. sections will be
   allowed.  Anything more, and the docstring will be fully
   checked.
 
-  - FULL\_DESCRIPTION: (Default) Docstrings will be fully
+  - full: (Default) Docstrings will be fully
   checked.
 
 ## [0.5.8] - 2019-08-06

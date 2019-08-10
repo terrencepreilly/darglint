@@ -98,14 +98,14 @@ Strictness Configuration
 Strictness determines how lax darglint will be when checking docstrings.
 There are three levels of strictness available:
 
--  SHORT\_DESCRIPTION: One-line descriptions are acceptable; anything
-   more and the docstring will be fully checked.
+-  short: One-line descriptions are acceptable; anything more and the
+   docstring will be fully checked.
 
--  LONG\_DESCRIPTION: One-line descriptions and descriptions without
+-  long: One-line descriptions and descriptions without
    arguments/returns/yields/etc. sections will be allowed. Anything
    more, and the docstring will be fully checked.
 
--  FULL\_DESCRIPTION: (Default) Docstrings will be fully checked.
+-  full: (Default) Docstrings will be fully checked.
 
 For example, if we have the following function:
 
@@ -121,28 +121,28 @@ of the docstrings (rows) when checked against each of the configurations
 
 ::
 
-    ┌──────────────────────────────────┬─────────────────────┬────────────────────┬────────────────────┐
-    │ Docstring                        │  SHORT_DESCRIPTION  │  LONG_DESCRIPTION  │  FULL_DESCRIPTION  │
-    ├──────────────────────────────────┼─────────────────────┼────────────────────┼────────────────────┤
-    │ """Doubles the argument."""      │ None                │ None               │ Missing argument   │
-    │                                  │                     │                    │ Missing return     │
-    │                                  │                     │                    │                    │
-    │                                  │                     │                    │                    │
-    ├──────────────────────────────────┼─────────────────────┼────────────────────┼────────────────────┤
-    │ """Doubles the argument.         │ Missing argument    │ None               │ Missing argument   │
-    │                                  │ Missing return      │                    │ Missing return     │
-    │ Not very pythonic.               │                     │                    │                    │
-    │                                  │                     │                    │                    │
-    │ """                              │                     │                    │                    │
-    │                                  │                     │                    │                    │
-    ├──────────────────────────────────┼─────────────────────┼────────────────────┼────────────────────┤
-    │ """Doubles the argument.         │ Missing return      │ Missing return     │ Missing return     │
-    │                                  │                     │                    │                    │
-    │ Args:                            │                     │                    │                    │
-    │     x: The number to double.     │                     │                    │                    │
-    │                                  │                     │                    │                    │
-    │ """                              │                     │                    │                    │
-    └──────────────────────────────────┴─────────────────────┴────────────────────┴────────────────────┘
+    ┌──────────────────────────────┬──────────────────┬────────────────┬──────────────────┐
+    │ Docstring                    │  short           │  long          │  full            │
+    ├──────────────────────────────┼──────────────────┼────────────────┼──────────────────┤
+    │ """Doubles the argument."""  │ None             │ None           │ Missing argument │
+    │                              │                  │                │ Missing return   │
+    │                              │                  │                │                  │
+    │                              │                  │                │                  │
+    ├──────────────────────────────┼──────────────────┼────────────────┼──────────────────┤
+    │ """Doubles the argument.     │ Missing argument │ None           │ Missing argument │
+    │                              │ Missing return   │                │ Missing return   │
+    │ Not very pythonic.           │                  │                │                  │
+    │                              │                  │                │                  │
+    │ """                          │                  │                │                  │
+    │                              │                  │                │                  │
+    ├──────────────────────────────┼──────────────────┼────────────────┼──────────────────┤
+    │ """Doubles the argument.     │ Missing return   │ Missing return │ Missing return   │
+    │                              │                  │                │                  │
+    │ Args:                        │                  │                │                  │
+    │     x: The number to double. │                  │                │                  │
+    │                              │                  │                │                  │
+    │ """                          │                  │                │                  │
+    └──────────────────────────────┴──────────────────┴────────────────┴──────────────────┘
 
 In short, if you want to be able to have single-line docstrings, and
 check all other docstrings against their described parameters, you would
@@ -151,7 +151,7 @@ specify
 ::
 
     [darglint]
-    strictness=SHORT_DESCRIPTION
+    strictness=short
 
 In your configuration file.
 

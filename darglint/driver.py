@@ -98,10 +98,14 @@ parser.add_argument(
     '-z',
     '--strictness',
     default=None,
-    choices=['short_description', 'long_description', 'full_description'],
+    choices=[
+        'short',
+        'long',
+        'full',
+    ],
     help=(
         'The minimum strictness when checking docstrings. '
-        '`short_description`, for example, will result in one-line '
+        '`short`, for example, will result in one-line '
         'docstrings always being accepted.  Anything more than one line '
         'would go through the full check.'
     ),
@@ -207,11 +211,11 @@ def main():
         elif args.docstring_style == 'google':
             config.style = DocstringStyle.GOOGLE
 
-        if args.strictness == 'short_description':
+        if args.strictness == 'short':
             config.strictness = Strictness.SHORT_DESCRIPTION
-        elif args.strictness == 'long_description':
+        elif args.strictness == 'long':
             config.strictness = Strictness.LONG_DESCRIPTION
-        elif args.strictness == 'full_description':
+        elif args.strictness == 'full':
             config.strictness = Strictness.FULL_DESCRIPTION
 
         raise_errors_for_syntax = args.raise_syntax or False
