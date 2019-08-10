@@ -18,6 +18,9 @@ from ..node import (
     Node,
     NodeType,
 )
+from ..config import (
+    Strictness,
+)
 from ..parse import (
     google,
 )
@@ -330,3 +333,35 @@ class Docstring(BaseDocstring):
                 return True
 
         return False
+
+    def satisfies_strictness(self, strictness):
+        # type: (Strictness) -> bool
+        """Return true if the docstring has no more than the min strictness.
+
+        Args:
+            strictness: The minimum amount of strictness which should
+                be present in the docstring.
+
+        Returns:
+            True if there is no more than the minimum amount of strictness.
+
+        """
+        if len(self.root.children) != 1:
+            return False
+        top_levels = {
+            x.node_type for x in self.root.children[0].children
+        }
+        if strictness == Strictness.SHORT_DESCRIPTION:
+            return top_levels == {NodeType.SHORT_DESCRIPTION}
+        elif strictness == Strictness.LONG_DESCRIPTION:
+            return top_levels in [
+                {NodeType.SHORT_DESCRIPTION},
+                {NodeType.SHORT_DESCRIPTION, NodeType.LONG_DESCRIPTION},
+                # Shouldn't be possible, but if it is in the future, then
+                # we should allow this.
+                {NodeType.LONG_DESCRIPTION},
+            ]
+        else:
+            # We don't need to check FULL_DESCRIPTION because it's the
+            # same situation as when strictness is not satisfied.
+            return False

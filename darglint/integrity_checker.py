@@ -108,6 +108,11 @@ class IntegrityChecker(object):
                     self._check_variables()
                 if self.docstring.ignore_all:
                     return
+                if self.config.strictness != Strictness.FULL_DESCRIPTION:
+                    if self.docstring.satisfies_strictness(
+                        self.config.strictness
+                    ):
+                        return
                 self._check_parameters()
                 self._check_parameter_types()
                 self._check_return()

@@ -31,7 +31,7 @@ POSSIBLE_CONFIG_FILENAMES = (
 
 
 class Strictness(Enum):
-    """The strictness with which to apply checks.
+    """The minimum strictness with which to apply checks.
 
     Strictness does not describe whether or not a check
     should be applied. Rather, if a check is done, strictness
@@ -39,7 +39,7 @@ class Strictness(Enum):
 
     Each level here describes what is required of the
     docstring at the given level of strictness.  For example,
-    ONE_LINERS describes the situation where one-liners are
+    SHORT_DESCRIPTION describes the situation where one-liners are
     allowed, and sections are not required.
 
     If the docstring being checked contains more than the
@@ -49,7 +49,7 @@ class Strictness(Enum):
     """
 
     # Allow a single-line description.
-    ONE_LINERS = 1
+    SHORT_DESCRIPTION = 1
 
     # Allow a single-line description followed by a long
     # description, but no sections.
