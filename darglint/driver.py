@@ -9,9 +9,10 @@ from .function_description import (
     get_function_descriptions,
 )
 from .integrity_checker import IntegrityChecker
-from .config import (  # noqa
+from .config import (
     Configuration,
     get_config,
+    Strictness,
 )
 from .docstring.base import DocstringStyle
 
@@ -92,6 +93,18 @@ parser.add_argument(
         'The docstring style used in the given project. Currently, '
         'only google or sphinx styles are supported.'
     )
+)
+parser.add_argument(
+    '-z',
+    '--strictness',
+    default=None,
+    choices=['short_description', 'long_description', 'full_description'],
+    help=(
+        'The minimum strictness when checking docstrings. '
+        '`short_description`, for example, will result in one-line '
+        'docstrings always being accepted.  Anything more than one line '
+        'would go through the full check.'
+    ),
 )
 
 # ---------------------- MAIN SCRIPT ---------------------------------
@@ -188,10 +201,19 @@ def main():
 
     try:
         config = get_config()
+
         if args.docstring_style == 'sphinx':
             config.style = DocstringStyle.SPHINX
         elif args.docstring_style == 'google':
             config.style = DocstringStyle.GOOGLE
+
+        if args.strictness == 'short_description':
+            config.strictness = Strictness.SHORT_DESCRIPTION
+        elif args.strictness == 'long_description':
+            config.strictness = Strictness.LONG_DESCRIPTION
+        elif args.strictness == 'full_description':
+            config.strictness = Strictness.FULL_DESCRIPTION
+
         raise_errors_for_syntax = args.raise_syntax or False
         for filename in files:
             error_report = get_error_report(
