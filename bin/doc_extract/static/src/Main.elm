@@ -4,8 +4,8 @@ import Array
 import Browser
 import Dict exposing ( Dict )
 import File exposing ( File )
-import File.Select as Select
 import File.Download as Download
+import File.Select as Select
 import Html exposing ( Html, div, text, button, input, label, pre, span, p )
 import Html.Attributes exposing ( class, type_, for, id, disabled, value )
 import Html.Events exposing ( onClick, onInput )
@@ -81,6 +81,8 @@ type alias Model =
     { docstrings : Array.Array Docstring
     , selected : Int
     , error : Maybe String
+    -- The target where we want to place items.
+    , target : Maybe MetadataType
     }
 
 type alias Flags =
@@ -88,9 +90,35 @@ type alias Flags =
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
-    ( Model Array.empty -1 Nothing
+    ( Model Array.empty -1 Nothing Nothing
     , Cmd.none
     )
+
+
+removeMetadatum : Docstring -> MetadataType -> Int -> Docstring
+removeMetadatum (Docstring repo filename doc metadata) metadataType index =
+    let
+        oldMetadataList =
+            getMetadata metadataType metadata
+
+        indexableOldMetadata =
+            Array.fromList oldMetadataList
+
+        withoutIndexed =
+            Array.append
+                (Array.slice 0 index indexableOldMetadata)
+                (Array.slice
+                    (index + 1)
+                    (Array.length indexableOldMetadata)
+                    indexableOldMetadata)
+
+        newMetadataList =
+            Array.toList withoutIndexed
+
+        newMetadata =
+            setMetadata metadataType metadata newMetadataList
+    in
+        Docstring repo filename doc newMetadata
 
 
 -- DECODERS
@@ -184,6 +212,10 @@ type Msg
     | Save
     -- Actions related to docstrings
     | Delete
+    | SetTarget MetadataType
+    | AddToTarget String
+    | RemoveFromTarget MetadataType Int
+    | Noop
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -252,6 +284,56 @@ update msg model =
             ( { model | docstrings = newDocstrings }
             , Cmd.none
             )
+        SetTarget metadataType ->
+            ( { model | target = Just metadataType }, Cmd.none )
+        AddToTarget value ->
+            case model.target of
+                Nothing ->
+                    ( model, Cmd.none )
+                Just section ->
+                     case Array.get model.selected model.docstrings of
+                        Nothing ->
+                            ( model, Cmd.none )
+                        Just docstring ->
+                            case docstring of
+                                Docstring a b c oldMetadata ->
+                                    let
+                                        oldItems =
+                                            getMetadata section oldMetadata
+
+                                        newItems =
+                                            value :: oldItems
+
+                                        newMetadata =
+                                            setMetadata section oldMetadata newItems 
+
+                                        newDocstrings =
+                                            Array.set
+                                                model.selected
+                                                (Docstring a b c newMetadata)
+                                                model.docstrings 
+                                    in
+                                        ( { model | docstrings = newDocstrings }, Cmd.none )
+        RemoveFromTarget metadataType index ->
+            case Array.get model.selected model.docstrings of
+                Nothing ->
+                    ( model, Cmd.none )
+                Just docstring ->
+                    let
+                        newDocstring =
+                            removeMetadatum docstring metadataType index
+
+                        newDocstrings =
+                            Array.set
+                                model.selected
+                                newDocstring
+                                model.docstrings
+                    in
+                    ( { model | docstrings = newDocstrings }
+                    , Cmd.none
+                    )
+        Noop ->
+            ( model, Cmd.none )
 
 
 -- VIEW
@@ -292,28 +374,43 @@ errorView model =
         Just error ->
             div [ class "errors" ] [ text error ]
 
-docstringView : Docstring -> Html Msg
-docstringView (Docstring
-                    (Repository repo)
-                    (Filename filename)
-                    maybeDocstring
-                    metadata) =
+docstringView : Model -> Docstring -> Html Msg
+docstringView model (Docstring
+                        (Repository repo)
+                        (Filename filename)
+                        maybeDocstring
+                        metadata) =
+    let
+        wordView x =
+            if String.isEmpty x then
+                span [ class "indent" ] []
+            else
+                span
+                    [ class "word"
+                    , onClick <| AddToTarget x
+                    ]
+                    [ text x ]
+
+        lineView words =
+            div [ class "line" ]
+                <| List.map wordView words
+    in
     case maybeDocstring of
         Nothing ->
             div [] []
         Just docstring ->
             div
                 [ class "docstring-container " ]
-                [ pre
+                [ div
                     [ class "docstring" ]
-                    [ text docstring
-                    ]
-                , metadataView metadata
+                    <| List.map lineView
+                    <| parseDocstring docstring
+                , metadataView metadata model.target
                 ]
 
 
-metadataView : Metadata -> Html Msg
-metadataView metadata =
+metadataView : Metadata -> Maybe MetadataType -> Html Msg
+metadataView metadata target =
     let
         sectionToString section =
             case section of
@@ -323,15 +420,32 @@ metadataView metadata =
                 Sections -> "Sections"
 
         dropBox section =
+            let
+                dropboxClass =
+                    if target == (Just section) then
+                            "dropbox selected"
+                        else
+                            "dropbox"
+
+                metadatumView index metadatum =
+                    div
+                        [ class "metadatum"
+                        , onClick <| RemoveFromTarget section index
+                        ]
+                        [ text metadatum ]
+
+            in
             div
-                [ class "dropbox" ]
+                [ class dropboxClass ]
                 <| (++)
                     [ div
-                        [ class "section-title" ]
+                        [ class "section-title"
+                        , onClick <| SetTarget section
+                        ]
                         [ text <| sectionToString section ]
                     ]
-                <| List.map
-                    (\x -> div [] [ text x ])
+                <| List.indexedMap
+                    metadatumView
                     <| getMetadata section metadata
     in
     div
@@ -350,7 +464,7 @@ editView model =
                 Nothing ->
                     div [] []
                 Just docstring ->
-                    docstringView docstring
+                    docstringView model docstring
 
         currentPage =
             model.selected
@@ -433,3 +547,28 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.none
+
+
+-- Parser
+parseDocstring : String -> List (List String)
+parseDocstring docstring =
+    let
+        doUntilNoChange f x =
+            if f x == x then
+                x
+            else
+                doUntilNoChange f (f x)
+
+        removeDoubleSpaces =
+            doUntilNoChange (String.replace "  " " ")
+
+        join = List.foldr (++) []
+
+        separate =
+            join
+            << List.map (String.split " ")
+            << List.map removeDoubleSpaces
+            << String.split "    "
+    in
+        List.map separate
+        <| String.lines docstring

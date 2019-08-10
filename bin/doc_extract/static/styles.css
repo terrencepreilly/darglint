@@ -1,7 +1,6 @@
 .main-content {
     width: 800px;
     height: 500px;
-    border: 1px dotted grey;
 
     display: flex;
     flex-direction: column;
@@ -24,6 +23,29 @@
 
 .docstring-container .docstring {
     margin: auto;
+    display: flex;
+    flex-direction: column;
+    flex: auto;
+}
+
+.docstring-container .docstring .word {
+    margin-right: 0.5em;
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+/Edge */
+    user-select: none; /* Standard */
+}
+
+.docstring-container .docstring .line {
+    display: flex;
+    flex-direction: row;
+    min-height: 1em;
+}
+
+.docstring-container .docstring .indent {
+    width: 4em;
+    height: 1px;
+    display: inline-block;
 }
 
 .docstring-container .metadata {
@@ -40,12 +62,18 @@
     width: 200px;
 	min-height: 100px;
     margin: 4px;
+    overflow-y: scroll;
+}
+
+.selected  {
+    background-color: rgba(0, 256, 0, 0.1);
 }
 
 .docstring-container .metadata .dropbox .section-title {
     margin-left: auto;
     margin-right: auto;
     font-style: italic;
+    cursor: pointer;
 }
 
 .selector {
@@ -70,4 +98,8 @@
 .metadata {
     display: flex;
     flex-direction: column;
+}
+
+.metadatum {
+    cursor: pointer;
 }
