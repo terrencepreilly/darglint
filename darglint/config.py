@@ -31,19 +31,22 @@ POSSIBLE_CONFIG_FILENAMES = (
 
 class Configuration(object):
 
-    def __init__(self, ignore, message_template, style):
-        # type: (List[str], Optional[str], DocstringStyle) -> None
+    def __init__(self, ignore, message_template, style, raise_on_missing_docstrings):
+        # type: (List[str], Optional[str], DocstringStyle, bool) -> None
         """Initialize the configuration object.
 
         Args:
             ignore: A list of error codes to ignore.
             message_template: the template with which to format the errors.
             style: The style of docstring.
+            raise_on_missing_docstrings: Report an error if a public function or method
+                is missing a docstring.
 
         """
         self.ignore = ignore
         self.message_template = message_template
         self.style = style
+        self.raise_on_missing_docstrings = raise_on_missing_docstrings
 
 
 def load_config_file(filename):  # type: (str) -> Configuration
@@ -64,6 +67,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
     ignore = list()
     message_template = None
     style = DocstringStyle.GOOGLE
+    raise_on_missing_docstrings = False
     if 'darglint' in config.sections():
         if 'ignore' in config['darglint']:
             errors = config['darglint']['ignore']
@@ -83,10 +87,15 @@ def load_config_file(filename):  # type: (str) -> Configuration
                         [x.name for x in DocstringStyle]
                     )
                 )
+        if 'raise_on_missing_docstrings' in config['darglint']:
+            raise_on_missing_docstrings = config.getboolean(
+                'darglint', 'raise_on_missing_docstrings')
+
     return Configuration(
         ignore=ignore,
         message_template=message_template,
-        style=style
+        style=style,
+        raise_on_missing_docstrings=raise_on_missing_docstrings
     )
 
 
@@ -167,7 +176,8 @@ def get_config():  # type: () -> Configuration
         return Configuration(
             ignore=list(),
             message_template=None,
-            style=DocstringStyle.GOOGLE
+            style=DocstringStyle.GOOGLE,
+            raise_on_missing_docstrings=False
         )
     return load_config_file(filename)
 

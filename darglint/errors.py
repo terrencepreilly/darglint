@@ -8,6 +8,7 @@ Groups of errors:
     I Interface
     S Style
 
+    000 Missing docstrings
     100 Args
     200 Returns
     300 Yields
@@ -146,6 +147,50 @@ class EmptyDescriptionError(DarglintError):
         self.terse_message = 'e {}'.format(message)
 
         super(EmptyDescriptionError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
+
+
+class MissingDocstringForPublicMethod(DarglintError):
+    """Describes when a docstring is missing for a public method."""
+
+    error_code = 'I002'
+
+    def __init__(self, function, line_numbers=None):
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Tuple[int, int]) -> None
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+            line_numbers: The line numbers where this error occurs.
+
+        """
+        self.general_message = 'Missing docstring for public method'
+        self.terse_message = function.name
+        super(MissingDocstringForPublicMethod, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
+
+
+class MissingDocstringForPublicFunction(DarglintError):
+    """Describes when a docstring is missing for a public function."""
+
+    error_code = 'I003'
+
+    def __init__(self, function, line_numbers=None):
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Tuple[int, int]) -> None
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+            line_numbers: The line numbers where this error occurs.
+
+        """
+        self.general_message = 'Missing docstring for public function'
+        self.terse_message = function.name
+        super(MissingDocstringForPublicFunction, self).__init__(
             function,
             line_numbers=line_numbers,
         )

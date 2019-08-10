@@ -93,6 +93,14 @@ parser.add_argument(
         'only google or sphinx styles are supported.'
     )
 )
+parser.add_argument(
+    '--raise-on-missing-docstrings',
+    action='store_true',
+    help=(
+        'Missing docstrings for public functions or methods are considered an '
+        'error.'
+    )
+)
 
 # ---------------------- MAIN SCRIPT ---------------------------------
 
@@ -139,6 +147,8 @@ def get_error_report(filename,
 
 def print_error_list():
     print('\n'.join([
+        'I002: Missing docstring for public method.'
+        'I003: Missing docstring for public function.'
         'I101: The docstring is missing a parameter in the definition.',
         'I102: The docstring contains a parameter not in function.',
         'I103: The docstring parameter type doesn\'t match function.',
@@ -192,6 +202,10 @@ def main():
             config.style = DocstringStyle.SPHINX
         elif args.docstring_style == 'google':
             config.style = DocstringStyle.GOOGLE
+
+        if args.raise_on_missing_docstrings:
+            config.raise_on_missing_docstrings = True
+
         raise_errors_for_syntax = args.raise_syntax or False
         for filename in files:
             error_report = get_error_report(

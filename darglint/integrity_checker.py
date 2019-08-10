@@ -34,6 +34,8 @@ from .errors import (  # noqa: F401
     ExcessReturnError,
     ExcessVariableError,
     ExcessYieldError,
+    MissingDocstringForPublicMethod,
+    MissingDocstringForPublicFunction,
     MissingParameterError,
     MissingRaiseError,
     MissingReturnError,
@@ -64,7 +66,8 @@ class IntegrityChecker(object):
                  config=Configuration(
                      ignore=[],
                      message_template=None,
-                     style=DocstringStyle.GOOGLE
+                     style=DocstringStyle.GOOGLE,
+                     raise_on_missing_docstrings=False
                  ),
                  raise_errors=False
                  ):
@@ -93,8 +96,8 @@ class IntegrityChecker(object):
 
         """
         self.function = function
-        if function.docstring is not None:
-            try:
+        try:
+            if function.docstring is not None:
                 if self.config.style == DocstringStyle.GOOGLE:
                     self.docstring = Docstring.from_google(
                         function.docstring,
@@ -113,24 +116,35 @@ class IntegrityChecker(object):
                 self._check_yield()
                 self._check_raises()
                 self._sorted = False
-            except ParserException as exception:
-                # If a syntax exception was raised, we may still
-                # want to ignore it, if we place a noqa statement.
-                if (
-                    SYNTAX_NOQA.search(function.docstring)
-                    or EXPLICIT_GLOBAL_NOQA.search(function.docstring)
-                    or BARE_NOQA.search(function.docstring)
-                ):
-                    return
-                if self.raise_errors:
-                    raise
+            # If not docstring is given, and raise on missing is true, and its not
+            # a private function, add an error.
+            elif self.config.raise_on_missing_docstrings and not function.name.startswith("_"):
+                cls = (MissingDocstringForPublicMethod
+                       if function.is_method else MissingDocstringForPublicFunction)
                 self.errors.append(
-                    exception.style_error(
+                    cls(
                         self.function.function,
-                        message=str(exception),
-                        line_numbers=exception.line_numbers,
-                    ),
+                        line_numbers=(-1, -1),
+                    )
                 )
+        except ParserException as exception:
+            # If a syntax exception was raised, we may still
+            # want to ignore it, if we place a noqa statement.
+            if (
+                SYNTAX_NOQA.search(function.docstring)
+                or EXPLICIT_GLOBAL_NOQA.search(function.docstring)
+                or BARE_NOQA.search(function.docstring)
+            ):
+                return
+            if self.raise_errors:
+                raise
+            self.errors.append(
+                exception.style_error(
+                    self.function.function,
+                    message=str(exception),
+                    line_numbers=exception.line_numbers,
+                ),
+            )
 
     def _check_parameter_types(self):
         # type: () -> None

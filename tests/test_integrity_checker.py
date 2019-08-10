@@ -18,6 +18,8 @@ from darglint.errors import (
     MissingRaiseError,
     MissingReturnError,
     MissingYieldError,
+    MissingDocstringForPublicFunction,
+    MissingDocstringForPublicMethod,
     ParameterTypeMismatchError,
     ReturnTypeMismatchError,
 )
@@ -30,7 +32,8 @@ class IntegrityCheckerSphinxTestCase(TestCase):
         self.config = Configuration(
             ignore=[],
             message_template=None,
-            style=DocstringStyle.SPHINX
+            style=DocstringStyle.SPHINX,
+            raise_on_missing_docstrings=False
         )
 
     def test_missing_parameter(self):
@@ -644,3 +647,80 @@ class IntegrityCheckerTestCase(TestCase):
         ])
         for variant in ['# noqa: *', '# noqa: S001', '# noqa']:
             self.has_no_errors(program.format(variant))
+
+        self.config = Configuration(
+            ignore=[],
+            message_template=None,
+            style=DocstringStyle.SPHINX,
+            raise_on_missing_docstrings=False
+        )
+
+    def test_check_for_missing_docstrings(self):
+        """Make sure we capture missing parameters."""
+        program = '\n'.join([
+            # Function without a docstring.
+            'def foo():',
+            '    pass',
+            # Function with a docstring.
+            'def bar():',
+            '    """"docstring"""',
+            '    pass',
+            # private function without a docstring.
+            'def _foo():',
+            '    pass',
+            'class FooBar:',
+            # Method with a docstring.
+            '    def bar_method(self):',
+            '        """docstring"""',
+            '        pass',
+            # Method without a docstring.
+            '    def foo_method(self):',
+            '        pass',
+            # Private method without a docstring.
+            '    def _foo_method(self):',
+            '        pass',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+
+        # No errors if raise_on_missing_docstrings is False.
+        checker = IntegrityChecker(
+            Configuration(
+                ignore=[],
+                message_template=None,
+                style=DocstringStyle.GOOGLE,
+                raise_on_missing_docstrings=False
+            )
+        )
+        for f in functions:
+            checker.run_checks(f)
+        errors = checker.errors
+        self.assertEqual(len(errors), 0)
+
+        # But two errors if True.
+        checker = IntegrityChecker(
+            Configuration(
+                ignore=[],
+                message_template=None,
+                style=DocstringStyle.GOOGLE,
+                raise_on_missing_docstrings=True
+            )
+        )
+        for f in functions:
+            checker.run_checks(f)
+        errors = checker.errors
+        self.assertEqual(len(errors), 2)
+
+        # Somehow the functions are parsed methods -> functions.
+        self.assertTrue(isinstance(
+            errors[0], MissingDocstringForPublicMethod))
+        self.assertTrue(isinstance(
+            errors[1], MissingDocstringForPublicFunction))
+        self.assertEqual(errors[0].general_message,
+                         'Missing docstring for public method')
+        self.assertEqual(errors[0].terse_message,
+                         'foo_method')
+        self.assertEqual(errors[1].general_message,
+                         'Missing docstring for public function')
+        self.assertEqual(errors[1].terse_message,
+                         'foo')
