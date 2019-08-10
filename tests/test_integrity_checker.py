@@ -3,7 +3,10 @@ from unittest import (
     TestCase,
 )
 
-from darglint.config import Configuration
+from darglint.config import (
+    Configuration,
+    Strictness,
+)
 from darglint.docstring.base import DocstringStyle
 from darglint.integrity_checker import IntegrityChecker
 from darglint.function_description import get_function_descriptions
@@ -30,7 +33,8 @@ class IntegrityCheckerSphinxTestCase(TestCase):
         self.config = Configuration(
             ignore=[],
             message_template=None,
-            style=DocstringStyle.SPHINX
+            style=DocstringStyle.SPHINX,
+            strictness=Strictness.FULL_DESCRIPTION,
         )
 
     def test_missing_parameter(self):

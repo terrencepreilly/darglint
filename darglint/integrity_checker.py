@@ -46,6 +46,7 @@ from .error_report import (
 )
 from .config import (
     Configuration,
+    Strictness,
 )
 
 
@@ -64,7 +65,8 @@ class IntegrityChecker(object):
                  config=Configuration(
                      ignore=[],
                      message_template=None,
-                     style=DocstringStyle.GOOGLE
+                     style=DocstringStyle.GOOGLE,
+                     strictness=Strictness.FULL_DESCRIPTION,
                  ),
                  raise_errors=False
                  ):
