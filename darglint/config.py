@@ -216,7 +216,8 @@ def get_config():  # type: () -> Configuration
         return Configuration(
             ignore=list(),
             message_template=None,
-            style=DocstringStyle.GOOGLE
+            style=DocstringStyle.GOOGLE,
+            strictness=Strictness.SHORT_DESCRIPTION,
         )
     return load_config_file(filename)
 
