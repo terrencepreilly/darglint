@@ -1,18 +1,13 @@
 from abc import ABC, abstractmethod
 import enum
-from typing import (  # noqa
-    Any,
+from typing import (
     Callable,
     Dict,
     List,
     Optional,
-    Set,
     Tuple,
     Union,
     Iterable,
-)
-from ..errors import (  # noqa
-    DarglintError,
 )
 
 
@@ -143,4 +138,20 @@ class BaseDocstring(ABC):
     @abstractmethod
     def ignore_all(self):
         # type: () -> bool
+        pass
+
+    @abstractmethod
+    def satisfies_strictness(self, strictness):
+        # NOTE: We can't add the type signature because adding Strictness
+        # to the imports would cause a circular dependency.
+        """Return true if the docstring has no more than the min strictness.
+
+        Args:
+            strictness: The minimum amount of strictness which should
+                be present in the docstring.
+
+        Returns:
+            True if there is no more than the minimum amount of strictness.
+
+        """
         pass

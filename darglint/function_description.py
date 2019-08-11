@@ -9,12 +9,18 @@ from typing import (
     Set,
     Tuple,
     Optional,
+    Union,
 )
 
 from .config import get_logger
 
 
 logger = get_logger()
+
+
+FunctionDef = ast.FunctionDef
+if hasattr(ast, 'AsyncFunctionDef'):
+    FunctionDef = (ast.FunctionDef, ast.AsyncFunctionDef)
 
 
 def read_program(filename):  # type: (str) -> str
@@ -38,7 +44,7 @@ def read_program(filename):  # type: (str) -> str
 
 
 def _get_arguments(fn):
-    # type: (ast.FunctionDef) -> Tuple[List[str], List[str]]
+    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Tuple[List[str], List[str]]
     arguments = list()  # type: List[str]
     types = list()  # type: List[str]
 
@@ -50,6 +56,9 @@ def _get_arguments(fn):
             types.append(None)
 
     for arg in fn.args.args:
+        add_arg_by_name(arg.arg, arg)
+
+    for arg in fn.args.kwonlyargs:
         add_arg_by_name(arg.arg, arg)
 
     # Handle single-star arguments.
@@ -65,7 +74,7 @@ def _get_arguments(fn):
 
 
 def _walk(fun, skip):
-    # type: (ast.FunctionDef, Callable) -> Iterator[ast.AST]
+    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Callable) -> Iterator[ast.AST]
     """Walk through the nodes in this function, skipping as necessary.
 
     ast.walk goes through nodes in an arbitrary order, and doesn't
@@ -96,7 +105,7 @@ def _walk(fun, skip):
 
 
 def _has_return(fun):
-    # type: (ast.FunctionDef) -> bool
+    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> bool
     """Return true if the function has a fruitful return.
 
     Args:
@@ -107,7 +116,7 @@ def _has_return(fun):
 
     """
     def skip(f):
-        return f != fun and isinstance(f, ast.FunctionDef)
+        return f != fun and isinstance(f, FunctionDef)
 
     for node in _walk(fun, skip):
         if isinstance(node, ast.Return) and node.value is not None:
@@ -115,7 +124,7 @@ def _has_return(fun):
     return False
 
 
-def _has_yield(fun):  # type: (ast.FunctionDef) -> bool
+def _has_yield(fun):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> bool
     for node in ast.walk(fun):
         if isinstance(node, ast.Yield) or isinstance(node, ast.YieldFrom):
             return True
@@ -126,9 +135,9 @@ def _get_docstring(fun):  # type: (ast.AST) -> str
     return ast.get_docstring(fun)
 
 
-def _get_all_functions(tree):  # type: (ast.AST) -> Iterator[ast.FunctionDef]
+def _get_all_functions(tree):  # type: (ast.AST) -> Iterator[Union[ast.FunctionDef, ast.AsyncFunctionDef]]
     for node in ast.walk(tree):
-        if isinstance(node, ast.FunctionDef):
+        if isinstance(node, FunctionDef):
             yield node
 
 
@@ -138,13 +147,13 @@ def _get_all_classes(tree):  # type: (ast.AST) -> Iterator[ast.ClassDef]
             yield node
 
 
-def _get_all_methods(tree):  # type: (ast.AST) -> Iterator[ast.FunctionDef]
+def _get_all_methods(tree):  # type: (ast.AST) -> Iterator[Union[ast.FunctionDef, ast.AsyncFunctionDef]]
     for klass in _get_all_classes(tree):
         for fun in _get_all_functions(klass):
             yield fun
 
 
-def _get_decorator_names(fun):  # type: (ast.FunctionDef) -> List[str]
+def _get_decorator_names(fun):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> List[str]
     """Get decorator names from the function.
 
     Args:
@@ -163,16 +172,16 @@ def _get_decorator_names(fun):  # type: (ast.FunctionDef) -> List[str]
     return ret
 
 
-def _is_classmethod(fun):  # type: (ast.FunctionDef) -> bool
+def _is_classmethod(fun):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> bool
     return 'classmethod' in _get_decorator_names(fun)
 
 
-def _is_staticmethod(fun):  # type: (ast.FunctionDef) -> bool
+def _is_staticmethod(fun):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> bool
     return 'staticmethod' in _get_decorator_names(fun)
 
 
 def _get_stripped_method_args(method):
-    # type: (ast.FunctionDef) -> Tuple[List[str], List[str]]
+    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Tuple[List[str], List[str]]
     args, types = _get_arguments(method)
     if 'cls' in args and _is_classmethod(method):
         args.remove('cls')
@@ -184,7 +193,7 @@ def _get_stripped_method_args(method):
 
 
 def _get_all_raises(fn):
-    # type: (ast.FunctionDef) -> Iterator[ast.Raise]
+    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Iterator[ast.Raise]
     for node in ast.walk(fn):
         if isinstance(node, ast.Raise):
             yield node
@@ -201,7 +210,7 @@ def _get_exception_name(raises):  # type: (ast.Raise) -> str
         else:
             logger.error(
                 'Raises function call has neither id nor attr.'
-                'has only: %s' % str(dir(raises.ecx.func))
+                'has only: %s' % str(dir(raises.exc.func))
             )
     else:
         raise Exception('Unexpected type in raises expression: {}'.format(
@@ -210,7 +219,7 @@ def _get_exception_name(raises):  # type: (ast.Raise) -> str
     return ''
 
 
-def _get_exceptions_raised(fn):  # type: (ast.FunctionDef) -> Set[str]
+def _get_exceptions_raised(fn):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Set[str]
     ret = set()  # type: Set[str]
     for raises in _get_all_raises(fn):
         # TODO: Handle this?
@@ -222,14 +231,14 @@ def _get_exceptions_raised(fn):  # type: (ast.FunctionDef) -> Set[str]
 
 
 def _get_return_type(fn):
-    # type: (ast.FunctionDef) -> Optional[str]
+    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Optional[str]
     if fn.returns is not None and hasattr(fn.returns, 'id'):
         return fn.returns.id
     return None
 
 
 def _get_all_variable_names(fn):
-    # type: (ast.FunctionDef) -> Iterator[str]
+    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Iterator[str]
     """Get all variable names used in the function.
 
     Args:
@@ -245,7 +254,7 @@ def _get_all_variable_names(fn):
 
 
 def get_line_number_from_function(fn):
-    # type: (ast.FunctionDef) -> int
+    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> int
     """Get the line number for the end of the function signature.
 
     The function signature can be farther down when the parameter
@@ -276,7 +285,7 @@ class FunctionDescription(object):
     """
 
     def __init__(self, is_method, function):
-        # type: (bool, ast.FunctionDef) -> None
+        # type: (bool, Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> None
         """Create a new FunctionDescription.
 
         Args:

@@ -2,6 +2,11 @@
 import ast
 
 
+FunctionDef = ast.FunctionDef
+if hasattr(ast, 'AsyncFunctionDef'):
+    FunctionDef = (ast.FunctionDef, ast.AsyncFunctionDef)
+
+
 def publish_msgstr(app, source, source_path, source_line, config, settings):
     # From https://github.com/sphinx-doc/sphinx
     # File: sphinx/transforms/il8n.py
@@ -251,5 +256,5 @@ def docstrings():
         data = fin.read()
     this_script = ast.parse(data)
     functions = [x for x in this_script.body
-                 if isinstance(x, ast.FunctionDef)]
+                 if isinstance(x, FunctionDef)]
     return list(map(ast.get_docstring, functions))

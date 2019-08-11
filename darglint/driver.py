@@ -1,6 +1,7 @@
 """Defines the command line interface for darglint."""
 import argparse
 import ast
+import pathlib
 import sys
 
 from .function_description import (
@@ -8,9 +9,10 @@ from .function_description import (
     get_function_descriptions,
 )
 from .integrity_checker import IntegrityChecker
-from .config import (  # noqa
+from .config import (
     Configuration,
     get_config,
+    Strictness,
 )
 from .docstring.base import DocstringStyle
 
@@ -91,6 +93,22 @@ parser.add_argument(
         'The docstring style used in the given project. Currently, '
         'only google or sphinx styles are supported.'
     )
+)
+parser.add_argument(
+    '-z',
+    '--strictness',
+    default=None,
+    choices=[
+        'short',
+        'long',
+        'full',
+    ],
+    help=(
+        'The minimum strictness when checking docstrings. '
+        '`short`, for example, will result in one-line '
+        'docstrings always being accepted.  Anything more than one line '
+        'would go through the full check.'
+    ),
 )
 
 # ---------------------- MAIN SCRIPT ---------------------------------
@@ -175,14 +193,33 @@ def main():
     if args.version:
         print_version()
 
+    # Expand directories.
+    files = []
+    for f in args.files:
+        p = pathlib.Path(f)
+        if not p.is_dir():
+            files.append(f)
+        # Convert back to strings to not require modifications of any
+        # subsequent code.
+        files.extend(str(i) for i in p.glob('**/*.py'))
+
     try:
         config = get_config()
+
         if args.docstring_style == 'sphinx':
             config.style = DocstringStyle.SPHINX
         elif args.docstring_style == 'google':
             config.style = DocstringStyle.GOOGLE
+
+        if args.strictness == 'short':
+            config.strictness = Strictness.SHORT_DESCRIPTION
+        elif args.strictness == 'long':
+            config.strictness = Strictness.LONG_DESCRIPTION
+        elif args.strictness == 'full':
+            config.strictness = Strictness.FULL_DESCRIPTION
+
         raise_errors_for_syntax = args.raise_syntax or False
-        for filename in args.files:
+        for filename in files:
             error_report = get_error_report(
                 filename,
                 args.verbosity,

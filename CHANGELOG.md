@@ -3,6 +3,70 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2019-08-11
+
+### Fixed
+
+- Incorrect configuration for flake8.  See Issue #35.
+
+- Incorrect check for strictness options *long* and *full*.  See Issue #37.
+
+Thanks to sobolevn for these fixes!
+
+## [0.6.0] - 2019-08-10
+
+### Added
+
+- Minimum strictness configuration option.  You can now specify a minimum
+  amount of strictness to have when checking docstrings.  Strictness does
+  not affect whether the docstring will be checked or not; it only changes
+  the amount of checking which is done.  For example, if your config file
+  looks like
+
+    [darglint]
+    strictness=short
+
+  Then the following would pass with no errors:
+
+    def double(x):
+        """Returns the number, multiplied by two."""
+        return x * 2
+
+  The following levels of strictness are available:
+
+  - short: One-line descriptions are acceptable;
+  anything more and the docstring will be fully checked.
+
+  - long: One-line descriptions and descriptions
+  without arguments/returns/yields/etc. sections will be
+  allowed.  Anything more, and the docstring will be fully
+  checked.
+
+  - full: (Default) Docstrings will be fully
+  checked.
+
+## [0.5.8] - 2019-08-06
+
+### Fixed
+
+- Syntax error when logging about unusual raises description.
+  (See Issue #34).
+
+## [0.5.7] - 2019-07-20
+
+### Fixed
+
+- Handle async function definitions.  Previously they were simply skipped.
+  Thanks to @zeebonk!
+
+## [0.5.6] - 2019-06-03
+
+### Fixed
+
+- Erroneous I203 was being raised for return type when one of the
+  type annotations was missing (it should only ever be raised when
+  both type signatures are present.)  Thanks to @asford!
+
 ## [0.5.5] - 2019-05-19
 
 ### Fixed

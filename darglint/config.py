@@ -1,6 +1,7 @@
 """This module reads the configuration file."""
 
 import configparser
+from enum import Enum
 import logging
 from logging import (  # noqa
     Logger,
@@ -29,21 +30,52 @@ POSSIBLE_CONFIG_FILENAMES = (
 )
 
 
+class Strictness(Enum):
+    """The minimum strictness with which to apply checks.
+
+    Strictness does not describe whether or not a check
+    should be applied. Rather, if a check is done, strictness
+    describes how intense/strict/deep the check should be.
+
+    Each level here describes what is required of the
+    docstring at the given level of strictness.  For example,
+    SHORT_DESCRIPTION describes the situation where one-liners are
+    allowed, and sections are not required.
+
+    If the docstring being checked contains more than the
+    allowed amount below, then it is assumed that everything
+    must be checked.
+
+    """
+
+    # Allow a single-line description.
+    SHORT_DESCRIPTION = 1
+
+    # Allow a single-line description followed by a long
+    # description, but no sections.
+    LONG_DESCRIPTION = 2
+
+    # Require everything.
+    FULL_DESCRIPTION = 3
+
+
 class Configuration(object):
 
-    def __init__(self, ignore, message_template, style):
-        # type: (List[str], Optional[str], DocstringStyle) -> None
+    def __init__(self, ignore, message_template, style, strictness):
+        # type: (List[str], Optional[str], DocstringStyle, Strictness) -> None
         """Initialize the configuration object.
 
         Args:
             ignore: A list of error codes to ignore.
             message_template: the template with which to format the errors.
             style: The style of docstring.
+            strictness: The minimum strictness to allow.
 
         """
         self.ignore = ignore
         self.message_template = message_template
         self.style = style
+        self.strictness = strictness
 
 
 def load_config_file(filename):  # type: (str) -> Configuration
@@ -64,6 +96,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
     ignore = list()
     message_template = None
     style = DocstringStyle.GOOGLE
+    strictness = Strictness.FULL_DESCRIPTION
     if 'darglint' in config.sections():
         if 'ignore' in config['darglint']:
             errors = config['darglint']['ignore']
@@ -83,10 +116,24 @@ def load_config_file(filename):  # type: (str) -> Configuration
                         [x.name for x in DocstringStyle]
                     )
                 )
+        if 'strictness' in config['darglint']:
+            raw_strictness = config['darglint']['strictness'].lower().strip()
+            if raw_strictness in {'short_description', 'short'}:
+                strictness = Strictness.SHORT_DESCRIPTION
+            elif raw_strictness in {'long_description', 'long'}:
+                strictness = Strictness.LONG_DESCRIPTION
+            elif raw_strictness in {'full_description', 'full'}:
+                strictness = Strictness.FULL_DESCRIPTION
+            else:
+                raise Exception(
+                    'Unrecognized stricteness amount.  '
+                    'Should be one of {"short", "long", "full"}'
+                )
     return Configuration(
         ignore=ignore,
         message_template=message_template,
-        style=style
+        style=style,
+        strictness=strictness,
     )
 
 
@@ -167,7 +214,8 @@ def get_config():  # type: () -> Configuration
         return Configuration(
             ignore=list(),
             message_template=None,
-            style=DocstringStyle.GOOGLE
+            style=DocstringStyle.GOOGLE,
+            strictness=Strictness.FULL_DESCRIPTION,
         )
     return load_config_file(filename)
 

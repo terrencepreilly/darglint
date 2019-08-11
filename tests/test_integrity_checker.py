@@ -4,10 +4,19 @@ from unittest import (
     skip,
 )
 
-from darglint.config import Configuration
-from darglint.docstring.base import DocstringStyle
-from darglint.integrity_checker import IntegrityChecker
-from darglint.function_description import get_function_descriptions
+from darglint.config import (
+    Configuration,
+    Strictness,
+)
+from darglint.docstring.base import (
+    DocstringStyle,
+)
+from darglint.integrity_checker import (
+    IntegrityChecker,
+)
+from darglint.function_description import (
+    get_function_descriptions,
+)
 from darglint.errors import (
     ExcessParameterError,
     ExcessRaiseError,
@@ -30,7 +39,8 @@ class IntegrityCheckerSphinxTestCase(TestCase):
         self.config = Configuration(
             ignore=[],
             message_template=None,
-            style=DocstringStyle.SPHINX
+            style=DocstringStyle.SPHINX,
+            strictness=Strictness.FULL_DESCRIPTION,
         )
 
     def test_missing_parameter(self):
@@ -287,6 +297,40 @@ class IntegrityCheckerTestCase(TestCase):
         self.assertTrue(isinstance(error, ParameterTypeMismatchError))
         self.assertEqual(error.expected, 'int')
         self.assertEqual(error.actual, 'float')
+
+    def test_return_type_unchecked_if_not_defined_in_docstring(self):
+        program = '\n'.join([
+            'def foo() -> str:',
+            '    """Just a foobar.',
+            '',
+            '    Returns:',
+            '        bar',
+            '',
+            '    """',
+            '    return "bar"',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        self.assertEqual(len(checker.errors), 0)
+
+    def test_return_type_unchecked_if_not_defined_in_function(self):
+        program = '\n'.join([
+            'def foo():',
+            '    """Just a foobar.',
+            '',
+            '    Returns:',
+            '        str: bar',
+            '',
+            '    """',
+            '    return "bar"',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        self.assertEqual(len(checker.errors), 0)
 
     def test_return_type_checked_if_defined_in_docstring_and_function(self):
         program = '\n'.join([
@@ -602,3 +646,147 @@ class IntegrityCheckerTestCase(TestCase):
         ])
         for variant in ['# noqa: *', '# noqa: S001', '# noqa']:
             self.has_no_errors(program.format(variant))
+
+
+class StrictnessTests(TestCase):
+
+    def setUp(self):
+        self.short_google_config = Configuration(
+            ignore=[],
+            message_template=None,
+            style=DocstringStyle.GOOGLE,
+            strictness=Strictness.SHORT_DESCRIPTION,
+        )
+        self.long_google_config = Configuration(
+            ignore=[],
+            message_template=None,
+            style=DocstringStyle.GOOGLE,
+            strictness=Strictness.LONG_DESCRIPTION,
+        )
+        self.full_google_config = Configuration(
+            ignore=[],
+            message_template=None,
+            style=DocstringStyle.GOOGLE,
+            strictness=Strictness.FULL_DESCRIPTION,
+        )
+        self.short_sphinx_config = Configuration(
+            ignore=[],
+            message_template=None,
+            style=DocstringStyle.SPHINX,
+            strictness=Strictness.SHORT_DESCRIPTION,
+        )
+        self.long_sphinx_config = Configuration(
+            ignore=[],
+            message_template=None,
+            style=DocstringStyle.SPHINX,
+            strictness=Strictness.LONG_DESCRIPTION,
+        )
+        self.full_sphinx_config = Configuration(
+            ignore=[],
+            message_template=None,
+            style=DocstringStyle.SPHINX,
+            strictness=Strictness.FULL_DESCRIPTION,
+        )
+        self.short_docstring = 'Adds an item to the head of the list.'
+        self.long_docstring = '\n'.join([
+            'Adds an item to the head of the list',
+            '',
+            'Not very pythonic.',
+        ])
+        self.full_docstring = '\n'.join([
+            'Adds an item to the head of the list',
+            '',
+            'Not very pythonic, but oh well.',
+            '',
+            'Args:',
+            '    x: Definitely only the head is required.',
+        ])
+        self.full_docstring_sphinx = '\n'.join([
+            'Adds an item to the head of the list',
+            '',
+            'Not very pythonic, but oh well.',
+            '',
+            ':param x: Definitely only the head is required.',
+        ])
+
+    def get_function_with(self, docstring):
+        program = '\n'.join([
+            'def cons(x, l):',
+            '    """{}"""'.format(docstring),
+            '    return [x] + l',
+        ])
+        tree = ast.parse(program)
+        return get_function_descriptions(tree)[0]
+
+    def assertHasNoErrors(self, config, docstring):
+        checker = IntegrityChecker(config)
+        checker.run_checks(self.get_function_with(docstring))
+        errors = checker.errors
+        self.assertEqual(
+            len(errors),
+            0,
+            [(x.message()) for x in errors]
+        )
+
+    def assertHasErrors(self, config, docstring):
+        checker = IntegrityChecker(config)
+        checker.run_checks(self.get_function_with(docstring))
+        errors = checker.errors
+        self.assertTrue(
+            len(errors) > 0
+        )
+
+    def test_short_google_strictness(self):
+        self.assertHasNoErrors(self.short_google_config, self.short_docstring)
+
+    def test_long_google_strictness(self):
+        for doc in [
+            self.short_docstring,
+            self.long_docstring,
+        ]:
+            self.assertHasNoErrors(self.long_google_config, doc)
+
+    def test_not_google_short_description(self):
+        for doc in [
+            self.long_docstring,
+            self.full_docstring,
+        ]:
+            self.assertHasErrors(self.short_google_config, doc)
+
+    def test_not_google_long_description(self):
+        self.assertHasErrors(self.long_google_config, self.full_docstring)
+
+    def test_google_full_description(self):
+        for doc in [
+            self.short_docstring,
+            self.long_docstring,
+            self.full_docstring,
+        ]:
+            self.assertHasErrors(self.full_google_config, doc)
+
+    def test_short_sphinx(self):
+        self.assertHasNoErrors(self.short_sphinx_config, self.short_docstring)
+        for doc in [
+            self.long_docstring,
+            self.full_docstring_sphinx,
+        ]:
+            self.assertHasErrors(self.short_sphinx_config, doc)
+
+    def test_long_sphinx(self):
+        for doc in [
+            self.short_docstring,
+            self.long_docstring,
+        ]:
+            self.assertHasNoErrors(self.long_sphinx_config, doc)
+        self.assertHasErrors(
+            self.long_sphinx_config,
+            self.full_docstring_sphinx,
+        )
+
+    def test_full_sphinx(self):
+        for doc in [
+            self.short_docstring,
+            self.long_docstring,
+            self.full_docstring_sphinx,
+        ]:
+            self.assertHasErrors(self.full_sphinx_config, doc)
