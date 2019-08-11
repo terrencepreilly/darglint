@@ -120,9 +120,9 @@ def load_config_file(filename):  # type: (str) -> Configuration
             raw_strictness = config['darglint']['strictness'].lower().strip()
             if raw_strictness in {'short_description', 'short'}:
                 strictness = Strictness.SHORT_DESCRIPTION
-            elif raw_strictness == {'long_description', 'long'}:
+            elif raw_strictness in {'long_description', 'long'}:
                 strictness = Strictness.LONG_DESCRIPTION
-            elif raw_strictness == {'full_description', 'full'}:
+            elif raw_strictness in {'full_description', 'full'}:
                 strictness = Strictness.FULL_DESCRIPTION
             else:
                 raise Exception(
