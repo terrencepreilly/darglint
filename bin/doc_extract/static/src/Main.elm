@@ -2,6 +2,7 @@ module Main exposing ( main )
 
 import Array
 import Browser
+import Browser.Events as Events
 import Dict exposing ( Dict )
 import File exposing ( File )
 import File.Download as Download
@@ -34,17 +35,19 @@ type Metadata =
         (List String)
         (List String)
         (List String)
+        (List String)
 
 type MetadataType
     = Arguments
     | Raises
     | Variables
     | Sections
+    | Noqas
 
 getMetadata : MetadataType -> Metadata -> List String
 getMetadata metadatatype =
     let
-        getter (Metadata args raises variables sections) =
+        getter (Metadata args raises variables sections noqas) =
             case metadatatype of
                 Arguments ->
                     args
@@ -54,21 +57,25 @@ getMetadata metadatatype =
                     variables
                 Sections ->
                     sections
+                Noqas ->
+                    noqas
     in
         getter
 
 
 setMetadata : MetadataType -> Metadata -> List String -> Metadata
-setMetadata metadatatype (Metadata args raises variables sections) section =
+setMetadata metadatatype (Metadata args raises variables sections noqas) section =
     case metadatatype of
         Arguments ->
-            Metadata section raises variables sections
+            Metadata section raises variables sections noqas
         Raises ->
-            Metadata args section variables sections
+            Metadata args section variables sections noqas
         Variables ->
-            Metadata args raises section sections
+            Metadata args raises section sections noqas
         Sections ->
-            Metadata args raises variables section
+            Metadata args raises variables section noqas
+        Noqas ->
+            Metadata args raises variables sections section
 
 
 type Docstring =
@@ -84,6 +91,7 @@ type alias Model =
     , error : Maybe String
     -- The target where we want to place items.
     , target : Maybe MetadataType
+    , customEntry : String
     }
 
 type alias Flags =
@@ -91,7 +99,7 @@ type alias Flags =
 
 init : Flags -> ( Model, Cmd Msg )
 init flags =
-    ( Model Array.empty -1 Nothing Nothing
+    ( Model Array.empty -1 Nothing Nothing ""
     , Cmd.none
     )
 
@@ -122,6 +130,42 @@ removeMetadatum (Docstring repo filename doc metadata) metadataType index =
         Docstring repo filename doc newMetadata
 
 
+nextTarget : Model -> Model
+nextTarget model =
+    case model.target of
+        Nothing ->
+            model
+        Just target ->
+            case target of
+                Arguments ->
+                    { model | target = Just Raises }
+                Raises ->
+                    { model | target = Just Variables }
+                Variables ->
+                    { model | target = Just Sections }
+                Sections ->
+                    { model | target = Just Noqas }
+                Noqas ->
+                    model
+
+prevTarget : Model -> Model
+prevTarget model =
+    case model.target of
+        Nothing ->
+            model
+        Just target ->
+            case target of
+                Arguments ->
+                    model
+                Raises ->
+                    { model | target = Just Arguments }
+                Variables ->
+                    { model | target = Just Raises }
+                Sections ->
+                    { model | target = Just Variables }
+                Noqas ->
+                    { model | target = Just Sections }
+
 -- DECODERS
 
 filenameDecoder : Decode.Decoder Filename
@@ -141,11 +185,12 @@ decodeMetadata =
     let
         sectionDecoder = Decode.list Decode.string
     in
-    Decode.map4 Metadata
+    Decode.map5 Metadata
         (Decode.field "arguments" sectionDecoder)
         (Decode.field "raises" sectionDecoder)
         (Decode.field "variables" sectionDecoder)
         (Decode.field "sections" sectionDecoder)
+        (Decode.field "noqas" sectionDecoder)
 
 docstringDecoder : Decode.Decoder Docstring
 docstringDecoder =
@@ -187,12 +232,13 @@ docstringEncoder (Docstring
         sectionEncoder =
             Encode.list Encode.string
 
-        metadataEncoder (Metadata args raises variables sections) =
+        metadataEncoder (Metadata args raises variables sections noqas) =
             Encode.object
                 [ ("arguments", sectionEncoder args)
                 , ("raises", sectionEncoder raises)
                 , ("variables", sectionEncoder variables)
                 , ("sections", sectionEncoder sections)
+                , ("noqas", sectionEncoder noqas)
                 ]
     in
     Encode.object
@@ -214,9 +260,12 @@ type Msg
     -- Actions related to docstrings
     | Delete
     | SetTarget MetadataType
-    | AddToTarget String
+    | AddToTarget String Bool
     | RemoveFromTarget MetadataType Int
     | Noop
+    | UpdateCustomEntry String
+    | AddCustomEntry
+    | KeyChanged String
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -287,7 +336,7 @@ update msg model =
             )
         SetTarget metadataType ->
             ( { model | target = Just metadataType }, Cmd.none )
-        AddToTarget value ->
+        AddToTarget value clean ->
             case model.target of
                 Nothing ->
                     ( model, Cmd.none )
@@ -302,11 +351,17 @@ update msg model =
                                         oldItems =
                                             getMetadata section oldMetadata
 
+                                        newValue =
+                                            if clean then
+                                                removePunctuation value
+                                            else
+                                                value
+
                                         newItems =
-                                            (removePunctuation value) :: oldItems
+                                            newValue :: oldItems
 
                                         newMetadata =
-                                            setMetadata section oldMetadata newItems 
+                                            setMetadata section oldMetadata newItems
 
                                         newDocstrings =
                                             Array.set
@@ -336,6 +391,48 @@ update msg model =
         Noop ->
             ( model, Cmd.none )
 
+        UpdateCustomEntry value ->
+            ( { model | customEntry = value }, Cmd.none )
+
+        AddCustomEntry ->
+            let
+                addTask =
+                    Task.perform
+                         (\_ -> AddToTarget model.customEntry False)
+                         <| Task.succeed ""
+            in
+            ( { model | customEntry = "" }
+            , addTask
+            )
+        KeyChanged key ->
+            case key of
+                "ArrowRight" ->
+                    let
+                        currSize =
+                            Array.length model.docstrings
+
+                        newSelected =
+                            if 1 + model.selected > (currSize - 1) then
+                                model.selected
+                            else
+                                model.selected + 1
+                    in
+                    ( { model | selected = newSelected }, Cmd.none )
+                "ArrowLeft" ->
+                    let
+                        newSelected =
+                            if model.selected - 1 < 0 then
+                                0
+                            else
+                                model.selected - 1
+                    in
+                    ( { model | selected = newSelected }, Cmd.none )
+                "ArrowDown" ->
+                    ( nextTarget model, Cmd.none )
+                "ArrowUp" ->
+                    ( prevTarget model, Cmd.none )
+                _ ->
+                    ( model, Cmd.none )
 
 -- VIEW
 
@@ -388,7 +485,7 @@ docstringView model (Docstring
             else
                 span
                     [ class "word"
-                    , onClick <| AddToTarget x
+                    , onClick <| AddToTarget x True
                     ]
                     [ text x ]
 
@@ -419,6 +516,7 @@ metadataView metadata target =
                 Raises -> "Raises"
                 Variables -> "Variables"
                 Sections -> "Sections"
+                Noqas -> "Noqas"
 
         dropBox section =
             let
@@ -455,6 +553,7 @@ metadataView metadata target =
         , dropBox Raises
         , dropBox Variables
         , dropBox Sections
+        , dropBox Noqas
         ]
 
 editView : Model -> Html Msg
@@ -476,10 +575,45 @@ editView model =
         disablePrevPage =
             currentPage <= 0
 
+        disableCustomEntry =
+            model.target == Nothing
+
         actionsPane =
             div
                 [ class "actions" ]
-                [ button
+                [ div
+                    []
+                    [ input
+                        [ type_ "text"
+                        , id "custom-entry"
+                        , disabled disableCustomEntry
+                        , onInput <| UpdateCustomEntry
+                        , value model.customEntry
+                        ]
+                        []
+                    , button
+                        [ class "custom-entry-ok"
+                        , disabled disableCustomEntry
+                        , onClick AddCustomEntry
+                        ]
+                        [ text "✓" ]
+                    ]
+                , div
+                    [ onClick <| AddToTarget "short-description" False
+                    , class "default-entry"
+                    ]
+                    [ text "short-description" ]
+                , div
+                    [ onClick <| AddToTarget "long-description" False
+                    , class "default-entry"
+                    ]
+                    [ text "long-description" ]
+                , div
+                    [ onClick <| AddToTarget "*" False
+                    , class "default-entry"
+                    ]
+                    [ text "*" ]
+                , button
                     [ class "delete"
                     , onClick Delete ]
                     [ text "X"
@@ -547,7 +681,9 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.none
+    Events.onKeyUp <|
+        Decode.map KeyChanged <|
+            Decode.field "key" Decode.string
 
 
 -- Parser

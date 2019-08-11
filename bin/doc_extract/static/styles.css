@@ -1,6 +1,6 @@
 .main-content {
     width: 800px;
-    height: 500px;
+    height: 550px;
 
     display: flex;
     flex-direction: column;
@@ -9,10 +9,12 @@
 .actions {
     display: flex;
     flex-direction: row;
+    justify-content: space-between;
 }
 
-.actions .delete {
-    margin-left: auto;
+.actions .default-entry {
+    cursor: pointer;
+    margin-top: auto;
 }
 
 .docstring-container {
