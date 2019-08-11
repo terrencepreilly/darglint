@@ -127,9 +127,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
             else:
                 raise Exception(
                     'Unrecognized stricteness amount.  '
-                    'Should be one of {}'.format(
-                        [x.name for x in Strictness]
-                    )
+                    'Should be one of {"short", "long", "full"}'
                 )
     return Configuration(
         ignore=ignore,
@@ -217,7 +215,7 @@ def get_config():  # type: () -> Configuration
             ignore=list(),
             message_template=None,
             style=DocstringStyle.GOOGLE,
-            strictness=Strictness.SHORT_DESCRIPTION,
+            strictness=Strictness.FULL_DESCRIPTION,
         )
     return load_config_file(filename)
 

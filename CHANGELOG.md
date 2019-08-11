@@ -3,6 +3,16 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2019-08-11
+
+### Fixed
+
+- Incorrect configuration for flake8.  See Issue #35.
+
+- Incorrect check for strictness options *long* and *full*.  See Issue #37.
+
+Thanks to sobolevn for these fixes!
+
 ## [0.6.0] - 2019-08-10
 
 ### Added
