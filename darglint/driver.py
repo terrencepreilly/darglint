@@ -172,7 +172,7 @@ def print_error_list():
 
 
 def print_version():
-    print('0.6.0')
+    print('0.6.1')
 
 
 def main():
