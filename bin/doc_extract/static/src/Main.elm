@@ -12,6 +12,7 @@ import Html.Events exposing ( onClick, onInput )
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Task
+import Set
 
 
 main = Browser.document
@@ -302,7 +303,7 @@ update msg model =
                                             getMetadata section oldMetadata
 
                                         newItems =
-                                            value :: oldItems
+                                            (removePunctuation value) :: oldItems
 
                                         newMetadata =
                                             setMetadata section oldMetadata newItems 
@@ -572,3 +573,34 @@ parseDocstring docstring =
     in
         List.map separate
         <| String.lines docstring
+
+
+{-| Removes all disallowed punctuation from a word.
+
+This is not very discriminatory, simply takes all allowed
+identifier components, and lets them through.  So, if it's
+actually two words separated by punctuation, it will still
+look like one word.
+
+-}
+removePunctuation : String -> String
+removePunctuation word =
+    let
+        allowed =
+            Set.fromList
+            <| String.toList
+            <| "abcdefghijklmnopqrstuvwxyz"
+            ++ "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            ++ "0123456789"
+            ++ "_"
+
+        isAllowed x =
+            Set.member
+                x
+                allowed
+
+        (trimmedWord, _) =
+            List.partition isAllowed
+            <| String.toList word
+    in
+        String.fromList trimmedWord
