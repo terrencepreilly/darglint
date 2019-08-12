@@ -8,8 +8,8 @@ import File exposing ( File )
 import File.Download as Download
 import File.Select as Select
 import Html exposing ( Html, div, text, button, input, label, pre, span, p )
-import Html.Attributes exposing ( class, type_, for, id, disabled, value )
-import Html.Events exposing ( onClick, onInput )
+import Html.Attributes exposing ( class, type_, for, id, disabled, value, name, checked )
+import Html.Events exposing ( onClick, onInput, on )
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Task
@@ -28,6 +28,10 @@ main = Browser.document
 
 type Filename = Filename String
 type Repository = Repository String
+
+type DocstringType
+    = Google
+    | Sphinx
 
 type Metadata =
     Metadata
@@ -84,6 +88,7 @@ type Docstring =
         Filename
         (Maybe String)
         Metadata
+        DocstringType
 
 type alias Model =
     { docstrings : Array.Array Docstring
@@ -105,7 +110,9 @@ init flags =
 
 
 removeMetadatum : Docstring -> MetadataType -> Int -> Docstring
-removeMetadatum (Docstring repo filename doc metadata) metadataType index =
+removeMetadatum (Docstring repo filename doc metadata docstringType)
+                metadataType
+                index =
     let
         oldMetadataList =
             getMetadata metadataType metadata
@@ -127,7 +134,7 @@ removeMetadatum (Docstring repo filename doc metadata) metadataType index =
         newMetadata =
             setMetadata metadataType metadata newMetadataList
     in
-        Docstring repo filename doc newMetadata
+        Docstring repo filename doc newMetadata docstringType
 
 
 nextTarget : Model -> Model
@@ -192,13 +199,26 @@ decodeMetadata =
         (Decode.field "sections" sectionDecoder)
         (Decode.field "noqas" sectionDecoder)
 
+docstringTypeDecoder : Decode.Decoder DocstringType
+docstringTypeDecoder =
+    let
+        stringToDocstringType s =
+            case s of
+                "SPHINX" ->
+                    Sphinx
+                _ ->
+                    Google
+    in
+        Decode.map stringToDocstringType Decode.string
+
 docstringDecoder : Decode.Decoder Docstring
 docstringDecoder =
-    Decode.map4 Docstring
+    Decode.map5 Docstring
         (Decode.field "repository" repositoryDecoder)
         (Decode.field "filename" filenameDecoder)
         (Decode.field "docstring" (Decode.maybe Decode.string))
         (Decode.field "metadata" decodeMetadata)
+        (Decode.field "type" docstringTypeDecoder)
 
 
 -- Decoders for the file and its contents.
@@ -220,7 +240,8 @@ docstringEncoder (Docstring
                     (Repository repo)
                     (Filename filename)
                     maybeDoc
-                    metadata) =
+                    metadata
+                    docstringType) =
     let
         docstring =
             case maybeDoc of
@@ -240,12 +261,20 @@ docstringEncoder (Docstring
                 , ("sections", sectionEncoder sections)
                 , ("noqas", sectionEncoder noqas)
                 ]
+
+        docstringTypeEncoder d =
+            case d of
+                Google ->
+                    Encode.string "GOOGLE"
+                Sphinx ->
+                    Encode.string "SPHINX"
     in
     Encode.object
         [ ( "repository", Encode.string repo )
         , ( "filename", Encode.string filename )
         , ( "docstring", docstring )
         , ( "metadata", metadataEncoder metadata )
+        , ( "type", docstringTypeEncoder docstringType )
         ]
 
 
@@ -266,6 +295,7 @@ type Msg
     | UpdateCustomEntry String
     | AddCustomEntry
     | KeyChanged String
+    | ToggleDocstringType
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -346,7 +376,7 @@ update msg model =
                             ( model, Cmd.none )
                         Just docstring ->
                             case docstring of
-                                Docstring a b c oldMetadata ->
+                                Docstring a b c oldMetadata e ->
                                     let
                                         oldItems =
                                             getMetadata section oldMetadata
@@ -366,8 +396,8 @@ update msg model =
                                         newDocstrings =
                                             Array.set
                                                 model.selected
-                                                (Docstring a b c newMetadata)
-                                                model.docstrings 
+                                                (Docstring a b c newMetadata e)
+                                                model.docstrings
                                     in
                                         ( { model | docstrings = newDocstrings }, Cmd.none )
         RemoveFromTarget metadataType index ->
@@ -433,6 +463,37 @@ update msg model =
                     ( prevTarget model, Cmd.none )
                 _ ->
                     ( model, Cmd.none )
+        ToggleDocstringType ->
+            case Array.get model.selected model.docstrings of
+                Nothing ->
+                    ( model, Cmd.none )
+                Just (Docstring
+                        repo
+                        filename
+                        doc
+                        metadata
+                        docstringType) ->
+                    let
+                        newDocstringType =
+                            case docstringType of
+                                Google -> Sphinx
+                                Sphinx -> Google
+
+                        newDocstring =
+                            Docstring
+                                repo
+                                filename
+                                doc
+                                metadata
+                                newDocstringType
+
+                        newDocstrings =
+                            Array.set
+                                model.selected
+                                newDocstring
+                                model.docstrings
+                    in
+                    ( { model | docstrings = newDocstrings }, Cmd.none )
 
 -- VIEW
 
@@ -472,12 +533,54 @@ errorView model =
         Just error ->
             div [ class "errors" ] [ text error ]
 
+
+docstringTypeView : DocstringType -> Html Msg
+docstringTypeView docstringType =
+    let
+        onChange msg =
+          on "change" <| Decode.succeed msg
+    in
+    div
+        [ class "docstring-type"
+        ]
+        [ label
+            [ for "google-docstring-type"
+            ]
+            [ text "Google"
+            ]
+        , input
+            [ type_ "radio"
+            , id "google-docstring-type"
+            , name "docstring-type"
+            , value "Google"
+            , checked <| docstringType == Google
+            , onChange ToggleDocstringType
+            ]
+            []
+        , label
+            [ for "sphinx-docstring-type"
+            ]
+            [ text "Sphinx"
+            ]
+        , input
+            [ type_ "radio"
+            , id "sphinx-docstring-type"
+            , name "docstring-type"
+            , value "Sphinx"
+            , checked <| docstringType == Sphinx
+            , onChange ToggleDocstringType
+            ]
+            []
+        ]
+
+
 docstringView : Model -> Docstring -> Html Msg
 docstringView model (Docstring
                         (Repository repo)
                         (Filename filename)
                         maybeDocstring
-                        metadata) =
+                        metadata
+                        docstringType) =
     let
         wordView x =
             if String.isEmpty x then
@@ -503,7 +606,12 @@ docstringView model (Docstring
                     [ class "docstring" ]
                     <| List.map lineView
                     <| parseDocstring docstring
-                , metadataView metadata model.target
+                , div
+                    [ class "metadata-container"
+                    ]
+                    [ docstringTypeView docstringType
+                    , metadataView metadata model.target
+                    ]
                 ]
 
 

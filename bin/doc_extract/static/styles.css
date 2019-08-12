@@ -1,6 +1,6 @@
 .main-content {
     width: 800px;
-    height: 550px;
+    height: 580px;
 
     display: flex;
     flex-direction: column;
@@ -50,11 +50,14 @@
     display: inline-block;
 }
 
+.docstring-container .metadata-container {
+    margin: 20px 0 20px 20px;
+}
+
 .docstring-container .metadata {
     display: flex;
     flex-direction: column;
     justify-content: space-around;
-    margin: 20px;
 }
 
 .docstring-container .metadata .dropbox {
