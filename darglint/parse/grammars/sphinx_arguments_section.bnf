@@ -8,8 +8,10 @@ start: <arguments-section>
     ::= <ahead> <abody>
 
 <ahead>
-    ::= <colon> <arguments> <word> <colon>
-    | <colon> <arguments> <argument-type-section> <word> <colon>
+    ::= <colon> <arguments> <word> <colon> <newlines>
+    | <colon> <arguments> <newline> <block-indented> <newlines>
+    | <colon> <arguments> <argument-type-section> <word> <colon> <newlines>
+    | <colon> <arguments> <argument-type-section> <newline> <block-indented> <newlines>
 
 <argument-type-section>
     ::= <word>
