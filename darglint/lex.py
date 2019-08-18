@@ -135,14 +135,11 @@ def lex(program):
 
 KEYWORDS = {
     'Args': TokenType.ARGUMENTS,
-    # 'Arguments': NodeType.ARGUMENTS,
-    # 'Returns': NodeType.RETURNS,
+    'Arguments': TokenType.ARGUMENTS,
     'Yields': TokenType.YIELDS,
     'Raises': TokenType.RAISES,
     'Returns': TokenType.RETURNS,
     'noqa': TokenType.NOQA,
-
-    # Separate these somehow by the flag.
     'param': TokenType.ARGUMENTS,
     'parameter': TokenType.ARGUMENTS,
     'arg': TokenType.ARGUMENTS,

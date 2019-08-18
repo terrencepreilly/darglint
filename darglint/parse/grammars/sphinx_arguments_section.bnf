@@ -17,5 +17,5 @@ start: <arguments-section>
     ::= <word>
 
 <abody>
-    ::= <line>
-    | <line> <newline> <block-indented>
+    ::= <line> <newlines>
+    | <line> <newline> <block-indented> <newlines>

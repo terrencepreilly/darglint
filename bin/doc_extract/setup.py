@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="doc_extract",
-    version="0.0.0",
+    version="0.0.1",
     author="Terrence Reilly",
     author_email="terrencepreilly@gmail.com",
     description=("A utility for extracting docstrings from git projects."),

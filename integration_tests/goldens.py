@@ -9,8 +9,9 @@ be identified using the current implementation.
 
 import json
 import sys
-from unittest import (
+from unittest import ( # noqa
     TestCase,
+    skip,
 )
 from darglint.docstring.docstring import (
     Docstring,
@@ -18,16 +19,6 @@ from darglint.docstring.docstring import (
 from darglint.docstring.base import (
     Sections,
 )
-
-# class Sections(enum.Enum):
-#     SHORT_DESCRIPTION = 0
-#     LONG_DESCRIPTION = 1
-#     ARGUMENTS_SECTION = 2
-#     RAISES_SECTION = 4
-#     YIELDS_SECTION = 6
-#     RETURNS_SECTION = 8
-#     VARIABLES_SECTION = 10
-#     NOQAS = 13
 
 SECTION_MAP = {
     'args': Sections.ARGUMENTS_SECTION,
@@ -46,6 +37,7 @@ SECTION_MAP = {
     'yield': Sections.YIELDS_SECTION,
     'yields': Sections.YIELDS_SECTION,
     'yields-section': Sections.YIELDS_SECTION,
+    'param': Sections.ARGUMENTS_SECTION,
 }
 
 
@@ -60,6 +52,10 @@ class Goldens(TestCase):
             docstring = Docstring.from_google(golden['docstring'])
         elif golden['type'] == 'SPHINX':
             docstring = Docstring.from_sphinx(golden['docstring'])
+        else:
+            raise Exception('Unsupported docstring type {}'.format(
+                golden['type']
+            ))
         return docstring, golden['metadata']
 
     def normalize_section(self, section):
@@ -92,6 +88,6 @@ class Goldens(TestCase):
             self.assertSectionsMatch(
                 docstring,
                 metadata,
-                'Index: {}'.format(i),
+                'Index: {}\nTree: {}'.format(i, docstring.root),
             )
             sys.stderr.write('.')
