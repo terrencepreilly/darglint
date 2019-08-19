@@ -21,6 +21,7 @@ would like a feature in *darglint*.
 - [Usage](#usage)
 - [Sphinx](#sphinx)
 - [Flake8](#flake8)
+- [Pre-commit](#Pre-commit)
 - [Roadmap](#roadmap)
 - [Contribution](#development-and-contributions)
 
@@ -341,6 +342,22 @@ Darglint will pull its configuration from any configuration file present.
 (So, if you would like to lint Sphinx-style comments, then you should have
 that setting enabled in a configuration file in the project directory.)
 
+## Pre-commit
+
+Download [pre-commit](https://pre-commit.com/) and
+[install](https://pre-commit.com/#install) it. Once it is installed, add this
+to `.pre-commit-config.yaml` in your repository:
+```yaml
+repos:
+-   repo: https://github.com/terrencepreilly/darglint
+    rev: master
+    hooks:
+    - id: darglint
+```
+Then run `pre-commit install` and you're ready to go. Before commiting,
+`darglint` will be run on the staged files. If it finds any errors, the user
+is notified and the commit is aborted. Store necessary configuration (such as
+error formatting) in `.darglint`, `config.cfg` or `tox.ini`.
 
 ## Roadmap
 The below list is the current roadmap for *darglint*.  For each
