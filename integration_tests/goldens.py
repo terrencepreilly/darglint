@@ -8,10 +8,8 @@ be identified using the current implementation.
 """
 
 import json
-import sys
 from unittest import ( # noqa
     TestCase,
-    skip,
 )
 from darglint.docstring.docstring import (
     Docstring,
@@ -82,6 +80,18 @@ class Goldens(TestCase):
                 )
             )
 
+    def assertArgumentsMatch(self, docstring, metadata, message=''):
+        expected_arguments = sorted(metadata['arguments'])
+        actual_arguments = sorted(
+            docstring.get_items(Sections.ARGUMENTS_SECTION)
+            or []
+        )
+        self.assertEqual(
+            expected_arguments,
+            actual_arguments,
+            message,
+        )
+
     def test_golden(self):
         for i, golden in enumerate(self.goldens):
             docstring, metadata = self.parse_golden(golden)
@@ -90,4 +100,8 @@ class Goldens(TestCase):
                 metadata,
                 'Index: {}\nTree: {}'.format(i, docstring.root),
             )
-            sys.stderr.write('.')
+            self.assertArgumentsMatch(
+                docstring,
+                metadata,
+                'Index: {}'.format(i),
+            )
