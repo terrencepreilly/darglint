@@ -92,6 +92,15 @@ class Goldens(TestCase):
             message,
         )
 
+    def assertNoqasMatch(self, docstring, metadata, message=''):
+        expected_noqas = sorted(metadata['noqas'])
+        actual_noqas = sorted(docstring.get_noqas().keys())
+        self.assertEqual(
+            expected_noqas,
+            actual_noqas,
+            message,
+        )
+
     def test_golden(self):
         for i, golden in enumerate(self.goldens):
             docstring, metadata = self.parse_golden(golden)
@@ -101,6 +110,11 @@ class Goldens(TestCase):
                 'Index: {}\nTree: {}'.format(i, docstring.root),
             )
             self.assertArgumentsMatch(
+                docstring,
+                metadata,
+                'Index: {}'.format(i),
+            )
+            self.assertNoqasMatch(
                 docstring,
                 metadata,
                 'Index: {}'.format(i),

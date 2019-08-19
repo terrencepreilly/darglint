@@ -158,7 +158,7 @@ class Docstring(BaseDocstring):
         return return_value.strip() or None
 
     def _get_argument_types(self):
-        # type: () ->  List[Optional[str]]
+        # type: () ->  Optional[List[Optional[str]]]
         """Get a list of types corresponding to arguments.
 
         Returns:
@@ -166,8 +166,8 @@ class Docstring(BaseDocstring):
 
         """
         lookup = self._get_compound_item_type_lookup('arguments-section')
-        if lookup is None:
-            return []
+        if not lookup:
+            return None
 
         names_and_types = sorted(lookup.items())
         return [x[1] for x in names_and_types]

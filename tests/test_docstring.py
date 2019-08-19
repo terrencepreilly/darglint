@@ -36,24 +36,24 @@ class DocstringBaseMethodTests(TestCase):
         #         '',
         #     ])
         # ),
-        # (
-        #     '\n'.join([
-        #         'A docstring with noqas in it.',
-        #         '',
-        #         '# noqa: I203',
-        #         '',
-        #         '# noqa',
-        #         '',
-        #     ]),
-        #     '\n'.join([
-        #         'A docstring with noqas in it.',
-        #         '',
-        #         '# noqa: I203',
-        #         '',
-        #         '# noqa',
-        #         '',
-        #     ])
-        # ),
+        (
+            '\n'.join([
+                'A docstring with noqas in it.',
+                '',
+                '# noqa: I203',
+                '',
+                '# noqa',
+                '',
+            ]),
+            '\n'.join([
+                'A docstring with noqas in it.',
+                '',
+                '# noqa: I203',
+                '',
+                '# noqa',
+                '',
+            ])
+        ),
         (
             '\n'.join([
                 'A docstring with types in it.',

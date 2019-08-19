@@ -20,6 +20,7 @@ from ..parse.cyk import (
 )
 from ..parse.identifiers import (
     Identifier,
+    NoqaIdentifier,
 )
 from ..parse.sphinx import (
     parse,
@@ -236,7 +237,12 @@ class Docstring(BaseDocstring):
             the values.  A blank list implies a global noqa.
 
         """
-        return {}
+        noqas = dict()
+        for noqa in self._lookup[NoqaIdentifier.key]:
+            noqas[NoqaIdentifier.extract(noqa) or '*'] = (
+                NoqaIdentifier.extract_targets(noqa)
+            )
+        return noqas
 
     def get_line_numbers(self, node_type):
         # type: (str) -> Optional[Tuple[int, int]]
