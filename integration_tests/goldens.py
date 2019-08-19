@@ -101,6 +101,21 @@ class Goldens(TestCase):
             message,
         )
 
+    def assertVariablesMatch(self, docstring, metadata, message=''):
+        expected_variables = metadata['variables']
+        if expected_variables:
+            expected_variables = sorted(expected_variables)
+        else:
+            expected_variables = None
+
+        actual_variables = docstring.get_items(Sections.VARIABLES_SECTION)
+        if actual_variables:
+            actual_variables = sorted(actual_variables)
+        self.assertEqual(
+            expected_variables,
+            actual_variables,
+        )
+
     def test_golden(self):
         for i, golden in enumerate(self.goldens):
             docstring, metadata = self.parse_golden(golden)
@@ -119,3 +134,9 @@ class Goldens(TestCase):
                 metadata,
                 'Index: {}'.format(i),
             )
+            if self.goldens[i]['type'] == 'SPHINX':
+                self.assertVariablesMatch(
+                    docstring,
+                    metadata,
+                    'Index: {}'.format(i),
+                )
