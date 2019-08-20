@@ -197,7 +197,7 @@ def main():
     files = []
     for f in args.files:
         p = pathlib.Path(f)
-        if not p.is_dir():
+        if not p.is_dir() and p.suffix == '.py':
             files.append(f)
         # Convert back to strings to not require modifications of any
         # subsequent code.
