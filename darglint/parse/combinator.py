@@ -19,8 +19,10 @@ since our k is around 4 members, this constant divisor will
 actually impart a significant improvement, even though it doesn't
 change the order.
 
-Additionally, this will be a good location to add threading in
-the future.
+Upon inspection, threading did not significantly improve performance.
+The probem, it seems, is that some of the sections take much
+longer than others, and so threading does nothing to improve
+speed. (It actually made it worse.)
 
 """
 

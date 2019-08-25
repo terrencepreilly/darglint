@@ -287,7 +287,7 @@ def _record_historical(stats, filename='.performance_history'):
         ))
 
 
-if __name__ == '__main__':
+def _main():
     print('DARGLINT STATS', end=' ')
     print_version()
     stats = _read_from_cache()
@@ -297,3 +297,7 @@ if __name__ == '__main__':
         _write_to_cache(stats)
     _record_historical(stats)
     perf.report_stats(stats)
+
+
+if __name__ == '__main__':
+    _main()
