@@ -4,6 +4,9 @@
 from collections import (
     defaultdict,
 )
+from datetime import (
+    datetime,
+)
 import json
 import time
 from typing import (
@@ -273,6 +276,17 @@ class PerformanceRegressionTest(TestCase):
         _write_to_cache(stats)
 
 
+def _record_historical(stats, filename='.performance_history'):
+    # We don't bother with checking if it's unique or not, since
+    # we can just open it in vim and do a sort.
+    with open(filename, 'a') as fout:
+        fout.write('{}\t{}\t{}'.format(
+            datetime.fromtimestamp(stats.timestamp).isoformat(),
+            mean(stats.times),
+            stdev(stats.times),
+        ))
+
+
 if __name__ == '__main__':
     print('DARGLINT STATS', end=' ')
     print_version()
@@ -281,4 +295,5 @@ if __name__ == '__main__':
     if not stats or stats.is_stale():
         stats = perf.test_golden_performance()
         _write_to_cache(stats)
+    _record_historical(stats)
     perf.report_stats(stats)
