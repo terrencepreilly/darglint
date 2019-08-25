@@ -1,18 +1,22 @@
 """A utility for measuring performance characteristics for darglint.
 """
 
-import json
-import time
 from collections import (
     defaultdict,
 )
+import json
+import time
 from typing import (
     Any,
     Dict,
     List,
+    Optional,
     Tuple,
-    NamedTuple,
 )
+from unittest import (
+    TestCase,
+)
+
 from darglint.docstring.base import (
     BaseDocstring,
 )
@@ -30,15 +34,43 @@ from statistics import (
 
 Golden = Dict[str, Any]
 
-Stats = NamedTuple(
-    'Stats',
-    [
-        ('times', List[float]),
-        ('by_length', List[Tuple[int, float]]),
-        ('google', List[float]),
-        ('sphinx', List[float]),
-    ]
-)
+
+class Stats(object):
+
+    STALE_AGE_MINS = 30
+
+    def __init__(self, times, by_length, google, sphinx, timestamp=None):
+        # type: (List[float], List[Tuple[int, float]], List[float], List[float], int) -> None  # noqa: E501
+        self.times = times
+        self.by_length = by_length
+        self.google = google
+        self.sphinx = sphinx
+
+        if timestamp:
+            self.timestamp = timestamp
+        else:
+            self.timestamp = int(time.time())
+
+    def is_stale(self):
+        # type: () -> bool
+        current = int(time.time())
+        delta = self.timestamp - current
+        return (delta // 60) > self.STALE_AGE_MINS
+
+    @staticmethod
+    def decode(datum):
+        # type: (Dict[str, Any]) -> Stats
+        datum['by_length'] = [(x, y) for x, y in datum['by_length']]
+        return Stats(**datum)
+
+    def encode(self):
+        return {
+            'times': self.times,
+            'by_length': [[x, y] for x, y in self.by_length],
+            'google': self.google,
+            'sphinx': self.sphinx,
+            'timestamp': self.timestamp,
+        }
 
 
 class Performance(object):
@@ -166,6 +198,22 @@ class Performance(object):
         self.print_chart(stats)
 
 
+def _read_from_cache(filename='.performance_testrun'):
+    # type: (str) -> Optional[Stats]
+    try:
+        with open(filename, 'r') as fin:
+            data = json.load(fin)
+        return Stats.decode(data)
+    except Exception:
+        return None
+
+
+def _write_to_cache(data, filename='.performance_testrun'):
+    # type: (Stats, str) -> None
+    with open(filename, 'w') as fout:
+        json.dump(data.encode(), fout)
+
+
 def _cache(perf):
     """Pull stats results from the cache.
 
@@ -178,34 +226,59 @@ def _cache(perf):
         The cached (or calculated) statistics.
 
     """
-    def _encode(stats):
-        return {
-            'times': stats.times,
-            'by_length': [[x, y] for x, y in stats.by_length],
-            'google': stats.google,
-            'sphinx': stats.sphinx,
-        }
-
-    def _decode(datum):
-        datum['by_length'] = [(x, y) for x, y in datum['by_length']]
-        return Stats(**datum)
-
-    try:
-        with open('.integration_cache', 'r') as fin:
-            data = json.load(fin)
-        return _decode(data)
-    except Exception:
-        pass
+    prev = _read_from_cache()
+    if prev and not prev.is_stale():
+        return prev
     data = perf.test_golden_performance()
-    with open('.integration_cache', 'w') as fout:
-        json.dump(_encode(data), fout)
+    _write_to_cache(data)
     return data
+
+
+class PerformanceRegressionTest(TestCase):
+
+    def test_performance_not_worse_than_before(self):
+        prev_stats = _read_from_cache()
+        perf = Performance()
+        # Capture stats and test.
+        stats = perf.test_golden_performance()
+        if not prev_stats:
+            _write_to_cache(stats)
+            return
+        prev_mean = mean(prev_stats.times)
+        prev_stdev = stdev(prev_stats.times)
+        curr_mean = mean(stats.times)
+        delta = abs(prev_mean - curr_mean)
+
+        # We aren't exactly performing a rigorous statistical
+        # analysis here.  Really, we should do a proper difference
+        # of means.
+        self.assertTrue(
+            delta < prev_stdev * 2,
+            'Expected small variance in performance change, but '
+            'current mean, {}, is more than two standard deviations ({}) '
+            'from previous mean, {}'.format(
+                curr_mean,
+                prev_stdev,
+                prev_mean,
+            ),
+        )
+
+        # NOTE: Should we perform a difference of variance test?
+        # Is that very meaningful in this context?
+
+        # NOTE: Should we perform a test for difference of distributions?
+        # That would give us a hint whether we're in a different time
+        # complexity.
+
+        _write_to_cache(stats)
 
 
 if __name__ == '__main__':
     print('DARGLINT STATS', end=' ')
     print_version()
+    stats = _read_from_cache()
     perf = Performance()
-    # stats = _cache(perf)
-    stats = perf.test_golden_performance()
+    if not stats or stats.is_stale():
+        stats = perf.test_golden_performance()
+        _write_to_cache(stats)
     perf.report_stats(stats)

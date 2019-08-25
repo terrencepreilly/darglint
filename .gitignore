@@ -107,3 +107,4 @@ _data/
 .pytest_cache/
 
 integration_tests/goldens.json
+.performance_testrun
