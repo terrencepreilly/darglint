@@ -18,7 +18,7 @@ from .base import (  # noqa: F401
     DocstringStyle,
     Sections,
 )
-from ..parse.cyk import (
+from ..node import (
     CykNode,
 )
 from ..parse.google import (

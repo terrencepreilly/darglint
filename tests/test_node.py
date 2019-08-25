@@ -1,219 +1,49 @@
 """Tests for the parser Node class."""
+
+from random import (
+    randint,
+)
+from unittest import (
+    TestCase,
+)
+
 from darglint.node import (
-    Node,
-    NodeType,
-)
-from darglint.token import (
-    Token,
-    TokenType,
+    CykNode,
 )
 
-from unittest import TestCase
 
+class CykNodeTest(TestCase):
 
-class NodeTestCase(TestCase):
-    """Tests for Node."""
+    def build_binary_search_tree(self, root, value):
+        if value < root.value:
+            if not root.lchild:
+                root.lchild = CykNode(symbol='', value=value)
+            else:
+                self.build_binary_search_tree(root.lchild, value)
+        elif value > root.value:
+            if not root.rchild:
+                root.rchild = CykNode(symbol='', value=value)
+            else:
+                self.build_binary_search_tree(root.rchild, value)
+        else:
+            pass
 
-    def test_node_has_type_value_and_children(self):
-        Node(
-            node_type=NodeType.DOCSTRING,
-            children=[
-                Node(
-                    node_type=NodeType.SUMMARY,
-                    value='This is a docstring.',
-                ),
-            ]
-        )
+    def assertIsSorted(self, arr, reverse=False):
+        for i in range(len(arr) - 1):
+            if reverse:
+                self.assertTrue(
+                    arr[i] >= arr[i + 1],
+                    '{} is not sorted.'.format(arr),
+                )
+            else:
+                self.assertTrue(
+                    arr[i] <= arr[i + 1],
+                    '{} is not sorted.'.format(arr),
+                )
 
-    def test_supplying_tokens_sets_line_number(self):
-        """Make sure giving tokens will set the line numbers to the range."""
-        token = Token(value="a", token_type=TokenType.WORD, line_number=3)
-        node = Node(
-            value="a b c",
-            node_type=NodeType.LONG_DESCRIPTION,
-            token=token,
-        )
-        self.assertEqual(
-            node.line_numbers,
-            (3,3),
-            'The line numbers should be a tuple of the lowest and highest.'
-        )
-
-    def test_breadth_first_walk_no_leaves(self):
-        r"""Make sure we can do a breadth-first walk without traversing leaves.
-
-        Structure:
-                        Docstring
-                            |
-                         Summary
-                        /   |   \
-                   Return square root.
-
-        """
-        tree = Node(
-            node_type=NodeType.DOCSTRING,
-            children=[
-                Node(
-                    node_type=NodeType.SUMMARY,
-                    children=[
-                        Node(
-                            node_type=NodeType.WORD,
-                            value='Return',
-                        ),
-                        Node(
-                            node_type=NodeType.WORD,
-                            value='square',
-                        ),
-                        Node(
-                            node_type=NodeType.WORD,
-                            value='root.',
-                        )
-                    ]
-                ),
-            ]
-        )
-        traversal = list(tree.breadth_first_walk(leaves=False))
-        expected_types_and_values = [
-            (NodeType.DOCSTRING, None),
-            (NodeType.SUMMARY, None),
-        ]
-        self.assertEqual(
-            [(x.node_type, x.value) for x in traversal],
-            expected_types_and_values,
-        )
-
-    def test_breadth_first_walk(self):
-        """Make sure we can do a breadth-first walk.
-
-        This will be much easier for finding sections.
-
-        Structure:
-                        Docstring
-                         |     |
-                   Summary     Description
-                  /   |   |     |     |   |
-            Return square root. Fails for negatives.
-
-        """
-        tree = Node(
-            node_type=NodeType.DOCSTRING,
-            children=[
-                Node(
-                    node_type=NodeType.SUMMARY,
-                    children=[
-                        Node(
-                            node_type=NodeType.WORD,
-                            value='Return',
-                        ),
-                        Node(
-                            node_type=NodeType.WORD,
-                            value='square',
-                        ),
-                        Node(
-                            node_type=NodeType.WORD,
-                            value='root.',
-                        )
-                    ]
-                ),
-                Node(
-                    node_type=NodeType.DESCRIPTION,
-                    children=[
-                        Node(
-                            node_type=NodeType.WORD,
-                            value='Fails',
-                        ),
-                        Node(
-                            node_type=NodeType.WORD,
-                            value='for',
-                        ),
-                        Node(
-                            node_type=NodeType.WORD,
-                            value='negatives.',
-                        ),
-                    ],
-                ),
-            ]
-        )
-        traversal = list(tree.breadth_first_walk())
-        expected_types_and_values = [
-            (NodeType.DOCSTRING, None),
-            (NodeType.SUMMARY, None),
-            (NodeType.DESCRIPTION, None),
-            (NodeType.WORD, 'Return'),
-            (NodeType.WORD, 'square'),
-            (NodeType.WORD, 'root.'),
-            (NodeType.WORD, 'Fails'),
-            (NodeType.WORD, 'for'),
-            (NodeType.WORD, 'negatives.'),
-        ]
-        self.assertEqual(
-            [(x.node_type, x.value) for x in traversal],
-            expected_types_and_values,
-        )
-
-    def test_walk_tree_does_post_order_traversal(self):
-        """Make sure walking is done post-order.
-
-        Structure:
-                        Docstring
-                         |     |
-                   Summary     Description
-                  /   |   |     |     |   |
-            Return square root. Fails for negatives.
-
-        """
-        tree = Node(
-            node_type=NodeType.DOCSTRING,
-            children=[
-                Node(
-                    node_type=NodeType.SUMMARY,
-                    children=[
-                        Node(
-                            node_type=NodeType.WORD,
-                            value='Return',
-                        ),
-                        Node(
-                            node_type=NodeType.WORD,
-                            value='square',
-                        ),
-                        Node(
-                            node_type=NodeType.WORD,
-                            value='root.',
-                        )
-                    ]
-                ),
-                Node(
-                    node_type=NodeType.DESCRIPTION,
-                    children=[
-                        Node(
-                            node_type=NodeType.WORD,
-                            value='Fails',
-                        ),
-                        Node(
-                            node_type=NodeType.WORD,
-                            value='for',
-                        ),
-                        Node(
-                            node_type=NodeType.WORD,
-                            value='negatives.',
-                        ),
-                    ],
-                ),
-            ]
-        )
-        traversal = list(tree.walk())
-        expected_types_and_values = [
-            (NodeType.WORD, 'Return'),
-            (NodeType.WORD, 'square'),
-            (NodeType.WORD, 'root.'),
-            (NodeType.SUMMARY, None),
-            (NodeType.WORD, 'Fails'),
-            (NodeType.WORD, 'for'),
-            (NodeType.WORD, 'negatives.'),
-            (NodeType.DESCRIPTION, None),
-            (NodeType.DOCSTRING, None),
-        ]
-        self.assertEqual(
-            [(x.node_type, x.value) for x in traversal],
-            expected_types_and_values,
-        )
+    def test_in_order_traversal(self):
+        node = CykNode(symbol='', value=randint(-100, 100))
+        for i in range(20):
+            self.build_binary_search_tree(node, randint(-100, 100))
+        values = [x.value for x in node.in_order_traverse()]
+        self.assertIsSorted(values)

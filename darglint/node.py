@@ -1,225 +1,317 @@
-"""Defines a node for the docstring AST."""
-
-from collections import deque
-
-from enum import Enum
-from typing import (  # noqa: F401
+from collections import (
+    deque,
+)
+from typing import (
     Any,
-    List,
     Iterator,
-    Tuple,
     Optional,
+    List,
+    Tuple,
+    Set,
 )
-from .token import (  # noqa: F401
+
+from .token import (
     Token,
+    TokenType,
 )
 
-
-class NodeType(Enum):
-    """The type of node in a docstring."""
-    # Non-Terminals
-    DOCSTRING = 0
-    SUMMARY = 1
-    DESCRIPTION = 2
-    SHORT_DESCRIPTION = 26
-    TYPE = 10
-    LINE = 11
-    SECTION_HEAD = 13
-    SECTION_SIMPLE_BODY = 14
-    SECTION_COMPOUND_BODY = 15
-    SECTION = 16
-    ITEM_NAME = 17
-    ITEM_DEFINITION = 18
-    ITEM = 19
-    ARGS_SECTION = 22
-    RAISES_SECTION = 23
-    RETURNS_SECTION = 24
-    YIELDS_SECTION = 25
-    LONG_DESCRIPTION = 27
-    NOQA = 28
-    LIST = 29
-    NOQA_HEAD = 30
-    NOQA_BODY = 31
-    VARIABLES_SECTION = 34
-
-    # Terminals
-    KEYWORD = 3
-    WORD = 4
-    COLON = 5
-    RETURNS = 6
-    ARGUMENTS = 7
-    YIELDS = 8
-    RAISES = 9
-    INDENT = 12
-    LPAREN = 20
-    RPAREN = 21
-    HASH = 32
-    VARIABLES = 33
+WHITESPACE = {TokenType.INDENT, TokenType.NEWLINE}
 
 
-class Node(object):
-    """A node in a docstring AST."""
+# A best guess at the maximum height of a docstring tree,
+# for use in recursion bounds checking.
+MAX_TREE_HEIGHT = 300
 
-    def __init__(self, node_type, value=None, children=None, token=None):
-        # type: (NodeType, str, List[Node], Token) -> None
-        """Instantiate the new node.
 
-        If the node is terminal, it will get the line number from the
-        token.  If it is non-terminal, it will derive the line number(s)
-        from the children.
+class CykNode(object):
+    """A node for use in a cyk parse."""
 
-        Args:
-            node_type: The type of node.
-            value: The value of the node.  Should only be specified for
-                terminal nodes.
-            children: The children of this node. Should only be specified
-                for non-terminal nodes.
-            token: The token this node was made from.  Should only be
-                specified for terminal nodes.
-
-        """
-        self.node_type = node_type
+    def __init__(self,
+                 symbol,
+                 lchild=None,
+                 rchild=None,
+                 value=None,
+                 annotations=list(),
+                 weight=0):
+        # type: (str, Optional[CykNode], Optional[CykNode], Optional[Token], List[Any], int) -> None  # noqa: E501
+        self.symbol = symbol
+        self.lchild = lchild
+        self.rchild = rchild
         self.value = value
-        self.children = children or list()
-        self.line_numbers = None  # type: Optional[Tuple[int, int]]
-        if token:
-            self.line_numbers = (
-                token.line_number,
-                token.line_number
+        self.annotations = annotations
+        self._line_number_cache = None  # type: Optional[Tuple[int, int]]
+
+        # If there is an explicit weight, we definitely want to use
+        # that (there was probably a good reason it was given.)
+        #
+        # If no weight was given, but the children have weights, then
+        # we probably want to give preference to this node over a node
+        # which has no weights at all.
+        if weight:
+            self.weight = weight
+        else:
+            self.weight = max([
+                0,
+                self.lchild.weight if self.lchild else 0,
+                self.rchild.weight if self.rchild else 0,
+            ])
+
+    def __repr__(self):
+        if hasattr(self.value, 'token_type'):
+            return '<{}: {}>'.format(
+                self.symbol,
+                str(self.value.token_type)[10:] if self.value else '',
             )
-        elif children:
-            child_min_line_numbers = [
-                x.line_numbers[0] for x in children
-                if x.line_numbers
-            ]
-            child_max_line_numbers = [
-                x.line_numbers[1] for x in children
-                if x.line_numbers
-            ]
-            if child_min_line_numbers and child_max_line_numbers:
-                self.line_numbers = (
-                    min(child_min_line_numbers),
-                    max(child_max_line_numbers),
-                )
+        return '<{}>'.format(self.value)
 
-    @property
-    def is_keyword(self):
-        return self.node_type in {
-            NodeType.KEYWORD,
-            NodeType.RETURNS,
-            NodeType.ARGUMENTS,
-            NodeType.YIELDS,
-            NodeType.RAISES,
-        }
+    def __str__(self, indent=0):
+        if self.value:
+            ret = (
+                ' ' * indent
+                + str(self.value.token_type)
+                + ': '
+                + repr(self.value.value)
+            )
+        else:
+            ret = ' ' * indent + self.symbol
+        if self.annotations:
+            ret += ': ' + ', '.join([str(x) for x in self.annotations])
+        if self.lchild:
+            ret += '\n' + self.lchild.__str__(indent + 2)
+        if self.rchild:
+            ret += '\n' + self.rchild.__str__(indent + 2)
+        return ret
 
-    @property
-    def is_leaf(self):
-        """Tell whether this node is a leaf.
-
-        Returns:
-            True if this node is a leaf.
-
-        """
-        return self.node_type in {
-            NodeType.KEYWORD,
-            NodeType.WORD,
-            NodeType.COLON,
-            NodeType.RETURNS,
-            NodeType.ARGUMENTS,
-            NodeType.YIELDS,
-            NodeType.RAISES,
-            NodeType.INDENT,
-            NodeType.LPAREN,
-            NodeType.RPAREN,
-            NodeType.HASH,
-        }
-
-    def first_instance(self, node_type):
-        # type: (NodeType) -> Optional[Node]
-        for child in self.breadth_first_walk():
-            if child.node_type == node_type:
-                return child
-        return None
-
-    def walk(self):
-        # type: () -> Iterator[Node]
-        """Iterate over nodes in the tree rooted at this node.
-
-        Recursion isn't too horrible here, as the syntax tree
-        in this case never gets very deep.  Does a post-order
-        traversal of the tree.
-
-        Yields:
-            Nodes in the tree.
-
-        """
-        for child in self.children:
-            yield from child.walk()
+    def in_order_traverse(self):
+        if self.lchild:
+            yield from self.lchild.in_order_traverse()
         yield self
+        if self.rchild:
+            yield from self.rchild.in_order_traverse()
 
-    def breadth_first_walk(self, leaves=True):
-        # type: (bool) -> Iterator[Node]
-        """Iterate over the nodes in the tree using Breadth First Traversal.
-
-        A breadth-first traversal will be much faster when identifying
-        sections.
-
-        Args:
-            leaves: True if leaves of the tree should also be yielded,
-                otherwise only parent nodes will be yielded.
-
-        Yields:
-            Nodes in the tree.
-
-        """
-        queue = deque()  # type: deque
-        queue.appendleft(self)
+    def breadth_first_walk(self):
+        queue = deque([self])
         while queue:
             curr = queue.pop()
             yield curr
-            queue.extendleft([
-                child for child in curr.children
-                if leaves or not child.is_leaf
-            ])
+            if curr.lchild:
+                queue.appendleft(curr.lchild)
+            if curr.rchild:
+                queue.appendleft(curr.rchild)
 
-    def reconstruct_string(self):
-        # type: () -> str
-        """Attempt to reconstruct how the node looked before.
+    def first_instance(self, symbol):
+        # type: (str) -> Optional['CykNode']
+        for node in self.breadth_first_walk():
+            if node.symbol == symbol:
+                return node
+        return None
 
-        Unfortunately, with how the parser works, we can't do this
-        perfectly.  Nor would it likely be worthwhile. For example, if
-        there are extra spaces (not in multiples of 4), then they will
-        not be represented.
+    def contains(self, symbol=None, value=None):
+        # type: (Optional[str], Optional[str]) -> bool
+        """Return true if the tree contains the given symbol.
 
-        If the parser ever changes, this will likely have to change.
-        Which is fine, because it's gross anyway.
+        This is intended only for testing.
+
+        Args:
+            symbol: The symbol to search for.
+            value: If defined, the string value the node should
+                have in order to match.
 
         Returns:
-            Something close to the original string.
+            True if the symbol/value is in the tree, false otherwise.
 
         """
-        lines = [[]]  # type: List[List[str]]
-        keyword = None
-        for child in self.walk():
-            if child.node_type == NodeType.INDENT:
-                # When joined, it will have 4 spaces.
-                lines[-1].append(' '*3)
-            elif child.node_type == NodeType.COLON:
-                # Remove the space before the colon. (This is more common.)
-                if keyword:
-                    lines[-1].append(keyword + ':')
-                    keyword = None
-                    lines.append(list())
-                elif lines[-1]:
-                    lines[-1][-1] += ':'
-                elif child.value:
-                    lines[-1].append(child.value)
-            elif child.is_keyword:
-                # Keywords always have colons after them, so wait for
-                # the colon.
-                keyword = child.value
-            elif child.is_leaf and child.value:
-                lines[-1].append(child.value)
-            elif child.node_type == NodeType.LINE:
-                lines.append(list())
-        return '\n'.join([' '.join(line) for line in lines])
+        def _match(n):
+            symbol_match = symbol is None or n.symbol == symbol
+            value_match = value is None or n.value == value
+            return symbol_match and value_match
+        for node in self.walk():
+            if _match(node):
+                return True
+        return False
+
+    def walk(self):
+        # type: () -> Iterator['CykNode']
+        yield from self.in_order_traverse()
+
+    def equals(self, other):
+        # type: (Optional['CykNode']) -> bool
+        if other is None:
+            return False
+        if self.symbol != other.symbol:
+            return False
+        if self.value != other.value:
+            return False
+        if self.lchild and not self.lchild.equals(other.lchild):
+            return False
+        if self.rchild and not self.rchild.equals(other.rchild):
+            return False
+        return True
+
+    def reconstruct_string(self, strictness=0):
+        # type: (int) -> str
+        """Reconstruct the docstring.
+
+        This method should rebuild the docstring while fixing style
+        errors.  The errors themselves determine how to fix the node
+        they apply to.  (If there isn't a good fix, then it's just the
+        identity function.)
+
+        Args:
+            strictness: How strictly we should correct.  If an error
+                doesn't match the strictness, we won't correct for
+                that error.
+
+        Returns:
+            The docstring, reconstructed.
+
+        """
+        # In order to make a reasonable guess as to the whitespace
+        # to apply between characters, we use a 3-token sliding
+        # window.
+        window_size = 3
+        window = deque(maxlen=window_size)  # type: deque
+        source = self.in_order_traverse()
+
+        # Fill the buffer.
+        while len(window) < window_size:
+            try:
+                node = next(source)
+            except StopIteration:
+                break
+            if node.value:
+                window.append(node.value)
+
+        if not window:
+            return ''
+
+        ret = window[0].value
+
+        # Slide the window, filling the return value.
+        while len(window) > 1:
+            is_whitespace = (
+                window[0].token_type in WHITESPACE
+                or window[1].token_type in WHITESPACE
+            )
+            is_colon = window[1].token_type == TokenType.COLON
+            if is_whitespace or is_colon:
+                ret += window[1].value
+            else:
+                ret += ' ' + window[1].value
+
+            found_token = False
+            for node in source:
+                if node.value:
+                    window.append(node.value)
+                    found_token = True
+                    break
+            if not found_token:
+                break
+
+        if len(window) == 3:
+            if (window[1].token_type in WHITESPACE
+                    or window[2].token_type in WHITESPACE
+                    or window[2].token_type == TokenType.COLON):
+                ret += window[2].value
+            else:
+                ret += ' ' + window[2].value
+
+        return ret
+
+    # TODO: Move to test-only, so it's not loaded when
+    # running.
+    def to_dot(self, is_root=True, encountered=set()):
+        # type: (bool, Set[str]) -> str
+        def _get_name(node):
+            i = 0
+            name = node.symbol
+            if node.value:
+                if node.value.value:
+                    name += '_' + node.value.value
+                else:
+                    name += '_' + str(node.value)
+            for x in '.*!@#$%^*,- ;:\'"\n\t{}[]()':
+                name = name.replace(x, '_')
+            while name.replace('__', '_') != name:
+                name = name.replace('__', '_')
+            name = name.lower()
+            while name + str(i) in encountered:
+                i += 1
+            return name + str(i)
+
+        def _get_value(node):
+            if self.value and self.value.value:
+                if self.value.value.isspace():
+                    return repr(self.value.value).replace('\\', '\\\\')
+                return self.value.value
+            elif self.value:
+                return str(self.value)
+            else:
+                return self.symbol
+
+        if is_root:
+            ret = 'digraph G {\n'
+        else:
+            ret = ''
+
+        # Print this node's relationship with its children.
+        name = _get_name(self)
+        encountered.add(name)
+        if self.lchild or self.rchild:
+            ret += name + (
+                '  [shape="oval", style="filled", '
+                ' label="{}",'
+                ' fillcolor="#fffde7"];\n'
+            ).format(_get_value(self))
+            if self.lchild:
+                childname = _get_name(self.lchild)
+                ret += '{} -> {}'.format(name, childname)
+                if self.annotations:
+                    ret += '[label="'
+                    for annotation in self.annotations:
+                        ret += annotation.__name__ + ',\\n'
+                    ret += '"]'
+                ret += ';\n'
+            if self.rchild:
+                childname = _get_name(self.rchild)
+                if self.lchild and _get_name(self.lchild) == childname:
+                    childname += '_'
+                ret += '{} -> {};\n'.format(name, childname)
+        else:
+            ret += name + (
+                ' [shape="rectangle", style="filled",'
+                ' label="{}"'
+                ' fillcolor="#80deea"];\n'
+            ).format(_get_value(self))
+
+        # Add all of the children's relationships.
+        if self.lchild:
+            ret += self.lchild.to_dot(False, encountered) + '\n'
+        if self.rchild:
+            ret += self.rchild.to_dot(False, encountered) + '\n'
+
+        if is_root:
+            ret += '}'
+        return ret
+
+    def _get_line_numbers_cached(self, recurse=0):
+        # type: (int) -> Tuple[int, int]
+        if recurse > MAX_TREE_HEIGHT:
+            return (-1, -1)
+        if self.value:
+            return (self.value.line_number, self.value.line_number)
+        elif self._line_number_cache:
+            return self._line_number_cache
+        leftmost = -1
+        if self.lchild:
+            leftmost = self.lchild._get_line_numbers_cached(recurse + 1)[0]
+        rightmost = leftmost
+        if self.rchild:
+            rightmost = self.rchild._get_line_numbers_cached(recurse + 1)[1]
+        self._line_number_cache = (leftmost, rightmost)
+        return self._line_number_cache or (-1, -1)
+
+    @property
+    def line_numbers(self):
+        # type: () -> Tuple[int, int]
+        return self._get_line_numbers_cached()

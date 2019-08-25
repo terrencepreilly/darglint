@@ -11,8 +11,10 @@ from ..token import (
     KEYWORDS,
 )
 from .cyk import (
-    CykNode,
     parse as cyk_parse,
+)
+from ..node import (
+    CykNode,
 )
 from .combinator import (
     parser_combinator,

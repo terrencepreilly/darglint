@@ -108,3 +108,4 @@ _data/
 
 integration_tests/goldens.json
 .performance_testrun
+.performance_history

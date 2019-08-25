@@ -15,7 +15,7 @@ from .base import (
     DocstringStyle,
     Sections,
 )
-from ..parse.cyk import (
+from ..node import (
     CykNode,
 )
 from ..parse.identifiers import (

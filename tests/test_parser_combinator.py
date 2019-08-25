@@ -8,8 +8,10 @@ from darglint.parse.combinator import (
     parser_combinator,
 )
 from darglint.parse.cyk import (
-    CykNode,
     parse,
+)
+from darglint.node import (
+    CykNode,
 )
 from darglint.parse.grammar import Production as P
 from darglint.token import (

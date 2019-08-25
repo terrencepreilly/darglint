@@ -280,7 +280,7 @@ def _record_historical(stats, filename='.performance_history'):
     # We don't bother with checking if it's unique or not, since
     # we can just open it in vim and do a sort.
     with open(filename, 'a') as fout:
-        fout.write('{}\t{}\t{}'.format(
+        fout.write('{}\t{}\t{}\n'.format(
             datetime.fromtimestamp(stats.timestamp).isoformat(),
             mean(stats.times),
             stdev(stats.times),
