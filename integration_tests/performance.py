@@ -105,7 +105,7 @@ class Performance(object):
             )
         return stats
 
-    def print_chart(self, stats, width=65, height=35):
+    def print_chart(self, stats, width=65, height=25):
         # type: (Stats, int, int) -> None
         x_min, x_max = stats.by_length[0][0], stats.by_length[0][0]
         y_min, y_max = stats.by_length[0][1], stats.by_length[0][1]
@@ -118,6 +118,7 @@ class Performance(object):
         y_bucket = int(y_max - y_min) / height
 
         plot_points = defaultdict(lambda: defaultdict(lambda: 0))  # type: Dict[int, Dict[int, int]]  # noqa: E501
+
         max_amount = 0
         for x, y in stats.by_length:
             xb = int(x / x_bucket)
@@ -126,12 +127,14 @@ class Performance(object):
             if plot_points[xb][yb] > max_amount:
                 max_amount = plot_points[xb][yb]
 
+        title = 'Time to Parse (seconds) by Length (chars)'
+        print(title.rjust((width // 2) - (len(title) // 2) + len(title)))
+
         y_axis_top = str(int(y_max))
         y_axis_bottom = str(int(y_min))
         padding = max(len(y_axis_top), len(y_axis_bottom))
-        print('padding: {}'.format(padding))
         print(y_axis_top.rjust(padding) + '│')
-        for row in range(height, -1, -1):
+        for row in range(height + 1, -1, -1):
             if row == 0:
                 print(y_axis_bottom.rjust(padding), end='│')
             else:
@@ -147,7 +150,7 @@ class Performance(object):
                 elif 2 * (max_amount / 3) < point:
                     print('●', end='')
             print()
-        print('└'.rjust(padding + 1) + '─' * (width - 1))
+        print('└'.rjust(padding + 1) + '─' * (width))
         x_axis_left = str(int(x_min))
         x_axis_right = str(int(x_max))
         print('{}{}'.format(
