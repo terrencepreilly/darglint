@@ -413,3 +413,15 @@ class TranslatorTestCase(TestCase):
         tree = Parser().parse(grammar)
         node = Translator().translate(tree)
         self.assertTrue(node)
+
+    def test_nodes_not_leading_to_terminals_removed(self):
+        grammar = r'''
+        start: <a>
+        <a> ::= "a" | <b>
+        <b> ::= <c> <d>
+        '''
+        tree = Parser().parse(grammar)
+        node = Translator().translate(tree)
+        self.assertFalse(
+            list(node.filter(lambda x: x.value == 'c'))
+        )

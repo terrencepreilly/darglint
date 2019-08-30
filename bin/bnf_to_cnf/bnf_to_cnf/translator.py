@@ -619,6 +619,53 @@ class Translator(object):
         if start_symbol:
             tree.children.insert(0, start_symbol)
 
+    def _remove_non_fruitful_branches(self, tree: Node,
+                                      start_symbol: Optional[Node]):
+        # This is very inefficient, but seems to work well enough
+        # in practice.  Ideally, this would be O(n) or something.
+        if not start_symbol:
+            return
+
+        graph = self._build_adjacency_matrix(tree)
+
+        def _dfs(node, encountered=set()):
+            for child in graph.get(node, []):
+                if child in encountered:
+                    continue
+                yield from _dfs(child, encountered | {node, child})
+            yield node
+
+        terminals = {x.value for x in tree.filter(Node.is_terminal)}
+
+        def is_fruitful(node):
+            if node in terminals:
+                return True
+            for child in _dfs(node):
+                if child in terminals:
+                    return True
+            return False
+
+        changed = True
+        while changed:
+            nonfruitful = set()
+            for symbol in tree.filter(Node.is_symbol):
+                if symbol and not is_fruitful(symbol.value):
+                    nonfruitful.add(symbol.value)
+
+            if not nonfruitful:
+                break
+
+            changed = False
+            # Remove all sequences where the children are nonfruitful.
+            changed |= tree.remove(lambda x: Node.is_sequence(x) and all([
+                y.value in nonfruitful for y in x.filter(Node.is_symbol)]))
+
+            # Remove all empty productions.
+            changed |= tree.remove(
+                lambda x: Node.is_production(x) and not (list(
+                    x.filter(Node.is_sequence)) or list(
+                        x.filter(Node.is_terminal))))
+
     def translate(self, tree: Node) -> Node:
         start_symbol = self._remove_start_symbol(tree)
         self._remove_remaining_imports(tree)
@@ -636,10 +683,10 @@ class Translator(object):
         if max_iterations == 0:
             raise Exception('Reached maximum epsilon expansion.')
 
-        # FIXME: Removes annotations!
         self._eliminate_unit_productions(tree)
         self._remove_unused_productions(tree, start_symbol)
 
         # TODO: remove nodes which don't lead to terminals?
+        self._remove_non_fruitful_branches(tree, start_symbol)
 
         return tree

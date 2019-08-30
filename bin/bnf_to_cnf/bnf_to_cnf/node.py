@@ -91,6 +91,11 @@ class Node(object):
                     f'{self.children[0]}\n'
                     f'{self.children[1]} ::= {self.children[2]}'
                 )
+            else:
+                raise Exception(
+                    f'Expected production to have 2 or 3 children but '
+                    f'it had {len(self.children)}'
+                )
         elif self.node_type == NodeType.SYMBOL:
             return f'<{self.value}>'
         elif self.node_type == NodeType.EXPRESSION:
@@ -214,7 +219,7 @@ class Node(object):
             if filt(node):
                 yield node
 
-    def remove(self, filt: Callable[['Node'], bool]):
+    def remove(self, filt: Callable[['Node'], bool]) -> bool:
         parents_to_children = dict()  # type: Dict['Node', List['Node']]
         for parent in self._bfs():
             for child in parent.children:
@@ -231,6 +236,8 @@ class Node(object):
         for parent in parents:
             for child in parents_to_children[parent]:
                 parent.children.remove(child)
+
+        return bool(parents_to_children)
 
     @classmethod
     def from_lark_tree(self, tree: Union[Tree, Token]) -> 'Node':
