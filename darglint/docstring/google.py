@@ -271,7 +271,6 @@ class Docstring(BaseDocstring):
             return type_node.lchild.value.value
         return None
 
-    # TODO: Refactor using NoqaIdentifier
     def get_noqas(self):
         # type: () -> Dict[str, List[str]]
         """Get a map of the errors ignored to their targets.

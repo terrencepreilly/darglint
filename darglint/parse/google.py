@@ -1,10 +1,6 @@
+import inspect
 from typing import (
-    Any,
-    Callable,
-    Iterable,
-    Optional,
     List,
-    Tuple,
 )
 from functools import (
     reduce,
@@ -25,9 +21,11 @@ from ..node import (
 from .combinator import (
     parser_combinator,
 )
+from .long_description import (
+    parse as long_description_parse,
+)
 
 from .grammars.google_arguments_section import ArgumentsGrammar
-from .grammars.google_long_description import LongDescriptionGrammar
 from .grammars.google_raises_section import RaisesGrammar
 from .grammars.google_returns_section import ReturnsGrammar
 from .grammars.google_returns_section_without_type import (
@@ -141,23 +139,23 @@ def _match(token):
         TokenType.RETURNS: [
             ReturnsGrammar,
             ReturnsWithoutTypeGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
         TokenType.ARGUMENTS: [
             ArgumentsGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
         TokenType.YIELDS: [
             YieldsGrammar,
             YieldsWithoutTypeGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
         TokenType.RAISES: [
             RaisesGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
     }
-    return tt_lookup.get(token.token_type, [LongDescriptionGrammar])
+    return tt_lookup.get(token.token_type, [long_description_parse])
 
 
 def lookup(section, section_index=-1):
@@ -192,5 +190,8 @@ def combinator(*args):
 def parse(tokens):
     def mapped_lookup(section, section_index=-1):
         for grammar in lookup(section, section_index):
-            yield lambda x: cyk_parse(grammar, x)
+            if inspect.isclass(grammar):
+                yield lambda x: cyk_parse(grammar, x)
+            else:
+                yield grammar
     return parser_combinator(top_parse, mapped_lookup, combinator, tokens)

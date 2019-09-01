@@ -1,5 +1,5 @@
+import inspect
 from unittest import TestCase
-
 from random import (
     randint,
 )
@@ -172,7 +172,10 @@ class NewGoogleParserTests(TestCase):
         ]
         grammar = lookup(tokens)[0]
         self.assertTrue(grammar is not None)
-        parsed = cyk_parse(grammar, tokens)
+        if inspect.isclass(grammar):
+            parsed = cyk_parse(grammar, tokens)
+        else:
+            parsed = grammar(tokens)
         self.assertTrue(parsed is not None)
 
     def test_lookup_always_returns_something(self):

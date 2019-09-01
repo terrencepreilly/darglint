@@ -11,6 +11,7 @@ from darglint.lex import (
 from darglint.parse.identifiers import (
     ArgumentIdentifier,
     ExceptionIdentifier,
+    NoqaIdentifier,
 )
 from darglint.parse.google import (
     parse,
@@ -36,6 +37,12 @@ class DocstringTestCase(TestCase):
             if child.symbol == symbol and child.value is not None:
                 yield child.value.value
 
+    def get_identifier(self, node, identifier):
+        for child in node.walk():
+            if identifier in child.annotations:
+                return child
+        return None
+
     def test_parse_noqa_for_argument(self):
         func = '\n'.join([
             'def my_function():',
@@ -53,18 +60,12 @@ class DocstringTestCase(TestCase):
         self.assertTrue(
             node.contains('noqa'),
         )
-        maybe_noqa = None
-        for child in node.walk():
-            if child.symbol == 'noqa-maybe':
-                maybe_noqa = child
-                break
-        word = None
-        for child in maybe_noqa.walk():
-            if child.symbol == 'words':
-                word = child
-                break
+        noqa = self.get_identifier(node, NoqaIdentifier)
+        self.assertTrue(
+            noqa is not None,
+        )
         self.assertEqual(
-            word.value.value,
+            NoqaIdentifier.extract(noqa),
             'I102',
         )
 
@@ -543,7 +544,7 @@ class DocstringTestCase(TestCase):
         node = parse(condense(lex(
             '    int: the square of something.\n'
         )))
-        self.assertTrue(node.contains('line'))
+        self.assertTrue(node.contains('long-description'))
 
     def test_parse_line_without_type_but_with_parentheses(self):
         """Make sure we can have parentheses otherwise."""
@@ -728,7 +729,7 @@ class DocstringTestCase(TestCase):
     def test_parse_noqa_with_target_and_argument(self):
         """Make sure we can target specific args in a noqa."""
         node = parse(condense(lex('# noqa: I101 arg1, arg2\n')))
-        self.assertTrue(node.contains('noqa'))
+        self.assertTrue(node.contains('noqa'), str(node))
 
     def test_parse_inline_noqa_statements(self):
         """Make sure we can parse noqa statements."""

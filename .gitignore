@@ -107,5 +107,6 @@ _data/
 .pytest_cache/
 
 integration_tests/goldens.json
+integration_tests/max_golden.json
 .performance_testrun
 .performance_history

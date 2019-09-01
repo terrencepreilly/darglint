@@ -193,10 +193,20 @@ class Performance(object):
             x_axis_right.rjust(width - (len(x_axis_left) + padding))
         ))
 
+    def report_worst_five_percent(self, stats):
+        # type: (Stats) -> None
+        total = len(stats.times)
+        n = int(0.01 * total)
+        assert n > 0
+        sorted_stats = sorted(stats.times)
+        worst = mean(sorted_stats[-1 * n:])
+        print('1 %ile mean: {}'.format(worst))
+
     def report_stats(self, stats):
         # type: (Stats) -> None
         print('x̄: {}'.format(mean(stats.times)))
         print('s: {}'.format(stdev(stats.times)))
+        self.report_worst_five_percent(stats)
         print()
         self.print_chart(stats)
 

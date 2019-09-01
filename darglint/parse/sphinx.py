@@ -1,3 +1,4 @@
+import inspect
 from typing import (
     List,
 )
@@ -19,10 +20,12 @@ from ..node import (
 from .combinator import (
     parser_combinator,
 )
+from .long_description import (
+    parse as long_description_parse,
+)
 
 from .grammars.sphinx_arguments_section import ArgumentsGrammar
 from .grammars.sphinx_argument_type_section import ArgumentTypeGrammar
-from .grammars.sphinx_long_description import LongDescriptionGrammar
 from .grammars.sphinx_variables_section import VariablesSectionGrammar
 from .grammars.sphinx_variable_type_section import VariableTypeGrammar
 from .grammars.sphinx_raises_section import RaisesGrammar
@@ -95,42 +98,42 @@ def _match(token):
     tt_lookup = {
         TokenType.VARIABLES: [
             VariablesSectionGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
         TokenType.ARGUMENTS: [
             ArgumentsGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
         TokenType.ARGUMENT_TYPE: [
             ArgumentTypeGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
         TokenType.VARIABLE_TYPE: [
             VariableTypeGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
         TokenType.RAISES: [
             RaisesGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
         TokenType.YIELDS: [
             YieldsGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
         TokenType.YIELD_TYPE: [
             YieldTypeGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
         TokenType.RETURNS: [
             ReturnsGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
         TokenType.RETURN_TYPE: [
             ReturnTypeGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
     }
-    return tt_lookup.get(token.token_type, [LongDescriptionGrammar])
+    return tt_lookup.get(token.token_type, [long_description_parse])
 
 
 def lookup(section, section_index=-1):
@@ -139,7 +142,7 @@ def lookup(section, section_index=-1):
             and len(section) > 1):
         grammars = _match(section[1])
     else:
-        grammars = [LongDescriptionGrammar]
+        grammars = [long_description_parse]
     if section_index == 0:
         return [ShortDescriptionGrammar] + grammars
     return grammars
@@ -169,5 +172,8 @@ def combinator(*args):
 def parse(tokens):
     def mapped_lookup(section, section_index=-1):
         for grammar in lookup(section, section_index):
-            yield lambda x: cyk_parse(grammar, x)
+            if inspect.isclass(grammar):
+                yield lambda x: cyk_parse(grammar, x)
+            else:
+                yield grammar
     return parser_combinator(top_parse, mapped_lookup, combinator, tokens)
