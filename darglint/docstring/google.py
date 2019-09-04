@@ -146,6 +146,55 @@ class Docstring(BaseDocstring):
             )
         return None
 
+    def get_definitions(self, section):
+        # type: (Sections) -> Union[None, str, List[Optional[str]]]
+        if section == Sections.ARGUMENTS_SECTION:
+            return self._get_compound_item_definition_lookup(NodeType.ARGS_SECTION).values()
+        elif section == Sections.RETURNS_SECTION:
+            return self._get_compound_item_definition_lookup(NodeType.RETURNS_SECTION).values()
+        elif section == Sections.YIELDS_SECTION:
+            return self._get_compound_item_definition_lookup(NodeType.YIELDS_SECTION).values()
+        elif section == Sections.RAISES_SECTION:
+            return self._get_compound_item_definition_lookup(NodeType.RAISES_SECTION).values()
+        else:
+            raise Exception(
+                'Section type {} does not have definitions, '.format(
+                    section.name
+                ) + 'or is not yet supported'
+            )
+        return None
+
+    def _get_compound_item_definition_lookup(self, node_type):
+        # type: (NodeType) -> Optional[Dict[str, Optional[str]]]
+        """Get a map of names to definitions for the section.
+
+        Args:
+            node_type: The type of the section.
+
+        Returns:
+            A lookup of items to definitions.
+
+        """
+        if node_type not in self._lookup:
+            return {}
+
+        item_definitions = dict()  # type: Dict[str, Optional[str]]
+        for node in self._lookup[node_type]:
+            for item_node in node.breadth_first_walk(leaves=False):
+                if item_node.node_type != NodeType.ITEM:
+                    continue
+                name = item_node.first_instance(NodeType.WORD)
+                if not name or not name.value:
+                    continue
+                definition = item_node.first_instance(NodeType.ITEM_DEFINITION)
+                if definition is None:
+                    item_definitions[name.value] = None
+                else:
+                    definition_repr = definition.reconstruct_string().strip()
+                    item_definitions[name.value] = definition_repr
+
+        return item_definitions
+
     def _get_compound_item_type_lookup(self, node_type):
         # type: (NodeType) -> Optional[Dict[str, Optional[str]]]
         """Get a map of names to types for the section.

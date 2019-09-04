@@ -40,6 +40,8 @@ from .errors import (  # noqa: F401
     MissingYieldError,
     ParameterTypeMismatchError,
     ReturnTypeMismatchError,
+    DefinitionNotStartingWithCapitalError,
+    DefinitionNotEndingWithPeriodError,
 )
 from .error_report import (
     ErrorReport,
@@ -295,6 +297,33 @@ class IntegrityChecker(object):
                     line_numbers=line_numbers,
                 )
             )
+
+        for definition in self.docstring.get_definitions(Sections.ARGUMENTS_SECTION) or []:
+            if not definition.endswith('.'):
+                line_numbers = self.docstring.get_line_numbers_for_value(
+                    NodeType.ARGS_SECTION,
+                    definition,
+                ) or default_line_numbers
+                self.errors.append(
+                    DefinitionNotEndingWithPeriodError(
+                        self.function.function,
+                        definition,
+                        line_numbers=line_numbers,
+                    )
+                )
+            if definition[0] != definition[0].upper():
+                line_numbers = self.docstring.get_line_numbers_for_value(
+                    NodeType.ARGS_SECTION,
+                    definition,
+                ) or default_line_numbers
+                self.errors.append(
+                    DefinitionNotStartingWithCapitalError(
+                        self.function.function,
+                        definition,
+                        line_numbers=line_numbers,
+                    )
+                )
+
 
     def _check_variables(self):
         # type: () -> None

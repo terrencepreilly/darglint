@@ -174,6 +174,52 @@ class MissingParameterError(DarglintError):
         )
 
 
+class DefinitionNotEndingWithPeriodError(DarglintError):
+    """Describes when a definition is not ending with a period."""
+
+    error_code = 'I?01'
+
+    def __init__(self, function, definition, line_numbers=None):
+         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+            definition: The definition of the argument that is not ending with a period.
+            line_numbers: The line numbers where this error occurs.
+
+        """
+        self.general_message = "Definition not ending with a period"
+        self.terse_message = "p {}".format(definition)
+        super(DefinitionNotEndingWithPeriodError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
+
+
+class DefinitionNotStartingWithCapitalError(DarglintError):
+    """Describes when a definition is not starting with a capital."""
+
+    error_code = 'I?02'
+
+    def __init__(self, function, definition, line_numbers=None):
+          # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+            name: The definition of the argument that is not starting with a capital.
+            line_numbers: The line numbers where this error occurs.
+
+        """
+        self.general_message = 'Definition not starting with a capital'
+        self.terse_message = 'c {}'.format(definition)
+        super(DefinitionNotStartingWithCapitalError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
+
+
 class ExcessParameterError(DarglintError):
     """Describes when a docstring contains a parameter not in function."""
 
