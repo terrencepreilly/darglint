@@ -106,8 +106,29 @@ _data/
 
 .pytest_cache/
 
-integration_tests/goldens.json
-integration_tests/max_golden.json
-.performance_testrun
-.performance_history
 TODO.md
+
+# INTEGRATION TESTS
+#
+# Integration tests require some files which don't properly belong
+# in the repository.  So, they'll be excluded here.
+
+# Individual docstrings to parse, and the attributes they're expected
+# to have.
+integration_tests/goldens.json
+
+# The largest of the above docstrings.
+integration_tests/max_golden.json
+
+# The cached result of the latest test run, if we want to rerun the
+# test just to see the results.
+.performance_testrun
+.performance_module_testrun
+
+# When tinkering with performance, this will give an idea of how the
+# performance has changed over time.
+.performance_history
+
+# Cloned whole repos to test against.  Ideally, these will be quite
+# large, so it doesn't make sense to include them.
+integration_tests/repos/

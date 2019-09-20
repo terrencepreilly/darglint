@@ -1,4 +1,8 @@
 """A utility for measuring performance characteristics for darglint.
+
+Performs performance tests at two levels: the individual docstring,
+and individual files.
+
 """
 
 from collections import (
@@ -7,6 +11,7 @@ from collections import (
 from datetime import (
     datetime,
 )
+from enum import Enum
 import json
 import time
 from typing import (
@@ -15,6 +20,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Iterable,
 )
 from unittest import (
     TestCase,
@@ -33,21 +39,31 @@ from statistics import (
     mean,
     stdev,
 )
+import subprocess
+import os
 
 
 Golden = Dict[str, Any]
+
+
+class PerfScope(Enum):
+
+    DOCSTRING = 1
+    MODULE = 2
 
 
 class Stats(object):
 
     STALE_AGE_MINS = 30
 
-    def __init__(self, times, by_length, google, sphinx, timestamp=None):
-        # type: (List[float], List[Tuple[int, float]], List[float], List[float], int) -> None  # noqa: E501
+    def __init__(self, times, by_length, google, sphinx,
+                 timestamp=None, scope=PerfScope.MODULE):
+        # type: (List[float], List[Tuple[int, float]], List[float], List[float], int, PerfScope) -> None  # noqa: E501
         self.times = times
         self.by_length = by_length
         self.google = google
         self.sphinx = sphinx
+        self.scope = scope
 
         if timestamp:
             self.timestamp = timestamp
@@ -73,12 +89,122 @@ class Stats(object):
             'google': self.google,
             'sphinx': self.sphinx,
             'timestamp': self.timestamp,
+            'scope': self.scope.value,
         }
 
 
-class Performance(object):
+class Chart(object):
+    """A quick graphical representation of the stats."""
 
-    def parse_golden(self, golden):
+    def __init__(self, stats, width=65, height=25):
+        # type: (Stats, int, int) -> None
+        self.stats = stats
+        self.width = width
+        self.height = height
+
+    def __str__(self):
+        # type: () -> str
+        x_min, x_max = self.stats.by_length[0][0], self.stats.by_length[0][0]
+        y_min, y_max = self.stats.by_length[0][1], self.stats.by_length[0][1]
+        for x, y in self.stats.by_length:
+            x_min = min(x, x_min)
+            x_max = max(x, x_max)
+            y_min = min(y, y_min)
+            y_max = max(y, y_max)
+        x_bucket = int(x_max - x_min) / self.width
+        y_bucket = int(y_max - y_min) / self.height
+
+        plot_points = defaultdict(lambda: defaultdict(lambda: 0))  # type: Dict[int, Dict[int, int]]  # noqa: E501
+
+        max_amount = 0
+        for x, y in self.stats.by_length:
+            xb = int(x / x_bucket)
+            yb = int(y / y_bucket)
+            plot_points[xb][yb] += 1
+            if plot_points[xb][yb] > max_amount:
+                max_amount = plot_points[xb][yb]
+
+        title = 'Time to Parse (seconds) by Length (chars)\n'
+        ret = title.rjust((self.width // 2) - (len(title) // 2) + len(title))
+
+        y_axis_top = str(int(y_max))
+        y_axis_bottom = str(int(y_min))
+        padding = max(len(y_axis_top), len(y_axis_bottom))
+        ret += y_axis_top.rjust(padding) + '│\n'
+        for row in range(self.height + 1, -1, -1):
+            if row == 0:
+                ret += y_axis_bottom.rjust(padding) + '│'
+            else:
+                ret += '│'.rjust(padding + 1)
+            for col in range(self.width + 1):
+                point = plot_points[col][row]
+                if point == 0:
+                    ret += ' '
+                elif 0 < point <= max_amount / 3:
+                    ret += '○'
+                elif max_amount / 3 < point < 2 * (max_amount / 3):
+                    ret += '◎'
+                elif 2 * (max_amount / 3) < point:
+                    ret += '●'
+            ret += '\n'
+        ret += '└'.rjust(padding + 1) + '─' * (self.width) + '\n'
+        x_axis_left = str(int(x_min))
+        x_axis_right = str(int(x_max))
+        ret += '{}{}\n'.format(
+            x_axis_left.rjust(padding + len(x_axis_left)),
+            x_axis_right.rjust(self.width - (len(x_axis_left) + padding))
+        )
+        return ret
+
+
+class Performance(object):
+    """Measure and report on performance of darglint."""
+
+    def __init__(self, stats=None, module_stats=None):
+        # type: (Optional[Stats], Optional[Stats]) -> None
+        self.stats = stats
+        self.module_stats = module_stats
+
+    def report_worst_five_percent(self, scope=PerfScope.DOCSTRING):
+        # type: (PerfScope) -> None
+        if scope == PerfScope.DOCSTRING:
+            stats = self.stats
+        elif scope == PerfScope.MODULE:
+            stats = self.module_stats
+        else:
+            raise Exception('Unrecognized PerfScope {}'.format(scope))
+        assert stats
+        total = len(stats.times)
+        n = int(0.01 * total)
+        assert n > 0
+        sorted_stats = sorted(stats.times)
+        worst = mean(sorted_stats[-1 * n:])
+        print('1 %ile mean: {}'.format(worst))
+
+    def report_stats(self):
+        # type: () -> None
+        if self.stats:
+            print('∷∴∵∴∵∴∵∴∵∴∵∴∵ DOCSTRING ∴∵∴∵∴∵∴∵∴∵∴∵∷')
+            print('x̄: {}'.format(mean(self.stats.times)))
+            print('s: {}'.format(stdev(self.stats.times)))
+            print('n: {}'.format(len(self.stats.times)))
+            self.report_worst_five_percent()
+            print()
+            chart = Chart(self.stats)
+            print(chart)
+            print()
+
+        if self.module_stats:
+            print('∷∴∵∴∵∴∵∴∵∴∵∴∵∴∵ MODULE ∴∵∴∵∴∵∴∵∴∵∴∵∴∵∷')
+            print('x̄: {}'.format(mean(self.module_stats.times)))
+            print('s: {}'.format(stdev(self.module_stats.times)))
+            print('n: {}'.format(len(self.module_stats.times)))
+            self.report_worst_five_percent(PerfScope.MODULE)
+            print()
+            chart = Chart(self.module_stats)
+            print(chart)
+
+    def _parse_golden(self, golden):
         # type: (Golden) -> BaseDocstring
         if golden['type'] == 'GOOGLE':
             assert isinstance(golden['docstring'], str)
@@ -92,18 +218,18 @@ class Performance(object):
             ))
         return docstring
 
-    def parse_and_measure(self, golden):
+    def _parse_and_measure(self, golden):
         # type: (Golden) -> Tuple[float, bool]
         succeeded = True
         start = time.time()
         try:
-            self.parse_golden(golden)
+            self._parse_golden(golden)
         except Exception:
             succeeded = False
         end = time.time()
         return end - start, succeeded
 
-    def read_goldens(self):
+    def _read_goldens(self):
         # type: () -> List[Golden]
         with open('integration_tests/goldens.json', 'r') as fin:
             goldens = json.load(fin)
@@ -111,15 +237,16 @@ class Performance(object):
 
     def test_golden_performance(self):
         # type: () -> Stats
+        assert not self.stats
         stats = Stats(
             times=list(),
             by_length=list(),
             google=list(),
             sphinx=list(),
         )
-        goldens = self.read_goldens()
+        goldens = self._read_goldens()
         for golden in goldens:
-            duration, succeeded = self.parse_and_measure(golden)
+            duration, succeeded = self._parse_and_measure(golden)
 
             # Really, all of them should succeed, as this should
             # have run through the goldens test first.
@@ -138,77 +265,65 @@ class Performance(object):
             stats.by_length.append(
                 (len(golden['docstring']), duration)
             )
+        self.stats = stats
         return stats
 
-    def print_chart(self, stats, width=65, height=25):
-        # type: (Stats, int, int) -> None
-        x_min, x_max = stats.by_length[0][0], stats.by_length[0][0]
-        y_min, y_max = stats.by_length[0][1], stats.by_length[0][1]
-        for x, y in stats.by_length:
-            x_min = min(x, x_min)
-            x_max = max(x, x_max)
-            y_min = min(y, y_min)
-            y_max = max(y, y_max)
-        x_bucket = int(x_max - x_min) / width
-        y_bucket = int(y_max - y_min) / height
+    def _read_and_measure(self, filename):
+        # type: (str) -> Tuple[float, bool, str]
+        succeeded = True
+        start = time.time()
+        try:
+            completed_process = subprocess.run([
+                'darglint',
+                filename
+            ], stdout=subprocess.PIPE)
+            value = completed_process.stdout.decode('utf8')
+        except Exception:
+            succeeded = False
+            value = ''
+        end = time.time()
+        return end - start, succeeded, value
 
-        plot_points = defaultdict(lambda: defaultdict(lambda: 0))  # type: Dict[int, Dict[int, int]]  # noqa: E501
+    def _get_module_size(self, filename):
+        # type: (str) -> Optional[int]
+        try:
+            completed_process = subprocess.run([
+                'wc',
+                '-l',
+                filename,
+            ], stdout=subprocess.PIPE)
+            value = completed_process.stdout.decode('utf8')
+            return int(value.split()[0])
+        except Exception:
+            return None
 
-        max_amount = 0
-        for x, y in stats.by_length:
-            xb = int(x / x_bucket)
-            yb = int(y / y_bucket)
-            plot_points[xb][yb] += 1
-            if plot_points[xb][yb] > max_amount:
-                max_amount = plot_points[xb][yb]
+    def yield_modules(self):
+        # type: () -> Iterable[str]
+        for path, folders, filenames in os.walk('integration_tests/repos'):
+            for filename in filenames:
+                if not filename.endswith('.py'):
+                    continue
+                yield os.path.join(path, filename)
 
-        title = 'Time to Parse (seconds) by Length (chars)'
-        print(title.rjust((width // 2) - (len(title) // 2) + len(title)))
-
-        y_axis_top = str(int(y_max))
-        y_axis_bottom = str(int(y_min))
-        padding = max(len(y_axis_top), len(y_axis_bottom))
-        print(y_axis_top.rjust(padding) + '│')
-        for row in range(height + 1, -1, -1):
-            if row == 0:
-                print(y_axis_bottom.rjust(padding), end='│')
-            else:
-                print('│'.rjust(padding + 1), end='')
-            for col in range(width + 1):
-                point = plot_points[col][row]
-                if point == 0:
-                    print(' ', end='')
-                elif 0 < point <= max_amount / 3:
-                    print('○', end='')
-                elif max_amount / 3 < point < 2 * (max_amount / 3):
-                    print('◎', end='')
-                elif 2 * (max_amount / 3) < point:
-                    print('●', end='')
-            print()
-        print('└'.rjust(padding + 1) + '─' * (width))
-        x_axis_left = str(int(x_min))
-        x_axis_right = str(int(x_max))
-        print('{}{}'.format(
-            x_axis_left.rjust(padding + len(x_axis_left)),
-            x_axis_right.rjust(width - (len(x_axis_left) + padding))
-        ))
-
-    def report_worst_five_percent(self, stats):
-        # type: (Stats) -> None
-        total = len(stats.times)
-        n = int(0.01 * total)
-        assert n > 0
-        sorted_stats = sorted(stats.times)
-        worst = mean(sorted_stats[-1 * n:])
-        print('1 %ile mean: {}'.format(worst))
-
-    def report_stats(self, stats):
-        # type: (Stats) -> None
-        print('x̄: {}'.format(mean(stats.times)))
-        print('s: {}'.format(stdev(stats.times)))
-        self.report_worst_five_percent(stats)
-        print()
-        self.print_chart(stats)
+    def test_repo_performance(self):
+        assert not self.module_stats
+        stats = Stats(
+            times=list(),
+            by_length=list(),
+            google=list(),
+            sphinx=list(),
+            scope=PerfScope.MODULE,
+        )
+        self.module_stats = stats
+        for module in self.yield_modules():
+            duration, succeed, value = self._read_and_measure(module)
+            size = self._get_module_size(module)
+            if size is None:
+                succeed = False
+            if succeed:
+                stats.times.append(duration)
+                stats.by_length.append((size, duration))
+        return stats
 
 
 def _read_from_cache(filename='.performance_testrun'):
@@ -227,39 +342,29 @@ def _write_to_cache(data, filename='.performance_testrun'):
         json.dump(data.encode(), fout)
 
 
-def _cache(perf):
-    """Pull stats results from the cache.
-
-    Intended for internal testing of the output format.
-
-    Args:
-        perf: The Performance object.
-
-    Returns:
-        The cached (or calculated) statistics.
-
-    """
-    prev = _read_from_cache()
-    if prev and not prev.is_stale():
-        return prev
-    data = perf.test_golden_performance()
-    _write_to_cache(data)
-    return data
-
-
 class PerformanceRegressionTest(TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        cls.prev_stats = _read_from_cache()
+        cls.prev_module_stats = _read_from_cache('.performance_module_testrun')
+        cls.stats = Stats()
+        cls.module_stats = Stats()
+
+    @classmethod
+    def tearDownClass(cls):
+        _write_to_cache(cls.stats)
+        _write_to_cache(cls.module_stats, '.performance_module_testrun')
+
     def test_performance_not_worse_than_before(self):
-        prev_stats = _read_from_cache()
-        perf = Performance()
         # Capture stats and test.
-        stats = perf.test_golden_performance()
-        if not prev_stats:
-            _write_to_cache(stats)
+        perf = Performance()
+        self.stats = perf.test_golden_performance()
+        if not self.prev_stats:
             return
-        prev_mean = mean(prev_stats.times)
-        prev_stdev = stdev(prev_stats.times)
-        curr_mean = mean(stats.times)
+        prev_mean = mean(self.prev_stats.times)
+        prev_stdev = stdev(self.prev_stats.times)
+        curr_mean = mean(self.stats.times)
         delta = abs(prev_mean - curr_mean)
 
         # We aren't exactly performing a rigorous statistical
@@ -283,17 +388,21 @@ class PerformanceRegressionTest(TestCase):
         # That would give us a hint whether we're in a different time
         # complexity.
 
-        _write_to_cache(stats)
+    def test_performance_against_repositories(self):
+        perf = Performance()
+        self.module_stats = perf.test_repo_performance()
 
 
-def _record_historical(stats, filename='.performance_history'):
+def _record_historical(stats, module_stats, filename='.performance_history'):
     # We don't bother with checking if it's unique or not, since
     # we can just open it in vim and do a sort.
     with open(filename, 'a') as fout:
-        fout.write('{}\t{}\t{}\n'.format(
+        fout.write('{}\t{}\t{}\t{}\t{}\n'.format(
             datetime.fromtimestamp(stats.timestamp).isoformat(),
             mean(stats.times),
             stdev(stats.times),
+            mean(module_stats.times),
+            stdev(module_stats.times),
         ))
 
 
@@ -301,12 +410,18 @@ def _main():
     print('DARGLINT STATS', end=' ')
     print_version()
     stats = _read_from_cache()
-    perf = Performance()
+    perf = Performance(stats)
     if not stats or stats.is_stale():
         stats = perf.test_golden_performance()
         _write_to_cache(stats)
-    _record_historical(stats)
-    perf.report_stats(stats)
+
+    module_stats = _read_from_cache('.performance_module_testrun')
+    if not module_stats or module_stats.is_stale():
+        module_stats = perf.test_repo_performance()
+        _write_to_cache(module_stats, '.performance_module_testrun')
+    perf.module_stats = module_stats
+    _record_historical(stats, module_stats)
+    perf.report_stats()
 
 
 if __name__ == '__main__':
