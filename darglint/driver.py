@@ -146,7 +146,7 @@ def get_error_report(filename,
         raise_errors=raise_errors_for_syntax,
     )
     for function in functions:
-        checker.run_checks(function)
+        checker.schedule(function)
     return checker.get_error_report_string(
         verbosity,
         filename,

@@ -112,7 +112,11 @@ class Chart(object):
             y_min = min(y, y_min)
             y_max = max(y, y_max)
         x_bucket = int(x_max - x_min) / self.width
+        if x_bucket <= 0:
+            x_bucket = 1
         y_bucket = int(y_max - y_min) / self.height
+        if y_bucket <= 0:
+            y_bucket = 1
 
         plot_points = defaultdict(lambda: defaultdict(lambda: 0))  # type: Dict[int, Dict[int, int]]  # noqa: E501
 
@@ -237,7 +241,6 @@ class Performance(object):
 
     def test_golden_performance(self):
         # type: () -> Stats
-        assert not self.stats
         stats = Stats(
             times=list(),
             by_length=list(),
@@ -348,8 +351,18 @@ class PerformanceRegressionTest(TestCase):
     def setUpClass(cls):
         cls.prev_stats = _read_from_cache()
         cls.prev_module_stats = _read_from_cache('.performance_module_testrun')
-        cls.stats = Stats()
-        cls.module_stats = Stats()
+        cls.stats = Stats(
+            times=list(),
+            by_length=list(),
+            google=list(),
+            sphinx=list(),
+        )
+        cls.module_stats = Stats(
+            times=list(),
+            by_length=list(),
+            google=list(),
+            sphinx=list(),
+        )
 
     @classmethod
     def tearDownClass(cls):
@@ -360,7 +373,7 @@ class PerformanceRegressionTest(TestCase):
         # Capture stats and test.
         perf = Performance()
         self.stats = perf.test_golden_performance()
-        if not self.prev_stats:
+        if not self.prev_stats or not len(self.prev_stats.times):
             return
         prev_mean = mean(self.prev_stats.times)
         prev_stdev = stdev(self.prev_stats.times)
@@ -411,12 +424,14 @@ def _main():
     print_version()
     stats = _read_from_cache()
     perf = Performance(stats)
-    if not stats or stats.is_stale():
+    if not stats or stats.is_stale() or not len(stats.times):
         stats = perf.test_golden_performance()
         _write_to_cache(stats)
 
     module_stats = _read_from_cache('.performance_module_testrun')
-    if not module_stats or module_stats.is_stale():
+    if (not module_stats
+            or module_stats.is_stale()
+            or not len(module_stats.times)):
         module_stats = perf.test_repo_performance()
         _write_to_cache(module_stats, '.performance_module_testrun')
     perf.module_stats = module_stats

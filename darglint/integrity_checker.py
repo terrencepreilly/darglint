@@ -1,6 +1,7 @@
 """Defines IntegrityChecker."""
 
 import re
+import concurrent.futures
 from typing import (  # noqa: F401
     Any,
     List,
@@ -82,6 +83,18 @@ class IntegrityChecker(object):
         self.config = config
         self.raise_errors = raise_errors
 
+        # TODO: Move max workers into a configuration option.
+        # A thread pool for handling checks.  Tasks are added to the
+        # pool when `schedule` is executed, if it has a docstring.
+        # The pool is collected when `get_error_report_string` is called.
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+
+    def schedule(self, function):
+        # type: (FunctionDescription) -> None
+        if function.docstring is None:
+            return
+        self.executor.submit(self.run_checks, function)
+
     def run_checks(self, function):
         # type: (FunctionDescription) -> None
         """Run checks on the given function.
@@ -90,7 +103,6 @@ class IntegrityChecker(object):
             function: A function whose docstring we are verifying.
 
         """
-        self.function = function
         if function.docstring is not None:
             if self.config.style == DocstringStyle.GOOGLE:
                 self.docstring = Docstring.from_google(
@@ -100,7 +112,7 @@ class IntegrityChecker(object):
                 self.docstring = Docstring.from_sphinx(
                     function.docstring,
                 )
-                self._check_variables()
+                self._check_variables(function)
             if self.config.strictness != Strictness.FULL_DESCRIPTION:
                 if self.docstring.satisfies_strictness(
                     self.config.strictness
@@ -108,17 +120,17 @@ class IntegrityChecker(object):
                     return
             if self.docstring.ignore_all:
                 return
-            self._check_parameters()
-            self._check_parameter_types()
-            self._check_return()
-            self._check_return_type()
-            self._check_yield()
-            self._check_raises()
-            self._check_style()
+            self._check_parameters(function)
+            self._check_parameter_types(function)
+            self._check_return(function)
+            self._check_return_type(function)
+            self._check_yield(function)
+            self._check_raises(function)
+            self._check_style(function)
             self._sorted = False
 
-    def _check_parameter_types(self):
-        # type: () -> None
+    def _check_parameter_types(self, function):
+        # type: (FunctionDescription) -> None
         error_code = ParameterTypeMismatchError.error_code
         if self._ignore_error(ParameterTypeMismatchError):
             return
@@ -128,15 +140,15 @@ class IntegrityChecker(object):
                 self.docstring.get_types(Sections.ARGUMENTS_SECTION) or [])
         )
         doc_arg_types = list()  # type: List[Optional[str]]
-        for name in self.function.argument_names:
+        for name in function.argument_names:
             if name not in argument_types:
                 doc_arg_types.append(None)
             else:
                 doc_arg_types.append(argument_types[name])
         noqa_lookup = self.docstring.get_noqas()
         for name, expected, actual in zip(
-                self.function.argument_names,
-                self.function.argument_types,
+                function.argument_names,
+                function.argument_types,
                 doc_arg_types,
         ):
             if expected is None or actual is None:
@@ -153,7 +165,7 @@ class IntegrityChecker(object):
                 ) or default_line_numbers
                 self.errors.append(
                     ParameterTypeMismatchError(
-                        self.function.function,
+                        function.function,
                         name=name,
                         expected=expected,
                         actual=actual,
@@ -161,12 +173,12 @@ class IntegrityChecker(object):
                     )
                 )
 
-    def _check_return_type(self):
-        # type: () -> None
+    def _check_return_type(self, function):
+        # type: (FunctionDescription) -> None
         if self._ignore_error(ReturnTypeMismatchError):
             return
 
-        fun_type = self.function.return_type
+        fun_type = function.return_type
         doc_type = self.docstring.get_types(Sections.RETURNS_SECTION)
         if not doc_type or isinstance(doc_type, list):
             doc_type = None
@@ -177,22 +189,22 @@ class IntegrityChecker(object):
                 )
                 self.errors.append(
                     ReturnTypeMismatchError(
-                        self.function.function,
+                        function.function,
                         expected=fun_type,
                         actual=doc_type,
                         line_numbers=line_numbers,
                     ),
                 )
 
-    def _check_yield(self):
-        # type: () -> None
+    def _check_yield(self, function):
+        # type: (FunctionDescription) -> None
         doc_yield = self.docstring.get_section(Sections.YIELDS_SECTION)
-        fun_yield = self.function.has_yield
+        fun_yield = function.has_yield
         ignore_missing = self._ignore_error(MissingYieldError)
         ignore_excess = self._ignore_error(ExcessYieldError)
         if fun_yield and not doc_yield and not ignore_missing:
             self.errors.append(
-                MissingYieldError(self.function.function)
+                MissingYieldError(function.function)
             )
         elif doc_yield and not fun_yield and not ignore_excess:
             line_numbers = self.docstring.get_line_numbers(
@@ -200,20 +212,20 @@ class IntegrityChecker(object):
             )
             self.errors.append(
                 ExcessYieldError(
-                    self.function.function,
+                    function.function,
                     line_numbers=line_numbers,
                 )
             )
 
-    def _check_return(self):
-        # type: () -> None
+    def _check_return(self, function):
+        # type: (FunctionDescription) -> None
         doc_return = self.docstring.get_section(Sections.RETURNS_SECTION)
-        fun_return = self.function.has_return
+        fun_return = function.has_return
         ignore_missing = self._ignore_error(MissingReturnError)
         ignore_excess = self._ignore_error(ExcessReturnError)
         if fun_return and not doc_return and not ignore_missing:
             self.errors.append(
-                MissingReturnError(self.function.function)
+                MissingReturnError(function.function)
             )
         elif doc_return and not fun_return and not ignore_excess:
             line_numbers = self.docstring.get_line_numbers(
@@ -221,19 +233,19 @@ class IntegrityChecker(object):
             )
             self.errors.append(
                 ExcessReturnError(
-                    self.function.function,
+                    function.function,
                     line_numbers=line_numbers,
                 )
             )
 
-    def _check_parameters(self):
-        # type: () -> None
+    def _check_parameters(self, function):
+        # type: (FunctionDescription) -> None
         # argument_types = self.docstring.get_argument_types()
         # docstring_arguments = set(argument_types.keys())
         docstring_arguments = set(self.docstring.get_items(
             Sections.ARGUMENTS_SECTION
         ) or [])
-        actual_arguments = set(self.function.argument_names)
+        actual_arguments = set(function.argument_names)
         missing_in_doc = actual_arguments - docstring_arguments
         missing_in_doc = self._remove_ignored(
             missing_in_doc,
@@ -250,7 +262,7 @@ class IntegrityChecker(object):
             # parameter, by definition, will not have line numbers.
             self.errors.append(
                 MissingParameterError(
-                    self.function.function,
+                    function.function,
                     missing,
                     line_numbers=default_line_numbers
                 )
@@ -268,18 +280,18 @@ class IntegrityChecker(object):
             ) or default_line_numbers
             self.errors.append(
                 ExcessParameterError(
-                    self.function.function,
+                    function.function,
                     missing,
                     line_numbers=line_numbers,
                 )
             )
 
-    def _check_variables(self):
-        # type: () -> None
+    def _check_variables(self, function):
+        # type: (FunctionDescription) -> None
         described_variables = set(
             self.docstring.get_items(Sections.VARIABLES_SECTION) or []
         )  # type: Set[str]
-        actual_variables = set(self.function.variables)
+        actual_variables = set(function.variables)
         excess_in_doc = described_variables - actual_variables
 
         # Get a default line number.
@@ -294,7 +306,7 @@ class IntegrityChecker(object):
             ) or default_line_numbers
             self.errors.append(
                 ExcessVariableError(
-                    self.function.function,
+                    function.function,
                     excess,
                     line_numbers=line_numbers,
                 )
@@ -348,19 +360,19 @@ class IntegrityChecker(object):
         # We are to ignore specific instances.
         return missing - set(noqa_lookup[error_code])
 
-    def _check_style(self):
-        # type: () -> None
+    def _check_style(self, function):
+        # type: (FunctionDescription) -> None
         for StyleError, line_numbers in self.docstring.get_style_errors():
             self.errors.append(StyleError(
-                self.function.function,
+                function.function,
                 line_numbers,
             ))
 
-    def _check_raises(self):
-        # type: () -> None
+    def _check_raises(self, function):
+        # type: (FunctionDescription) -> None
         exception_types = self.docstring.get_items(Sections.RAISES_SECTION)
         docstring_raises = set(exception_types or [])
-        actual_raises = self.function.raises
+        actual_raises = function.raises
         missing_in_doc = actual_raises - docstring_raises
 
         missing_in_doc = self._remove_ignored(
@@ -370,7 +382,7 @@ class IntegrityChecker(object):
 
         for missing in missing_in_doc:
             self.errors.append(
-                MissingRaiseError(self.function.function, missing)
+                MissingRaiseError(function.function, missing)
             )
 
         # TODO: Disable by default.
@@ -394,7 +406,7 @@ class IntegrityChecker(object):
             ) or default_line_numbers
             self.errors.append(
                 ExcessRaiseError(
-                    self.function.function,
+                    function.function,
                     missing,
                     line_numbers=line_numbers,
                 )
@@ -408,6 +420,7 @@ class IntegrityChecker(object):
 
     def get_error_report(self, verbosity, filename, message_template=None):
         # type: (int, str, str) -> ErrorReport
+        self.executor.shutdown()
         return ErrorReport(
             errors=self.errors,
             filename=filename,
