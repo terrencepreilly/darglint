@@ -75,8 +75,6 @@ class IntegrityChecker(object):
                 propagate, crashing darglint.  This is mostly useful
                 for development.
 
-        TODO: Remove reference to ParserExceptions.
-
         """
         self.errors = list()  # type: List[DarglintError]
         self._sorted = True

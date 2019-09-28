@@ -3,6 +3,44 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-alpha] - 2019-09-28
+
+### Added
+
+- A *bin/* folder to hold various development utilities for darglint.
+  Currently, it holds `bnf_to_cnf` (a utility to convert BNF grammars to
+  CNF grammars), and `doc_extract` (a utility to extract docstrings from
+  repositories, and annotate them for use in integration tests.)
+
+- A (crappy) integration test framework.  Test fixtures are ignored in git,
+  since the integration tests are only relevant for local development (and
+  even then, mostly just release).  The integration tests are as follows:
+
+  - *goldens.py*: Tests against goldens for individual docstrings.  This
+  attempts to ensure that parsed docstrings always contain the expected
+  sections after development.  Goldens are generated using the `doc_extract`
+  utility in the *bin/* folder.
+
+  - *grammar_size.py*: Tests that the grammar size doesn't increase
+  significantly.  Larger grammars will result in longer parse times, and it
+  could be relatively easy to accidentally introduce a much larger grammar.
+
+  - *performance.py*: Tests performance of the parser against individual
+  docstrings to make sure we don't introduce a performance regression.  Also
+  tests performance for individual files in some repositories.
+
+  - TODO: We still need to add some tests against multiple configurations,
+  and against entire repositories.
+
+### Changed
+
+- Changed the recursive descent parser to a CYK parser.  This was a significant
+  change.  It makes darglint much more flexible and extensible.  However, it
+  also introduces a significant performance regression.  For that reason, this
+  will be released first as an alpha, while I figure out how to handle the
+  performance regression (or I determine whether or not it's even all that
+  important of a problem.)
+
 ## [0.6.1] - 2019-08-11
 
 ### Fixed

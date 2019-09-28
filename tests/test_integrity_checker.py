@@ -554,9 +554,6 @@ class IntegrityCheckerTestCase(TestCase):
         functions = get_function_descriptions(tree)
         checker = IntegrityChecker(raise_errors=True)
 
-        # with self.assertRaises(ParserException):
-        #     checker.run_checks(functions[0])
-
         # The default is to not raise exceptions.
         checker = IntegrityChecker()
         checker.run_checks(functions[0])
