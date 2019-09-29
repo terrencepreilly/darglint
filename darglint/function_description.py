@@ -23,7 +23,7 @@ if hasattr(ast, 'AsyncFunctionDef'):
     FunctionDef = (ast.FunctionDef, ast.AsyncFunctionDef)
 
 
-def read_program(filename):  # type: (str) -> str
+def read_program(filename):  # type: (str) -> Union[bytes, Optional[str]]
     """Read a program from a file.
 
     Args:
@@ -34,11 +34,11 @@ def read_program(filename):  # type: (str) -> str
         The program as a single string.
 
     """
-    program = None  # type: Optional[str]
+    program = None  # type: Union[bytes, Optional[str]]
     if filename == '-':
         program = sys.stdin.read()
     else:
-        with open(filename, 'r') as fin:
+        with open(filename, 'rb') as fin:
             program = fin.read()
     return program
 

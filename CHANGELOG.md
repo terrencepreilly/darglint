@@ -3,6 +3,14 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.0.0-alpha.2] - 2019-09-29
+
+### Fixed
+
+- UTF-8 encoded source files were not working previously.  Rather than
+  reading the string (and forcing an encoding on the data), we're now
+  reading bytes and passing that along to the `ast` module. See Issue #46.
+
 ## [1.0.0-alpha.1] - 2019-09-28
 
 ### Changed
