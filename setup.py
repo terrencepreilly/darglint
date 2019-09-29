@@ -49,7 +49,7 @@ flake8_entry_point = 'flake8.extension'
 
 setup(
     name="darglint",
-    version="1.0.0-alpha",
+    version="1.0.0-alpha.1",
     author="Terrence Reilly",
     author_email="terrencepreilly@gmail.com",
     description=("A utility for ensuring Google-style docstrings"
@@ -59,6 +59,7 @@ setup(
     url="http://github.com/terrencepreilly/darglint",
     packages=find_packages(exclude=('tests', 'docs')),
     long_description=read_full_documentation('README.md'),
+    long_description_content_type="text/markdown",
     entry_points={
         'console_scripts': [
             'darglint = darglint.driver:main',
