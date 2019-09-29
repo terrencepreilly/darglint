@@ -5,6 +5,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [1.0.0-alpha.2] - 2019-09-29
 
+### Changed
+
+- Changed the error code prefixes from "I" and "S" to "DAR".  This
+  will prevent collisions with other utilities reported through flake8.
+  See Issue #40.
+
 ### Fixed
 
 - UTF-8 encoded source files were not working previously.  Rather than

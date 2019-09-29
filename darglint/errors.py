@@ -5,9 +5,8 @@ to having docstring arguments out of sync with the function/method
 definition.
 
 Groups of errors:
-    I Interface
-    S Style
 
+    000 Style
     100 Args
     200 Returns
     300 Yields
@@ -18,7 +17,7 @@ These errors are based on the errors and warnings from the
 pycodestyle package.  Interface, here, describes incorrect or incomplete
 documentation.  Style, here, means errors in documentation style.
 So, for instance, missing a parameter in the documentation would be
-I101.
+DAR101.
 
 """
 import ast  # noqa: F401
@@ -105,7 +104,7 @@ class DarglintError(BaseException):
 class GenericSyntaxError(DarglintError):
     """Describes that something went wrong in parsing the docstring."""
 
-    error_code = 'S001'
+    error_code = 'DAR001'
 
     def __init__(self, function, message, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
@@ -129,7 +128,7 @@ class GenericSyntaxError(DarglintError):
 class EmptyDescriptionError(DarglintError):
     """Describes when an argument/exception lacks a description."""
 
-    error_code = 'S002'
+    error_code = 'DAR002'
 
     def __init__(self, function, message, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
@@ -155,7 +154,7 @@ class IndentError(DarglintError):
     """Describes when a line is under-indented or over-indented.
     """
 
-    error_code = 'S003'
+    error_code = 'DAR003'
 
     def __init__(self, function, line_numbers=None):
         # type: (ast.FunctionDef, Tuple[int, int]) -> None
@@ -178,7 +177,7 @@ class IndentError(DarglintError):
 class ExcessNewlineError(DarglintError):
     """Describes when a docstring has an extra newline where it shouldn't."""
 
-    error_code = 'S004'
+    error_code = 'DAR004'
 
     def __init__(self, function, line_numbers=None):
         # type: (ast.FunctionDef, Tuple[int, int]) -> None
@@ -193,7 +192,7 @@ class ExcessNewlineError(DarglintError):
 class MissingParameterError(DarglintError):
     """Describes when a docstring is missing a parameter in the definition."""
 
-    error_code = 'I101'
+    error_code = 'DAR101'
 
     def __init__(self, function, name, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
@@ -216,7 +215,7 @@ class MissingParameterError(DarglintError):
 class ExcessParameterError(DarglintError):
     """Describes when a docstring contains a parameter not in function."""
 
-    error_code = 'I102'
+    error_code = 'DAR102'
 
     def __init__(self, function, name, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
@@ -239,7 +238,7 @@ class ExcessParameterError(DarglintError):
 class ParameterTypeMismatchError(DarglintError):
     """Describes when a docstring parameter type doesn't match function."""
 
-    error_code = 'I103'
+    error_code = 'DAR103'
 
     def __init__(self, function, name, expected, actual, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, str, str, Tuple[int, int]) -> None
@@ -271,7 +270,7 @@ class ParameterTypeMismatchError(DarglintError):
 class MissingReturnError(DarglintError):
     """Describes when a docstring is missing a return from definition."""
 
-    error_code = 'I201'
+    error_code = 'DAR201'
 
     def __init__(self, function, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Tuple[int, int]) -> None
@@ -294,7 +293,7 @@ class MissingReturnError(DarglintError):
 class ExcessReturnError(DarglintError):
     """Describes when a docstring has a return not in definition."""
 
-    error_code = 'I202'
+    error_code = 'DAR202'
 
     def __init__(self, function, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Tuple[int, int]) -> None
@@ -317,7 +316,7 @@ class ExcessReturnError(DarglintError):
 class ReturnTypeMismatchError(DarglintError):
     """Describes when a docstring parameter type doesn't match function."""
 
-    error_code = 'I203'
+    error_code = 'DAR203'
 
     def __init__(self, function, expected, actual, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, str, Tuple[int, int]) -> None
@@ -346,7 +345,7 @@ class ReturnTypeMismatchError(DarglintError):
 class MissingYieldError(DarglintError):
     """Describes when a docstring is missing a yield present in definition."""
 
-    error_code = 'I301'
+    error_code = 'DAR301'
 
     def __init__(self, function, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Tuple[int, int]) -> None
@@ -369,7 +368,7 @@ class MissingYieldError(DarglintError):
 class ExcessYieldError(DarglintError):
     """Describes when a docstring has a yield not in definition."""
 
-    error_code = 'I302'
+    error_code = 'DAR302'
 
     def __init__(self, function, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Tuple[int, int]) -> None
@@ -392,7 +391,7 @@ class ExcessYieldError(DarglintError):
 class MissingRaiseError(DarglintError):
     """Describes when a docstring is missing an exception raised."""
 
-    error_code = 'I401'
+    error_code = 'DAR401'
 
     def __init__(self, function, name, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
@@ -423,7 +422,7 @@ class ExcessRaiseError(DarglintError):
 
     """
 
-    error_code = 'I402'
+    error_code = 'DAR402'
 
     def __init__(self, function, name, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
@@ -447,7 +446,7 @@ class ExcessRaiseError(DarglintError):
 class ExcessVariableError(DarglintError):
     """Describes when a docstring describes a variable which is not defined."""
 
-    error_code = 'I501'
+    error_code = 'DAR501'
 
     def __init__(self, function, name, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
