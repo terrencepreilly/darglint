@@ -58,7 +58,7 @@ setup(
     keywords="documentation linter development",
     url="http://github.com/terrencepreilly/darglint",
     packages=find_packages(exclude=('tests', 'docs')),
-    long_description=read_full_documentation('README.rst'),
+    long_description=read_full_documentation('README.md'),
     entry_points={
         'console_scripts': [
             'darglint = darglint.driver:main',
