@@ -24,13 +24,13 @@ would like a feature in *darglint*.
 
 To install *darglint*, use pip.
 
-```
+```bash
 pip install darglint
 ```
 
 Or, clone the repository, `cd` to the directory, and
 
-```
+```bash
 pip install .
 ```
 
@@ -52,14 +52,14 @@ If we would like to ignore `ExcessRaiseError`s (because we know that
 an underlying function will raise an exception), then we would add its
 error code to a file named *.darglint*:
 
-```
+```ini
 [darglint]
 ignore=I402
 ```
 
 We can ignore multiple errors by using a comma-separated list:
 
-```
+```ini
 [darglint]
 ignore=I402,I103
 ```
@@ -69,7 +69,7 @@ ignore=I402,I103
 If we would like to specify a message template, we may do so as
 follows:
 
-```
+```ini
 [darglint]
 message_template={msg_id}@{path}:{line}
 ```
@@ -79,7 +79,7 @@ Which will produce a message such as `I102@driver.py:72`.
 Finally, we can specify the docstring style type using `docstring_style`
 ("google" by default):
 
-```
+```ini
 [darglint]
 docstring_style=sphinx
 ```
@@ -100,7 +100,7 @@ and the docstring will be fully checked.
 
 For example, if we have the following function:
 
-```
+```python
 def double(x):
     # <docstring>
     return x * 2
@@ -138,7 +138,7 @@ configurations (columns):
 In short, if you want to be able to have single-line docstrings, and check
 all other docstrings against their described parameters, you would specify
 
-```
+```ini
 [darglint]
 strictness=short
 ```
@@ -154,13 +154,13 @@ In your configuration file.
 Given a python source file, `serializers.py`, you would check the docstrings
 as follows:
 
-```
+```bash
 darglint serializers.py
 ```
 
 You can give an optional verbosity setting to *darglint*.  For example,
 
-```
+```bash
 darglint -v 2 *.py
 ```
 
@@ -172,7 +172,7 @@ To use an arbitrary error format, you can pass a message template, which
 is a python format string.  For example, if we pass the message
 template
 
-```
+```bash
 darglint -m "{path}:{line} -> {msg_id}" darglint/driver.py
 ```
 
@@ -196,7 +196,7 @@ as the value `message_template`.
 This allows us to check all of the files in our project at once.  For example,
 when eating my own dogfood (as I tend to do), I invoke *darglint* as follows:
 
-```
+```bash
 find . -name "*.py" | xargs darglint
 ```
 
@@ -209,7 +209,7 @@ You can ignore specific errors in a particular docstring.  The syntax
 is much like that of *pycodestyle*, etc.  It generally takes the from
 of:
 
-```
+```python
 # noqa: <error> <argument>
 ```
 
@@ -220,7 +220,7 @@ statement refers to (if nothing, then it is not specified).
 Let us say that we want to ignore a missing return statement
 in the following docstring:
 
-```
+```python
 def we_dont_want_a_returns_section():
   """Return the value, 3.
 
@@ -237,7 +237,7 @@ either, just one particular one.  For example, we may be writing a
 function that takes a class instance as self. (Say, in a bound *celery*
 task.) Then we would do something like:
 
-```
+```python
 def a_bound_function(self, arg1):
   """Do something interesting.
 
@@ -256,7 +256,7 @@ We may also want to mark excess documentation as being okay.  For example,
 we may not want to explicitly catch and raise a `ZeroDivisionError`.  We
 could do the following:
 
-```
+```python
 def always_raises_exception(x):
     """Raise a zero division error or type error.o
 
@@ -315,7 +315,7 @@ later date.
 
 To analyze Sphinx-style docstrings, pass the style flag to the command:
 
-```
+```bash
 darglint -s sphinx example.py
 darglint --docsting-style sphinx example.py
 ```
@@ -323,7 +323,7 @@ darglint --docsting-style sphinx example.py
 Alternatively, you can specify the style in the configuration file using
 the setting, "docstring\_style":
 
-```
+```ini
 [darglint]
 docstring_style=sphinx
 ```
@@ -373,13 +373,13 @@ general descriptions in the interface.
 
 Install `darglint`. First, clone the repository:
 
-```
+```bash
 git clone https://github.com/terrencepreilly/darglint.git
 ```
 
 `cd` into the directory, create a virtual environment (optional), then setup:
 
-```
+```bash
 cd darglint/
 virtualenv -p python3.6 .env
 source .env/bin/activate
@@ -388,14 +388,14 @@ pip install -e .
 
 You can run the tests using
 
-```
+```bash
 python setup.py test
 ```
 
 Or, install `pytest` manually, `cd` to the project's root directory,
 and run
 
-```
+```bash
 pytest
 ```
 
@@ -408,7 +408,7 @@ officially supported (only 3.5+), it's nice to try to make minor
 version numbers support it.  You would build the dockerfile and
 test using something like
 
-```
+```bash
 pushd docker-build
 docker build -t darglint-34 -f Dockerfile.test34 .
 popd
