@@ -1,4 +1,4 @@
-# Generated on 2019-09-01 13:32:50.190490
+# Generated on 2019-10-19 16:36:06.237714
 
 from darglint.parse.grammar import (
     BaseGrammar,
