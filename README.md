@@ -277,32 +277,30 @@ have put it on its own line, as `# noqa: I402 ZeroDivisionError`.
 
 ### Error Codes
 
-- *I101*: The docstring is missing a parameter in the definition.
-- *I102*: The docstring contains a parameter not in function.
-- *I103*: The docstring parameter type doesn't match function.
-- *I201*: The docstring is missing a return from definition.
-- *I202*: The docstring has a return not in definition.
-- *I203*: The docstring parameter type doesn't match function.
-- *I301*: The docstring is missing a yield present in definition.
-- *I302*: The docstring has a yield not in definition.
-- *I401*: The docstring is missing an exception raised.
-- *I402*: The docstring describes an exception not explicitly raised.
-- *I501*: The docstring describes a variable which is not defined.
-- *S001*: Describes that something went wrong in parsing the docstring.
-- *S002*: An argument/exception lacks a description.
-
-The error code scheme is based on the errors from the pycodestyle package.
-The first letter corresponds to the broad class of error:
-
--  I (Interface): Incorrect or incomplete documentation.
--  S (Style): Errors with documentation style/syntax.
+- *DAR001*: The docstring was not parsed correctly due to a syntax error.
+- *DAR002*: An argument/exception lacks a description
+- *DAR003*: A line is under-indented or over-indented.
+- *DAR004*: The docstring contains an extra newline where it shouldn't.
+- *DAR101*: The docstring is missing a parameter in the definition.
+- *DAR102*: The docstring contains a parameter not in function.
+- *DAR103*: The docstring parameter type doesn't match function.
+- *DAR201*: The docstring is missing a return from definition.
+- *DAR202*: The docstring has a return not in definition.
+- *DAR203*: The docstring parameter type doesn't match function.
+- *DAR301*: The docstring is missing a yield present in definition.
+- *DAR302*: The docstring has a yield not in definition.
+- *DAR401*: The docstring is missing an exception raised.
+- *DAR402*: The docstring describes an exception not explicitly raised.
+- *DAR501*: The docstring describes a variable which is not defined.
 
 The number in the hundreds narrows the error by location in the docstring:
 
+- 000: Syntax, formatting, and style
 - 100: Args section
 - 200: Returns section
 - 300: Yields section
 - 400: Raises section
+- 500: Variables section
 
 
 ## Sphinx
