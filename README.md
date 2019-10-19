@@ -54,14 +54,14 @@ error code to a file named *.darglint*:
 
 ```ini
 [darglint]
-ignore=I402
+ignore=DAR402
 ```
 
 We can ignore multiple errors by using a comma-separated list:
 
 ```ini
 [darglint]
-ignore=I402,I103
+ignore=DAR402,DAR103
 ```
 
 ### Message Template Configuration
@@ -74,7 +74,7 @@ follows:
 message_template={msg_id}@{path}:{line}
 ```
 
-Which will produce a message such as `I102@driver.py:72`.
+Which will produce a message such as `DAR102@driver.py:72`.
 
 Finally, we can specify the docstring style type using `docstring_style`
 ("google" by default):
@@ -179,7 +179,7 @@ darglint -m "{path}:{line} -> {msg_id}" darglint/driver.py
 Then we would get back error messages like
 
 ```
-darglint/driver.py :61 -> I101
+darglint/driver.py :61 -> DAR101
 ```
 
 The following attributes can be passed to the format string:
@@ -213,7 +213,7 @@ of:
 # noqa: <error> <argument>
 ```
 
-Where `<error>` is the particular error to ignore (`I402`, or `I201`
+Where `<error>` is the particular error to ignore (`DAR402`, or `DAR201`
 for example), and `<argument>` is what (if anything) the ignore
 statement refers to (if nothing, then it is not specified).
 
@@ -224,7 +224,7 @@ in the following docstring:
 def we_dont_want_a_returns_section():
   """Return the value, 3.
 
-  # noqa: I201
+  # noqa: DAR201
 
   """
   return 3
@@ -244,7 +244,7 @@ def a_bound_function(self, arg1):
   Args:
     arg1: The first argument.
 
-  # noqa: I101 arg1
+  # noqa: DAR101 arg1
 
   """
   arg1.execute(self)
@@ -264,8 +264,8 @@ def always_raises_exception(x):
       x: The argument which could be a number or could not be.
 
     Raises:
-      ZeroDivisionError: If x is a number.  # noqa: I402
-      TypeError: If x is not a number.  # noqa: I402
+      ZeroDivisionError: If x is a number.  # noqa: DAR402
+      TypeError: If x is not a number.  # noqa: DAR402
 
     """
     x / 0
@@ -273,7 +273,7 @@ def always_raises_exception(x):
 
 So, in this case, the argument for `noqa` is really all the way to
 the left.  (Or whatever description we are parsing.)  We could also
-have put it on its own line, as `# noqa: I402 ZeroDivisionError`.
+have put it on its own line, as `# noqa: DAR402 ZeroDivisionError`.
 
 ### Error Codes
 
