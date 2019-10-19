@@ -55,19 +55,3 @@ class DarglintChecker(object):
 
         except Exception as ex:
             yield (last_line, 0, str(ex), type(self))
-
-
-class StyleDarglintChecker(DarglintChecker):
-
-    def run(self):
-        for line, col, msg, selftype in super(StyleDarglintChecker, self).run():
-            if msg.startswith('S'):
-                yield line, col, msg, selftype
-
-
-class InterfaceDarglintChecker(DarglintChecker):
-
-    def run(self):
-        for line, col, msg, selftype in super(InterfaceDarglintChecker, self).run():
-            if msg.startswith('I'):
-                yield line, col, msg, selftype

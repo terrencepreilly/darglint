@@ -171,7 +171,7 @@ def print_error_list():
 
 
 def print_version():
-    print('1.0.0')
+    print('1.1.0')
 
 
 def main():
