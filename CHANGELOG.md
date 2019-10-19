@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   won't help much with load times or memory use, but it will at least
   reduce the risk of parse errors from that code.
 
+### Fixed
+
+- Fixed mypy errors in darglint.
+
 ## [1.0.0-alpha.2] - 2019-09-29
 
 ### Changed

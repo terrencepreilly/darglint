@@ -216,8 +216,8 @@ class Docstring(BaseDocstring):
         if section == Sections.ARGUMENTS_SECTION:
             return self._sorted_keys(self._get_argument_type_lookup()) or None
         elif section == Sections.RAISES_SECTION:
-            return sorted(  # type: ignore
-                self._get_raises_type(),
+            return sorted(
+                [x or '' for x in self._get_raises_type()],
                 key=lambda x: x or ''
             ) or None
         elif section == Sections.VARIABLES_SECTION:

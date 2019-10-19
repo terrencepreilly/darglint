@@ -106,9 +106,13 @@ class CykNodeUtils(object):
 
         # Add all of the children's relationships.
         if cyk_node.lchild:
-            ret += cyk_node.lchild.to_dot(False, encountered) + '\n'
+            ret += CykNodeUtils.to_dot(
+                cyk_node.lchild, False, encountered
+            ) + '\n'
         if cyk_node.rchild:
-            ret += cyk_node.rchild.to_dot(False, encountered) + '\n'
+            ret += CykNodeUtils.to_dot(
+                cyk_node.rchild, False, encountered
+            ) + '\n'
 
         if is_root:
             ret += '}'
