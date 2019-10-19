@@ -584,7 +584,6 @@ class IntegrityCheckerTestCase(TestCase):
         errors = checker.errors
         self.assertTrue(isinstance(errors[0], IndentError))
 
-    @skip('Implement me!')
     def test_raises_style_error_if_no_content_after_colon(self):
         program = '\n'.join([
             'def hello_world(name):',
