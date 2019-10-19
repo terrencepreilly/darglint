@@ -24,6 +24,9 @@ from darglint.parse.cyk import (
 from .utils import (
     random_tokens,
 )
+from darglint.utils import (
+    CykNodeUtils,
+)
 
 MAX_REPS = 10
 
@@ -251,8 +254,8 @@ class NewGoogleParserTests(TestCase):
         ])))
         node = parse(tokens)
         self.assertTrue(
-            node.contains('short-description')
+            CykNodeUtils.contains(node, 'short-description')
         )
         self.assertTrue(
-            node.contains('long-description')
+            CykNodeUtils.contains(node, 'long-description')
         )

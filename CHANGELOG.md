@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - Updated readme and error description list.
+- Move debug- or test-only functions to utils file.  Probably this
+  won't help much with load times or memory use, but it will at least
+  reduce the risk of parse errors from that code.
 
 ## [1.0.0-alpha.2] - 2019-09-29
 
