@@ -32,6 +32,9 @@ from ..lex import (
 from ..config import (
     Strictness,
 )
+from ..errors import (
+    DarglintError,
+)
 
 
 class Docstring(BaseDocstring):
@@ -213,8 +216,8 @@ class Docstring(BaseDocstring):
         if section == Sections.ARGUMENTS_SECTION:
             return self._sorted_keys(self._get_argument_type_lookup()) or None
         elif section == Sections.RAISES_SECTION:
-            return sorted(  # type: ignore
-                self._get_raises_type(),
+            return sorted(
+                [x or '' for x in self._get_raises_type()],
                 key=lambda x: x or ''
             ) or None
         elif section == Sections.VARIABLES_SECTION:
@@ -308,9 +311,10 @@ class Docstring(BaseDocstring):
         # noqa: I302
 
         """
-        # TODO: Implement me!
-        t = []  # type: List[Tuple[Callable, Tuple[int, int]]]
-        return (x for x in t)
+        for node in self.root.in_order_traverse():
+            for annotation in node.annotations:
+                if issubclass(annotation, DarglintError):
+                    yield annotation, node.line_numbers
 
     def satisfies_strictness(self, strictness):
         # type: (Strictness) -> bool

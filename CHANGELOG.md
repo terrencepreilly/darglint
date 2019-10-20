@@ -3,6 +3,29 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+
+## [1.1.0 - 2019-10-19
+
+### Fixed
+
+- Updated the flake8 entry point to reflect the new error codes.
+
+## [1.0.0] - 2019-10-19
+
+### Changed
+
+- Updated readme and error description list.
+- Move debug- or test-only functions to utils file.  Probably this
+  won't help much with load times or memory use, but it will at least
+  reduce the risk of parse errors from that code.
+- Removed the *google_types.py* target, since that is not used directly
+  by any source code. (*google_types.bnf* is imported by other BNF files,
+  only.)
+
+### Fixed
+
+- Fixed mypy errors in darglint.
+
 ## [1.0.0-alpha.2] - 2019-09-29
 
 ### Changed

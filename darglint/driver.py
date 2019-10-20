@@ -3,6 +3,11 @@ import argparse
 import ast
 import pathlib
 import sys
+import inspect
+
+from typing import (
+    List,
+)
 
 from .function_description import (
     read_program,
@@ -15,6 +20,7 @@ from .config import (
     Strictness,
 )
 from .docstring.base import DocstringStyle
+import darglint.errors
 
 
 # ---------------------- ARGUMENT PARSER -----------------------------
@@ -155,24 +161,17 @@ def get_error_report(filename,
 
 
 def print_error_list():
-    print('\n'.join([
-        'I101: The docstring is missing a parameter in the definition.',
-        'I102: The docstring contains a parameter not in function.',
-        'I103: The docstring parameter type doesn\'t match function.',
-        'I201: The docstring is missing a return from definition.',
-        'I202: The docstring has a return not in definition.',
-        'I203: The docstring parameter type doesn\'t match function.',
-        'I301: The docstring is missing a yield present in definition.',
-        'I302: The docstring has a yield not in definition.',
-        'I401: The docstring is missing an exception raised.',
-        'I402: The docstring describes an exception not explicitly raised.',
-        'S001: Describes that something went wrong in parsing the docstring.',
-        'S002: An argument/exception lacks a description.',
-    ]))
+    errors = list()  # type: List[str]
+    for name, obj in inspect.getmembers(darglint.errors, inspect.isclass):
+        if (issubclass(obj, darglint.errors.DarglintError)
+                and obj != darglint.errors.DarglintError):
+            errors.append('{}: {}'.format(obj.error_code, obj.description))
+    errors.sort()
+    print('\n'.join(errors))
 
 
 def print_version():
-    print('1.0.0-alpha.1')
+    print('1.1.0')
 
 
 def main():

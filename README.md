@@ -24,13 +24,13 @@ would like a feature in *darglint*.
 
 To install *darglint*, use pip.
 
-```
+```bash
 pip install darglint
 ```
 
 Or, clone the repository, `cd` to the directory, and
 
-```
+```bash
 pip install .
 ```
 
@@ -52,16 +52,16 @@ If we would like to ignore `ExcessRaiseError`s (because we know that
 an underlying function will raise an exception), then we would add its
 error code to a file named *.darglint*:
 
-```
+```ini
 [darglint]
-ignore=I402
+ignore=DAR402
 ```
 
 We can ignore multiple errors by using a comma-separated list:
 
-```
+```ini
 [darglint]
-ignore=I402,I103
+ignore=DAR402,DAR103
 ```
 
 ### Message Template Configuration
@@ -69,17 +69,17 @@ ignore=I402,I103
 If we would like to specify a message template, we may do so as
 follows:
 
-```
+```ini
 [darglint]
 message_template={msg_id}@{path}:{line}
 ```
 
-Which will produce a message such as `I102@driver.py:72`.
+Which will produce a message such as `DAR102@driver.py:72`.
 
 Finally, we can specify the docstring style type using `docstring_style`
 ("google" by default):
 
-```
+```ini
 [darglint]
 docstring_style=sphinx
 ```
@@ -100,7 +100,7 @@ and the docstring will be fully checked.
 
 For example, if we have the following function:
 
-```
+```python
 def double(x):
     # <docstring>
     return x * 2
@@ -138,7 +138,7 @@ configurations (columns):
 In short, if you want to be able to have single-line docstrings, and check
 all other docstrings against their described parameters, you would specify
 
-```
+```ini
 [darglint]
 strictness=short
 ```
@@ -154,13 +154,13 @@ In your configuration file.
 Given a python source file, `serializers.py`, you would check the docstrings
 as follows:
 
-```
+```bash
 darglint serializers.py
 ```
 
 You can give an optional verbosity setting to *darglint*.  For example,
 
-```
+```bash
 darglint -v 2 *.py
 ```
 
@@ -172,14 +172,14 @@ To use an arbitrary error format, you can pass a message template, which
 is a python format string.  For example, if we pass the message
 template
 
-```
+```bash
 darglint -m "{path}:{line} -> {msg_id}" darglint/driver.py
 ```
 
 Then we would get back error messages like
 
 ```
-darglint/driver.py :61 -> I101
+darglint/driver.py :61 -> DAR101
 ```
 
 The following attributes can be passed to the format string:
@@ -196,7 +196,7 @@ as the value `message_template`.
 This allows us to check all of the files in our project at once.  For example,
 when eating my own dogfood (as I tend to do), I invoke *darglint* as follows:
 
-```
+```bash
 find . -name "*.py" | xargs darglint
 ```
 
@@ -209,22 +209,22 @@ You can ignore specific errors in a particular docstring.  The syntax
 is much like that of *pycodestyle*, etc.  It generally takes the from
 of:
 
-```
+```python
 # noqa: <error> <argument>
 ```
 
-Where `<error>` is the particular error to ignore (`I402`, or `I201`
+Where `<error>` is the particular error to ignore (`DAR402`, or `DAR201`
 for example), and `<argument>` is what (if anything) the ignore
 statement refers to (if nothing, then it is not specified).
 
 Let us say that we want to ignore a missing return statement
 in the following docstring:
 
-```
+```python
 def we_dont_want_a_returns_section():
   """Return the value, 3.
 
-  # noqa: I201
+  # noqa: DAR201
 
   """
   return 3
@@ -237,14 +237,14 @@ either, just one particular one.  For example, we may be writing a
 function that takes a class instance as self. (Say, in a bound *celery*
 task.) Then we would do something like:
 
-```
+```python
 def a_bound_function(self, arg1):
   """Do something interesting.
 
   Args:
     arg1: The first argument.
 
-  # noqa: I101 arg1
+  # noqa: DAR101 arg1
 
   """
   arg1.execute(self)
@@ -256,7 +256,7 @@ We may also want to mark excess documentation as being okay.  For example,
 we may not want to explicitly catch and raise a `ZeroDivisionError`.  We
 could do the following:
 
-```
+```python
 def always_raises_exception(x):
     """Raise a zero division error or type error.o
 
@@ -264,8 +264,8 @@ def always_raises_exception(x):
       x: The argument which could be a number or could not be.
 
     Raises:
-      ZeroDivisionError: If x is a number.  # noqa: I402
-      TypeError: If x is not a number.  # noqa: I402
+      ZeroDivisionError: If x is a number.  # noqa: DAR402
+      TypeError: If x is not a number.  # noqa: DAR402
 
     """
     x / 0
@@ -273,36 +273,34 @@ def always_raises_exception(x):
 
 So, in this case, the argument for `noqa` is really all the way to
 the left.  (Or whatever description we are parsing.)  We could also
-have put it on its own line, as `# noqa: I402 ZeroDivisionError`.
+have put it on its own line, as `# noqa: DAR402 ZeroDivisionError`.
 
 ### Error Codes
 
-- *I101*: The docstring is missing a parameter in the definition.
-- *I102*: The docstring contains a parameter not in function.
-- *I103*: The docstring parameter type doesn't match function.
-- *I201*: The docstring is missing a return from definition.
-- *I202*: The docstring has a return not in definition.
-- *I203*: The docstring parameter type doesn't match function.
-- *I301*: The docstring is missing a yield present in definition.
-- *I302*: The docstring has a yield not in definition.
-- *I401*: The docstring is missing an exception raised.
-- *I402*: The docstring describes an exception not explicitly raised.
-- *I501*: The docstring describes a variable which is not defined.
-- *S001*: Describes that something went wrong in parsing the docstring.
-- *S002*: An argument/exception lacks a description.
-
-The error code scheme is based on the errors from the pycodestyle package.
-The first letter corresponds to the broad class of error:
-
--  I (Interface): Incorrect or incomplete documentation.
--  S (Style): Errors with documentation style/syntax.
+- *DAR001*: The docstring was not parsed correctly due to a syntax error.
+- *DAR002*: An argument/exception lacks a description
+- *DAR003*: A line is under-indented or over-indented.
+- *DAR004*: The docstring contains an extra newline where it shouldn't.
+- *DAR101*: The docstring is missing a parameter in the definition.
+- *DAR102*: The docstring contains a parameter not in function.
+- *DAR103*: The docstring parameter type doesn't match function.
+- *DAR201*: The docstring is missing a return from definition.
+- *DAR202*: The docstring has a return not in definition.
+- *DAR203*: The docstring parameter type doesn't match function.
+- *DAR301*: The docstring is missing a yield present in definition.
+- *DAR302*: The docstring has a yield not in definition.
+- *DAR401*: The docstring is missing an exception raised.
+- *DAR402*: The docstring describes an exception not explicitly raised.
+- *DAR501*: The docstring describes a variable which is not defined.
 
 The number in the hundreds narrows the error by location in the docstring:
 
+- 000: Syntax, formatting, and style
 - 100: Args section
 - 200: Returns section
 - 300: Yields section
 - 400: Raises section
+- 500: Variables section
 
 
 ## Sphinx
@@ -315,7 +313,7 @@ later date.
 
 To analyze Sphinx-style docstrings, pass the style flag to the command:
 
-```
+```bash
 darglint -s sphinx example.py
 darglint --docsting-style sphinx example.py
 ```
@@ -323,7 +321,7 @@ darglint --docsting-style sphinx example.py
 Alternatively, you can specify the style in the configuration file using
 the setting, "docstring\_style":
 
-```
+```ini
 [darglint]
 docstring_style=sphinx
 ```
@@ -373,13 +371,13 @@ general descriptions in the interface.
 
 Install `darglint`. First, clone the repository:
 
-```
+```bash
 git clone https://github.com/terrencepreilly/darglint.git
 ```
 
 `cd` into the directory, create a virtual environment (optional), then setup:
 
-```
+```bash
 cd darglint/
 virtualenv -p python3.6 .env
 source .env/bin/activate
@@ -388,14 +386,14 @@ pip install -e .
 
 You can run the tests using
 
-```
+```bash
 python setup.py test
 ```
 
 Or, install `pytest` manually, `cd` to the project's root directory,
 and run
 
-```
+```bash
 pytest
 ```
 
@@ -408,7 +406,7 @@ officially supported (only 3.5+), it's nice to try to make minor
 version numbers support it.  You would build the dockerfile and
 test using something like
 
-```
+```bash
 pushd docker-build
 docker build -t darglint-34 -f Dockerfile.test34 .
 popd

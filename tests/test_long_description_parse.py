@@ -16,6 +16,9 @@ from darglint.parse.grammars.google_long_description import (
 from darglint.parse.cyk import (
     parse as cyk_parse,
 )
+from darglint.utils import (
+    CykNodeUtils,
+)
 
 
 class LongDescriptionParserTestCase(TestCase):
@@ -178,7 +181,7 @@ class LongDescriptionParserTestCase(TestCase):
         node = self.parse_string(raw)
         for noqa in self.get_identifiers(node, NoqaIdentifier):
             self.assertFalse(
-                noqa.contains('long-description'),
+                CykNodeUtils.contains(noqa, 'long-description'),
                 'The noqa should be on its own, but was not:\n{}'.format(
                     noqa
                 )

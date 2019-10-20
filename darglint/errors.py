@@ -49,6 +49,9 @@ class DarglintError(BaseException):
     # The first and last line numbers where the error occurs.
     line_numbers = None  # type: Tuple[int, int]
 
+    # A description of the error itself.
+    description = None  # type: str
+
     def message(self, verbosity=1):
         # type: (int) -> str
         """Get the message for this error, according to the verbosity.
@@ -105,6 +108,9 @@ class GenericSyntaxError(DarglintError):
     """Describes that something went wrong in parsing the docstring."""
 
     error_code = 'DAR001'
+    description = (
+        'The docstring was not parsed correctly due to a syntax error.'
+    )
 
     def __init__(self, function, message, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
@@ -129,6 +135,7 @@ class EmptyDescriptionError(DarglintError):
     """Describes when an argument/exception lacks a description."""
 
     error_code = 'DAR002'
+    description = 'An argument/exception lacks a description'
 
     def __init__(self, function, message, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
@@ -155,6 +162,7 @@ class IndentError(DarglintError):
     """
 
     error_code = 'DAR003'
+    description = 'A line is under-indented or over-indented.'
 
     def __init__(self, function, line_numbers=None):
         # type: (ast.FunctionDef, Tuple[int, int]) -> None
@@ -178,6 +186,9 @@ class ExcessNewlineError(DarglintError):
     """Describes when a docstring has an extra newline where it shouldn't."""
 
     error_code = 'DAR004'
+    description = (
+        'The docstring contains an extra newline where it shouldn\'t.'
+    )
 
     def __init__(self, function, line_numbers=None):
         # type: (ast.FunctionDef, Tuple[int, int]) -> None
@@ -193,6 +204,7 @@ class MissingParameterError(DarglintError):
     """Describes when a docstring is missing a parameter in the definition."""
 
     error_code = 'DAR101'
+    description = 'The docstring is missing a parameter in the definition.'
 
     def __init__(self, function, name, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
@@ -216,6 +228,7 @@ class ExcessParameterError(DarglintError):
     """Describes when a docstring contains a parameter not in function."""
 
     error_code = 'DAR102'
+    description = 'The docstring contains a parameter not in function.'
 
     def __init__(self, function, name, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
@@ -239,6 +252,7 @@ class ParameterTypeMismatchError(DarglintError):
     """Describes when a docstring parameter type doesn't match function."""
 
     error_code = 'DAR103'
+    description = 'The docstring parameter type doesn\'t match function.'
 
     def __init__(self, function, name, expected, actual, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, str, str, Tuple[int, int]) -> None
@@ -271,6 +285,7 @@ class MissingReturnError(DarglintError):
     """Describes when a docstring is missing a return from definition."""
 
     error_code = 'DAR201'
+    description = 'The docstring is missing a return from definition.'
 
     def __init__(self, function, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Tuple[int, int]) -> None
@@ -294,6 +309,7 @@ class ExcessReturnError(DarglintError):
     """Describes when a docstring has a return not in definition."""
 
     error_code = 'DAR202'
+    description = 'The docstring has a return not in definition.'
 
     def __init__(self, function, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Tuple[int, int]) -> None
@@ -317,6 +333,7 @@ class ReturnTypeMismatchError(DarglintError):
     """Describes when a docstring parameter type doesn't match function."""
 
     error_code = 'DAR203'
+    description = 'The docstring parameter type doesn\'t match function.'
 
     def __init__(self, function, expected, actual, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, str, Tuple[int, int]) -> None
@@ -346,6 +363,7 @@ class MissingYieldError(DarglintError):
     """Describes when a docstring is missing a yield present in definition."""
 
     error_code = 'DAR301'
+    description = 'The docstring is missing a yield present in definition.'
 
     def __init__(self, function, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Tuple[int, int]) -> None
@@ -369,6 +387,7 @@ class ExcessYieldError(DarglintError):
     """Describes when a docstring has a yield not in definition."""
 
     error_code = 'DAR302'
+    description = 'The docstring has a yield not in definition.'
 
     def __init__(self, function, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Tuple[int, int]) -> None
@@ -392,6 +411,7 @@ class MissingRaiseError(DarglintError):
     """Describes when a docstring is missing an exception raised."""
 
     error_code = 'DAR401'
+    description = 'The docstring is missing an exception raised.'
 
     def __init__(self, function, name, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
@@ -423,6 +443,7 @@ class ExcessRaiseError(DarglintError):
     """
 
     error_code = 'DAR402'
+    description = 'The docstring describes an exception not explicitly raised.'
 
     def __init__(self, function, name, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
@@ -447,6 +468,7 @@ class ExcessVariableError(DarglintError):
     """Describes when a docstring describes a variable which is not defined."""
 
     error_code = 'DAR501'
+    description = 'The docstring describes a variable which is not defined.'
 
     def __init__(self, function, name, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None

@@ -9,6 +9,9 @@ from darglint.parse.sphinx import (
     parse,
 )
 from .sphinx_docstrings import docstrings
+from darglint.utils import (
+    CykNodeUtils,
+)
 
 
 class SphinxParserTest(TestCase):
@@ -17,26 +20,26 @@ class SphinxParserTest(TestCase):
         """Make sure a short description is just a single line."""
         content = 'Description!'
         node = parse(condense(lex(content)))
-        self.assertTrue(node.contains('short-description'))
+        self.assertTrue(CykNodeUtils.contains(node, 'short-description'))
 
     def test_parse_short_description_one_word_cyk(self):
         """Make sure a single word can suffice."""
         content = 'Kills.'
         node = parse(condense(lex(content)))
-        self.assertTrue(node.contains('short-description'))
+        self.assertTrue(CykNodeUtils.contains(node, 'short-description'))
 
     def test_parse_short_description_multiple_words_cyk(self):
         """Make sure we can have a normal short description."""
         content = 'Flips the pancake.'
         node = parse(condense(lex(content)))
-        self.assertTrue(node.contains('short-description'))
+        self.assertTrue(CykNodeUtils.contains(node, 'short-description'))
 
     def test_short_description_can_have_colons_cyk(self):
         """Make sure special characters are fine."""
         content = ":param Something: Should be okay, I guess."
         node = parse(condense(lex(content)))
         self.assertTrue(
-            node.contains('short-description')
+            CykNodeUtils.contains(node, 'short-description')
         )
 
     def test_parse_all_keywords_cyk(self):
@@ -63,7 +66,7 @@ class SphinxParserTest(TestCase):
                 )
                 node = parse(condense(lex(docstring)))
                 self.assertTrue(
-                    node.contains(keyword_section),
+                    CykNodeUtils.contains(node, keyword_section),
                     '{}: {}'.format(keyword_section, node)
                 )
 
@@ -77,25 +80,25 @@ class SphinxParserTest(TestCase):
                 docstring = 'Short.\n\n:{}: something'.format(keyword)
                 node = parse(condense(lex(docstring)))
                 self.assertTrue(
-                    node.contains(keyword_section),
+                    CykNodeUtils.contains(node, keyword_section),
                     '{}: {}'.format(keyword_section, node),
                 )
 
     def test_item_without_argument_cyk(self):
         """Test that we can parse an item without an argument."""
         node = parse(condense(lex('a\n\n:returns: A value.')))
-        self.assertTrue(node.contains('returns-section'))
+        self.assertTrue(CykNodeUtils.contains(node, 'returns-section'))
 
     def test_parse_argument_item_cyk(self):
         """Make sure we can parse an item with an arity of 1."""
         node = parse(condense(lex('SD\n\n:param x: A vector.')))
-        self.assertTrue(node.contains('arguments-section'))
+        self.assertTrue(CykNodeUtils.contains(node, 'arguments-section'))
 
     def test_parse_type_item_cyk(self):
         """Ensure we can parse a type item correctly."""
         node = parse(condense(lex('a\n\n:type priorities: List[int]')))
         self.assertTrue(
-            node.contains('argument-type-section'),
+            CykNodeUtils.contains(node, 'argument-type-section'),
             str(node),
         )
 
@@ -103,7 +106,7 @@ class SphinxParserTest(TestCase):
         """Make sure we can get the type of the item in its definition."""
         node = parse(condense(lex('short\n\n:param int x: A number.')))
         self.assertTrue(
-            node.contains('arguments-section'),
+            CykNodeUtils.contains(node, 'arguments-section'),
             node,
         )
 
@@ -114,7 +117,7 @@ class SphinxParserTest(TestCase):
             ':param x: : That shouldn\'t be there.'
         )))
         self.assertTrue(
-            node.contains('arguments-section'),
+            CykNodeUtils.contains(node, 'arguments-section'),
         )
 
     def test_item_name_with_return_can_have_type_but_not_argument_cyk(self):
@@ -123,7 +126,7 @@ class SphinxParserTest(TestCase):
             'short\n\n:returns int: Whoa.'
         )))
         self.assertTrue(
-            node.contains('returns-section'),
+            CykNodeUtils.contains(node, 'returns-section'),
         )
 
     def test_parse_vartype_item_cyk(self):
@@ -132,7 +135,7 @@ class SphinxParserTest(TestCase):
             'short\n\n:vartype foo: Dict[str][str]'
         )))
         self.assertTrue(
-            node.contains('variable-type-section'),
+            CykNodeUtils.contains(node, 'variable-type-section'),
             node,
         )
 
@@ -147,7 +150,7 @@ class SphinxParserTest(TestCase):
             'As should noqas # noqa',
         ]))))
         self.assertTrue(
-            node.contains('long-description'),
+            CykNodeUtils.contains(node, 'long-description'),
         )
 
     def test_parse_whole_docstring_cyk(self):
@@ -167,7 +170,7 @@ class SphinxParserTest(TestCase):
             'argument-type-section',
             'return-type-section',
         ]:
-            self.assertTrue(node.contains(section), node)
+            self.assertTrue(CykNodeUtils.contains(node, section), node)
 
     def test_multiple_line_item_definition_cyk(self):
         """Make sure item definitions can span multiple lines."""
@@ -184,7 +187,7 @@ class SphinxParserTest(TestCase):
         doc = ast.get_docstring(ast.parse(func).body[0])
         node = parse(condense(lex(doc)))
         self.assertTrue(
-            node.contains('arguments-section'),
+            CykNodeUtils.contains(node, 'arguments-section'),
             node,
         )
 
@@ -214,11 +217,11 @@ class SphinxParserTest(TestCase):
         doc = ast.get_docstring(ast.parse(func).body[0])
         node = parse(condense(lex(doc)))
         self.assertTrue(
-            node.contains('arguments-section'),
+            CykNodeUtils.contains(node, 'arguments-section'),
             node,
         )
         self.assertTrue(
-            node.contains('returns-section'),
+            CykNodeUtils.contains(node, 'returns-section'),
             node,
         )
 
@@ -237,10 +240,10 @@ class SphinxParserTest(TestCase):
         tokens = condense(lex(doc))
         node = parse(tokens)
         self.assertTrue(
-            node.contains('returns-section'),
+            CykNodeUtils.contains(node, 'returns-section'),
         )
         self.assertTrue(
-            node.contains('arguments-section'),
+            CykNodeUtils.contains(node, 'arguments-section'),
         )
 
 

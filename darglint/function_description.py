@@ -10,6 +10,8 @@ from typing import (
     Tuple,
     Optional,
     Union,
+    Type,
+    Any,
 )
 
 from .config import get_logger
@@ -18,12 +20,12 @@ from .config import get_logger
 logger = get_logger()
 
 
-FunctionDef = ast.FunctionDef
+FunctionDef = ast.FunctionDef  # type: Union[Type[Any], Tuple[Type[Any], Type[Any]]]  # noqa: E501
 if hasattr(ast, 'AsyncFunctionDef'):
     FunctionDef = (ast.FunctionDef, ast.AsyncFunctionDef)
 
 
-def read_program(filename):  # type: (str) -> Union[bytes, Optional[str]]
+def read_program(filename):  # type: (str) -> Union[bytes, str]
     """Read a program from a file.
 
     Args:
@@ -40,11 +42,11 @@ def read_program(filename):  # type: (str) -> Union[bytes, Optional[str]]
     else:
         with open(filename, 'rb') as fin:
             program = fin.read()
-    return program
+    return program or ''
 
 
 def _get_arguments(fn):
-    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Tuple[List[str], List[str]]
+    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Tuple[List[str], List[str]]  # noqa: E501
     arguments = list()  # type: List[str]
     types = list()  # type: List[str]
 
@@ -74,7 +76,7 @@ def _get_arguments(fn):
 
 
 def _walk(fun, skip):
-    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Callable) -> Iterator[ast.AST]
+    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Callable) -> Iterator[ast.AST]  # noqa: E501
     """Walk through the nodes in this function, skipping as necessary.
 
     ast.walk goes through nodes in an arbitrary order, and doesn't
@@ -124,7 +126,7 @@ def _has_return(fun):
     return False
 
 
-def _has_yield(fun):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> bool
+def _has_yield(fun):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> bool  # noqa: E501
     for node in ast.walk(fun):
         if isinstance(node, ast.Yield) or isinstance(node, ast.YieldFrom):
             return True
@@ -135,10 +137,13 @@ def _get_docstring(fun):  # type: (ast.AST) -> str
     return ast.get_docstring(fun)
 
 
-def _get_all_functions(tree):  # type: (ast.AST) -> Iterator[Union[ast.FunctionDef, ast.AsyncFunctionDef]]
+def _get_all_functions(tree):  # type: (ast.AST) -> Iterator[Union[ast.FunctionDef, ast.AsyncFunctionDef]]  # noqa: E501
     for node in ast.walk(tree):
-        if isinstance(node, FunctionDef):
+        if isinstance(node, ast.FunctionDef):
             yield node
+        elif hasattr(ast, 'AsyncFunctionDef'):
+            if isinstance(node, ast.AsyncFunctionDef):
+                yield node
 
 
 def _get_all_classes(tree):  # type: (ast.AST) -> Iterator[ast.ClassDef]
@@ -147,13 +152,13 @@ def _get_all_classes(tree):  # type: (ast.AST) -> Iterator[ast.ClassDef]
             yield node
 
 
-def _get_all_methods(tree):  # type: (ast.AST) -> Iterator[Union[ast.FunctionDef, ast.AsyncFunctionDef]]
+def _get_all_methods(tree):  # type: (ast.AST) -> Iterator[Union[ast.FunctionDef, ast.AsyncFunctionDef]]  # noqa: E501
     for klass in _get_all_classes(tree):
         for fun in _get_all_functions(klass):
             yield fun
 
 
-def _get_decorator_names(fun):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> List[str]
+def _get_decorator_names(fun):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> List[str]  # noqa: E501
     """Get decorator names from the function.
 
     Args:
@@ -168,20 +173,20 @@ def _get_decorator_names(fun):  # type: (Union[ast.FunctionDef, ast.AsyncFunctio
     for decorator in fun.decorator_list:
         # Attributes (setters and getters) won't have an id.
         if hasattr(decorator, 'id'):
-            ret.append(decorator.id)
+            ret.append(getattr(decorator, 'id'))
     return ret
 
 
-def _is_classmethod(fun):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> bool
+def _is_classmethod(fun):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> bool  # noqa: E501
     return 'classmethod' in _get_decorator_names(fun)
 
 
-def _is_staticmethod(fun):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> bool
+def _is_staticmethod(fun):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> bool  # noqa: E501
     return 'staticmethod' in _get_decorator_names(fun)
 
 
 def _get_stripped_method_args(method):
-    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Tuple[List[str], List[str]]
+    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Tuple[List[str], List[str]]  # noqa: E501
     args, types = _get_arguments(method)
     if 'cls' in args and _is_classmethod(method):
         args.remove('cls')
@@ -193,7 +198,7 @@ def _get_stripped_method_args(method):
 
 
 def _get_all_raises(fn):
-    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Iterator[ast.Raise]
+    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Iterator[ast.Raise]  # noqa: E501
     for node in ast.walk(fn):
         if isinstance(node, ast.Raise):
             yield node
@@ -204,9 +209,9 @@ def _get_exception_name(raises):  # type: (ast.Raise) -> str
         return raises.exc.id
     elif isinstance(raises.exc, ast.Call):
         if hasattr(raises.exc.func, 'id'):
-            return raises.exc.func.id
+            return getattr(raises.exc.func, 'id')
         elif hasattr(raises.exc.func, 'attr'):
-            return raises.exc.func.attr
+            return getattr(raises.exc.func, 'attr')
         else:
             logger.error(
                 'Raises function call has neither id nor attr.'
@@ -215,9 +220,17 @@ def _get_exception_name(raises):  # type: (ast.Raise) -> str
     elif isinstance(raises.exc, ast.Attribute):
         return raises.exc.attr
     elif isinstance(raises.exc, ast.Subscript):
+        id_repr = ''
+        if hasattr(raises.exc.value, 'id'):
+            id_repr = getattr(raises.exc.value, 'id')
+        n_repr = ''
+        if hasattr(raises.exc.slice, 'value'):
+            value = getattr(raises.exc.slice, 'value')
+            if hasattr(value, 'n'):
+                n_repr = getattr(value, 'n')
         return '{}[{}]'.format(
-            raises.exc.value.id,
-            raises.exc.slice.value.n,
+            id_repr,
+            n_repr,
         )
     else:
         logger.error('Unexpected type in raises expression: {}'.format(
@@ -226,7 +239,7 @@ def _get_exception_name(raises):  # type: (ast.Raise) -> str
     return ''
 
 
-def _get_exceptions_raised(fn):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Set[str]
+def _get_exceptions_raised(fn):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Set[str]  # noqa: E501
     ret = set()  # type: Set[str]
     for raises in _get_all_raises(fn):
         # TODO: Handle this?
@@ -240,7 +253,7 @@ def _get_exceptions_raised(fn):  # type: (Union[ast.FunctionDef, ast.AsyncFuncti
 def _get_return_type(fn):
     # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Optional[str]
     if fn.returns is not None and hasattr(fn.returns, 'id'):
-        return fn.returns.id
+        return getattr(fn.returns, 'id')
     return None
 
 
