@@ -171,7 +171,7 @@ def print_error_list():
 
 
 def print_version():
-    print('1.1.0')
+    print('1.1.1')
 
 
 def main():
@@ -204,6 +204,9 @@ def main():
 
     try:
         config = get_config()
+
+        if '*' in config.ignore:
+            sys.exit(0)
 
         if args.docstring_style == 'sphinx':
             config.style = DocstringStyle.SPHINX
