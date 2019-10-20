@@ -3,17 +3,25 @@
 import subprocess
 from unittest import TestCase
 
-# Regression introduced by flake8 in 3.3.0
-# Bad:  3.3.0
 
 class CompatibilityTest(TestCase):
+    """A simple compatibility test for Darglint.
 
-    def test_flake8_docstrings(self):
+    Currently, this test only checks for the presence of certain
+    errors which we know to be present.  Ideally, we would run
+    the test against a set of repositories, record the errors found,
+    and make sure the same errors are found when run along with darglint.
+    That may not be easy, though, since flake8 doesn't seem to have a
+    command-line option to disable a particular extension.
+
+    """
+
+    def test_flake8_docstrings_flake8_rst_docstrings(self):
         proc = subprocess.run([
                 'flake8',
                 '--isolated',
                 '--enable-extensions=TRUE',
-                'integration_tests/files/example-ascii.py',
+                'integration_tests/files/problematic.py',
             ], stdout=subprocess.PIPE
         )
         result = proc.stdout.decode('utf8')
