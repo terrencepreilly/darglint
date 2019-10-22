@@ -34,6 +34,7 @@ from .errors import (  # noqa: F401
     MissingReturnError,
     MissingYieldError,
     ParameterTypeMismatchError,
+    ParameterTypeMissingError,
     ReturnTypeMismatchError,
 )
 from .error_report import (
@@ -120,6 +121,7 @@ class IntegrityChecker(object):
                 return
             self._check_parameters(function)
             self._check_parameter_types(function)
+            self._check_parameter_types_missing(function)
             self._check_return(function)
             self._check_return_type(function)
             self._check_yield(function)
@@ -167,6 +169,39 @@ class IntegrityChecker(object):
                         name=name,
                         expected=expected,
                         actual=actual,
+                        line_numbers=line_numbers,
+                    )
+                )
+
+    def _check_parameter_types_missing(self, function):
+        # type: (FunctionDescription) -> None
+        error_code = ParameterTypeMissingError.error_code
+        if self._ignore_error(ParameterTypeMissingError):
+            return
+
+        argument_types = dict(
+            zip(self.docstring.get_items(Sections.ARGUMENTS_SECTION) or [],
+                self.docstring.get_types(Sections.ARGUMENTS_SECTION) or [])
+        )
+
+        noqa_lookup = self.docstring.get_noqas()
+        noqa_exists = error_code in noqa_lookup
+
+        for name, argument_type in argument_types.items():
+            name_has_no_qa = noqa_exists and name in noqa_lookup[error_code]
+
+            if argument_type is None and not name_has_no_qa:
+                default_line_numbers = self.docstring.get_line_numbers(
+                    'arguments-section'
+                )
+                line_numbers = self.docstring.get_line_numbers_for_value(
+                    'ident',
+                    name,
+                ) or default_line_numbers
+                self.errors.append(
+                    ParameterTypeMissingError(
+                        function.function,
+                        name=name,
                         line_numbers=line_numbers,
                     )
                 )
