@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [1.1.0 - 2019-10-19
 
+### Added
+- Added `DAR104` which checks for the presence of types in the docstring.
+
 ### Fixed
 
 - Updated the flake8 entry point to reflect the new error codes.

@@ -284,6 +284,7 @@ have put it on its own line, as `# noqa: DAR402 ZeroDivisionError`.
 - *DAR101*: The docstring is missing a parameter in the definition.
 - *DAR102*: The docstring contains a parameter not in function.
 - *DAR103*: The docstring parameter type doesn't match function.
+- *DAR104*: The docstring parameter has no type specified
 - *DAR201*: The docstring is missing a return from definition.
 - *DAR202*: The docstring has a return not in definition.
 - *DAR203*: The docstring parameter type doesn't match function.
