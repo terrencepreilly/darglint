@@ -28,6 +28,7 @@ from darglint.errors import (
     MissingRaiseError,
     MissingReturnError,
     MissingYieldError,
+    ParameterTypeMissingError,
     ParameterTypeMismatchError,
     ReturnTypeMismatchError,
 )
@@ -50,6 +51,7 @@ class IntegrityCheckerSphinxTestCase(TestCase):
             '    """Add an item to the head of the list.',
             '    ',
             '    :param x: The item to add to the list.',
+            '    :type x: int',
             '    :return: The list with the item attached.',
             '    ',
             '    """',
@@ -66,6 +68,25 @@ class IntegrityCheckerSphinxTestCase(TestCase):
         )
         self.assertTrue(isinstance(errors[0], MissingParameterError))
 
+    def test_missing_parameter_types(self):
+        program = '\n'.join([
+            'def function_with_excess_parameter(extra):',
+            '    """We have an extra parameter below, extra.',
+            '',
+            '    Args:',
+            '        extra: This shouldn\'t be here.',
+            '',
+            '    """',
+            '    print(\'Hey!\')',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertEqual(len(errors), 1)
+        self.assertTrue(isinstance(errors[0], ParameterTypeMissingError))
+
     def test_variable_doesnt_exist(self):
         """Ensure described variables must exist in the function."""
         program = '\n'.join([
@@ -73,6 +94,7 @@ class IntegrityCheckerSphinxTestCase(TestCase):
             '    """Calculate the circle\'s area.',
             '    ',
             '    :param r: The radius of the circle.',
+            '    :type r: float.',
             '    :var pi: An estimate of PI.',
             '    :return: The area of the circle.',
             '    ',
@@ -145,7 +167,7 @@ class IntegrityCheckerTestCase(TestCase):
             '    """We have an extra parameter below, extra.',
             '',
             '    Args:',
-            '        extra: This shouldn\'t be here.',
+            '        extra (str): This shouldn\'t be here.',
             '',
             '    """',
             '    print(\'Hey!\')',
@@ -250,8 +272,8 @@ class IntegrityCheckerTestCase(TestCase):
             '    """Should not have a raises section.',
             '',
             '    Args:',
-            '        x: The divisor.',
-            '        y: The dividend.',
+            '        x (float): The divisor.',
+            '        y (float): The dividend.',
             '',
             '    Raises:',
             '        ZeroDivisionError: If y is zero.',
@@ -402,7 +424,7 @@ class IntegrityCheckerTestCase(TestCase):
             '    """Excess arguments.',
             '',
             '    Args:',
-            '        x: Will be here eventually.  # noqa: DAR102',
+            '        x (str): Will be here eventually.  # noqa: DAR102',
             '',
             '    """',
             '    pass'
@@ -566,7 +588,7 @@ class IntegrityCheckerTestCase(TestCase):
             '    """Return the hash value of an integer.',
             '',
             '    Args:',
-            '        value: The integer that we want',
+            '        value (int): The integer that we want',
             # This line should cause an error because it is at the
             # level for parameter identifiers.
             '        to make a hashed value of.',
