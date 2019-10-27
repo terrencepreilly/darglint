@@ -17,12 +17,10 @@ ERROR = re.compile(r'\[A-Z]{1,3}\d{3}')
 class CompatibilityTest(TestCase):
     """A simple compatibility test for Darglint.
 
-    Currently, this test only checks for the presence of certain
-    errors which we know to be present.  Ideally, we would run
-    the test against a set of repositories, record the errors found,
-    and make sure the same errors are found when run along with darglint.
-    That may not be easy, though, since flake8 doesn't seem to have a
-    command-line option to disable a particular extension.
+    This test attempts to ensure that the error
+    checks with darglint are a superset of the errors
+    reported without darglint. (That is, darglint
+    does not hide any errors.)
 
     """
 
