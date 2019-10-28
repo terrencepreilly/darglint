@@ -6,25 +6,38 @@ from unittest import (
 
 from darglint.function_description import get_function_descriptions
 from darglint.integrity_checker import IntegrityChecker
+from darglint.docstring.base import DocstringStyle
+from darglint.config import (
+    Configuration,
+    Strictness,
+)
 
 
 class ErrorTest(TestCase):
     """Tests for the error class."""
 
-    def get_single_error(self, src):
+    def get_n_errors(self, amount, src, config=None):
         tree = ast.parse(src)
         functions = get_function_descriptions(tree)
-        checker = IntegrityChecker()
+        if config:
+            checker = IntegrityChecker(config)
+        else:
+            checker = IntegrityChecker()
         checker.run_checks(functions[0])
         errors = checker.errors
         self.assertEqual(
             len(errors),
-            1,
-            'There should only be one error, but there were {}: {}.'.format(
-                len(errors), ' '.join([x.__class__.__name__ for x in errors])
+            amount,
+            'There should only be {} errors, but there were {}: {}.'.format(
+                amount,
+                len(errors),
+                ' '.join([x.__class__.__name__ for x in errors])
             )
         )
-        return errors[0]
+        return errors
+
+    def get_single_error(self, src, config=None):
+        return self.get_n_errors(1, src, config)[0]
 
     def test_missing_section_has_no_line_number(self):
         """Make sure missing sections can't have numbers."""
@@ -282,4 +295,45 @@ class ErrorTest(TestCase):
             error.line_numbers,
             (4, 4),
             'It should point to the item line.',
+        )
+
+    def test_default_disabled_error(self):
+        not_enabled_config = Configuration(
+            ignore=[],
+            message_template=None,
+            style=DocstringStyle.GOOGLE,
+            strictness=Strictness.FULL_DESCRIPTION,
+            enable=[],
+        )
+        enabled_config = Configuration(
+            ignore=[],
+            message_template=None,
+            style=DocstringStyle.GOOGLE,
+            strictness=Strictness.FULL_DESCRIPTION,
+            enable=['DAR104'],
+        )
+        src = '\n'.join([
+            'def double(x):',
+            '    """Double the value.',
+            '    ',
+            '    Args:',
+            '        x: The value to double.',
+            '',
+            '    Returns:',
+            '        The value, doubled.',
+            '',
+            '    """',
+            '    return 2 * x',
+        ])
+
+        errors = self.get_n_errors(0, src, not_enabled_config)
+        self.assertEqual(
+            len(errors),
+            0,
+        )
+
+        errors = self.get_n_errors(1, src, enabled_config)
+        self.assertEqual(
+            len(errors),
+            1,
         )
