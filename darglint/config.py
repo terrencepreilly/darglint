@@ -29,6 +29,8 @@ POSSIBLE_CONFIG_FILENAMES = (
     'tox.ini',
 )
 
+DEFAULT_DISABLED = ['DAR104']
+
 
 class Strictness(Enum):
     """The minimum strictness with which to apply checks.
@@ -61,7 +63,7 @@ class Strictness(Enum):
 
 class Configuration(object):
 
-    def __init__(self, ignore, message_template, style, strictness):
+    def __init__(self, ignore, message_template, style, strictness, enable_disabled=[]):
         # type: (List[str], Optional[str], DocstringStyle, Strictness) -> None
         """Initialize the configuration object.
 
@@ -70,9 +72,10 @@ class Configuration(object):
             message_template: the template with which to format the errors.
             style: The style of docstring.
             strictness: The minimum strictness to allow.
-
+            enable_disabled: A list of of error codes that are disabled by default.
         """
-        self.ignore = ignore
+        disabled = list(set(DEFAULT_DISABLED) - set(enable_disabled))
+        self.ignore = ignore + disabled
         self.message_template = message_template
         self.style = style
         self.strictness = strictness
@@ -94,6 +97,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
     config = configparser.ConfigParser()
     config.read(filename)
     ignore = list()
+    enable_disabled = list()
     message_template = None
     style = DocstringStyle.GOOGLE
     strictness = Strictness.FULL_DESCRIPTION
@@ -102,6 +106,10 @@ def load_config_file(filename):  # type: (str) -> Configuration
             errors = config['darglint']['ignore']
             for error in errors.split(','):
                 ignore.append(error.strip())
+        if 'enable' in config.sections():
+            to_enable = config['darglint']['enable']
+            for error in to_enable.split(','):
+                enable_disabled.append(error.strip())
         if 'message_template' in config['darglint']:
             message_template = config['darglint']['message_template']
         if 'docstring_style' in config['darglint']:

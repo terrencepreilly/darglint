@@ -28,6 +28,7 @@ from darglint.errors import (
     MissingRaiseError,
     MissingReturnError,
     MissingYieldError,
+    ParameterTypeMissingError,
     ParameterTypeMismatchError,
     ReturnTypeMismatchError,
 )
@@ -65,6 +66,32 @@ class IntegrityCheckerSphinxTestCase(TestCase):
             [(x.message()) for x in errors]
         )
         self.assertTrue(isinstance(errors[0], MissingParameterError))
+
+    def test_missing_parameter_types(self):
+        program = '\n'.join([
+            'def function_with_excess_parameter(extra):',
+            '    """We have an extra parameter below, extra.',
+            '',
+            '    Args:',
+            '        extra: This shouldn\'t be here.',
+            '',
+            '    """',
+            '    print(\'Hey!\')',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+
+        checker = IntegrityChecker(config=Configuration(
+            ignore=[],
+            message_template=None,
+            style=DocstringStyle.GOOGLE,
+            strictness=Strictness.FULL_DESCRIPTION,
+            enable_disabled=['DAR104']
+        ))
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertEqual(len(errors), 1)
+        self.assertTrue(isinstance(errors[0], ParameterTypeMissingError))
 
     def test_variable_doesnt_exist(self):
         """Ensure described variables must exist in the function."""
