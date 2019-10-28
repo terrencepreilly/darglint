@@ -277,6 +277,7 @@ have put it on its own line, as `# noqa: DAR402 ZeroDivisionError`.
 
 ### Error Codes
 
+The following exceptions are enabled by default in `darglint`.
 - *DAR001*: The docstring was not parsed correctly due to a syntax error.
 - *DAR002*: An argument/exception lacks a description
 - *DAR003*: A line is under-indented or over-indented.
@@ -284,7 +285,6 @@ have put it on its own line, as `# noqa: DAR402 ZeroDivisionError`.
 - *DAR101*: The docstring is missing a parameter in the definition.
 - *DAR102*: The docstring contains a parameter not in function.
 - *DAR103*: The docstring parameter type doesn't match function.
-- *DAR104*: The docstring parameter has no type specified
 - *DAR201*: The docstring is missing a return from definition.
 - *DAR202*: The docstring has a return not in definition.
 - *DAR203*: The docstring parameter type doesn't match function.
@@ -302,6 +302,15 @@ The number in the hundreds narrows the error by location in the docstring:
 - 300: Yields section
 - 400: Raises section
 - 500: Variables section
+
+There are also some exceptions that are available but are not enabled by default:
+- *DAR104*: The docstring parameter has no type specified 
+
+You can enable these exceptions in your configuration by e.g.
+```ini
+[darglint]
+enable_disabled=DAR104
+```
 
 
 ## Sphinx

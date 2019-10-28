@@ -80,7 +80,14 @@ class IntegrityCheckerSphinxTestCase(TestCase):
         ])
         tree = ast.parse(program)
         functions = get_function_descriptions(tree)
-        checker = IntegrityChecker()
+
+        checker = IntegrityChecker(config=Configuration(
+            ignore=[],
+            message_template=None,
+            style=DocstringStyle.GOOGLE,
+            strictness=Strictness.FULL_DESCRIPTION,
+            enable_disabled=['DAR104']
+        ))
         checker.run_checks(functions[0])
         errors = checker.errors
         self.assertEqual(len(errors), 1)
