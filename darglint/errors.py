@@ -282,7 +282,7 @@ class ParameterTypeMismatchError(DarglintError):
 
 
 class ParameterTypeMissingError(DarglintError):
-    """Describes when a argument definition has no type specifiedc"""
+    """Describes when a argument definition has no type specified"""
 
     error_code = 'DAR104'
     description = 'The docstring parameter type is not given.'
@@ -297,7 +297,7 @@ class ParameterTypeMissingError(DarglintError):
             line_numbers: The line numbers where this error occurs.
 
         """
-        self.general_message = 'Parameter type mismatch'
+        self.general_message = 'Parameter type missing'
         self.terse_message = ' ~{}: type was not specified'.format(
             name
         )
