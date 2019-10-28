@@ -281,6 +281,34 @@ class ParameterTypeMismatchError(DarglintError):
         )
 
 
+class ParameterTypeMissingError(DarglintError):
+    """Describes when a argument definition has no type specified"""
+
+    error_code = 'DAR104'
+    description = 'The docstring parameter type is not given.'
+
+    def __init__(self, function, name, line_numbers=None):
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+            name: The name of the parameter.
+            line_numbers: The line numbers where this error occurs.
+
+        """
+        self.general_message = 'Parameter type missing'
+        self.terse_message = ' ~{}: type was not specified'.format(
+            name
+        )
+        self.name = name
+        super(ParameterTypeMissingError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
+
+
+
 class MissingReturnError(DarglintError):
     """Describes when a docstring is missing a return from definition."""
 
@@ -327,7 +355,6 @@ class ExcessReturnError(DarglintError):
             function,
             line_numbers=line_numbers,
         )
-
 
 class ReturnTypeMismatchError(DarglintError):
     """Describes when a docstring parameter type doesn't match function."""
