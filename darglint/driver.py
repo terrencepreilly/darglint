@@ -116,6 +116,16 @@ parser.add_argument(
         'would go through the full check.'
     ),
 )
+parser.add_argument(
+    '-e',
+    '--enable',
+    type=str,
+    help=(
+        'Enable disabled-by-default errors.  Accepts a '
+        'comma-separated list of error codes.  E.g.: '
+        '"DAR104,DAR105"'
+    )
+)
 
 # ---------------------- MAIN SCRIPT ---------------------------------
 
@@ -204,6 +214,12 @@ def main():
 
     try:
         config = get_config()
+
+        # Only override enable if explicitly passed.
+        if args.enable:
+            config.enable = [
+                x.strip() for x in args.enable.split(',')
+            ]
 
         if '*' in config.ignore:
             sys.exit(0)

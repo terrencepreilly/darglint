@@ -358,7 +358,7 @@ class IntegrityChecker(object):
 
         """
         error_code = error.error_code
-        if error_code in self.config.ignore:
+        if error_code in self.config.errors_to_ignore:
             return True
         noqa_lookup = self.docstring.get_noqas()
         inline_error = error_code in noqa_lookup

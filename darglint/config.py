@@ -29,7 +29,7 @@ POSSIBLE_CONFIG_FILENAMES = (
     'tox.ini',
 )
 
-DEFAULT_DISABLED = ['DAR104']
+DEFAULT_DISABLED = {'DAR104'}
 
 
 class Strictness(Enum):
@@ -73,12 +73,52 @@ class Configuration(object):
             style: The style of docstring.
             strictness: The minimum strictness to allow.
             enable: A list of of error codes that are disabled by default.
+
         """
-        disabled = list(set(DEFAULT_DISABLED) - set(enable))
-        self.ignore = ignore + disabled
+        self._enable = enable
+        self._ignore = ignore
         self.message_template = message_template
         self.style = style
         self.strictness = strictness
+        self.enable = enable
+        self.errors_to_ignore = self._get_errors_to_ignore()
+
+    @property
+    def enable(self):
+        # type: () -> List[str]
+        return self._enable
+
+    @enable.setter
+    def enable(self, errors):
+        # type: (List[str]) -> None
+        self._enable = errors
+        self.errors_to_ignore = self._get_errors_to_ignore()
+
+    @property
+    def ignore(self):
+        # type: () -> List[str]
+        return self._ignore
+
+    @ignore.setter
+    def ignore(self, errors):
+        # type: (List[str]) -> None
+        self._ignore = errors
+        self.errors_to_ignore = self._get_errors_to_ignore()
+
+    def _get_errors_to_ignore(self):
+        # type: () -> List[str]
+        """Update the errors to ignore, accounding for defaults.
+
+        For use in constructing a cached `errors_to_ignore` value.
+        Since this value could be used frequently, it makes
+        sense to cache this value.
+
+        Returns:
+            The errors to ignore, including the default errors.
+
+        """
+        disabled = DEFAULT_DISABLED - set(self._enable)
+        return self._ignore + list(disabled)
 
 
 def load_config_file(filename):  # type: (str) -> Configuration
