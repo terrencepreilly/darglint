@@ -3,8 +3,15 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.1.1]
 
-## [1.1.0 - 2019-10-19
+### Added
+
+- Added compatibility test for Darglint with flake8-docstrings and
+  flake8-rst-docstrings.
+
+
+## [1.1.0] - 2019-10-19
 
 ### Added
 - Added `DAR104` which checks for the presence of types in the docstring.

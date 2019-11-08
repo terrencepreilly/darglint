@@ -31,6 +31,8 @@ class DarglintChecker(object):
 
     def run(self):
         # type: () -> Iterator[Tuple[int, int, str, type]]
+        if '*' in self.config.ignore:
+            return
 
         # Remember the last line number, so that if there is an
         # exception raised by Darglint, we can at least give a decent
