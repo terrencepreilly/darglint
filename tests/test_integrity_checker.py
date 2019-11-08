@@ -86,7 +86,7 @@ class IntegrityCheckerSphinxTestCase(TestCase):
             message_template=None,
             style=DocstringStyle.GOOGLE,
             strictness=Strictness.FULL_DESCRIPTION,
-            enable_disabled=['DAR104']
+            enable=['DAR104']
         ))
         checker.run_checks(functions[0])
         errors = checker.errors

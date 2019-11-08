@@ -10,7 +10,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added compatibility test for Darglint with flake8-docstrings and
   flake8-rst-docstrings.
 
-
 ## [1.1.0] - 2019-10-19
 
 ### Added
