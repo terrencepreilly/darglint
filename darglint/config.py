@@ -63,8 +63,9 @@ class Strictness(Enum):
 
 class Configuration(object):
 
-    def __init__(self, ignore, message_template, style, strictness, enable_disabled=[]):
-        # type: (List[str], Optional[str], DocstringStyle, Strictness) -> None
+    def __init__(self, ignore, message_template, style, strictness,
+                 ignore_regex=None, enable_disabled=[]):
+        # type: (List[str], Optional[str], DocstringStyle, Strictness, Optional[str]) -> None
         """Initialize the configuration object.
 
         Args:
@@ -72,6 +73,7 @@ class Configuration(object):
             message_template: the template with which to format the errors.
             style: The style of docstring.
             strictness: The minimum strictness to allow.
+            ignore_regex: A regular expression that allows to ignore objects by name
             enable_disabled: A list of of error codes that are disabled by default.
         """
         disabled = list(set(DEFAULT_DISABLED) - set(enable_disabled))
@@ -79,6 +81,7 @@ class Configuration(object):
         self.message_template = message_template
         self.style = style
         self.strictness = strictness
+        self.ignore_regex = ignore_regex
 
 
 def load_config_file(filename):  # type: (str) -> Configuration

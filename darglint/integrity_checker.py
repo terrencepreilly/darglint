@@ -92,6 +92,12 @@ class IntegrityChecker(object):
         # type: (FunctionDescription) -> None
         if function.docstring is None:
             return
+        elif (
+            self.config.ignore_regex and
+            re.match(self.config.ignore_regex, function.name)
+        ):
+            return
+
         self.executor.submit(self.run_checks, function)
 
     def run_checks(self, function):

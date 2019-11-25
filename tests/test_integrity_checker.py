@@ -121,6 +121,33 @@ class IntegrityCheckerSphinxTestCase(TestCase):
 
 class IntegrityCheckerTestCase(TestCase):
 
+    def test_ignore_private_methods(self):
+        program = '\n'.join([
+            'def function_with_missing_parameter(x):',
+            '    """We\'re missing a description of x."""',
+            '    print(x / 2)',
+            ''
+            'def _same_error_but_private_method(x):',
+            '    """We\'re missing a description of x."""',
+            '    print(x / 2)',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker(
+            config=Configuration(
+                ignore=[],
+                message_template=None,
+                style=DocstringStyle.GOOGLE,
+                strictness=Strictness.FULL_DESCRIPTION,
+                ignore_regex=r'^_(.*)'
+            )
+        )
+        checker.schedule(functions[0])
+        checker.schedule(functions[1])
+
+        errors = checker.errors
+        self.assertEqual(len(errors), 1)
+
     def test_missing_parameter_added(self):
         program = '\n'.join([
             'def function_with_missing_parameter(x):',
