@@ -102,6 +102,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
     ignore = list()
     enable_disabled = list()
     message_template = None
+    ignore_regex = None
     style = DocstringStyle.GOOGLE
     strictness = Strictness.FULL_DESCRIPTION
     if 'darglint' in config.sections():
@@ -115,6 +116,8 @@ def load_config_file(filename):  # type: (str) -> Configuration
                 enable_disabled.append(error.strip())
         if 'message_template' in config['darglint']:
             message_template = config['darglint']['message_template']
+        if 'ignore_regex' in config['darglint']:
+            ignore_regex = config['darglint']['ignore_regex']
         if 'docstring_style' in config['darglint']:
             raw_style = config['darglint']['docstring_style'].lower().strip()
             if raw_style == 'google':
@@ -145,6 +148,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
         message_template=message_template,
         style=style,
         strictness=strictness,
+        ignore_regex=ignore_regex
     )
 
 
