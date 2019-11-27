@@ -142,8 +142,8 @@ class IntegrityCheckerTestCase(TestCase):
                 ignore_regex=r'^_(.*)'
             )
         )
-        checker.schedule(functions[0])
-        checker.schedule(functions[1])
+        checker.run_checks(functions[0])
+        checker.run_checks(functions[1])
 
         errors = checker.errors
         self.assertEqual(len(errors), 1)
