@@ -90,8 +90,9 @@ class IntegrityChecker(object):
 
     def schedule(self, function):
         # type: (FunctionDescription) -> None
-        if function.docstring is None:
+        if self._skip_checks(function):
             return
+
         self.executor.submit(self.run_checks, function)
 
     def run_checks(self, function):
@@ -102,32 +103,44 @@ class IntegrityChecker(object):
             function: A function whose docstring we are verifying.
 
         """
-        if function.docstring is not None:
-            if self.config.style == DocstringStyle.GOOGLE:
-                self.docstring = Docstring.from_google(
-                    function.docstring,
-                )
-            elif self.config.style == DocstringStyle.SPHINX:
-                self.docstring = Docstring.from_sphinx(
-                    function.docstring,
-                )
-                self._check_variables(function)
-            if self.config.strictness != Strictness.FULL_DESCRIPTION:
-                if self.docstring.satisfies_strictness(
-                    self.config.strictness
-                ):
-                    return
-            if self.docstring.ignore_all:
+        if self._skip_checks(function):
+            return
+
+        if self.config.style == DocstringStyle.GOOGLE:
+            self.docstring = Docstring.from_google(
+                function.docstring,
+            )
+        elif self.config.style == DocstringStyle.SPHINX:
+            self.docstring = Docstring.from_sphinx(
+                function.docstring,
+            )
+            self._check_variables(function)
+        if self.config.strictness != Strictness.FULL_DESCRIPTION:
+            if self.docstring.satisfies_strictness(
+                self.config.strictness
+            ):
                 return
-            self._check_parameters(function)
-            self._check_parameter_types(function)
-            self._check_parameter_types_missing(function)
-            self._check_return(function)
-            self._check_return_type(function)
-            self._check_yield(function)
-            self._check_raises(function)
-            self._check_style(function)
-            self._sorted = False
+        if self.docstring.ignore_all:
+            return
+        self._check_parameters(function)
+        self._check_parameter_types(function)
+        self._check_parameter_types_missing(function)
+        self._check_return(function)
+        self._check_return_type(function)
+        self._check_yield(function)
+        self._check_raises(function)
+        self._check_style(function)
+        self._sorted = False
+
+    def _skip_checks(self, function):
+        # type: (FunctionDescription) -> bool
+        no_docsting = function.docstring is None
+        skip_by_regex = (
+            self.config.ignore_regex and
+            re.match(self.config.ignore_regex, function.name)
+        )
+
+        return no_docsting or skip_by_regex
 
     def _check_parameter_types(self, function):
         # type: (FunctionDescription) -> None

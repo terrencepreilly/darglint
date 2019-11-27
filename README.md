@@ -64,6 +64,14 @@ We can ignore multiple errors by using a comma-separated list:
 ignore=DAR402,DAR103
 ```
 
+Instead of specifying error codes to ignore in general one can also specify a
+regex to exclude certain function names from tests. For example, the following 
+configuration would disable linting on all private methods.
+```ini
+[darglint]
+ignore_regex=^_(.*)
+```
+
 ### Message Template Configuration
 
 If we would like to specify a message template, we may do so as
