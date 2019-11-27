@@ -133,6 +133,7 @@ class IntegrityChecker(object):
         self._sorted = False
 
     def _skip_checks(self, function):
+        # type: (FunctionDescription) -> bool
         no_docsting = function.docstring is None
         skip_by_regex = (
             self.config.ignore_regex and
