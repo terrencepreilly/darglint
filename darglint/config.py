@@ -63,8 +63,9 @@ class Strictness(Enum):
 
 class Configuration(object):
 
-    def __init__(self, ignore, message_template, style, strictness, enable=[]):
-        # type: (List[str], Optional[str], DocstringStyle, Strictness, List[str]) -> None
+    def __init__(self, ignore, message_template, style, strictness,
+                 ignore_regex=None, enable=[]):
+        # type: (List[str], Optional[str], DocstringStyle, Strictness, Optional[str], List[str]) -> None
         """Initialize the configuration object.
 
         Args:
@@ -72,16 +73,17 @@ class Configuration(object):
             message_template: the template with which to format the errors.
             style: The style of docstring.
             strictness: The minimum strictness to allow.
+            ignore_regex: A regular expression which enables ignoring
+                functions/methods by name.
             enable: A list of of error codes that are disabled by default.
-
         """
         self._enable = enable
         self._ignore = ignore
         self.message_template = message_template
         self.style = style
         self.strictness = strictness
-        self.enable = enable
         self.errors_to_ignore = self._get_errors_to_ignore()
+        self.ignore_regex = ignore_regex
 
     @property
     def enable(self):
@@ -139,6 +141,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
     ignore = list()
     enable = list()
     message_template = None
+    ignore_regex = None
     style = DocstringStyle.GOOGLE
     strictness = Strictness.FULL_DESCRIPTION
     if 'darglint' in config.sections():
@@ -152,6 +155,8 @@ def load_config_file(filename):  # type: (str) -> Configuration
                 enable.append(error.strip())
         if 'message_template' in config['darglint']:
             message_template = config['darglint']['message_template']
+        if 'ignore_regex' in config['darglint']:
+            ignore_regex = config['darglint']['ignore_regex']
         if 'docstring_style' in config['darglint']:
             raw_style = config['darglint']['docstring_style'].lower().strip()
             if raw_style == 'google':
@@ -182,6 +187,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
         message_template=message_template,
         style=style,
         strictness=strictness,
+        ignore_regex=ignore_regex
     )
 
 
