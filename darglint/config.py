@@ -64,8 +64,8 @@ class Strictness(Enum):
 class Configuration(object):
 
     def __init__(self, ignore, message_template, style, strictness,
-                 ignore_regex=None, enable=[]):
-        # type: (List[str], Optional[str], DocstringStyle, Strictness, Optional[str], List[str]) -> None
+                 ignore_regex=None, enable=[], indentation=4):
+        # type: (List[str], Optional[str], DocstringStyle, Strictness, Optional[str], List[str], int) -> None
         """Initialize the configuration object.
 
         Args:
@@ -76,6 +76,8 @@ class Configuration(object):
             ignore_regex: A regular expression which enables ignoring
                 functions/methods by name.
             enable: A list of of error codes that are disabled by default.
+            indentation: The number of spaces to count as an indent.
+
         """
         self._enable = enable
         self._ignore = ignore
@@ -84,6 +86,7 @@ class Configuration(object):
         self.strictness = strictness
         self.errors_to_ignore = self._get_errors_to_ignore()
         self.ignore_regex = ignore_regex
+        self.indentation = indentation
 
     @property
     def enable(self):
@@ -144,6 +147,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
     ignore_regex = None
     style = DocstringStyle.GOOGLE
     strictness = Strictness.FULL_DESCRIPTION
+    indentation = 4
     if 'darglint' in config.sections():
         if 'ignore' in config['darglint']:
             errors = config['darglint']['ignore']
@@ -182,12 +186,24 @@ def load_config_file(filename):  # type: (str) -> Configuration
                     'Unrecognized stricteness amount.  '
                     'Should be one of {"short", "long", "full"}'
                 )
+        if 'indentation' in config['darglint']:
+            try:
+                indentation = int(config['darglint']['indentation'])
+            except ValueError:
+                raise Exception(
+                    'Unrecognized value for indentation.  Expected '
+                    'a non-zero, positive integer, but received {}'.format(
+                        config['darglint']['indentation']
+                    )
+                )
     return Configuration(
         ignore=ignore,
         message_template=message_template,
         style=style,
         strictness=strictness,
-        ignore_regex=ignore_regex
+        ignore_regex=ignore_regex,
+        enable=enable,
+        indentation=indentation,
     )
 
 

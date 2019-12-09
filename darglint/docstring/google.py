@@ -18,6 +18,7 @@ from .base import (  # noqa: F401
     DocstringStyle,
     Sections,
 )
+from ..config import Configuration
 from ..node import (
     CykNode,
 )
@@ -88,8 +89,8 @@ class _CykVisitor(object):
 class Docstring(BaseDocstring):
     """The docstring class interprets the AST of a docstring."""
 
-    def __init__(self, root, style=DocstringStyle.GOOGLE):
-        # type: (Union[CykNode, str], DocstringStyle) -> None
+    def __init__(self, root, style=DocstringStyle.GOOGLE, config=None):
+        # type: (Union[CykNode, str], DocstringStyle, Optional[Configuration]) -> None
         """Create a new docstring from the AST.
 
         Args:
@@ -98,12 +99,15 @@ class Docstring(BaseDocstring):
                 string will be parsed.
             style: The style of the docstring.  Discarded,
                 since this Docstring is always the Google style.
+            config: The configuration parameters.  Passed to
+                lex to change the number of spaces which count
+                as an indentation.
 
         """
         if isinstance(root, CykNode):
             self.root = root
         else:
-            self.root = parse(condense(lex(root)))
+            self.root = parse(condense(lex(root, config)))
         self._lookup = self._discover()
 
     def _discover(self):

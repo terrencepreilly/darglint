@@ -23,3 +23,11 @@ class EndToEndTest(TestCase):
             'DAR104',
         )
         self.assertTrue('DAR104' in errors, errors)
+
+    def test_two_space_indent(self):
+        errors = self.get_errors(
+            'integration_tests/files/two_spaces.py',
+            '--indentation',
+            '2',
+        )
+        self.assertEqual(errors.count('DAR101'), 1)

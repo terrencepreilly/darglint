@@ -109,10 +109,12 @@ class IntegrityChecker(object):
         if self.config.style == DocstringStyle.GOOGLE:
             self.docstring = Docstring.from_google(
                 function.docstring,
+                config=self.config,
             )
         elif self.config.style == DocstringStyle.SPHINX:
             self.docstring = Docstring.from_sphinx(
                 function.docstring,
+                config=self.config,
             )
             self._check_variables(function)
         if self.config.strictness != Strictness.FULL_DESCRIPTION:
@@ -140,7 +142,7 @@ class IntegrityChecker(object):
             re.match(self.config.ignore_regex, function.name)
         )
 
-        return no_docsting or skip_by_regex
+        return bool(no_docsting or skip_by_regex)
 
     def _check_parameter_types(self, function):
         # type: (FunctionDescription) -> None

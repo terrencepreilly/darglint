@@ -737,6 +737,13 @@ class StrictnessTests(TestCase):
             style=DocstringStyle.SPHINX,
             strictness=Strictness.FULL_DESCRIPTION,
         )
+        self.two_spaces_config = Configuration(
+            ignore=[],
+            message_template=None,
+            style=DocstringStyle.GOOGLE,
+            strictness=Strictness.FULL_DESCRIPTION,
+            indentation=2,
+        )
         self.short_docstring = 'Adds an item to the head of the list.'
         self.long_docstring = '\n'.join([
             'Adds an item to the head of the list',
@@ -757,6 +764,18 @@ class StrictnessTests(TestCase):
             'Not very pythonic, but oh well.',
             '',
             ':param x: Definitely only the head is required.',
+        ])
+        self.two_spaces_docstring = '\n'.join([
+            'Adds an item to the head of the list',
+            '',
+            'Not very pythonic, but oh well.',
+            '',
+            'Args:',
+            '  x: Definitely only the head is required.',
+            '  l: The list to append to.',
+            '',
+            'Returns:',
+            '  A new list with the item prepended.',
         ])
 
     def get_function_with(self, docstring):
@@ -840,3 +859,9 @@ class StrictnessTests(TestCase):
             self.full_docstring_sphinx,
         ]:
             self.assertHasErrors(self.full_sphinx_config, doc)
+
+    def test_two_spaces(self):
+        self.assertHasNoErrors(
+            self.two_spaces_config,
+            self.two_spaces_docstring,
+        )

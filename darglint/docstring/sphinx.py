@@ -35,13 +35,14 @@ from ..config import (
 from ..errors import (
     DarglintError,
 )
+from ..config import Configuration
 
 
 class Docstring(BaseDocstring):
     """The docstring class interprets the AST of a docstring."""
 
-    def __init__(self, root, style=DocstringStyle.SPHINX):
-        # type: (Union[CykNode, str], DocstringStyle) -> None
+    def __init__(self, root, style=DocstringStyle.SPHINX, config=None):
+        # type: (Union[CykNode, str], DocstringStyle, Optional[Configuration]) -> None
         """Create a new docstring from the AST.
 
         Args:
@@ -50,12 +51,15 @@ class Docstring(BaseDocstring):
                 string will be parsed.
             style: The docstring style.  Discarded, since this
                 docstring always represents the Sphinx style.
+            config: The configuration parameters.  Passed to
+                lex to change the number of spaces which count
+                as an indentation.
 
         """
         if isinstance(root, CykNode):
             self.root = root
         else:
-            self.root = parse(condense(lex(root)))
+            self.root = parse(condense(lex(root, config)))
         self._lookup = self._discover()
 
     def _discover(self):

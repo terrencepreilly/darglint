@@ -22,6 +22,11 @@ from darglint.errors import (
 from darglint.utils import (
     CykNodeUtils,
 )
+from darglint.config import (
+    Configuration,
+    DocstringStyle,
+    Strictness,
+)
 
 
 class DocstringTestCase(TestCase):
@@ -952,6 +957,31 @@ class DocstringTestCase(TestCase):
         tokens = condense(lex(docstring))
         node = parse(tokens)
         self.assertTrue(CykNodeUtils.contains(node, 'arguments-section'))
+
+    def test_parse_two_space_indent(self):
+        docstring = '\n'.join([
+            'Short.',
+            '',
+            'Args:',
+            '  x: Something something something.',
+            '    Something something.',
+            '  y: Something Else.',
+            '',
+            'Returns:',
+            '  A value.',
+        ])
+        config = Configuration([], None, DocstringStyle.GOOGLE, Strictness.FULL_DESCRIPTION, indentation=2)
+        tokens = condense(lex(docstring, config=config))
+        node = parse(tokens)
+        annotation_lookup = self.get_annotation_lookup(node)
+        values = {
+            ArgumentIdentifier.extract(x)
+            for x in annotation_lookup[ArgumentIdentifier]
+        }
+        self.assertEqual(
+            values,
+            {'x', 'y'},
+        )
 
     def test_parse_argument_with_two_lines(self):
         program = ('''

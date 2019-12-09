@@ -126,6 +126,16 @@ parser.add_argument(
         '"DAR104,DAR105"'
     )
 )
+parser.add_argument(
+    '--indentation',
+    type=int,
+    default=None,
+    help=(
+        'The number of spaces to count as an indentation. '
+        'For example, if following the Google python style '
+        'guide, you would set --indentation=2.'
+    ),
+)
 
 # ---------------------- MAIN SCRIPT ---------------------------------
 
@@ -181,7 +191,7 @@ def print_error_list():
 
 
 def print_version():
-    print('1.1.1')
+    print('1.1.2')
 
 
 def main():
@@ -223,6 +233,9 @@ def main():
 
         if '*' in config.ignore:
             sys.exit(0)
+
+        if args.indentation:
+            config.indentation = args.indentation
 
         if args.docstring_style == 'sphinx':
             config.style = DocstringStyle.SPHINX

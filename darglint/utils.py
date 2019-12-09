@@ -16,12 +16,13 @@ class CykNodeUtils(object):
 
     @staticmethod
     def contains(self, symbol=None, value=None):
-        # type: (Optional[str], Optional[str]) -> bool
+        # type: (CykNode, Optional[str], Optional[str]) -> bool
         """Return true if the tree contains the given symbol.
 
         This is intended only for testing.
 
         Args:
+            self: The node where we should begin the search.
             symbol: The symbol to search for.
             value: If defined, the string value the node should
                 have in order to match.
