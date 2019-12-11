@@ -7,6 +7,7 @@ and should ideally be excluded from the sources.
 
 from .node import CykNode
 from typing import (
+    Any,
     Set,
     Optional,
 )
@@ -39,6 +40,15 @@ class CykNodeUtils(object):
             if _match(node):
                 return True
         return False
+
+    @staticmethod
+    def get_annotated(self, annotation):
+        # type: (CykNode, Any) -> Set[CykNode]
+        nodes = set()
+        for node in self.walk():
+            if annotation in node.annotations:
+                nodes.add(node)
+        return nodes
 
     @staticmethod
     def to_dot(cyk_node, is_root=True, encountered=set()):

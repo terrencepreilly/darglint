@@ -65,7 +65,7 @@ class Configuration(object):
 
     def __init__(self, ignore, message_template, style, strictness,
                  ignore_regex=None, enable=[], indentation=4):
-        # type: (List[str], Optional[str], DocstringStyle, Strictness, Optional[str], List[str], int) -> None
+        # type: (List[str], Optional[str], DocstringStyle, Strictness, Optional[str], List[str], int) -> None  # noqa: E501
         """Initialize the configuration object.
 
         Args:

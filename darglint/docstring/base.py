@@ -14,6 +14,7 @@ from typing import (
 class DocstringStyle(enum.Enum):
     GOOGLE = 0
     SPHINX = 1
+    NUMPY = 2
 
 
 class Sections(enum.Enum):
