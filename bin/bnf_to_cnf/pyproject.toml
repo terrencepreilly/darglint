@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "bnf_to_cnf"
+version = "0.1.0"
+description = "Converts BNF notation to CNF, as a python class."
+authors = ["Terrence Reilly <terrencepreilly@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.7"
+lark-parser = "^0.7.8"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.3"
+tox = "^3.14"
+flake8 = "^3.7"
+mypy = "^0.750.0"
+ipython = "^7.10"
+ipdb = "^0.12.3"
+darglint = "^1.1"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
