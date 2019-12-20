@@ -56,11 +56,8 @@ class NumpydocTests(TestCase):
 
     def test_can_parse_short_description(self):
         program = '\n'.join([
-            'def add(a, b):',
-            '    """The sum of two numbers.',
+            'The sum of two numbers.',
             '',
-            '    """',
-            '    return a + b'
         ])
         tokens = condense(lex(program, self.config))
         docstring = parse(tokens)
@@ -71,15 +68,12 @@ class NumpydocTests(TestCase):
 
     def test_can_parse_deprecation_warning(self):
         program = '\n'.join([
-            'def mult(a, b):',
-            '    """Multiply two numbers.',
+            'Multiply two numbers.',
             '',
-            '    .. deprecated:: 1.6.0',
-            '        Nobody does this anymore!',
-            '        This will be removed in NumPy 2.0.0',
+            '.. deprecated:: 1.6.0',
+            '    Nobody does this anymore!',
+            '    This will be removed in NumPy 2.0.0',
             '',
-            '    """',
-            '    return a * b',
         ])
         tokens = condense(lex(program, self.config))
         docstring = parse(tokens)
@@ -95,13 +89,10 @@ class NumpydocTests(TestCase):
 
     def test_can_parse_long_description(self):
         program = '\n'.join([
-            'def monkey_up():',
-            '    """Monkey things up.',
+            'Monkey things up.',
             '',
-            '    Not to be confused with sabotage.',
+            'Not to be confused with sabotage.',
             '',
-            '    """',
-            '    return {}[()]',
         ])
         tokens = condense(lex(program, self.config))
         docstring = parse(tokens)
@@ -117,14 +108,11 @@ class NumpydocTests(TestCase):
 
         """
         program = '\n'.join([
-            'def cry():',
-            '    """Cry aloud.',
+            'Cry aloud.',
             '',
-            '    Parameters',
-            '    ----------',
+            'Parameters',
+            '----------',
             '',
-            '    """',
-            '    print("AAAaaargh")',
         ])
         tokens = condense(lex(program, self.config))
         docstring = parse(tokens)
@@ -137,14 +125,11 @@ class NumpydocTests(TestCase):
             for x in range(1, 15)
         ]:
             program = '\n'.join([
-                'def cry():',
-                '    """Cry aloud.',
+                'Cry aloud.',
                 '',
-                '    Parameters',
-                '    {}',
+                'Parameters',
+                '{}',
                 '',
-                '    """',
-                '    print("AAAaaargh")',
             ]).format(underline)
             tokens = condense(lex(program, self.config))
             docstring = parse(tokens)
@@ -152,25 +137,22 @@ class NumpydocTests(TestCase):
 
     def test_single_parameter(self):
         parameter_descriptions = [
-            '    Something.',
-            '    A slightly longer description which '
+            'Something.',
+            'A slightly longer description which '
             'can contain a colon: yes.',
-            '    A description over\n    two lines.',
-            '    A description with two lines and newlines.\n\n'
-            '    It\'s perfectly fine.',
+            'A description over\n    two lines.',
+            'A description with two lines and newlines.\n\n'
+            'It\'s perfectly fine.',
         ]
         for parameter_description in parameter_descriptions:
             program = '\n'.join([
-                'def process(x):',
-                '    """Process some data.',
+                'Process some data.',
                 '',
-                '    Parameters',
-                '    ----------',
-                '    x',
-                '        The data to process.',
+                'Parameters',
+                '----------',
+                'x',
+                '    {}',
                 '',
-                '    """',
-                '    ...',
             ]).format(parameter_description)
             tokens = condense(lex(program, self.config))
             docstring = parse(tokens)
@@ -179,17 +161,16 @@ class NumpydocTests(TestCase):
 
     def test_multiple_parameters(self):
         program_pattern = '\n'.join([
-              'def rename({}):',
-              '    """Rename the items.',
+              'Rename the items.',
               '',
-              '    Parameters',
-              '    ----------',
+              'Parameters',
+              '----------',
               '{}',
         ])
         number = random.randint(2, 10)
         names = string.ascii_letters[:number]
         descriptions = [
-          '    {}\n        Something\n'.format(name)
+          '{}\n    Something\n'.format(name)
           for name in names
         ]
         program = program_pattern.format(
@@ -208,16 +189,13 @@ class NumpydocTests(TestCase):
 
     def test_arguments_section_with_types(self):
         program = '\n'.join([
-            'def fontainify(x):',
-            '    """Turn the person into a Mr. Fontaine.',
+            'Turn the person into a Mr. Fontaine.',
             '',
-            '    Parameters',
-            '    ----------',
-            '    x : Person',
-            '        The person to fontainify.',
+            'Parameters',
+            '----------',
+            'x : Person',
+            '    The person to fontainify.',
             '',
-            '    """',
-            '    pass',
         ])
         tokens = condense(lex(program, config=self.config))
         docstring = parse(tokens)
@@ -225,16 +203,13 @@ class NumpydocTests(TestCase):
 
     def test_two_combined_parameters(self):
         program = '\n'.join([
-            'def cartesian_product(x1, x2):',
-            '    """Get the cartesian product of two lists.',
+            'Get the cartesian product of two lists.',
             '',
-            '    Parameters',
-            '    ----------',
-            '    x1, x2 : List[Any]',
-            '        The lists to use for the product.',
+            'Parameters',
+            '----------',
+            'x1, x2 : List[Any]',
+            '    The lists to use for the product.',
             '',
-            '    """',
-            '    return []',
         ])
         tokens = condense(lex(program, config=self.config))
         docstring = parse(tokens)
@@ -242,16 +217,13 @@ class NumpydocTests(TestCase):
 
     def test_returns_section(self):
         program = '\n'.join([
-            'def the_number_two():',
-            '    """Return the number two.',
+            'Return the number two.',
             '',
-            '    Returns',
-            '    -------',
-            '    {2}',
-            '        The number two.',
+            'Returns',
+            '-------',
+            '{2}',
+            '    The number two.',
             '',
-            '    """',
-            '    return 2',
         ])
         tokens = condense(lex(program, config=self.config))
         docstring = parse(tokens)
@@ -260,15 +232,12 @@ class NumpydocTests(TestCase):
     @skip('Implement return type missing exception')
     def test_return_type_missing_exception(self):
         program = '\n'.join([
-            'def the_number_three():',
-            '    """Return the number three.',
+            'Return the number three.',
             '',
-            '    Returns',
-            '    -------',
-            '    The number three.',
+            'Returns',
+            '-------',
+            'The number three.',
             '',
-            '    """',
-            '    return 3',
         ])
         tokens = condense(lex(program, config=self.config))
         docstring = parse(tokens)
@@ -278,16 +247,13 @@ class NumpydocTests(TestCase):
     @skip('implement return type identifier')
     def test_return_type_with_single_name(self):
         program = '\n'.join([
-            'def the_number_four():',
-            '    """Return the number four.',
+            'Return the number four.',
             '',
-            '    Returns',
-            '    -------',
-            '    number : int',
-            '        A number to use.',
+            'Returns',
+            '-------',
+            'number : int',
+            '    A number to use.',
             '',
-            '    """',
-            '    return 4',
         ])
         tokens = condense(lex(program, config=self.config))
         docstring = parse(tokens)
@@ -296,18 +262,14 @@ class NumpydocTests(TestCase):
 
     def test_return_type_with_multiple_names(self):
         program = '\n'.join([
-            'def the_number_four():',
-            '    """Return the number four.',
+            'Return the number four.',
             '',
-            '    Returns',
-            '    -------',
-            '    number : int',
-            '        A number to use.',
-            '    repr: str',
-            '        The representation of the number.',
-            '',
-            '    """',
-            '    return random.choice([4, "4"])',
+            'Returns',
+            '-------',
+            'number : int',
+            '    A number to use.',
+            'repr: str',
+            '    The representation of the number.',
             '',
         ])
         tokens = condense(lex(program, config=self.config))
@@ -319,16 +281,13 @@ class NumpydocTests(TestCase):
 
     def test_yields_section(self):
         program = '\n'.join([
-            'def the_number_two():',
-            '    """Yield the number two.',
+            'Yield the number two.',
             '',
-            '    Yields',
-            '    -------',
-            '    {2}',
-            '        The number two.',
+            'Yields',
+            '-------',
+            '{2}',
+            '    The number two.',
             '',
-            '    """',
-            '    yield 2',
         ])
         tokens = condense(lex(program, config=self.config))
         docstring = parse(tokens)
@@ -337,15 +296,12 @@ class NumpydocTests(TestCase):
     @skip('Implement yield type missing exception')
     def test_yield_type_missing_exception(self):
         program = '\n'.join([
-            'def the_number_three():',
-            '    """Yield the number three.',
+            'Yield the number three.',
             '',
-            '    Yields',
-            '    -------',
-            '    The number three.',
+            'Yields',
+            '-------',
+            'The number three.',
             '',
-            '    """',
-            '    yield 3',
         ])
         tokens = condense(lex(program, config=self.config))
         docstring = parse(tokens)
@@ -355,16 +311,13 @@ class NumpydocTests(TestCase):
     @skip('implement yield type identifier')
     def test_yield_type_with_single_name(self):
         program = '\n'.join([
-            'def the_number_four():',
-            '    """Yield the number four.',
+            'Yield the number four.',
             '',
-            '    Yields',
-            '    -------',
-            '    number : int',
-            '        A number to use.',
+            'Yields',
+            '-------',
+            'number : int',
+            '    A number to use.',
             '',
-            '    """',
-            '    yield 4',
         ])
         tokens = condense(lex(program, config=self.config))
         docstring = parse(tokens)
@@ -373,18 +326,14 @@ class NumpydocTests(TestCase):
 
     def test_yield_type_with_multiple_names(self):
         program = '\n'.join([
-            'def the_number_four():',
-            '    """Yield the number four.',
+            'Yield the number four.',
             '',
-            '    Yields',
-            '    -------',
-            '    number : int',
-            '        A number to use.',
-            '    repr: str',
-            '        The representation of the number.',
-            '',
-            '    """',
-            '    yield random.choice([4, "4"])',
+            'Yields',
+            '-------',
+            'number : int',
+            '    A number to use.',
+            'repr: str',
+            '    The representation of the number.',
             '',
         ])
         tokens = condense(lex(program, config=self.config))
@@ -397,25 +346,13 @@ class NumpydocTests(TestCase):
     @skip('Implement the error!')
     def test_receives_without_yield_error(self):
         program = '\n'.join([
-            'def the_number_four():',
-            '    """Yield the number four.',
+            'Yield the number four.',
             '',
-            '    Receives',
-            '    -------',
-            '    repr_or_number : {REPR, NUMB}',
-            '        Whether to yield a representation or number.',
+            'Receives',
+            '-------',
+            'repr_or_number : {REPR, NUMB}',
+            '    Whether to yield a representation or number.',
             '',
-            '    """',
-            '    repr_or_numb = REPR',
-            '    while True:',
-            '        if repr_or_numb == NUMB:',
-            '            val = (yield 4)',
-            '        elif repr_or_numb == REPR:',
-            '            val = (yield "4")',
-            '        else:',
-            '            raise Exception("Unexpected format.")',
-            '        if val:',
-            '            repr_or_numb = val',
         ])
         tokens = condense(lex(program, config=self.config))
         docstring = parse(tokens)
@@ -426,26 +363,18 @@ class NumpydocTests(TestCase):
 
     def test_receives_section(self):
         program = '\n'.join([
-            'def counter(maximum=10):',
-            '    """Count up to the number.',
+            'Count up to the number.',
             '',
-            '    Receives',
-            '    --------',
-            '    maximum : int',
-            '        The new maximum number.',
+            'Receives',
+            '--------',
+            'maximum : int',
+            '    The new maximum number.',
             '',
-            '    Yields',
-            '    ------',
-            '    int',
-            '        The next number up to the maximum.',
+            'Yields',
+            '------',
+            'int',
+            '    The next number up to the maximum.',
             '',
-            '    """',
-            '    i = 0',
-            '    while i < maximum:',
-            '        val = (yield i)',
-            '        i += 1',
-            '        if val:',
-            '            maximum = val',
         ])
         tokens = condense(lex(program, config=self.config))
         docstring = parse(tokens)
@@ -453,21 +382,18 @@ class NumpydocTests(TestCase):
 
     def test_other_parameters_section(self):
         program = '\n'.join([
-            'def _(x, target="eng"):',
-            '    """Translate the string to the target language.',
+            'Translate the string to the target language.',
             '',
-            '    Parameters',
-            '    ----------',
-            '    x : str',
-            '        The string to translate.',
+            'Parameters',
+            '----------',
+            'x : str',
+            '    The string to translate.',
             '',
-            '    Other Parameters',
-            '    ----------------',
-            '    target : str',
-            '        The target language.',
+            'Other Parameters',
+            '----------------',
+            'target : str',
+            '    The target language.',
             '',
-            '    """',
-            '    return "hur-dur"',
         ])
         tokens = condense(lex(program, config=self.config))
         docstring = parse(tokens)
@@ -475,16 +401,13 @@ class NumpydocTests(TestCase):
 
     def test_raises_section(self):
         program = '\n'.join([
-            'def fail():',
-            '    """Always fail.',
+            'Always fail.',
             '',
-            '    Raises',
-            '    ------',
-            '    Exception',
-            '        Under all conditions.',
+            'Raises',
+            '------',
+            'Exception',
+            '    Under all conditions.',
             '',
-            '    """',
-            '    raise Exception("Failed!")',
         ])
         tokens = condense(lex(program, config=self.config))
         docstring = parse(tokens)
@@ -492,16 +415,13 @@ class NumpydocTests(TestCase):
 
     def test_warns_section(self):
         program = '\n'.join([
-            'def warn():',
-            '    """Always warn.',
+            'Always warn.',
             '',
-            '    Warns',
-            '    -----',
-            '    Warning',
-            '        Under all conditions.',
+            'Warns',
+            '-----',
+            'Warning',
+            '    Under all conditions.',
             '',
-            '    """',
-            '    raise Warning("Warned!")',
         ])
         tokens = condense(lex(program, config=self.config))
         docstring = parse(tokens)

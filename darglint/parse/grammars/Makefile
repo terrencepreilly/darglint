@@ -18,7 +18,8 @@ sections = google_arguments_section.py \
 		   sphinx_variable_type_section.py \
 		   sphinx_variables_section.py \
 		   sphinx_yields_section.py \
-		   sphinx_yield_type_section.py
+		   sphinx_yield_type_section.py \
+		   numpy.py \
 
 all: $(sections)
 

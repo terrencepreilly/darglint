@@ -1,0 +1,24 @@
+import terminals.bnf
+import noqa_statement.bnf
+
+from darglint.parse.grammar import (
+    BaseGrammar,
+    P,
+)
+
+Grammar: NumpyGrammar
+
+start: <short-description>
+
+<short-description>
+    ::= <line>
+    | <line> <newlines>
+
+<line>
+    ::= <word> <line>
+    | <word> <noqa-maybe>
+    | <noqa-statement>
+
+<newlines>
+    ::= <newline> <newlines>
+    | <newline>

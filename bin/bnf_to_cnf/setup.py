@@ -19,7 +19,7 @@ setup(
         ],
     },
     install_requires=[
-        'lark-parser==0.7.0',
+        'lark-parser==0.7.8',
     ],
     setup_requires=[],
     tests_require=['pytest'],

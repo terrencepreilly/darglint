@@ -1,5 +1,6 @@
 from typing import (
-    Iterable,
+    List,
+    Optional,
 )
 from ..token import (
     Token,
@@ -7,8 +8,17 @@ from ..token import (
 from ..node import (
     CykNode,
 )
+from .cyk import (
+    parse as cyk_parse,
+)
+from .grammars.numpy import (
+    NumpyGrammar,
+)
+from .grammar import (
+    BaseGrammar,
+)
 
 
 def parse(tokens):
-    # type: (Iterable[Token]) -> CykNode
-    return CykNode('null')
+    # # type: (List[Token]) -> Optional[CykNode]
+    return cyk_parse(NumpyGrammar, tokens)
