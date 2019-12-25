@@ -425,3 +425,23 @@ class TranslatorTestCase(TestCase):
         self.assertFalse(
             list(node.filter(lambda x: x.value == 'c'))
         )
+
+    def test_translate_annotation_follows_pattern(self):
+        """Annotations should be the first item in the tuple."""
+        grammar = r'''
+        start: <d>
+
+        <d> ::= <s>
+        <s> ::= @Wrong <l>
+              | @Wrong <l> <nl>
+        <l> ::= "l"
+        <nl> ::= "n" | ε
+        '''
+        tree = Parser().parse(grammar)
+        node = Translator().translate(tree)
+        python = node.to_python()
+        self.assertEqual(
+            python.count(', [Wrong]'),
+            0,
+            python,
+        )

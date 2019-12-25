@@ -390,49 +390,66 @@ class Node(object):
             assert self.value is not None
             return f'"{self.value}"'
         elif self.node_type == NodeType.SEQUENCE:
+            # The grammar for sequence is
+            #    sequence: probability?
+            #              annotations?
+            #             (symbol | TERMINAL)
+            #             (_WHITESPACE (symbol | TERMINAL))*
+            #
             # If the node has undergone translation, it will have
-            # only one or two children.
+            # only one or two terminals/symbols, by definition of CNF.
             #
-            # If the node has probability, that will be the last element.
-            # Therefore, we have the partitioning
+            # Probability is saved onto the node, but annotations
+            # remain as children. (Probably a poor choice we should change.)
             #
-            # +----------+-----------------+----------+
-            # | Children | Has Probability | Length   |
-            # +----------+-----------------+----------+
-            # |    1     |        N        |    1     |
-            # +----------+-----------------+----------+
-            # |    1     |        Y        |    2     |
-            # +----------+-----------------+----------+
-            # |    2     |        N        |    3     |
-            # +----------+-----------------+----------+
-            # |    2     |        Y        |    4     |
-            # +----------+-----------------+----------+
+            # +----------+-----------------+----------------+
+            # | Children | Has Probability | Has Annotation |
+            # +----------+-----------------+----------------+
+            # |    1     |        N        |        N       |
+            # +----------+-----------------+----------------+
+            # |    1     |        N        |        Y       |
+            # +----------+-----------------+----------------+
+            # |    1     |        Y        |        N       |
+            # +----------+-----------------+----------------+
+            # |    1     |        Y        |        Y       |
+            # +----------+-----------------+----------------+
+            # |    2     |        N        |        N       |
+            # +----------+-----------------+----------------+
+            # |    2     |        N        |        Y       |
+            # +----------+-----------------+----------------+
+            # |    2     |        Y        |        N       |
+            # +----------+-----------------+----------------+
+            # |    2     |        Y        |        Y       |
+            # +----------+-----------------+----------------+
+            # |    3     |        N        |        N       |
+            # +----------+-----------------+----------------+
+            # |    3     |        N        |        Y       |
+            # +----------+-----------------+----------------+
+            # |    3     |        Y        |        N       |
+            # +----------+-----------------+----------------+
+            # |    3     |        Y        |        Y       |
+            # +----------+-----------------+----------------+
             #
             # Which will allow the consumer to distinguish between all of
             # these without introducing a new type.
             #
-            if len(self.children) == 1:
-                return (
-                    f'({self.children[0].to_python()}, '
-                    f'{self.probability if self.probability else 0})'
-                )
-            elif len(self.children) == 2:
-                if self.probability:
-                    return (
-                        f'([], {self.children[0].to_python()}, '
-                        f'{self.children[1].to_python()}, {self.probability})'
-                    )
-                return (
-                    f'([], {self.children[0].to_python()}, '
-                    f'{self.children[1].to_python()}, 0)'
-                )
-            else:
-                return (
-                    '('
-                    + ', '.join([x.to_python() for x in self.children])
-                    + (f', {self.probability}' if self.probability else ', 0')
-                    + ')'
-                )
+            annotations = '[]'
+            children = self.children
+            if self.children[0].node_type == NodeType.ANNOTATIONS:
+                annotations = self.children[0].to_python()
+                children = self.children[1:]
+            probability = '0'
+            if self.probability:
+                probability = str(self.probability)
+
+            return (
+                '('
+                + annotations
+                + ', '
+                + ', '.join([x.to_python() for x in children])
+                + ', ' + probability
+                + ')'
+            )
         elif self.node_type == NodeType.EXPRESSION:
             return ', '.join([x.to_python() for x in self.children])
         elif self.node_type == NodeType.IMPORTS:
