@@ -1,10 +1,11 @@
 """Defines a base class far describing grammars."""
 
 import abc
-from collections import deque
 from typing import (  # noqa: F401
+    Any,
     Dict,
     List,
+    Optional,
     Tuple,
     Union,
 )
@@ -19,7 +20,7 @@ class Production(object):
     """Represents a production in a grammar."""
 
     def __init__(self, lhs, *rhs, annotations=list()):
-        # # type: (str, Union[NonTerminalDerivation, TerminalDerivation]) -> None  # noqa: E501
+        # type: (str, Union[NonTerminalDerivation, TerminalDerivation], Optional[List[Any]]) -> None  # noqa: E501
         """Create a new production.
 
         Args:

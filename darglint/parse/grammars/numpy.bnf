@@ -5,14 +5,26 @@ from darglint.parse.grammar import (
     BaseGrammar,
     P,
 )
+from darglint.parse.identifiers import (
+    ShortDescriptionIdentifier,
+)
 
 Grammar: NumpyGrammar
 
-start: <short-description>
+start: <docstring>
+
+<docstring>
+    ::= <short-description>
+    | <short-description> <long-description>
+
+<long-description>
+    ::= <line> <newlines> <long-description>
+    | <line> <newlines>
+    | <line>
 
 <short-description>
-    ::= <line>
-    | <line> <newlines>
+    ::= @ShortDescriptionIdentifier <line>
+    | @ShortDescriptionIdentifier <line> <newlines>
 
 <line>
     ::= <word> <line>

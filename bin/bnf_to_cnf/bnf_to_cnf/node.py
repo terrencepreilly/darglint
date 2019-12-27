@@ -433,11 +433,13 @@ class Node(object):
             # Which will allow the consumer to distinguish between all of
             # these without introducing a new type.
             #
-            annotations = '[]'
+            annotations = '[], '
             children = self.children
             if self.children[0].node_type == NodeType.ANNOTATIONS:
-                annotations = self.children[0].to_python()
+                annotations = self.children[0].to_python() + ', '
                 children = self.children[1:]
+            if len(children) == 1:
+                annotations = ''
             probability = '0'
             if self.probability:
                 probability = str(self.probability)
@@ -445,7 +447,6 @@ class Node(object):
             return (
                 '('
                 + annotations
-                + ', '
                 + ', '.join([x.to_python() for x in children])
                 + ', ' + probability
                 + ')'
