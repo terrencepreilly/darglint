@@ -65,6 +65,11 @@ def _is_rparen(char):
     return char == ')'
 
 
+def _is_hyphen(char):
+    # type: (Optional[str]) -> bool
+    return char == '-'
+
+
 def _is_word(char):
     # type: (str) -> bool
     return not any([
@@ -132,6 +137,12 @@ def lex(program, config=None):
         elif _is_rparen(peaker.peak()):
             value = peaker.next()
             yield Token(value, TokenType.RPAREN, line_number)
+        elif _is_hyphen(peaker.peak()):
+            value = ''.join(peaker.take_while(_is_word))
+            if value.count('-') == len(value):
+                yield Token(value, TokenType.HEADER, line_number)
+            else:
+                yield Token(value, TokenType.WORD, line_number)
         else:
             value = ''.join(peaker.take_while(_is_word))
             if extra != '':
@@ -150,6 +161,7 @@ KEYWORDS = {
     'noqa': TokenType.NOQA,
     'param': TokenType.ARGUMENTS,
     'parameter': TokenType.ARGUMENTS,
+    'Parameters': TokenType.ARGUMENTS,
     'arg': TokenType.ARGUMENTS,
     'argument': TokenType.ARGUMENTS,
     'key': TokenType.VARIABLES,
@@ -166,6 +178,7 @@ KEYWORDS = {
     'return': TokenType.RETURNS,
     'returns': TokenType.RETURNS,
     'rtype': TokenType.RETURN_TYPE,
+    'Other': TokenType.OTHER,
 }
 
 

@@ -20,7 +20,9 @@ from darglint.parse.numpy import (
 )
 from darglint.parse.identifiers import (
     ArgumentIdentifier,
+    ArgumentItemIdentifier,
     ArgumentTypeIdentifier,
+    ShortDescriptionIdentifier,
 )
 from darglint.utils import (
     CykNodeUtils,
@@ -37,17 +39,28 @@ class NumpydocTests(TestCase):
             strictness=Strictness.FULL_DESCRIPTION,
         )
 
-    def assertContains(self, docstring, node_name):
-        self.assertTrue(CykNodeUtils.contains(docstring, node_name))
+    def assertContains(self, docstring, node_name, msg=''):
+        self.assertTrue(
+            CykNodeUtils.contains(docstring, node_name),
+            msg or 'Expected docstring to contain {} but it did not'.format(
+                node_name,
+            )
+        )
 
-    def assertIdentified(self, docstring, identifier, expected):
-        self.assertEqual(expected, {
+    def assertIdentified(self, docstring, identifier, expected, msg=''):
+        actual = {
             identifier.extract(x)
             for x in CykNodeUtils.get_annotated(
                 docstring,
                 identifier,
             )
-        })
+        }
+        self.assertEqual(
+            expected, actual,
+            msg or 'Expected identified {}, but found {}'.format(
+                repr(expected), repr(actual)
+            )
+        )
 
     def assertHasIdentifier(self, docstring, identifier):
         self.assertTrue(len(
@@ -61,9 +74,9 @@ class NumpydocTests(TestCase):
         ])
         tokens = condense(lex(raw_docstring, self.config))
         docstring = parse(tokens)
-        self.assertContains(
+        self.assertHasIdentifier(
             docstring,
-            'short-description',
+            ShortDescriptionIdentifier
         )
 
     @skip('Implement this?')
@@ -117,7 +130,7 @@ class NumpydocTests(TestCase):
         ])
         tokens = condense(lex(raw_docstring, self.config))
         docstring = parse(tokens)
-        for node_name in ['arguments-section', 'arguments-header']:
+        for node_name in ['arguments-section']:
             self.assertContains(docstring, node_name)
 
     def test_header_can_have_variable_length(self):
@@ -143,7 +156,7 @@ class NumpydocTests(TestCase):
             'can contain a colon: yes.',
             'A description over\n    two lines.',
             'A description with two lines and newlines.\n\n'
-            'It\'s perfectly fine.',
+            '    It\'s perfectly fine.',
         ]
         for parameter_description in parameter_descriptions:
             raw_docstring = '\n'.join([
@@ -157,8 +170,19 @@ class NumpydocTests(TestCase):
             ]).format(parameter_description)
             tokens = condense(lex(raw_docstring, self.config))
             docstring = parse(tokens)
-            for node_name in ['arguments-section', 'arguments']:
-                self.assertContains(docstring, node_name)
+            self.assertContains(
+                docstring,
+                'arguments-section',
+                'Expected docstring with {} as item description '
+                'but did not parse as arguments section'.format(
+                    repr(parameter_description),
+                )
+            )
+            self.assertIdentified(
+                docstring,
+                ArgumentItemIdentifier,
+                {'x'},
+            )
 
     def test_multiple_parameters(self):
         raw_docstring_pattern = '\n'.join([
@@ -167,22 +191,20 @@ class NumpydocTests(TestCase):
               'Parameters',
               '----------',
               '{}',
+              '',
         ])
-        number = random.randint(2, 10)
+        number = random.randint(2, 5)
         names = string.ascii_letters[:number]
-        descriptions = [
-          '{}\n    Something\n'.format(name)
-          for name in names
-        ]
         raw_docstring = raw_docstring_pattern.format(
-            ', '.join(names),
-            '\n'.join(descriptions),
+            '\n'.join([
+                '{}:\n    Something'.format(name)
+                for name in names
+            ])
         )
         tokens = condense(lex(raw_docstring, config=self.config))
         docstring = parse(tokens)
-        for node_name in ['arguments-section', 'arguments']:
-            self.assertContains(docstring, node_name)
-        self.assertIdentified(docstring, ArgumentIdentifier, set(names))
+        self.assertContains(docstring, 'arguments-section')
+        self.assertIdentified(docstring, ArgumentItemIdentifier, set(names))
 
     @skip('Not collecting whitespace yet')
     def test_error_associated_with_no_whitespace_before_type(self):
@@ -200,7 +222,7 @@ class NumpydocTests(TestCase):
         ])
         tokens = condense(lex(raw_docstring, config=self.config))
         docstring = parse(tokens)
-        self.assertIdentified(docstring, ArgumentTypeIdentifier, {'x'})
+        self.assertIdentified(docstring, ArgumentTypeIdentifier, {'Person'})
 
     def test_two_combined_parameters(self):
         raw_docstring = '\n'.join([
@@ -398,7 +420,12 @@ class NumpydocTests(TestCase):
         ])
         tokens = condense(lex(raw_docstring, config=self.config))
         docstring = parse(tokens)
-        self.assertContains(docstring, 'other-parameters-section')
+        self.assertContains(docstring, 'other-arguments-section')
+        self.assertIdentified(
+            docstring,
+            ArgumentItemIdentifier,
+            {'x', 'target'},
+        )
 
     def test_raises_section(self):
         raw_docstring = '\n'.join([

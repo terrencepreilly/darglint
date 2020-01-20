@@ -29,8 +29,10 @@ class TokenType(BaseTokenType):
     VARIABLES = 16
     VARIABLE_TYPE = 17
     ARGUMENT_TYPE = 18
+    HEADER = 19
+    OTHER = 20
 
-    # next: 19
+    # next: 21
 
 
 KEYWORDS = {
@@ -75,7 +77,7 @@ class Token(object):
             A readable representation for debugging.
 
         """
-        return '<Token {} {}>'.format(self.value, self.token_type)
+        return '<Token {} {}>'.format(repr(self.value), self.token_type)
 
     def __repr__(self):
         """Return readable representation for debugging.

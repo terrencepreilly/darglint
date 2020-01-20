@@ -65,7 +65,7 @@ class BaseGrammar(abc.ABC):
         lookup = dict()  # type: Dict[str, int]
 
         # We have to tell the type checker that productions is, in fact,
-        # a list, since it enumerate actually takes a wider type (Iterable),
+        # a list, since enumerate actually takes a wider type (Iterable),
         # and it gets confused.
         assert isinstance(cls.productions, list)
         for i, production in enumerate(cls.productions):

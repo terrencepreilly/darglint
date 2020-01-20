@@ -9,6 +9,7 @@ from darglint.token import (
     | <lparen>
     | <rparen>
     | <ident>
+    | <header>
 
 <word-colonless>
     ::= <ident>
@@ -16,6 +17,7 @@ from darglint.token import (
     | <indent>
     | <lparen>
     | <rparen>
+    | <header>
 
 <ident>
     ::= "TokenType\.WORD"
@@ -30,6 +32,11 @@ from darglint.token import (
     | <variables>
     | <variable-type>
     | <noqa>
+    | <other>
+
+
+<header>
+    ::= "TokenType\.HEADER"
 
 <arguments>
     ::= "TokenType\.ARGUMENTS"
@@ -78,3 +85,6 @@ from darglint.token import (
 
 <noqa>
     ::= "TokenType\.NOQA"
+
+<other>
+    ::= "TokenType\.OTHER"

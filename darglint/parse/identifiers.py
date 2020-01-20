@@ -57,7 +57,7 @@ class ArgumentItemIdentifier(Identifier):
 
     @staticmethod
     def extract(node):
-        return ''
+        return node.lchild.value.value
 
 
 class ArgumentIdentifier(Identifier):
@@ -84,12 +84,19 @@ class ArgumentTypeIdentifier(Identifier):
         assert node.rchild
         assert node.rchild.rchild
         assert node.rchild.rchild.lchild
-        assert node.rchild.rchild.lchild.rchild
-        assert node.rchild.rchild.lchild.rchild.lchild
-        if node.rchild.rchild.lchild.rchild.lchild.value:
-            return node.rchild.rchild.lchild.rchild.lchild.value.value
+        if node.rchild.rchild.lchild.rchild:
+            assert node.rchild.rchild.lchild.rchild.lchild
+            if node.rchild.rchild.lchild.rchild.lchild.value:
+                return node.rchild.rchild.lchild.rchild.lchild.value.value
+            else:
+                return (
+                    node.rchild.rchild.lchild.rchild
+                        .lchild.reconstruct_string()
+                )
         else:
-            return node.rchild.rchild.lchild.rchild.lchild.reconstruct_string()
+            if node.rchild.rchild.lchild.value:
+                return node.rchild.rchild.lchild.value.value
+            return node.rchild.rchild.lchild.reconstruct_string()
 
 
 class ExceptionItemIdentifier(Identifier):

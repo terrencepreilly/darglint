@@ -684,8 +684,10 @@ class Translator(object):
             raise Exception('Reached maximum epsilon expansion.')
 
         self._eliminate_unit_productions(tree)
+
         self._remove_unused_productions(tree, start_symbol)
 
+        # FIXME: Erroneously removes `word` production sometimes.
         # TODO: remove nodes which don't lead to terminals?
         self._remove_non_fruitful_branches(tree, start_symbol)
 
