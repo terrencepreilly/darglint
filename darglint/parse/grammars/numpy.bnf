@@ -8,6 +8,8 @@ from darglint.parse.grammar import (
 from darglint.parse.identifiers import (
     ArgumentItemIdentifier,
     ArgumentTypeIdentifier,
+    ExceptionItemIdentifier,
+    ExceptionIdentifier,
     ShortDescriptionIdentifier,
 )
 
@@ -16,12 +18,20 @@ Grammar: NumpyGrammar
 start: <docstring>
 
 <docstring>
+#     ::= <short-description>
+#         <maybe-long-description>
+#         <maybe-arguments-section>
+#         <maybe-other-arguments-section>
+#         <maybe-raises-section>
     ::= <short-description>
     | 100 <short-description> <arguments-section>
     | 100 <short-description> <arguments-section> <other-arguments-section>
     | <short-description> <long-description>
     | <short-description> <long-description> <arguments-section>
     | <short-description> <long-description> <arguments-section> <other-arguments-section>
+    | <short-description> <raises-section>
+    | <short-description> <long-description> <raises-section>
+    | <short-description> <arguments-section> <raises-section>
 
 <long-description>
     ::= <line> <newlines> <long-description>
@@ -57,6 +67,22 @@ start: <docstring>
     | @ArgumentItemIdentifier
       @ArgumentTypeIdentifier
         <ident> <colon> <line> <newline>
+        <block-indented>
+
+<raises-section>
+    ::= <raises-header> <newlines>
+    | <raises-header> <newline> <raises-body> <newlines>
+
+<raises-header>
+    ::= <raises> <newline> <header>
+
+<raises-body>
+    ::= <raises-item> <raises-body>
+    | <raises-item>
+
+<raises-item>
+    ::= @ExceptionItemIdentifier
+        <ident> <newline>
         <block-indented>
 
 <block-indented>
