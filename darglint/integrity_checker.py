@@ -288,8 +288,6 @@ class IntegrityChecker(object):
 
     def _check_parameters(self, function):
         # type: (FunctionDescription) -> None
-        # argument_types = self.docstring.get_argument_types()
-        # docstring_arguments = set(argument_types.keys())
         docstring_arguments = set(self.docstring.get_items(
             Sections.ARGUMENTS_SECTION
         ) or [])
@@ -306,6 +304,16 @@ class IntegrityChecker(object):
         )
 
         for missing in missing_in_doc:
+            # See if the documented argument begins with one
+            # or two asterisks.
+            if (
+                (missing.startswith('**')
+                    and missing[2:] in docstring_arguments)
+                or (missing.startswith('*')
+                    and missing[1:] in docstring_arguments)
+            ):
+                continue
+
             # We use the default line numbers because a missing
             # parameter, by definition, will not have line numbers.
             self.errors.append(
@@ -322,6 +330,14 @@ class IntegrityChecker(object):
             ExcessParameterError,
         )
         for missing in missing_in_function:
+            # If the actual argument begins with asterisk(s),
+            # then check to make sure the unasterisked version
+            # is not missing.
+            if (
+                '*' + missing in actual_arguments or
+                '**' + missing in actual_arguments
+            ):
+                continue
             line_numbers = self.docstring.get_line_numbers_for_value(
                 'arguments-section',
                 missing,

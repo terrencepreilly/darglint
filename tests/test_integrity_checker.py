@@ -697,6 +697,25 @@ class IntegrityCheckerTestCase(TestCase):
         for variant in ['# noqa: *', '# noqa: DAR001', '# noqa']:
             self.has_no_errors(program.format(variant))
 
+    def test_star_args_are_optional(self):
+        program = '\n'.join([
+            'def collapse_many_logs(*args: typing.List[str]) '
+            '-> typing.List[str]:',
+            '    """Concatenate an arbitrary number of lists, '
+            'with a separator.',
+            '',
+            '    Args:',
+            '        args: Any number of lists of strings.',
+            '',
+            '    Returns:',
+            '        A list of strings made up of the input lists, '
+            'skipping empty lists and',
+            '        putting a separator between the remainder.',
+            '    """',
+            '    return []',
+        ])
+        self.has_no_errors(program)
+
 
 class StrictnessTests(TestCase):
 
