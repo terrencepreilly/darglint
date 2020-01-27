@@ -18,11 +18,6 @@ Grammar: NumpyGrammar
 start: <docstring>
 
 <docstring>
-#     ::= <short-description>
-#         <maybe-long-description>
-#         <maybe-arguments-section>
-#         <maybe-other-arguments-section>
-#         <maybe-raises-section>
     ::= <short-description>
     | 100 <short-description> <arguments-section>
     | 100 <short-description> <arguments-section> <other-arguments-section>
@@ -32,6 +27,10 @@ start: <docstring>
     | <short-description> <raises-section>
     | <short-description> <long-description> <raises-section>
     | <short-description> <arguments-section> <raises-section>
+    | <short-description> <receives-section> <yields-section>
+    | <short-description> <returns-section>
+    | <short-description> <warns-section>
+    | <short-description> <yields-section>
 
 <long-description>
     ::= <line> <newlines> <long-description>
@@ -59,15 +58,26 @@ start: <docstring>
 
 <argument-item>
     ::= @ArgumentItemIdentifier
-        <ident> <newline>
+        <ident-list> <newline>
         <block-indented>
     | @ArgumentItemIdentifier
-        <ident> <colon> <newline>
+        <ident-list> <colon> <newline>
         <block-indented>
     | @ArgumentItemIdentifier
       @ArgumentTypeIdentifier
-        <ident> <colon> <line> <newline>
+        <ident-list> <colon> <line> <newline>
         <block-indented>
+
+<ident-list>
+    ::= <ident>
+    | <ident> <ident-list>
+
+<warns-section>
+    ::= <warns-header> <newlines>
+    | <warns-header> <newline> <raises-body> <newlines>
+
+<warns-header>
+    ::= <warns> <newline> <header>
 
 <raises-section>
     ::= <raises-header> <newlines>
@@ -84,6 +94,63 @@ start: <docstring>
     ::= @ExceptionItemIdentifier
         <ident> <newline>
         <block-indented>
+
+<receives-section>
+    ::= <receives-header> <newlines>
+    | <receives-header> <newline> <receives-body> <newlines>
+
+<receives-header>
+    ::= <receives> <newline> <header>
+
+<receives-body>
+    ::= <receives-item> <receives-body>
+    | <receives-item>
+
+<receives-item>
+    ::= <ident> <newline>
+        <block-indented>
+    | <ident> <colon> <line> <newline>
+      <block-indented>
+
+<yields-section>
+    ::= <yields-header> <newlines>
+    | <yields-header> <newline> <yields-body> <newlines>
+
+<yields-header>
+    ::= <yields> <newline> <header>
+
+<yields-body>
+    ::= <block-indented>
+    | <line> <newline> <block-indented>
+    | <yields-body-typed>
+
+<yields-body-typed>
+    ::= <yields-argument> <block-indented> <newline> <yields-body-typed>
+    | <yields-argument> <block-indented> <newlines>
+
+<yields-argument>
+    ::= <ident> <colon> <line> <newline>
+    | <ident> <newline>
+
+<returns-section>
+    ::= <returns-header> <newlines>
+    | <returns-header> <newline> <returns-body> <newlines>
+
+<returns-header>
+    ::= <returns> <newline> <header>
+
+# TODO: Change the yields body to match this.
+<returns-body>
+    ::= <block-indented>
+    | <returns-body-typed>
+
+<returns-body-typed>
+    ::= <returns-argument> <block-indented> <newline> <returns-body-typed>
+    | <returns-argument> <block-indented> <newlines>
+
+<returns-argument>
+    ::= <ident> <colon> <line> <newline>
+    | <ident> <newline>
 
 <block-indented>
     ::= <paragraph-indented> <split> <block-indented>

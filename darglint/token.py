@@ -31,8 +31,10 @@ class TokenType(BaseTokenType):
     ARGUMENT_TYPE = 18
     HEADER = 19
     OTHER = 20
+    RECEIVES = 21
+    WARNS = 22
 
-    # next: 21
+    # next: 23
 
 
 KEYWORDS = {
@@ -46,6 +48,8 @@ KEYWORDS = {
     TokenType.VARIABLES,
     TokenType.VARIABLE_TYPE,
     TokenType.ARGUMENT_TYPE,
+    TokenType.RECEIVES,
+    TokenType.WARNS,
 }
 
 

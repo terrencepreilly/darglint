@@ -117,6 +117,14 @@ def random_tokens(min_length=1, max_length=20, exclude=set()):
             value = random_string()
         elif _type == TokenType.ARGUMENT_TYPE:
             value = random_string()
+        elif _type == TokenType.OTHER:
+            value = 'Other'
+        elif _type == TokenType.RECEIVES:
+            value = 'Receives'
+        elif _type == TokenType.HEADER:
+            value = '--------'
+        elif _type == TokenType.WARNS:
+            value = 'Warns'
         else:
             raise Exception('Unexpected token type {}'.format(
                 _type

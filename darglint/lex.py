@@ -179,6 +179,9 @@ KEYWORDS = {
     'returns': TokenType.RETURNS,
     'rtype': TokenType.RETURN_TYPE,
     'Other': TokenType.OTHER,
+    'Receives': TokenType.RECEIVES,
+    'Warns': TokenType.WARNS,
+    'Warnings': TokenType.WARNS,
 }
 
 

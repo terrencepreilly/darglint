@@ -236,7 +236,7 @@ class NumpydocTests(TestCase):
         ])
         tokens = condense(lex(raw_docstring, config=self.config))
         docstring = parse(tokens)
-        self.assertIdentified(docstring, ArgumentIdentifier, {'x1', 'x2'})
+        self.assertIdentified(docstring, ArgumentItemIdentifier, {'x1, x2'})
 
     def test_returns_section(self):
         raw_docstring = '\n'.join([
@@ -361,6 +361,7 @@ class NumpydocTests(TestCase):
         ])
         tokens = condense(lex(raw_docstring, config=self.config))
         docstring = parse(tokens)
+        print('\n'.join([str(x) for x in tokens]))
         self.assertContains(docstring, 'yields-section')
         # self.assertIdentified(
         #     docstring, RetrunTypeIdentifier, {'int', 'str'}

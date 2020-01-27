@@ -33,6 +33,8 @@ from darglint.token import (
     | <variable-type>
     | <noqa>
     | <other>
+    | <receives>
+    | <warns>
 
 
 <header>
@@ -88,3 +90,9 @@ from darglint.token import (
 
 <other>
     ::= "TokenType\.OTHER"
+
+<receives>
+    ::= "TokenType\.RECEIVES"
+
+<warns>
+    ::= "TokenType\.WARNS"
