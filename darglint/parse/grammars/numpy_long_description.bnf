@@ -1,0 +1,17 @@
+import numpy.bnf
+
+from darglint.parse.grammar import (
+    BaseGrammar,
+    P,
+)
+
+
+Grammar: LongDescriptionGrammar
+
+start: <long-description>
+
+
+<long-description>
+    ::= <line> <newlines> <long-description>
+    | <line> <newlines>
+    | <line>

@@ -1,0 +1,40 @@
+import terminals.bnf
+import noqa_statement.bnf
+import numpy.bnf
+
+from darglint.parse.grammar import (
+    BaseGrammar,
+    P,
+)
+from darglint.parse.identifiers import (
+    ArgumentItemIdentifier,
+    ArgumentTypeIdentifier,
+)
+
+
+Grammar: OtherArgumentsGrammar
+
+start: <other-arguments-section>
+
+<other-arguments-section>
+    ::= <other> <arguments-header> <newlines>
+    | <other> <arguments-header> <newline> <arguments-body> <newlines>
+
+<arguments-header>
+    ::= <arguments> <newline> <header>
+
+<arguments-body>
+    ::= <argument-item> <newline> <arguments-body>
+    | <argument-item>
+
+<argument-item>
+    ::= @ArgumentItemIdentifier
+        <ident-list> <newline>
+        <block-indented>
+    | @ArgumentItemIdentifier
+        <ident-list> <colon> <newline>
+        <block-indented>
+    | @ArgumentItemIdentifier
+      @ArgumentTypeIdentifier
+        <ident-list> <colon> <line> <newline>
+        <block-indented>

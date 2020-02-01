@@ -1,0 +1,33 @@
+import numpy.bnf
+import terminals.bnf
+
+from darglint.parse.grammar import (
+    BaseGrammar,
+    P,
+)
+
+
+Grammar: ReturnsGrammar
+
+start: <returns-section>
+
+
+<returns-section>
+    ::= <returns-header> <newlines>
+    | <returns-header> <newline> <returns-body> <newlines>
+
+<returns-header>
+    ::= <returns> <newline> <header>
+
+# TODO: Change the yields body to match this.
+<returns-body>
+    ::= <block-indented>
+    | <returns-body-typed>
+
+<returns-body-typed>
+    ::= <returns-argument> <block-indented> <newline> <returns-body-typed>
+    | <returns-argument> <block-indented> <newlines>
+
+<returns-argument>
+    ::= <ident> <colon> <line> <newline>
+    | <ident> <newline>

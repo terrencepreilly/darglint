@@ -1,0 +1,32 @@
+import numpy.bnf
+import terminals.bnf
+
+from darglint.parse.grammar import (
+    BaseGrammar,
+    P,
+)
+from darglint.parse.identifiers import (
+    ExceptionItemIdentifier,
+)
+
+
+Grammar: WarnsGrammar
+
+start: <warns-section>
+
+
+<warns-section>
+    ::= <warns-header> <newlines>
+    | <warns-header> <newline> <warns-body> <newlines>
+
+<warns-header>
+    ::= <warns> <newline> <header>
+
+<warns-body>
+    ::= <warns-item> <warns-body>
+    | <warns-item>
+
+<warns-item>
+    ::= @ExceptionItemIdentifier
+        <ident> <newline>
+        <block-indented>

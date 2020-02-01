@@ -1,0 +1,30 @@
+import numpy.bnf
+import terminals.bnf
+
+from darglint.parse.grammar import (
+    BaseGrammar,
+    P,
+)
+
+
+Grammar: ReceivesGrammar
+
+start: <receives-section>
+
+
+<receives-section>
+    ::= <receives-header> <newlines>
+    | <receives-header> <newline> <receives-body> <newlines>
+
+<receives-header>
+    ::= <receives> <newline> <header>
+
+<receives-body>
+    ::= <receives-item> <receives-body>
+    | <receives-item>
+
+<receives-item>
+    ::= <ident> <newline>
+        <block-indented>
+    | <ident> <colon> <line> <newline>
+      <block-indented>

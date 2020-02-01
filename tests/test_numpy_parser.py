@@ -19,10 +19,8 @@ from darglint.parse.numpy import (
     parse,
 )
 from darglint.parse.identifiers import (
-    ArgumentIdentifier,
     ArgumentItemIdentifier,
     ArgumentTypeIdentifier,
-    ShortDescriptionIdentifier,
 )
 from darglint.utils import (
     CykNodeUtils,
@@ -74,10 +72,7 @@ class NumpydocTests(TestCase):
         ])
         tokens = condense(lex(raw_docstring, self.config))
         docstring = parse(tokens)
-        self.assertHasIdentifier(
-            docstring,
-            ShortDescriptionIdentifier
-        )
+        self.assertContains(docstring, 'short-description')
 
     @skip('Implement this?')
     def test_can_parse_deprecation_warning(self):
@@ -361,10 +356,9 @@ class NumpydocTests(TestCase):
         ])
         tokens = condense(lex(raw_docstring, config=self.config))
         docstring = parse(tokens)
-        print('\n'.join([str(x) for x in tokens]))
         self.assertContains(docstring, 'yields-section')
         # self.assertIdentified(
-        #     docstring, RetrunTypeIdentifier, {'int', 'str'}
+        #     docstring, ReturnTypeIdentifier, {'int', 'str'}
         # )
 
     @skip('Implement the error!')

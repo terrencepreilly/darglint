@@ -20,6 +20,15 @@ sections = google_arguments_section.py \
 		   sphinx_yields_section.py \
 		   sphinx_yield_type_section.py \
 		   numpy.py \
+		   numpy_arguments_section.py \
+		   numpy_long_description.py \
+		   numpy_other_arguments_section.py \
+		   numpy_raises_section.py \
+		   numpy_receives_section.py \
+		   numpy_returns_section.py \
+		   numpy_short_description.py \
+		   numpy_warns_section.py \
+		   numpy_yields_section.py
 
 all: $(sections)
 

@@ -42,15 +42,6 @@ class Identifier(abc.ABC):
 # given a path.  Use that to simplify the extract methods below.
 
 
-class ShortDescriptionIdentifier(Identifier):
-
-    key = 'id_ShortDescription'
-
-    @staticmethod
-    def extract(node):
-        return node.reconstruct_string()
-
-
 class ArgumentItemIdentifier(Identifier):
 
     key = 'id_ArgsItem'

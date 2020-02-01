@@ -1,0 +1,33 @@
+import numpy.bnf
+import terminals.bnf
+
+from darglint.parse.grammar import (
+    BaseGrammar,
+    P,
+)
+
+
+Grammar: YieldsGrammar
+
+start: <yields-section>
+
+
+<yields-section>
+    ::= <yields-header> <newlines>
+    | <yields-header> <newline> <yields-body> <newlines>
+
+<yields-header>
+    ::= <yields> <newline> <header>
+
+<yields-body>
+    ::= <block-indented>
+    | <line> <newline> <block-indented>
+    | <yields-body-typed>
+
+<yields-body-typed>
+    ::= <yields-argument> <block-indented> <newline> <yields-body-typed>
+    | <yields-argument> <block-indented> <newlines>
+
+<yields-argument>
+    ::= <ident> <colon> <line> <newline>
+    | <ident> <newline>
