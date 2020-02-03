@@ -21,6 +21,7 @@ from darglint.parse.numpy import (
 from darglint.parse.identifiers import (
     ArgumentItemIdentifier,
     ArgumentTypeIdentifier,
+    NoqaIdentifier,
 )
 from darglint.utils import (
     CykNodeUtils,
@@ -449,3 +450,48 @@ class NumpydocTests(TestCase):
         tokens = condense(lex(raw_docstring, config=self.config))
         docstring = parse(tokens)
         self.assertContains(docstring, 'warns-section')
+
+    def test_noqas_in_long_description(self):
+        raw_docstring = '\n'.join([
+            'Sore snork stort stort.',
+            '',
+            '# noqa: DAR101',
+            '',
+        ])
+        tokens = condense(lex(raw_docstring, config=self.config))
+        docstring = parse(tokens)
+        self.assertIdentified(
+            docstring,
+            NoqaIdentifier,
+            {'DAR101'},
+        )
+
+    def test_noqas_in_parameters_section(self):
+        raw_docstring = '\n'.join([
+            'Get the cartesian product of two lists.',
+            '',
+            'Parameters',
+            '----------',
+            'x1 : List[Any]',
+            '    The lists to use for the product. # noqa: DAR101',
+            '',
+        ])
+        tokens = condense(lex(raw_docstring, config=self.config))
+        docstring = parse(tokens)
+        self.assertIdentified(
+            docstring,
+            NoqaIdentifier,
+            {'DAR101'},
+        )
+
+    def test_noqas_in_short_description(self):
+        raw_docstring = '\n'.join([
+            'Gave gambol grubble goince # noqa: *',
+        ])
+        tokens = condense(lex(raw_docstring, config=self.config))
+        docstring = parse(tokens)
+        self.assertIdentified(
+            docstring,
+            NoqaIdentifier,
+            {'*'},
+        )
