@@ -120,15 +120,6 @@ class SphinxParserTest(TestCase):
             CykNodeUtils.contains(node, 'arguments-section'),
         )
 
-    def test_item_name_with_return_can_have_type_but_not_argument_cyk(self):
-        """Make sure the return item can can a type."""
-        node = parse(condense(lex(
-            'short\n\n:returns int: Whoa.'
-        )))
-        self.assertTrue(
-            CykNodeUtils.contains(node, 'returns-section'),
-        )
-
     def test_parse_vartype_item_cyk(self):
         """Ensure we can parse a variable type description."""
         node = parse(condense(lex(

@@ -9,10 +9,6 @@ start: <returns-section>
 
 <rethead>
     ::= <colon> <returns> <colon>
-    | <colon> <returns> <return-type-section> <colon>
-
-<return-type-section>
-    ::= <word>
 
 <retbody>
     ::= <line>

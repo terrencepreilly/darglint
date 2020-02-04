@@ -67,6 +67,25 @@ class IntegrityCheckerSphinxTestCase(TestCase):
         )
         self.assertTrue(isinstance(errors[0], MissingParameterError))
 
+    def test_return_incorrectly_has_parameter(self):
+        """Make sure that a return with a parameter is parsed correctly."""
+        program = '\n'.join([
+            'def f():',
+            '    """Some fn',
+            '    :return x: some value',
+            '    """',
+            '    return 3',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        checker = IntegrityChecker(self.config)
+        checker.run_checks(function)
+        # errors = checker.errors
+        # self.assertEqual(
+        #     len(errors), 1,
+        #     [(x.message()) for x in errors]
+        # )
+
     def test_missing_parameter_types(self):
         program = '\n'.join([
             'def function_with_excess_parameter(extra):',
