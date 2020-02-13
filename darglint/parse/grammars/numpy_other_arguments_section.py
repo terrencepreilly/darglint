@@ -1,4 +1,4 @@
-# Generated on 2020-02-03 11:15:29.584898
+# Generated on 2020-02-13 15:20:58.844851
 
 from darglint.parse.identifiers import (
     NoqaIdentifier,
@@ -44,7 +44,7 @@ class OtherArgumentsGrammar(BaseGrammar):
         P("indents", ([], "indent", "indents", 0), (TokenType.INDENT, 0)),
         P("split", ([], "newline", "split0", 0)),
         P("newlines", ([], "newline", "newlines", 0), (TokenType.NEWLINE, 0)),
-        P("line", ([], "word", "line", 0), ([], "word", "line0", 0), ([NoqaIdentifier], "hash", "noqa", 0), ([NoqaIdentifier], "noqa-head", "noqa-statement1", 0), (TokenType.COLON, 0), (TokenType.HASH, 0), (TokenType.INDENT, 0), (TokenType.LPAREN, 0), (TokenType.RPAREN, 0), (TokenType.WORD, 0), (TokenType.RAISES, 0), (TokenType.ARGUMENTS, 0), (TokenType.ARGUMENT_TYPE, 0), (TokenType.RETURNS, 0), (TokenType.RETURN_TYPE, 0), (TokenType.YIELDS, 0), (TokenType.YIELD_TYPE, 0), (TokenType.VARIABLES, 0), (TokenType.VARIABLE_TYPE, 0), (TokenType.NOQA, 0), (TokenType.OTHER, 0), (TokenType.RECEIVES, 0), (TokenType.WARNS, 0), (TokenType.HEADER, 0)),
+        P("line", ([], "word", "line", 0), ([], "word", "noqa-maybe", 0), ([NoqaIdentifier], "hash", "noqa", 0), ([NoqaIdentifier], "noqa-head", "noqa-statement1", 0), (TokenType.COLON, 0), (TokenType.HASH, 0), (TokenType.INDENT, 0), (TokenType.LPAREN, 0), (TokenType.RPAREN, 0), (TokenType.WORD, 0), (TokenType.RAISES, 0), (TokenType.ARGUMENTS, 0), (TokenType.ARGUMENT_TYPE, 0), (TokenType.RETURNS, 0), (TokenType.RETURN_TYPE, 0), (TokenType.YIELDS, 0), (TokenType.YIELD_TYPE, 0), (TokenType.VARIABLES, 0), (TokenType.VARIABLE_TYPE, 0), (TokenType.NOQA, 0), (TokenType.OTHER, 0), (TokenType.RECEIVES, 0), (TokenType.WARNS, 0), (TokenType.HEADER, 0)),
         P("other-arguments-section1", ([], "arguments-header", "newlines", 0), ([], "arguments", "arguments-header0", 0)),
         P("other-arguments-section2", ([], "arguments-header", "other-arguments-section3", 0)),
         P("other-arguments-section3", ([], "newline", "other-arguments-section4", 0)),
@@ -62,6 +62,5 @@ class OtherArgumentsGrammar(BaseGrammar):
         P("paragraph-indented0", ([], "line", "paragraph-indented1", 0)),
         P("paragraph-indented1", ([], "newline", "paragraph-indented", 0)),
         P("split0", ([], "newline", "newlines", 0), (TokenType.NEWLINE, 0)),
-        P("line0", ([], "noqa-maybe", "newlines", 0), ([], "newline", "newlines", 0), (TokenType.NEWLINE, 0), ([NoqaIdentifier], "hash", "noqa", 0), ([NoqaIdentifier], "noqa-head", "noqa-statement1", 0)),
     ]
     start = "other-arguments-section"

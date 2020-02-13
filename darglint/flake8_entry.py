@@ -56,4 +56,9 @@ class DarglintChecker(object):
                 yield (line, col, msg, type(self))
 
         except Exception as ex:
-            yield (last_line, 0, str(ex), type(self))
+            yield (
+                last_line,
+                0,
+                'DAR000: Unexpected exception in darglint: ' + str(ex),
+                type(self)
+            )

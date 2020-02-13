@@ -3,6 +3,28 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.1.3]
+
+### Fixed
+
+- Add error number to exceptions raised when using the flake8
+  runner.  This allows flake8 to report the error without
+  incorrectly unpacking the string.
+- Fix sphinx return type annotation.  Previously, there was an
+  inline return type which was accepted, in the format
+  `:return x: Explanation.` where `x` is the type returned.
+  However, this should really only be handled by the `:rtype:`
+  section.  This incorrect return type was labelled using the
+  same node name as the normal return type, leading to an
+  assertion being raised.  The inline return type was removed.
+
+## [1.1.2]
+
+### Changed
+
+- Allow for two-space indentation.
+- Make the asterisk(s) in star arguments optional.
+
 ## [1.1.1]
 
 ### Added
