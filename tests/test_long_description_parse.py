@@ -211,7 +211,10 @@ class LongDescriptionParserTestCase(TestCase):
             '# noqa: I932',
         ]
         for individual, noqa in zip(individuals, noqas):
-            individual_node = self.parse_string(individual)
+            # We have to get the first child, because individual
+            # noqas, when parsed as part of the long description,
+            # are put under a long-description node.
+            individual_node = self.parse_string(individual).lchild
             self.assertNodesEqual(
                 noqa,
                 individual_node,

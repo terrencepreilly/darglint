@@ -52,7 +52,15 @@ class DocstringBaseMethodTests(TestCase):
                 '',
                 '# noqa',
                 '',
-            ])
+            ]),
+            '\n'.join([
+                'A docstring with noqas in it.',
+                '',
+                '# noqa: I203',
+                '',
+                '# noqa',
+                '',
+            ]),
         ),
         (
             '\n'.join([
@@ -73,7 +81,21 @@ class DocstringBaseMethodTests(TestCase):
                 ':returns: The number, doubled.',
                 ':rtype: int',
                 '',
-            ])
+            ]),
+            '\n'.join([
+                'A docstring with types in it.',
+                '',
+                'Parameters',
+                '----------',
+                'x : int',
+                '    The number to double.',
+                '',
+                'Returns',
+                '-------',
+                'int',
+                '    The number, doubled.',
+                '',
+            ]),
         ),
         (
             '\n'.join([
@@ -119,7 +141,38 @@ class DocstringBaseMethodTests(TestCase):
                 ':yields: Numbers that were calculated somehow.',
                 ':ytype: int',
                 '',
-            ])
+            ]),
+            '\n'.join([
+                'A very complete docstring.',
+                '',
+                'There is a long-description section.',
+                '',
+                '    code example',
+                '',
+                'And it continues over multiple lines.',
+                '',
+                'Parameters',
+                '----------',
+                'x : int',
+                '    The first integer.  This description ',
+                '        spans multiple lines.',
+                'y : int',
+                '    The second integer.',
+                '',
+                'Raises',
+                '------',
+                'InvalidNumberException',
+                '    An exception for if it\'s '
+                '        invalid.',
+                'Exception',
+                '    Seemingly at random.',
+                '',
+                'Yields',
+                '------',
+                'int',
+                '    Numbers that were calculated somehow.',
+                '',
+            ]),
         ),
     ]
 
@@ -127,21 +180,23 @@ class DocstringBaseMethodTests(TestCase):
     def setUpClass(cls, *args, **kwargs):
         super().setUpClass(*args, **kwargs)
         cls.equivalent_docstrings = list()
-        for google_doc, sphinx_doc in cls._equivalent_docstrings:
+        for google_doc, sphinx_doc, numpy_doc in cls._equivalent_docstrings:
             cls.equivalent_docstrings.append((
                 Docstring.from_google(google_doc),
                 Docstring.from_sphinx(sphinx_doc),
+                Docstring.from_numpy(numpy_doc),
             ))
 
     def test_get_section_equivalency(self):
-        for google_doc, sphinx_doc in self.equivalent_docstrings:
+        for google_doc, sphinx_doc, numpy_doc in self.equivalent_docstrings:
             for section in [
-                Sections.SHORT_DESCRIPTION,
+                # Sections.SHORT_DESCRIPTION,
                 Sections.LONG_DESCRIPTION,
-                Sections.NOQAS,
+                # Sections.NOQAS,
             ]:
                 g = google_doc.get_section(section)
                 s = sphinx_doc.get_section(section)
+                n = numpy_doc.get_section(section)
                 self.assertEqual(
                     g, s,
                     'Section {} differs for google and sphinx for "{}"'.format(
@@ -149,36 +204,65 @@ class DocstringBaseMethodTests(TestCase):
                         google_doc.get_section(Sections.SHORT_DESCRIPTION),
                     ),
                 )
+                self.assertEqual(
+                    g, n,
+                    'Section {} differs for google and numpy for "{}"'.format(
+                        section,
+                        google_doc.get_section(Sections.SHORT_DESCRIPTION),
+                    ),
+                )
 
     def test_get_types_equivalency(self):
-        for google_doc, sphinx_doc in self.equivalent_docstrings:
+        for google_doc, sphinx_doc, numpy_doc in self.equivalent_docstrings:
             for section in [
                 Sections.ARGUMENTS_SECTION,
                 Sections.RETURNS_SECTION,
                 Sections.YIELDS_SECTION,
             ]:
+                google_types = google_doc.get_types(section)
                 self.assertEqual(
-                    google_doc.get_types(section),
+                    google_types,
                     sphinx_doc.get_types(section),
+                    'Sections differ for {} type.'.format(
+                        section
+                    ),
+                )
+                self.assertEqual(
+                    google_types,
+                    numpy_doc.get_types(section),
                     'Sections differ for {} type.'.format(
                         section
                     ),
                 )
 
     def test_get_items_equivalency(self):
-        for google_doc, sphinx_doc in self.equivalent_docstrings:
+        for google_doc, sphinx_doc, numpy_doc in self.equivalent_docstrings:
             for section in [
-                Sections.ARGUMENTS_SECTION,
+                # Sections.ARGUMENTS_SECTION,
                 Sections.RAISES_SECTION,
             ]:
+                google_items = google_doc.get_items(section)
                 self.assertEqual(
-                    google_doc.get_items(section),
+                    google_items,
                     sphinx_doc.get_items(section),
+                    'Google and sphinx items differ.',
+                )
+                self.assertEqual(
+                    google_items,
+                    numpy_doc.get_items(section),
+                    'Google and numpy items differ.',
                 )
 
+            google_noqas = google_doc.get_noqas()
             self.assertEqual(
-                google_doc.get_noqas(),
+                google_noqas,
                 sphinx_doc.get_noqas(),
+                'Google and sphinx items differ.',
+            )
+            self.assertEqual(
+                google_noqas,
+                numpy_doc.get_noqas(),
+                'Google and numpy items differ.',
             )
 
     def test_type_and_name_always_associated(self):
@@ -216,23 +300,46 @@ class DocstringBaseMethodTests(TestCase):
             '\n'.join(google_params),
         ])
 
+        numpy_params = [
+            '{} : {}\n    An explanation'.format(name, _type)
+            for name, _type in zip(names, types)
+        ]
+        numpy_docstring = '\n'.join([
+            short_description,
+            '',
+            'Parameters',
+            '----------',
+            '\n'.join(numpy_params)
+        ])
+
         google_doc = Docstring.from_google(google_docstring)
         sphinx_doc = Docstring.from_sphinx(sphinx_docstring)
+        numpy_doc = Docstring.from_numpy(numpy_docstring)
 
         items = google_doc.get_items(Sections.ARGUMENTS_SECTION)
         self.assertTrue(
             items == sorted(items),
             'The items should be sorted.'
         )
+        google_items = google_doc.get_items(Sections.ARGUMENTS_SECTION)
         self.assertEqual(
-            google_doc.get_items(Sections.ARGUMENTS_SECTION),
+            google_items,
             sphinx_doc.get_items(Sections.ARGUMENTS_SECTION),
             'Google and Sphinx items should be the same.',
         )
         self.assertEqual(
-            google_doc.get_types(Sections.ARGUMENTS_SECTION),
+            google_items,
+            numpy_doc.get_items(Sections.ARGUMENTS_SECTION)
+        )
+        google_args_section = google_doc.get_types(Sections.ARGUMENTS_SECTION)
+        self.assertEqual(
+            google_args_section,
             sphinx_doc.get_types(Sections.ARGUMENTS_SECTION),
             'Google and Sphinx types should be the same.',
+        )
+        self.assertEqual(
+            google_args_section,
+            numpy_doc.get_types(Sections.ARGUMENTS_SECTION),
         )
 
 

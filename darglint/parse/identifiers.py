@@ -96,7 +96,10 @@ class ExceptionItemIdentifier(Identifier):
 
     @staticmethod
     def extract(node):
-        return ''
+        # type: (CykNode) -> str
+        assert node.lchild
+        assert node.lchild.value
+        return node.lchild.value.value
 
 
 class ExceptionIdentifier(Identifier):
@@ -110,6 +113,30 @@ class ExceptionIdentifier(Identifier):
         assert node.rchild.lchild
         assert node.rchild.lchild.value
         return node.rchild.lchild.value.value
+
+
+class ReturnTypeIdentifier(Identifier):
+
+    key = 'id_ReturnType'
+
+    @staticmethod
+    def extract(node):
+        # type: (CykNode) -> str
+        assert node.lchild
+        assert node.lchild.value
+        return node.lchild.value.value
+
+
+class YieldTypeIdentifier(Identifier):
+
+    key = 'id_YieldType'
+
+    @staticmethod
+    def extract(node):
+        # type: (CykNode) -> str
+        assert node.lchild
+        assert node.lchild.value
+        return node.lchild.value.value
 
 
 class NoqaIdentifier(Identifier):

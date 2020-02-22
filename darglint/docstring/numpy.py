@@ -1,15 +1,25 @@
-from collections import defaultdict
-from typing import (  # noqa
+from typing import (
     Callable,
     Dict,
     Iterable,
     List,
     Optional,
-    Set,
     Tuple,
     Union,
 )
+from collections import (
+    defaultdict,
+)
 
+from ..parse.identifiers import (
+    ArgumentItemIdentifier,
+    ArgumentTypeIdentifier,
+    ExceptionItemIdentifier,
+    ReturnTypeIdentifier,
+    YieldTypeIdentifier,
+    Identifier,
+    NoqaIdentifier,
+)
 from .base import (
     BaseDocstring,
     DocstringStyle,
@@ -18,28 +28,23 @@ from .base import (
 from ..node import (
     CykNode,
 )
-from ..parse.identifiers import (
-    Identifier,
-    NoqaIdentifier,
+from ..config import (
+    Configuration,
+    Strictness,
 )
-from ..parse.sphinx import (
+from ..parse.numpy import (
     parse,
 )
 from ..lex import (
     lex,
     condense,
 )
-from ..config import (
-    Strictness,
-)
 from ..errors import (
     DarglintError,
 )
-from ..config import Configuration
 
 
 class Docstring(BaseDocstring):
-    """The docstring class interprets the AST of a docstring."""
 
     def __init__(self, root, style=DocstringStyle.SPHINX, config=None):
         # type: (Union[CykNode, str], DocstringStyle, Optional[Configuration]) -> None  # noqa: E501
@@ -50,14 +55,14 @@ class Docstring(BaseDocstring):
                 (as a string.)  If it is a string, the
                 string will be parsed.
             style: The docstring style.  Discarded, since this
-                docstring always represents the Sphinx style.
+                docstring always represents the Numpy style.
             config: The configuration parameters.  Passed to
                 lex to change the number of spaces which count
                 as an indentation.
 
         """
         if isinstance(root, CykNode):
-            self.root = root
+            self.root = root  # type: Optional[CykNode]
         else:
             self.root = parse(condense(lex(root, config)))
         self._lookup = self._discover()
@@ -70,6 +75,8 @@ class Docstring(BaseDocstring):
             A lookup table for compound Nodes by their NodeType.
 
         """
+        if not self.root:
+            return dict()
         lookup = defaultdict(
             lambda: list()
         )  # type: Dict[str, List[CykNode]]
@@ -84,20 +91,29 @@ class Docstring(BaseDocstring):
         # type: (Sections) -> Optional[str]
         nodes = []  # type: Optional[List[CykNode]]
 
+        # TODO: Add Receives section
         if section == Sections.SHORT_DESCRIPTION:
             nodes = self._lookup.get('short-description', None)
         elif section == Sections.LONG_DESCRIPTION:
             nodes = self._lookup.get('long-description', None)
         elif section == Sections.ARGUMENTS_SECTION:
             nodes = self._lookup.get('arguments-section', None)
+            extra = self._lookup.get('other-arguments-section', None)
+            if nodes:
+                nodes.extend(extra or [])
+            else:
+                nodes = extra
         elif section == Sections.RAISES_SECTION:
             nodes = self._lookup.get('raises-section', None)
+            extra = self._lookup.get('warns-section', None)
+            if nodes:
+                nodes.extend(extra or [])
+            else:
+                nodes = extra
         elif section == Sections.YIELDS_SECTION:
             nodes = self._lookup.get('yields-section', None)
         elif section == Sections.RETURNS_SECTION:
             nodes = self._lookup.get('returns-section', None)
-        elif section == Sections.VARIABLES_SECTION:
-            nodes = self._lookup.get('variables-section', None)
         elif section == Sections.NOQAS:
             nodes = self._lookup.get('noqa', None)
         else:
@@ -114,99 +130,15 @@ class Docstring(BaseDocstring):
 
         return return_value.strip() or None
 
-    def _get_argument_type_lookup(self):
-        # type: () -> Dict[str, Optional[str]]
-        ret = dict()  # type: Dict[str, Optional[str]]
-        for section in self._lookup['arguments-section']:
-            assert section.lchild
-            argument = section.lchild.first_instance('word')
-            if argument and argument.value:
-                ret[argument.value.value] = None
-        for argtype in self._lookup['argument-type-section']:
-            if argtype.lchild:
-                word = argtype.lchild.first_instance('word')
-                if word:
-                    argument_type = None
-                    if argtype.rchild:
-                        argument_type = (
-                            argtype.rchild.reconstruct_string().strip()
-                        )
-                    assert word.value
-                    ret[word.value.value] = argument_type or None
-        return ret
-
-    def _get_raises_type(self):
-        # type: () -> List[Optional[str]]
-        ret = list()  # type: List[Optional[str]]
-        for section in self._lookup['raises-section']:
-            assert section.lchild
-            exception = section.lchild.first_instance('word')
-            if exception and exception.value:
-                ret.append(exception.value.value)
-            else:
-                ret.append(None)
-        return ret
-
-    def _get_variable_type_lookup(self):
-        # type: () -> Dict[str, Optional[str]]
-        ret = defaultdict()  # type: Dict[str, Optional[str]]
-        for section in self._lookup['variables-section']:
-            assert section.lchild
-            variable = section.lchild.first_instance('word')
-            if variable and variable.value:
-                ret[variable.value.value] = None
-        for section in self._lookup['variable-type-section']:
-            assert section.lchild
-            variable = section.lchild.first_instance('word')
-            if variable and variable.value:
-                assert section.rchild
-                vartype = section.rchild.reconstruct_string().strip()
-                ret[variable.value.value] = vartype
-        return ret
-
-    def _get_return_type(self):
-        # type: () -> Optional[str]
-        if 'return-type-section' not in self._lookup:
-            return None
-        return_type_section = self._lookup['return-type-section'][0]
-        assert return_type_section.rchild
-        return return_type_section.rchild.reconstruct_string().strip()
-
-    def _get_yield_type(self):
-        # type: () -> Optional[str]
-        if 'yield-type-section' not in self._lookup:
-            return None
-        yield_type_section = self._lookup['yield-type-section'][0]
-        assert yield_type_section.rchild
-        return yield_type_section.rchild.reconstruct_string().strip()
-
-    def _sorted_values(self, lookup):
-        # type: (Dict[str, Optional[str]]) -> List[Optional[str]]
-        return [lookup[key] for key in sorted(lookup.keys())]
-
-    def _sorted_keys(self, lookup):
-        return sorted(lookup.keys())
-
-    def get_types(self, section):
+    def _get_types_unsorted(self, section):
         # type: (Sections) -> Optional[Union[str, List[Optional[str]]]]
         if section == Sections.ARGUMENTS_SECTION:
             if 'arguments-section' not in self._lookup:
                 return None
-            return (
-                self._sorted_values(self._get_argument_type_lookup())
-                or None
-            )
-        elif section == Sections.VARIABLES_SECTION:
-            if 'variables-section' not in self._lookup:
-                return None
-            return (
-                self._sorted_values(self._get_variable_type_lookup())
-                or None
-            )
-        elif section == Sections.RETURNS_SECTION:
-            return self._get_return_type() or None
-        elif section == Sections.YIELDS_SECTION:
-            return self._get_yield_type() or None
+            return [
+                ArgumentTypeIdentifier.extract(x)
+                for x in self._lookup.get(ArgumentTypeIdentifier.key, [])
+            ]
         else:
             raise Exception(
                 'Section type {} does not have types, '.format(
@@ -215,23 +147,70 @@ class Docstring(BaseDocstring):
             )
         return None
 
-    def get_items(self, section):
+    def get_types(self, section):
+        # type: (Sections) -> Optional[Union[str, List[Optional[str]]]]
+        if section == Sections.RETURNS_SECTION:
+            return_type = self._lookup.get(ReturnTypeIdentifier.key, [])
+            if len(return_type) == 0:
+                return None
+            elif len(return_type) == 1:
+                return ReturnTypeIdentifier.extract(return_type[0])
+            else:
+                raise NotImplementedError(
+                    'Multiple types should be combined into a Union'
+                )
+        elif section == Sections.YIELDS_SECTION:
+            yield_type = self._lookup.get(YieldTypeIdentifier.key, [])
+            if len(yield_type) == 0:
+                return None
+            elif len(yield_type) == 1:
+                return YieldTypeIdentifier.extract(yield_type[0])
+            else:
+                raise NotImplementedError(
+                    'Multiple types should be combined into a Union'
+                )
+
+        # Sort the types according to the sorted items section.
+        # This ensures that the results are always in the same
+        # order.
+        items = self._get_items_unsorted(section)
+        if not items:
+            return None
+        types = self._get_types_unsorted(section)
+        if not types:
+            return []
+        return [
+            x[1] for x in [
+                (arg, _type)
+                for arg, _type in sorted(zip(items, types))
+            ]
+        ]
+
+    def _get_items_unsorted(self, section):
         # type: (Sections) -> Optional[List[str]]
         if section == Sections.ARGUMENTS_SECTION:
-            return self._sorted_keys(self._get_argument_type_lookup()) or None
+            return [
+                ArgumentItemIdentifier.extract(x)
+                for x in self._lookup.get(ArgumentItemIdentifier.key, [])
+            ] or None
         elif section == Sections.RAISES_SECTION:
             return sorted(
-                [x or '' for x in self._get_raises_type()],
-                key=lambda x: x or ''
+                ExceptionItemIdentifier.extract(x)
+                for x in self._lookup.get(ExceptionItemIdentifier.key, [])
             ) or None
-        elif section == Sections.VARIABLES_SECTION:
-            return self._sorted_keys(self._get_variable_type_lookup()) or None
         else:
             raise Exception(
                 'Section type {} does not have items, '.format(
                     section.name
                 ) + 'or is not yet supported.'
             )
+        return None
+
+    def get_items(self, section):
+        # type: (Sections) -> Optional[List[str]]
+        items = self._get_items_unsorted(section)
+        if items:
+            return sorted(items)
         return None
 
     def get_noqas(self):
@@ -315,6 +294,8 @@ class Docstring(BaseDocstring):
         # noqa: I302
 
         """
+        if not self.root:
+            return
         for node in self.root.in_order_traverse():
             for annotation in node.annotations:
                 if issubclass(annotation, DarglintError):

@@ -1,4 +1,4 @@
-# Generated on 2020-02-13 15:20:49.430440
+# Generated on 2020-02-19 17:29:50.695279
 
 from darglint.parse.grammar import (
     BaseGrammar,
@@ -54,6 +54,6 @@ class YieldsGrammar(BaseGrammar):
         P("split0", ([], "newline", "newlines", 0), (TokenType.NEWLINE, 0)),
         P("noqa-statement1", ([], "colon", "words", 0)),
         P("type-words0", ([], "newline", "type-words1", 0), (TokenType.NEWLINE, 0)),
-        P("type-words1", ([], "indents", "type-words", 0), ([], "indent", "indents", 0), (TokenType.INDENT, 0), ([], "type-word", "type-words", 0), ([], "type-word", "type-words0", 0), (TokenType.WORD, 0)),
+        P("type-words1", ([], "indents", "type-words", 0), ([], "type-word", "type-words", 0), ([], "type-word", "type-words0", 0), (TokenType.WORD, 0), ([], "indent", "indents", 0), (TokenType.INDENT, 0)),
     ]
     start = "yields-section"

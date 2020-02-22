@@ -259,3 +259,20 @@ class NewGoogleParserTests(TestCase):
         self.assertTrue(
             CykNodeUtils.contains(node, 'long-description')
         )
+
+    def test_long_description_with_noqa(self):
+        tokens = condense(lex('\n'.join([
+            'A docstring with noqas in it.',
+            '',
+            '# noqa: I203',
+            '',
+            '# noqa',
+            '',
+        ])))
+        node = parse(tokens)
+        self.assertTrue(
+            CykNodeUtils.contains(node, 'short-description')
+        )
+        self.assertTrue(
+            CykNodeUtils.contains(node, 'long-description')
+        )

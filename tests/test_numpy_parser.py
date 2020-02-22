@@ -437,6 +437,23 @@ class NumpydocTests(TestCase):
         docstring = parse(tokens)
         self.assertContains(docstring, 'raises-section')
 
+    def test_multiple_entries_in_raises(self):
+        raw_docstring = '\n'.join([
+                'A problematic function.',
+                '',
+                'Raises',
+                '------',
+                'InvalidNumberException',
+                '    An exception for if it\'s '
+                '        invalid.',
+                'Exception',
+                '    Seemingly at random.',
+                '',
+        ])
+        tokens = condense(lex(raw_docstring, config=self.config))
+        docstring = parse(tokens)
+        self.assertContains(docstring, 'raises-section')
+
     def test_warns_section(self):
         raw_docstring = '\n'.join([
             'Always warn.',

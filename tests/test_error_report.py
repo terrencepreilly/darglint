@@ -7,6 +7,7 @@ from darglint.error_report import ErrorReport
 from darglint.errors import EmptyDescriptionError
 from darglint.function_description import get_function_descriptions
 
+
 def _get_function_description(program):
     tree = ast.parse(program)
     return get_function_descriptions(tree)[0]

@@ -1,4 +1,4 @@
-# Generated on 2020-02-13 15:20:57.204961
+# Generated on 2020-02-19 17:29:58.344204
 
 from darglint.parse.identifiers import (
     NoqaIdentifier,
@@ -12,7 +12,9 @@ class Grammar(BaseGrammar):
     productions = [
         P("ident-list", ([], "ident", "ident-list", 0), (TokenType.WORD, 0), (TokenType.RAISES, 0), (TokenType.ARGUMENTS, 0), (TokenType.ARGUMENT_TYPE, 0), (TokenType.RETURNS, 0), (TokenType.RETURN_TYPE, 0), (TokenType.YIELDS, 0), (TokenType.YIELD_TYPE, 0), (TokenType.VARIABLES, 0), (TokenType.VARIABLE_TYPE, 0), (TokenType.NOQA, 0), (TokenType.OTHER, 0), (TokenType.RECEIVES, 0), (TokenType.WARNS, 0)),
         P("block-indented", ([], "paragraph-indented", "block-indented0", 0), ([], "indented", "paragraph-indented0", 0), ([], "indented", "line", 0)),
+        P("block", ([], "paragraph", "block0", 0), ([], "indents", "paragraph0", 0), ([], "indents", "line", 0), ([], "line", "paragraph2", 0), ([], "word", "line", 0), ([], "word", "noqa-maybe", 0), ([NoqaIdentifier], "hash", "noqa", 0), ([NoqaIdentifier], "noqa-head", "noqa-statement1", 0), (TokenType.COLON, 0), (TokenType.HASH, 0), (TokenType.INDENT, 0), (TokenType.LPAREN, 0), (TokenType.RPAREN, 0), (TokenType.WORD, 0), (TokenType.RAISES, 0), (TokenType.ARGUMENTS, 0), (TokenType.ARGUMENT_TYPE, 0), (TokenType.RETURNS, 0), (TokenType.RETURN_TYPE, 0), (TokenType.YIELDS, 0), (TokenType.YIELD_TYPE, 0), (TokenType.VARIABLES, 0), (TokenType.VARIABLE_TYPE, 0), (TokenType.NOQA, 0), (TokenType.OTHER, 0), (TokenType.RECEIVES, 0), (TokenType.WARNS, 0), (TokenType.HEADER, 0), ([], "line", "paragraph1", 0)),
         P("paragraph-indented", ([], "indented", "paragraph-indented0", 0), ([], "indented", "line", 0)),
+        P("paragraph", ([], "indents", "paragraph0", 0), ([], "indents", "line", 0), ([], "line", "paragraph2", 0), ([], "word", "line", 0), ([], "word", "noqa-maybe", 0), ([NoqaIdentifier], "hash", "noqa", 0), ([NoqaIdentifier], "noqa-head", "noqa-statement1", 0), (TokenType.COLON, 0), (TokenType.HASH, 0), (TokenType.INDENT, 0), (TokenType.LPAREN, 0), (TokenType.RPAREN, 0), (TokenType.WORD, 0), (TokenType.RAISES, 0), (TokenType.ARGUMENTS, 0), (TokenType.ARGUMENT_TYPE, 0), (TokenType.RETURNS, 0), (TokenType.RETURN_TYPE, 0), (TokenType.YIELDS, 0), (TokenType.YIELD_TYPE, 0), (TokenType.VARIABLES, 0), (TokenType.VARIABLE_TYPE, 0), (TokenType.NOQA, 0), (TokenType.OTHER, 0), (TokenType.RECEIVES, 0), (TokenType.WARNS, 0), (TokenType.HEADER, 0), ([], "line", "paragraph1", 0)),
         P("indented", ([], "indent", "indents", 0), (TokenType.INDENT, 0)),
         P("indents", ([], "indent", "indents", 0), (TokenType.INDENT, 0)),
         P("split", ([], "newline", "split0", 0)),
@@ -46,8 +48,12 @@ class Grammar(BaseGrammar):
         P("noqa-head", ([], "hash", "noqa", 0)),
         P("words", ([], "word", "words", 0), (TokenType.COLON, 0), (TokenType.HASH, 0), (TokenType.INDENT, 0), (TokenType.LPAREN, 0), (TokenType.RPAREN, 0), (TokenType.WORD, 0), (TokenType.RAISES, 0), (TokenType.ARGUMENTS, 0), (TokenType.ARGUMENT_TYPE, 0), (TokenType.RETURNS, 0), (TokenType.RETURN_TYPE, 0), (TokenType.YIELDS, 0), (TokenType.YIELD_TYPE, 0), (TokenType.VARIABLES, 0), (TokenType.VARIABLE_TYPE, 0), (TokenType.NOQA, 0), (TokenType.OTHER, 0), (TokenType.RECEIVES, 0), (TokenType.WARNS, 0), (TokenType.HEADER, 0)),
         P("block-indented0", ([], "split", "block-indented", 0)),
+        P("block0", ([], "split", "block", 0)),
         P("paragraph-indented0", ([], "line", "paragraph-indented1", 0)),
         P("paragraph-indented1", ([], "newline", "paragraph-indented", 0)),
+        P("paragraph0", ([], "line", "paragraph1", 0)),
+        P("paragraph1", ([], "newline", "paragraph", 0)),
+        P("paragraph2", ([], "newline", "paragraph", 0)),
         P("split0", ([], "newline", "newlines", 0), (TokenType.NEWLINE, 0)),
         P("noqa-statement0", ([], "noqa-head", "noqa-statement1", 0)),
         P("noqa-statement1", ([], "colon", "words", 0)),

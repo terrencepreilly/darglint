@@ -23,7 +23,7 @@ start: <raises-section>
     ::= <raises> <newline> <header>
 
 <raises-body>
-    ::= <raises-item> <raises-body>
+    ::= <raises-item> <newline> <raises-body>
     | <raises-item>
 
 <raises-item>

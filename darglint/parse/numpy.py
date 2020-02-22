@@ -114,9 +114,14 @@ def top_parse(tokens):
     curr = list()  # type: List[Token]
     overall = list()  # type: List[List[Token]]
     i = 0
+    while i < len(tokens) and tokens[i].token_type != TokenType.NEWLINE:
+        i += 1
+    while i < len(tokens) and tokens[i].token_type == TokenType.NEWLINE:
+        i += 1
+    overall = [tokens[:i]]
     while i < len(tokens):
         beginning_tokens = at_section_boundary(i)
-        if beginning_tokens:
+        if beginning_tokens and curr:
             overall.append(curr)
             curr = list()
             curr.extend(tokens[i:i + beginning_tokens + 1])

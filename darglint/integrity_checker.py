@@ -102,6 +102,9 @@ class IntegrityChecker(object):
         Args:
             function: A function whose docstring we are verifying.
 
+        Raises:
+            Exception: If the docstring format isn't supported.
+
         """
         if self._skip_checks(function):
             return
@@ -117,6 +120,13 @@ class IntegrityChecker(object):
                 config=self.config,
             )
             self._check_variables(function)
+        elif self.config.style == DocstringStyle.NUMPY:
+            self.docstring = Docstring.from_numpy(
+                function.docstring,
+                config=self.config,
+            )
+        else:
+            raise Exception('Unsupported docstring format.')
         if self.config.strictness != Strictness.FULL_DESCRIPTION:
             if self.docstring.satisfies_strictness(
                 self.config.strictness

@@ -135,8 +135,6 @@ def _parse_long_description(peaker):
         return None
     head = _parse_noqa(peaker) or _parse_noqa_head(peaker)
     if head:
-        if not peaker.has_next():
-            return head
         new_head = CykNode(
             'long-description',
             lchild=head,

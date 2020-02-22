@@ -1,4 +1,4 @@
-# Generated on 2020-02-13 15:21:02.079119
+# Generated on 2020-02-22 09:47:36.788131
 
 from darglint.token import (
     TokenType,
@@ -13,13 +13,17 @@ from darglint.parse.grammar import (
     P,
 )
 
+from darglint.parse.identifiers import (
+    YieldTypeIdentifier,
+)
+
 class YieldsGrammar(BaseGrammar):
     productions = [
         P("yields-section", ([], "yields-header", "newlines", 0), ([], "yields-header", "yields-section1", 0), ([], "yields", "yields-header0", 0)),
         P("yields-header", ([], "yields", "yields-header0", 0)),
         P("yields-body", ([], "line", "yields-body0", 0), ([], "paragraph-indented", "block-indented0", 0), ([], "indented", "paragraph-indented0", 0), ([], "indented", "line", 0), ([], "yields-argument", "yields-body-typed0", 0), ([], "yields-argument", "yields-body-typed2", 0)),
         P("yields-body-typed", ([], "yields-argument", "yields-body-typed0", 0), ([], "yields-argument", "yields-body-typed2", 0)),
-        P("yields-argument", ([], "ident", "yields-argument0", 0), ([], "ident", "newline", 0)),
+        P("yields-argument", ([YieldTypeIdentifier], "ident", "yields-argument1", 0), ([YieldTypeIdentifier], "ident", "newline", 0)),
         P("block-indented", ([], "paragraph-indented", "block-indented0", 0), ([], "indented", "paragraph-indented0", 0), ([], "indented", "line", 0)),
         P("paragraph-indented", ([], "indented", "paragraph-indented0", 0), ([], "indented", "line", 0)),
         P("indented", ([], "indent", "indents", 0), (TokenType.INDENT, 0)),
@@ -46,8 +50,8 @@ class YieldsGrammar(BaseGrammar):
         P("yields-body-typed0", ([], "block-indented", "yields-body-typed1", 0)),
         P("yields-body-typed1", ([], "newline", "yields-body-typed", 0)),
         P("yields-body-typed2", ([], "block-indented", "newlines", 0), ([], "paragraph-indented", "block-indented0", 0), ([], "indented", "paragraph-indented0", 0), ([], "indented", "line", 0)),
-        P("yields-argument0", ([], "colon", "yields-argument1", 0)),
-        P("yields-argument1", ([], "line", "newline", 0)),
+        P("yields-argument1", ([], "colon", "yields-argument2", 0)),
+        P("yields-argument2", ([], "line", "newline", 0)),
         P("block-indented0", ([], "split", "block-indented", 0)),
         P("paragraph-indented0", ([], "line", "paragraph-indented1", 0)),
         P("paragraph-indented1", ([], "newline", "paragraph-indented", 0)),

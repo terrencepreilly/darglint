@@ -5,7 +5,7 @@ from typing import (
 
 from ..config import Configuration
 from .base import BaseDocstring  # noqa
-from . import google, sphinx
+from . import google, sphinx, numpy
 
 
 class Docstring(object):
@@ -20,3 +20,8 @@ class Docstring(object):
     def from_sphinx(root, config=None):
         # type: (str, Optional[Configuration]) -> BaseDocstring
         return sphinx.Docstring(root, config=config)
+
+    @staticmethod
+    def from_numpy(root, config=None):
+        # type: (str, Optional[Configuration]) -> BaseDocstring
+        return numpy.Docstring(root, config=config)

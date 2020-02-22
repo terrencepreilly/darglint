@@ -10,9 +10,19 @@ import noqa_statement.bnf
     ::= <paragraph-indented> <split> <block-indented>
     | <paragraph-indented>
 
+<block>
+    ::= <paragraph> <split> <block>
+    | <paragraph>
+
 <paragraph-indented>
     ::= <indented> <line> <newline> <paragraph-indented>
     | <indented> <line>
+
+<paragraph>
+    ::= <indents> <line> <newline> <paragraph>
+    | <indents> <line>
+    | <line> <newline> <paragraph>
+    | <line>
 
 <indented>
     ::= <indent> <indents>

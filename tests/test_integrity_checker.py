@@ -34,6 +34,45 @@ from darglint.errors import (
 )
 
 
+class IntegrityCheckerNumpyTestCase(TestCase):
+
+    def setUp(self):
+        self.config = Configuration(
+            ignore=[],
+            message_template=None,
+            style=DocstringStyle.NUMPY,
+            strictness=Strictness.FULL_DESCRIPTION,
+        )
+
+    def test_missing_parameter(self):
+        program = '\n'.join([
+            'def cons(x, l):',
+            '    """Add an item to the head of the list.',
+            '',
+            '    Parameters',
+            '    ----------',
+            '    x',
+            '        The item to add to the list.',
+            '',
+            '    Returns',
+            '    -------',
+            '    The list with the item attached.',
+            '',
+            '    """',
+            '    return [x] + l',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker(self.config)
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertEqual(
+            len(errors), 1,
+            [(x.message()) for x in errors]
+        )
+        self.assertTrue(isinstance(errors[0], MissingParameterError))
+
+
 class IntegrityCheckerSphinxTestCase(TestCase):
 
     def setUp(self):

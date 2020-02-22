@@ -1,4 +1,4 @@
-# Generated on 2020-02-13 15:20:59.388520
+# Generated on 2020-02-22 10:08:18.944738
 
 from darglint.token import (
     TokenType,
@@ -21,7 +21,7 @@ class RaisesGrammar(BaseGrammar):
     productions = [
         P("raises-section", ([], "raises-header", "newlines", 0), ([], "raises-header", "raises-section1", 0), ([], "raises", "raises-header0", 0)),
         P("raises-header", ([], "raises", "raises-header0", 0)),
-        P("raises-body", ([], "raises-item", "raises-body", 0), ([ExceptionItemIdentifier], "ident", "raises-item1", 0)),
+        P("raises-body", ([], "raises-item", "raises-body0", 0), ([ExceptionItemIdentifier], "ident", "raises-item1", 0)),
         P("raises-item", ([ExceptionItemIdentifier], "ident", "raises-item1", 0)),
         P("block-indented", ([], "paragraph-indented", "block-indented0", 0), ([], "indented", "paragraph-indented0", 0), ([], "indented", "line", 0)),
         P("paragraph-indented", ([], "indented", "paragraph-indented0", 0), ([], "indented", "line", 0)),
@@ -43,8 +43,9 @@ class RaisesGrammar(BaseGrammar):
         P("noqa-head", ([], "hash", "noqa", 0)),
         P("words", ([], "word", "words", 0), (TokenType.COLON, 0), (TokenType.HASH, 0), (TokenType.INDENT, 0), (TokenType.LPAREN, 0), (TokenType.RPAREN, 0), (TokenType.WORD, 0), (TokenType.RAISES, 0), (TokenType.ARGUMENTS, 0), (TokenType.ARGUMENT_TYPE, 0), (TokenType.RETURNS, 0), (TokenType.RETURN_TYPE, 0), (TokenType.YIELDS, 0), (TokenType.YIELD_TYPE, 0), (TokenType.VARIABLES, 0), (TokenType.VARIABLE_TYPE, 0), (TokenType.NOQA, 0), (TokenType.OTHER, 0), (TokenType.RECEIVES, 0), (TokenType.WARNS, 0), (TokenType.HEADER, 0)),
         P("raises-section1", ([], "newline", "raises-section2", 0)),
-        P("raises-section2", ([], "raises-body", "newlines", 0), ([], "raises-item", "raises-body", 0), ([ExceptionItemIdentifier], "ident", "raises-item1", 0)),
+        P("raises-section2", ([], "raises-body", "newlines", 0), ([], "raises-item", "raises-body0", 0), ([ExceptionItemIdentifier], "ident", "raises-item1", 0)),
         P("raises-header0", ([], "newline", "header", 0)),
+        P("raises-body0", ([], "newline", "raises-body", 0)),
         P("raises-item1", ([], "newline", "block-indented", 0)),
         P("block-indented0", ([], "split", "block-indented", 0)),
         P("paragraph-indented0", ([], "line", "paragraph-indented1", 0)),
