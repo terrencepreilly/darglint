@@ -94,10 +94,10 @@ parser.add_argument(
     '-s',
     '--docstring-style',
     default=None,
-    choices=['google', 'sphinx'],
+    choices=['google', 'sphinx', 'numpy'],
     help=(
         'The docstring style used in the given project. Currently, '
-        'only google or sphinx styles are supported.'
+        'only google, sphinx, and numpy styles are supported.'
     )
 )
 parser.add_argument(
@@ -241,6 +241,8 @@ def main():
             config.style = DocstringStyle.SPHINX
         elif args.docstring_style == 'google':
             config.style = DocstringStyle.GOOGLE
+        elif args.docstring_style == 'numpy':
+            config.style = DocstringStyle.NUMPY
 
         if args.strictness == 'short':
             config.strictness = Strictness.SHORT_DESCRIPTION

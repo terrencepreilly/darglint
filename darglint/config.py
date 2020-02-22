@@ -167,6 +167,8 @@ def load_config_file(filename):  # type: (str) -> Configuration
                 style = DocstringStyle.GOOGLE
             elif raw_style == 'sphinx':
                 style = DocstringStyle.SPHINX
+            elif raw_style == 'numpy':
+                style = DocstringStyle.NUMPY
             else:
                 raise Exception(
                     'Unrecognized style.  Should be one of {}'.format(

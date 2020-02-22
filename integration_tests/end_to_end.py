@@ -31,3 +31,28 @@ class EndToEndTest(TestCase):
             '2',
         )
         self.assertEqual(errors.count('DAR101'), 1)
+
+    def test_docstring_style_selection(self):
+        for style in ['google', 'sphinx', 'numpy']:
+            filename = 'integration_tests/files/{}_example.py'.format(
+                style
+            )
+            errors = self.get_errors(
+                filename,
+                '--docstring-style',
+                style,
+            )
+            self.assertEqual(
+                errors.count('DAR101'),
+                1,
+                'Expected {} to have one missing parameter.'.format(
+                    filename,
+                )
+            )
+            self.assertEqual(
+                errors.count('DAR102'),
+                1,
+                'Expected {} to have one extra parameter.'.format(
+                    filename,
+                )
+            )
