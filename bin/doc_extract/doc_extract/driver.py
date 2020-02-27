@@ -94,7 +94,7 @@ class Driver(object):
                             'filename': filename,
                             'docstring': docstring,
                             'repository': path,
-                            'type': 'GOOGLE',
+                            'type': 'NUMPY',
                             'metadata': {
                                 'arguments': [],
                                 'raises': [],

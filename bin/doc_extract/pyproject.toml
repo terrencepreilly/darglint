@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "doc_extract"
+version = "0.0.1"
+description = "Extracts docstrings from a repo and allows annotating them."
+authors = ["Terrence Reilly <terrencepreilly@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+
+[tool.poetry.dev-dependencies]
+flake8 = "^3.7.9"
+mypy = "^0.761"
+ipython = "^7.12.0"
+darglint = "^1.1.3"
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

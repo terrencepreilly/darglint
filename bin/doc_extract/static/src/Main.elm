@@ -9,7 +9,7 @@ import File.Download as Download
 import File.Select as Select
 import Html exposing ( Html, div, text, button, input, label, pre, span, p )
 import Html.Attributes exposing ( class, type_, for, id, disabled, value, name, checked )
-import Html.Events exposing ( onClick, onInput, on )
+import Html.Events exposing ( onClick, onInput, on, targetValue )
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Task
@@ -32,6 +32,30 @@ type Repository = Repository String
 type DocstringType
     = Google
     | Sphinx
+    | Numpy
+
+
+docstringTypeEncoder : DocstringType -> Encode.Value
+docstringTypeEncoder docType =
+    Encode.string
+        <| case docType of
+            Google -> "GOOGLE"
+            Sphinx -> "SPHINX"
+            Numpy -> "NUMPY"
+
+
+docstringTypeDecoder : Decode.Decoder DocstringType
+docstringTypeDecoder =
+    let
+        fromString : String -> DocstringType
+        fromString value =
+            case value of
+                "GOOGLE" -> Google
+                "SPHINX" -> Sphinx
+                "NUMPY" -> Numpy
+                _ -> Google
+    in
+        Decode.map fromString Decode.string
 
 type Metadata =
     Metadata
@@ -199,17 +223,6 @@ decodeMetadata =
         (Decode.field "sections" sectionDecoder)
         (Decode.field "noqas" sectionDecoder)
 
-docstringTypeDecoder : Decode.Decoder DocstringType
-docstringTypeDecoder =
-    let
-        stringToDocstringType s =
-            case s of
-                "SPHINX" ->
-                    Sphinx
-                _ ->
-                    Google
-    in
-        Decode.map stringToDocstringType Decode.string
 
 docstringDecoder : Decode.Decoder Docstring
 docstringDecoder =
@@ -261,13 +274,6 @@ docstringEncoder (Docstring
                 , ("sections", sectionEncoder sections)
                 , ("noqas", sectionEncoder noqas)
                 ]
-
-        docstringTypeEncoder d =
-            case d of
-                Google ->
-                    Encode.string "GOOGLE"
-                Sphinx ->
-                    Encode.string "SPHINX"
     in
     Encode.object
         [ ( "repository", Encode.string repo )
@@ -295,7 +301,7 @@ type Msg
     | UpdateCustomEntry String
     | AddCustomEntry
     | KeyChanged String
-    | ToggleDocstringType
+    | ToggleDocstringType String
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -463,7 +469,7 @@ update msg model =
                     ( prevTarget model, Cmd.none )
                 _ ->
                     ( model, Cmd.none )
-        ToggleDocstringType ->
+        ToggleDocstringType newDocstringTypeRepr ->
             case Array.get model.selected model.docstrings of
                 Nothing ->
                     ( model, Cmd.none )
@@ -475,10 +481,9 @@ update msg model =
                         docstringType) ->
                     let
                         newDocstringType =
-                            case docstringType of
-                                Google -> Sphinx
-                                Sphinx -> Google
-
+                            case Decode.decodeString docstringTypeDecoder newDocstringTypeRepr of
+                                Ok value -> value
+                                Err _ -> Google
                         newDocstring =
                             Docstring
                                 repo
@@ -537,8 +542,9 @@ errorView model =
 docstringTypeView : DocstringType -> Html Msg
 docstringTypeView docstringType =
     let
-        onChange msg =
-          on "change" <| Decode.succeed msg
+        onChange : (String -> msg) -> Html.Attribute msg
+        onChange msgConstructor =
+          on "change" (Decode.map msgConstructor targetValue)
     in
     div
         [ class "docstring-type"
@@ -552,7 +558,7 @@ docstringTypeView docstringType =
             [ type_ "radio"
             , id "google-docstring-type"
             , name "docstring-type"
-            , value "Google"
+            , value "GOOGLE"
             , checked <| docstringType == Google
             , onChange ToggleDocstringType
             ]
@@ -566,8 +572,22 @@ docstringTypeView docstringType =
             [ type_ "radio"
             , id "sphinx-docstring-type"
             , name "docstring-type"
-            , value "Sphinx"
+            , value "SPHINX"
             , checked <| docstringType == Sphinx
+            , onChange ToggleDocstringType
+            ]
+            []
+        , label
+            [ for "numpy-docstring-type"
+            ]
+            [ text "Numpy"
+            ]
+        , input
+            [ type_ "radio"
+            , id "numpy-docstring-type"
+            , name "docstring-type"
+            , value "NUMPY"
+            , checked <| docstringType == Numpy
             , onChange ToggleDocstringType
             ]
             []

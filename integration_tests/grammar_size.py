@@ -46,6 +46,7 @@ if __name__ == '__main__':
     count = {
         'google': 0,
         'sphinx': 0,
+        'numpy': 0,
     }
     print('BY FILENAME')
     for grammar_type in count:

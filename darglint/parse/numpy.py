@@ -22,9 +22,6 @@ from .cyk import (
 from .grammars.numpy_arguments_section import (
     ArgumentsGrammar,
 )
-from .grammars.numpy_long_description import (
-    LongDescriptionGrammar,
-)
 from .grammars.numpy_other_arguments_section import (
     OtherArgumentsGrammar,
 )
@@ -54,6 +51,9 @@ from .combinator import (
 )
 from ..token import (
     KEYWORDS,
+)
+from .long_description import (
+    parse as long_description_parse,
 )
 
 
@@ -149,34 +149,34 @@ def _match(token):
     tt_lookup = {
         TokenType.RETURNS: [
             ReturnsGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
         TokenType.ARGUMENTS: [
             ArgumentsGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
         TokenType.YIELDS: [
             YieldsGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
         TokenType.RAISES: [
             RaisesGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
         TokenType.WARNS: [
             WarnsGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
         TokenType.RECEIVES: [
             ReceivesGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
         TokenType.OTHER: [
             OtherArgumentsGrammar,
-            LongDescriptionGrammar,
+            long_description_parse,
         ],
     }  # type: Dict[TokenType, List[Union[BaseGrammar, Callable]]]  # noqa: E501
-    return tt_lookup.get(token.token_type, [LongDescriptionGrammar])
+    return tt_lookup.get(token.token_type, [long_description_parse])
 
 
 def lookup(section, section_index=-1):

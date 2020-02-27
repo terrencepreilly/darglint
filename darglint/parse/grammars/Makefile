@@ -19,7 +19,6 @@ sections = google_arguments_section.py \
 		   sphinx_variables_section.py \
 		   sphinx_yields_section.py \
 		   sphinx_yield_type_section.py \
-		   numpy.py \
 		   numpy_arguments_section.py \
 		   numpy_long_description.py \
 		   numpy_other_arguments_section.py \

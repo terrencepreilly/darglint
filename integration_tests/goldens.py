@@ -25,6 +25,7 @@ SECTION_MAP = {
     'except': Sections.RAISES_SECTION,
     'long-description': Sections.LONG_DESCRIPTION,
     'params': Sections.ARGUMENTS_SECTION,
+    'parameters': Sections.ARGUMENTS_SECTION,
     'raise': Sections.RAISES_SECTION,
     'raises': Sections.RAISES_SECTION,
     'raises-section': Sections.RAISES_SECTION,
@@ -50,6 +51,8 @@ class Goldens(TestCase):
             docstring = Docstring.from_google(golden['docstring'])
         elif golden['type'] == 'SPHINX':
             docstring = Docstring.from_sphinx(golden['docstring'])
+        elif golden['type'] == 'NUMPY':
+            docstring = Docstring.from_numpy(golden['docstring'])
         else:
             raise Exception('Unsupported docstring type {}'.format(
                 golden['type']
