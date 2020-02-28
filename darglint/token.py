@@ -33,8 +33,12 @@ class TokenType(BaseTokenType):
     OTHER = 20
     RECEIVES = 21
     WARNS = 22
+    SEE = 23
+    ALSO = 24
+    NOTES = 25
+    EXAMPLES = 26
 
-    # next: 23
+    # next: 27
 
 
 KEYWORDS = {
@@ -50,6 +54,8 @@ KEYWORDS = {
     TokenType.ARGUMENT_TYPE,
     TokenType.RECEIVES,
     TokenType.WARNS,
+    TokenType.NOTES,
+    TokenType.EXAMPLES,
 }
 
 

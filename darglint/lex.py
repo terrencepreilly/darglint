@@ -182,6 +182,10 @@ KEYWORDS = {
     'Receives': TokenType.RECEIVES,
     'Warns': TokenType.WARNS,
     'Warnings': TokenType.WARNS,
+    'See': TokenType.SEE,
+    'Also': TokenType.ALSO,
+    'Notes': TokenType.NOTES,
+    'Examples': TokenType.EXAMPLES,
 }
 
 

@@ -125,6 +125,14 @@ def random_tokens(min_length=1, max_length=20, exclude=set()):
             value = '--------'
         elif _type == TokenType.WARNS:
             value = 'Warns'
+        elif _type == TokenType.SEE:
+            value = 'See'
+        elif _type == TokenType.ALSO:
+            value = 'Also'
+        elif _type == TokenType.NOTES:
+            value = 'Notes'
+        elif _type == TokenType.EXAMPLES:
+            value = 'Examples'
         else:
             raise Exception('Unexpected token type {}'.format(
                 _type

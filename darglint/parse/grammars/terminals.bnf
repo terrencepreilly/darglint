@@ -35,6 +35,10 @@ from darglint.token import (
     | <other>
     | <receives>
     | <warns>
+    | <see>
+    | <also>
+    | <notes>
+    | <examples>
 
 
 <header>
@@ -96,3 +100,15 @@ from darglint.token import (
 
 <warns>
     ::= "TokenType\.WARNS"
+
+<see>
+    ::= "TokenType\.SEE"
+
+<also>
+    ::= "TokenType\.ALSO"
+
+<notes>
+    ::= "TokenType\.NOTES"
+
+<examples>
+    ::= "TokenType\.EXAMPLES"

@@ -95,6 +95,16 @@ def top_parse(tokens):
                 return 4
             else:
                 return 0
+        elif tokens[i].token_type == TokenType.SEE:
+            if (
+                i + 3 < len(tokens) and
+                tokens[i + 1].token_type == TokenType.ALSO and
+                tokens[i + 2].token_type == TokenType.NEWLINE and
+                tokens[i + 3].token_type == TokenType.HEADER
+            ):
+                return 4
+            else:
+                return 0
         elif tokens[i].token_type in KEYWORDS:
             if (
                 i + 2 < len(tokens) and
@@ -173,6 +183,17 @@ def _match(token):
         ],
         TokenType.OTHER: [
             OtherArgumentsGrammar,
+            long_description_parse,
+        ],
+        # Discard these two sections -- there's nothing
+        # to check against the function description.
+        TokenType.SEE: [
+            long_description_parse,
+        ],
+        TokenType.NOTES: [
+            long_description_parse,
+        ],
+        TokenType.EXAMPLES: [
             long_description_parse,
         ],
     }  # type: Dict[TokenType, List[Union[BaseGrammar, Callable]]]  # noqa: E501
