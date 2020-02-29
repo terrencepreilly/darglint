@@ -52,3 +52,5 @@ start: <arguments-section>
     | @ArgumentIdentifier
       @ArgumentTypeIdentifier
       <indent> <ident> <type-section-parens> <colon>
+    | @ArgumentIdentifier
+      <indent> <ident> <colon> <newline>
