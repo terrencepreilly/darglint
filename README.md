@@ -18,6 +18,7 @@ would like a feature in *darglint*.
 - [Sphinx](#sphinx)
 - [Numpy](#numpy)
 - [Integrations](#integrations)
+- [Flake8](#flake8)
 - [Roadmap](#roadmap)
 - [Contribution](#development-and-contributions)
 
@@ -381,14 +382,34 @@ that setting enabled in a configuration file in the project directory.)
 
 A plugin for SublimeLinter can be found [here](https://github.com/raddessi/SublimeLinter-contrib-darglint)
 
+### Pre-commit
+
+Download [pre-commit](https://pre-commit.com/) and
+[install](https://pre-commit.com/#install) it. Once it is installed, add this
+to `.pre-commit-config.yaml` in your repository:
+
+```yaml
+repos:
+-   repo: https://github.com/terrencepreilly/darglint
+    rev: master
+    hooks:
+    - id: darglint
+```
+
+Then run `pre-commit install` and you're ready to go. Before commiting,
+`darglint` will be run on the staged files. If it finds any errors, the user
+is notified and the commit is aborted. Store necessary configuration (such as
+error formatting) in `.darglint`, `config.cfg` or `tox.ini`.
 
 ## Roadmap
+
 The below list is the current roadmap for *darglint*.  For each
 version number, it specifies which features will be added.
 To see the most recently implemented features, see the *CHANGELOG*.
 
 
 ### 1.0
+
 - [ ] Robust logging for errors caused/encountered by *darglint*.
 - [ ] Add style errors and suggestions.  In particular, allow for multiple
 levels of strictness, (lenient by default).  Then warn for no newline after
