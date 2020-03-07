@@ -276,3 +276,18 @@ class NewGoogleParserTests(TestCase):
         self.assertTrue(
             CykNodeUtils.contains(node, 'long-description')
         )
+
+    def test_parse_args_section_with_newline_after_arg_name(self):
+        tokens = condense(lex('\n'.join([
+            'Args:',
+            '    x:',
+            '        Description text for x',
+            '    y:',
+            '        Description text for y'
+        ])))
+        node = parse(tokens)
+        self.assertEqual(
+            node.symbol,
+            'arguments-section',
+            str(node),
+        )

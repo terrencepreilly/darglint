@@ -1,4 +1,4 @@
-# Generated on 2020-03-07 09:11:37.427887
+# Generated on 2020-03-07 10:28:31.809162
 
 from darglint.parse.identifiers import (
     NoqaIdentifier,
