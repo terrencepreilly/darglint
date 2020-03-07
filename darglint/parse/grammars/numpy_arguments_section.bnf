@@ -25,17 +25,18 @@ start: <arguments-section>
     ::= <arguments> <newline> <header>
 
 <arguments-body>
-    ::= <argument-item> <newline> <arguments-body>
-    | <argument-item>
+    ::= <argument-item-header> <argument-item-body> <newline> <arguments-body>
+    | <argument-item-header> <argument-item-body>
 
-<argument-item>
+<argument-item-header>
     ::= @ArgumentItemIdentifier
         <ident-list> <newline>
-        <block-indented>
     | @ArgumentItemIdentifier
         <ident-list> <colon> <newline>
-        <block-indented>
     | @ArgumentItemIdentifier
       @ArgumentTypeIdentifier
         <ident-list> <colon> <line> <newline>
-        <block-indented>
+
+<argument-item-body>
+    ::= <block-indented> <newlines>
+    | <block-indented> <newline> <indents> <newlines>

@@ -37,8 +37,9 @@ class TokenType(BaseTokenType):
     ALSO = 24
     NOTES = 25
     EXAMPLES = 26
+    REFERENCES = 27
 
-    # next: 27
+    # next: 28
 
 
 KEYWORDS = {
@@ -56,6 +57,7 @@ KEYWORDS = {
     TokenType.WARNS,
     TokenType.NOTES,
     TokenType.EXAMPLES,
+    TokenType.REFERENCES,
 }
 
 

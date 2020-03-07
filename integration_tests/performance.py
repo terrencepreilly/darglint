@@ -57,12 +57,13 @@ class Stats(object):
     STALE_AGE_MINS = 30
 
     def __init__(self, times, by_length, google, sphinx,
-                 timestamp=None, scope=PerfScope.MODULE):
-        # type: (List[float], List[Tuple[int, float]], List[float], List[float], int, PerfScope) -> None  # noqa: E501
+                 timestamp=None, scope=PerfScope.MODULE, numpy=list()):
+        # type: (List[float], List[Tuple[int, float]], List[float], List[float], int, PerfScope, List[float]) -> None  # noqa: E501
         self.times = times
         self.by_length = by_length
         self.google = google
         self.sphinx = sphinx
+        self.numpy = numpy
         self.scope = scope
 
         if timestamp:
@@ -90,6 +91,7 @@ class Stats(object):
             'sphinx': self.sphinx,
             'timestamp': self.timestamp,
             'scope': self.scope.value,
+            'numpy': self.numpy,
         }
 
 
@@ -216,6 +218,9 @@ class Performance(object):
         elif golden['type'] == 'SPHINX':
             assert isinstance(golden['docstring'], str)
             docstring = Docstring.from_sphinx(golden['docstring'])
+        elif golden['type'] == 'NUMPY':
+            assert isinstance(golden['docstring'], str)
+            docstring = Docstring.from_numpy(golden['docstring'])
         else:
             raise Exception('Unsupported docstring type {}'.format(
                 golden['type']
@@ -260,7 +265,9 @@ class Performance(object):
             if golden['type'] == 'GOOGLE':
                 stats.google.append(duration)
             elif golden['type'] == 'SPHINX':
-                stats.google.append(duration)
+                stats.sphinx.append(duration)
+            elif golden['type'] == 'NUMPY':
+                stats.numpy.append(duration)
             else:
                 raise Exception('Unexpected docstring type {}'.format(
                     golden['type'],

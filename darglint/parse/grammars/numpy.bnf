@@ -8,7 +8,11 @@ import noqa_statement.bnf
 
 <block-indented>
     ::= <paragraph-indented> <split> <block-indented>
+    | <paragraph-indented> <split-indented> <block-indented>
     | <paragraph-indented>
+
+<split-indented>
+    ::= <newline> <indents> <newline> <newlines>
 
 <block>
     ::= <paragraph> <split> <block>

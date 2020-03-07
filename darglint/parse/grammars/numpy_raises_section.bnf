@@ -30,3 +30,4 @@ start: <raises-section>
     ::= @ExceptionItemIdentifier
         <ident> <newline>
         <block-indented>
+    | <ident>

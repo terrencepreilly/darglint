@@ -186,6 +186,7 @@ KEYWORDS = {
     'Also': TokenType.ALSO,
     'Notes': TokenType.NOTES,
     'Examples': TokenType.EXAMPLES,
+    'References': TokenType.REFERENCES,
 }
 
 

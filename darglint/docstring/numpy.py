@@ -179,12 +179,14 @@ class Docstring(BaseDocstring):
         types = self._get_types_unsorted(section)
         if not types:
             return []
-        return [
-            x[1] for x in [
-                (arg, _type)
-                for arg, _type in sorted(zip(items, types))
-            ]
-        ]
+
+        # Handle the case when two arguments are listed in
+        # one line (like "m, n: int").
+        sorted_types = list()
+        for arg, _type in sorted(zip(items, types)):
+            for _ in arg.split(','):
+                sorted_types.append(_type)
+        return sorted_types
 
     def _get_items_unsorted(self, section):
         # type: (Sections) -> Optional[List[str]]
@@ -209,9 +211,14 @@ class Docstring(BaseDocstring):
     def get_items(self, section):
         # type: (Sections) -> Optional[List[str]]
         items = self._get_items_unsorted(section)
-        if items:
-            return sorted(items)
-        return None
+        if not items:
+            return None
+        sorted_items = list()
+        for item in sorted(items):
+            sorted_items.extend([
+                x.strip() for x in item.split(',')
+            ])
+        return sorted_items
 
     def get_noqas(self):
         # type: () -> Dict[str, List[str]]

@@ -1,7 +1,17 @@
 """Tests for the Docstring class."""
 
+from typing import (
+    List,
+    Tuple,
+    Iterator,
+)
+import string
 from unittest import TestCase
-from random import shuffle
+from random import (
+    choice,
+    randint,
+    shuffle,
+)
 
 from darglint.docstring.base import Sections
 from darglint.docstring.docstring import Docstring
@@ -676,4 +686,193 @@ class DocstringForSphinxTests(TestCase):
         self.assertEqual(
             argtypes['y'],
             'List[int], optional',
+        )
+
+
+class DocstringForNumpyTest(TestCase):
+
+    MAX_ARG_NUM = 3
+
+    def _get_args(self):
+        # type: () -> List[str]
+        return list({
+            choice(string.ascii_lowercase)
+            for _ in range(randint(2, self.MAX_ARG_NUM))
+        })
+
+    def _get_types(self, args):
+        # type: (List[str]) -> List[str]
+        return [
+            choice('AB')
+            for _ in args
+        ]
+
+    def _get_argtype_pairs(self, args, types):
+        # type: (List[str], List[str]) -> List[Tuple[str, str]]
+        return list(zip(args, types))
+
+    def _combine(self, argtype_pairs):
+        # type: (List[Tuple[str, str]]) -> Iterator[List[Tuple[List[str], str]]]  # noqa: E501
+        """Generate some permutations of joinings.
+
+        For example, if two consecutive args have the same types,
+        say
+            [ ('a', 'A'), ('b', 'A') ]
+        then we will get the following permutations from this
+        function:
+            [ (['a'], 'A'), (['b'], 'A') ]
+            [ (['a', 'b'], 'A') ]
+
+        We don't need it to generate all possible permutations
+        of joinings -- that's too complicated for this test.
+        For example, if we have three items with the same type,
+        say
+            [ ('a', 'A'), ('b', 'A'), ('c', 'A') ]
+        We only need to generate the following
+            [ (['a'], 'A'), (['b'], 'A), (['c'], 'A') ]
+            [ (['a', 'b'], 'A'), (['c'], 'A') ]
+            [ (['a', 'b', 'c'], 'A') ]
+        But we don't need to generate
+            [ (['a'], 'A'), (['b', 'c'], 'A') ]
+        And we only really need to do it for each run
+        independently, not at the same time.
+
+        Args:
+            argtype_pairs: A list of tuples containing
+                arguments and their types.
+
+        Yields:
+            A list containing tuples with lists of
+            args and types.
+
+        """
+        yield [([x], y) for x, y in argtype_pairs]
+        i, j = 0, 0
+        # Go through each of the items except the last one.
+        while i < len(argtype_pairs) - 1:
+            j = i + 1
+            # Go forward from that item while you have an item
+            #   of a different type.
+            while (j < len(argtype_pairs) and
+                    argtype_pairs[i][1] == argtype_pairs[j][1]):
+                # For each of those, combine the ones up until the
+                # second index.
+                ret = [([x], y) for x, y in argtype_pairs[:i]]
+                joined_args = [x for x, y in argtype_pairs[i:j+1]]
+                ret.append((joined_args, argtype_pairs[j][1]))
+                ret.extend([([x], y) for x, y in argtype_pairs[j+1:]])
+                yield ret
+                j += 1
+            i += 1
+
+    def generate_docstring(self, argtypes):
+        # type: (List[Tuple[List[str], str]]) -> str
+        doc = [
+            'Short description',
+            '',
+            'Parameters',
+            '----------',
+        ]
+        for args, _type in argtypes:
+            doc.append(', '.join(args) + ': ' + _type)
+            doc.append('    Some description')
+        doc.append('')
+        return '\n'.join(doc)
+
+    def test_multiple_arguments_on_one_line(self):
+        """Make sure we can extract from multiple args on one line."""
+        # By forcing the individual elements to be sorted, we
+        # force an overall sorting. (The docstring will be sorting
+        # by the first element in a combined argument.  Once split,
+        # the individual arguments will not necessarily be in order.)
+        # This forces them to be.
+        args = sorted(self._get_args())
+        types = self._get_types(args)
+        sorted_args = sorted(args)
+        sorted_types = [
+            _type for arg, _type in
+            sorted(zip(args, types))
+        ]
+        argtypes = self._get_argtype_pairs(args, types)
+        for combo in self._combine(argtypes):
+            raw_docstring = self.generate_docstring(combo)
+            docstring = Docstring.from_numpy(raw_docstring)
+            items = docstring.get_items(Sections.ARGUMENTS_SECTION)
+            types = docstring.get_types(Sections.ARGUMENTS_SECTION)
+            self.assertEqual(
+                items,
+                sorted_args,
+            )
+            self.assertEqual(
+                types,
+                sorted_types,
+            )
+
+    def test_extract_simplest_raises_section(self):
+        raw_docstring = '\n'.join([
+            'Raises an error.',
+            '',
+            'Raises',
+            '------',
+            'AssertionError'
+            '',
+        ])
+        docstring = Docstring.from_numpy(raw_docstring)
+        self.assertTrue(
+            docstring.get_section(Sections.RAISES_SECTION)
+            is not None
+        )
+
+    def test_arguments_section_with_breaks_in_lines_and_indents(self):
+        raw_docstring = '\n'.join([
+            'Has arguments.',
+            '',
+            'Parameters',
+            '----------',
+            'x: int',
+            '    The first parameter.',
+            '    ',
+            '    Can be the only parameter.',
+            'y: Optional[int]',
+            '    The second parameter.',
+            '',
+            '    Can also be added.',
+            'z: Optional[int]',
+            '    The third parameter.',
+            '',
+        ])
+        docstring = Docstring.from_numpy(raw_docstring)
+        self.assertTrue(
+            docstring.get_section(Sections.ARGUMENTS_SECTION)
+            is not None
+        )
+        self.assertEqual(
+            docstring.get_items(Sections.ARGUMENTS_SECTION),
+            ['x', 'y', 'z'],
+        )
+
+    def test_arguments_section_with_break_after_description(self):
+        raw_docstring = '\n'.join([
+            'Has arguments.',
+            '',
+            'Parameters',
+            '----------',
+            'x: int',
+            '    The first parameter.',
+            '',
+            'y: Optional[int]',
+            '    The second parameter.',
+            '    ',
+            'z: Optional[int]',
+            '    The third parameter.',
+            '',
+        ])
+        docstring = Docstring.from_numpy(raw_docstring)
+        self.assertTrue(
+            docstring.get_section(Sections.ARGUMENTS_SECTION)
+            is not None
+        )
+        self.assertEqual(
+            docstring.get_items(Sections.ARGUMENTS_SECTION),
+            ['x', 'y', 'z'],
         )

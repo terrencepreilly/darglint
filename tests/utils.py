@@ -133,6 +133,8 @@ def random_tokens(min_length=1, max_length=20, exclude=set()):
             value = 'Notes'
         elif _type == TokenType.EXAMPLES:
             value = 'Examples'
+        elif _type == TokenType.REFERENCES:
+            value = 'References'
         else:
             raise Exception('Unexpected token type {}'.format(
                 _type

@@ -39,6 +39,7 @@ from darglint.token import (
     | <also>
     | <notes>
     | <examples>
+    | <references>
 
 
 <header>
@@ -112,3 +113,6 @@ from darglint.token import (
 
 <examples>
     ::= "TokenType\.EXAMPLES"
+
+<references>
+    ::= "TokenType\.REFERENCES"
