@@ -4,3 +4,4 @@
   docstring's' description matches the actual function/method implementation"
   entry: darglint
   language: python
+  types: [python]
