@@ -3,8 +3,9 @@
 A functional docstring linter which checks whether a docstring's
 description matches the actual function/method implementation.
 *Darglint* expects docstrings to be formatted using the
-[Google Python Style Guide](https://google.github.io/styleguide/pyguide.html)
-or [Sphinx Style Guide](https://pythonhosted.org/an_example_pypi_project/sphinx.html#function-definitions).
+[Google Python Style Guide](https://google.github.io/styleguide/pyguide.html),
+or [Sphinx Style Guide](https://pythonhosted.org/an_example_pypi_project/sphinx.html#function-definitions),
+or [Numpy Style Guide](https://numpydoc.readthedocs.io/en/latest/format.html).
 
 Feel free to submit an issue/pull request if you spot a problem or
 would like a feature in *darglint*.
@@ -15,6 +16,7 @@ would like a feature in *darglint*.
 - [Configuration](#configuration)
 - [Usage](#usage)
 - [Sphinx](#sphinx)
+- [Numpy](#numpy)
 - [Integrations](#integrations)
 - [Roadmap](#roadmap)
 - [Contribution](#development-and-contributions)
@@ -343,6 +345,27 @@ the setting, "docstring\_style":
 [darglint]
 docstring_style=sphinx
 ```
+
+## Numpy
+
+Darglint now has an initial implementation for Numpy-style docstrings.
+Similarly to Sphinx-style docstrings, you can pass a style flag to the
+command:
+
+```bash
+darglint -s numpy example.py
+darglint --docstring-style numpy example.py
+```
+
+Or set it in a configuration file:
+
+```init
+[darglint]
+docstring_style=numpy
+```
+
+The numpy parser and error reporter are not yet fully stabilized.
+Add issues or suggestions to the tracking bug, Issue #69.
 
 ## Integrations
 
