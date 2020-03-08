@@ -3,6 +3,8 @@ from unittest import (
     skip,
 )
 
+import re
+
 from bnf_to_cnf.translator import (
     Translator,
 )
@@ -444,4 +446,32 @@ class TranslatorTestCase(TestCase):
             python.count(', [Wrong]'),
             0,
             python,
+        )
+
+    def test_no_unnamed_nodes(self):
+        """Certain nodes, when translated, are missing names."""
+        grammar = r'''
+            Grammar: ArgumentsGrammar
+
+            start: <arguments-section>
+
+            <arguments-section>
+                ::= <ahead> <line>
+                # Causes an missing production name.
+                | <ahead>
+
+            # Simplified the remaning grammar.
+            <line> ::= "TokenType\.LINE"
+            <ahead> ::= "TokenType\.AHEAD"
+        '''
+        tree = Parser().parse(grammar)
+        node = Translator().translate(tree)
+        python = node.to_python()
+        unacceptable_pattern = re.compile(r'P\([^"]')
+        self.assertEqual(
+            unacceptable_pattern.findall(python),
+            [],
+            'Found production which doesn\'t begin with a name:\n{}'.format(
+                python
+            ),
         )

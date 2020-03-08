@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="bnf_to_cnf",
-    version="0.0.1",
+    version="0.0.2",
     author="Terrence Reilly",
     author_email="terrencepreilly@gmail.com",
     description=("A utility for converting bnf to cnf."),

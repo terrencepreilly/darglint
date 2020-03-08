@@ -158,7 +158,7 @@ class Node(object):
         Args:
             value: The value of the symbol we're looking for.
 
-        Return:
+        Returns:
             Whether the grammar contains the symbol's definition.
 
         """
@@ -380,7 +380,7 @@ class Node(object):
             probability=self.probability,
         )
 
-    def to_python(self) -> str:
+    def to_python(self, start_symbol: Optional[str] = None) -> str:
         if self.node_type == NodeType.TERMINAL:
             # Terminals are encoded as token types, so
             # they should not be quoted.
@@ -478,6 +478,11 @@ class Node(object):
             else:
                 symbol = self.children[0].to_python()
                 expression = next(self.filter(Node.is_expression)).to_python()
+                if not symbol.startswith('"'):
+                    # The symbol was elided up to the grammar.
+                    # It will already have been included, so we'll
+                    # just skip this one.
+                    return ' ' * 8 + '# Empty symbol elided to grammar'
                 return ' ' * 8 + f'P({symbol}, {expression}),'
         elif self.node_type == NodeType.ANNOTATIONS:
             return (
@@ -513,11 +518,14 @@ class Node(object):
                 f'class {name}(BaseGrammar):',
                 '    productions = [',
             ])
-            for production in self.filter(Node.is_production):
-                values.append(production.to_python())
-            values.append('    ]')
+            start_symbol = None
             for start_node in self.filter(Node.is_start):
-                values.append(f'    start = "{start_node.value}"')
+                start_symbol = start_node.value
+
+            for production in self.filter(Node.is_production):
+                values.append(production.to_python(start_symbol=start_symbol))
+            values.append('    ]')
+            values.append(f'    start = "{start_symbol}"')
             return '\n'.join(values)
         elif self.node_type == NodeType.EXTERNAL_IMPORTS:
             return '\n'.join([x.to_python() for x in self.children])
