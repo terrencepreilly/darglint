@@ -5,11 +5,7 @@ Grammar: VariableTypeGrammar
 start: <variable-type-section>
 
 <variable-type-section>
-    ::= <varhead> <varbody>
+    ::= <varhead> <item-body>
 
 <varhead>
     ::= <colon> <variable-type> <word> <colon>
-
-<varbody>
-    ::= <line>
-    | <line> <block-indented>

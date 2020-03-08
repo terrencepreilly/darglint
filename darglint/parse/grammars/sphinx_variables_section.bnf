@@ -6,7 +6,7 @@ Grammar: VariablesSectionGrammar
 start: <variables-section>
 
 <variables-section>
-    ::= <vhead> <vbody>
+    ::= <vhead> <item-body>
 
 <vhead>
     ::= <colon> <variables> <word> <colon>
@@ -14,7 +14,3 @@ start: <variables-section>
 
 <variable-type-section>
     ::= <word>
-
-<vbody>
-    ::= <line>
-    | <line> <block-indented>

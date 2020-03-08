@@ -5,7 +5,7 @@ Grammar: YieldsGrammar
 start: <yields-section>
 
 <yields-section>
-    ::= <yhead> <ybody> <newlines>
+    ::= <yhead> <item-body> <newlines>
 
 <yield-type-section>
     ::= <word>
@@ -13,7 +13,3 @@ start: <yields-section>
 <yhead>
     ::= <colon> <yields> <colon>
     | <colon> <yields> <yield-type-section> <colon>
-
-<ybody>
-    ::= <line>
-    | <line> <block-indented>

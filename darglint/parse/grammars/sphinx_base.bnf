@@ -7,9 +7,23 @@ from darglint.parse.grammar import (
 )
 
 
+<item-body>
+    ::= <line>
+    | <line> <newline> <block-indented>
+    | <line> <newlines> <block-indented>
+    | <line> <newline> <indent> <newline> <newlines> <block-indented>
+
+<blanks>
+    ::= <split>
+    | <split-indented>
+
 <block-indented>
     ::= <paragraph-indented> <split> <block-indented>
+    | <paragraph-indented> <split-indented> <block-indented>
     | <paragraph-indented>
+
+<split-indented>
+    ::= <newline> <indents> <newlines>
 
 <paragraph-indented>
     ::= <indented> <line> <newline> <paragraph-indented>

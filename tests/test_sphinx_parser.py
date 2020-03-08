@@ -130,6 +130,77 @@ class SphinxParserTest(TestCase):
             node,
         )
 
+    def test_parse_multiline_return(self):
+        """Ensure we can parse multiline returns.
+
+        See Issue #63.
+
+        """
+        return_variants = [
+            ':return: shape: (n, m), dtype: float\n'
+            '    Detailed description.\n',
+
+            # No trailing newline
+            ':return: shape: (n, m), dtype: float\n'
+            '    Detailed description.',
+
+            # Extra separation without indent
+            ':return: shape: (n, m), dtype: float\n'
+            '\n'
+            '    Detailed description\n',
+
+            # Extra separation with indent
+            ':return: shape: (n, m), dtype: float\n'
+            '    \n'
+            '    Detailed description\n',
+        ]
+        doc_template = 'Short description.\n\n{}'
+        for return_variant in return_variants:
+            raw_docstring = doc_template.format(return_variant)
+            tokens = condense(lex(raw_docstring))
+            node = parse(tokens)
+            self.assertTrue(
+                CykNodeUtils.contains(node, 'returns-section'),
+                'Variant failed: {}'.format(repr(return_variant)),
+            )
+
+    def test_parse_multiline_raises(self):
+        """Ensure we can parse multiline raises.
+
+        See Issue #63.
+
+        """
+        raises_variants = [
+            ':raises RuntimeError:\n'
+            '    Long description of why this happens.',
+
+            # Newline-terminated.
+            ':raises RuntimeError:\n'
+            '    Long description of why this happens.\n',
+
+            # TODO: Fix the top-parser to parse this correctly.
+            # It breaks this into two sections.
+            #
+            # # Separation without indent
+            # ':raises RuntimeError:\n'
+            # '\n'
+            # '    Long description of why this happens.',
+
+            # Separation with indent
+            ':raises RuntimeError:\n'
+            '    \n'
+            '    Long description of why this happens.',
+        ]
+        doc_template = 'Short description.\n\n{}'
+        for raises_variant in raises_variants:
+            raw_docstring = doc_template.format(raises_variant)
+            tokens = condense(lex(raw_docstring))
+            node = parse(tokens)
+            self.assertTrue(
+                CykNodeUtils.contains(node, 'raises-section'),
+                'Variant failed: {}'.format(repr(raises_variant)),
+            )
+
     def test_parse_long_description_cyk(self):
         """Make sure we can parse a long description."""
         node = parse(condense(lex('\n'.join([

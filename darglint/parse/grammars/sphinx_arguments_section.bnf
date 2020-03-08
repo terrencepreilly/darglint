@@ -5,7 +5,7 @@ Grammar: ArgumentsGrammar
 start: <arguments-section>
 
 <arguments-section>
-    ::= <ahead> <abody>
+    ::= <ahead> <item-body>
 
 <ahead>
     ::= <colon> <arguments> <word> <colon> <newlines>
@@ -15,7 +15,3 @@ start: <arguments-section>
 
 <argument-type-section>
     ::= <word>
-
-<abody>
-    ::= <line> <newlines>
-    | <line> <newline> <block-indented> <newlines>

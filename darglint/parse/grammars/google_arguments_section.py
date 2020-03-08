@@ -1,4 +1,4 @@
-# Generated on 2020-03-07 10:28:18.759150
+# Generated on 2020-03-07 20:50:03.473160
 
 from darglint.parse.grammar import (
     BaseGrammar,
@@ -80,6 +80,6 @@ class ArgumentsGrammar(BaseGrammar):
         P("noqa-statement1", ([], "colon", "words", 0)),
         P("type-section-parens0", ([], "type-words-colon", "rparen", 0), (TokenType.RPAREN, 0)),
         P("type-words-colon0", ([], "newline", "type-words-colon1", 0), (TokenType.NEWLINE, 0)),
-        P("type-words-colon1", ([], "indents", "type-words-colon", 0), ([], "indent", "indents", 0), (TokenType.INDENT, 0), ([], "type-word-colon", "type-words-colon", 0), ([], "type-word-colon", "type-words-colon0", 0), (TokenType.WORD, 0), (TokenType.COLON, 0)),
+        P("type-words-colon1", ([], "indents", "type-words-colon", 0), ([], "type-word-colon", "type-words-colon", 0), ([], "type-word-colon", "type-words-colon0", 0), (TokenType.WORD, 0), (TokenType.COLON, 0), (TokenType.INDENT, 0), ([], "indent", "indents", 0)),
     ]
     start = "arguments-section"

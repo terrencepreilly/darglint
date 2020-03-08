@@ -1,15 +1,13 @@
 import sphinx_base.bnf
 
+
 Grammar: ReturnsGrammar
 
 start: <returns-section>
 
 <returns-section>
-    ::= <rethead> <retbody> <newlines>
+    ::= <rethead> <item-body> <newlines>
+    | <rethead> <blanks> <item-body> <newlines>
 
 <rethead>
     ::= <colon> <returns> <colon>
-
-<retbody>
-    ::= <line>
-    | <line> <block-indented>

@@ -5,11 +5,7 @@ Grammar: ArgumentTypeGrammar
 start: <argument-type-section>
 
 <argument-type-section>
-    ::= <ahead> <abody> <newlines>
+    ::= <ahead> <item-body> <newlines>
 
 <ahead>
     ::= <colon> <argument-type> <word> <colon>
-
-<abody>
-    ::= <line>
-    | <line> <block-indented>

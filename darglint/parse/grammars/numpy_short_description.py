@@ -1,4 +1,4 @@
-# Generated on 2020-03-07 10:28:34.162350
+# Generated on 2020-03-07 20:50:19.165695
 
 from darglint.token import (
     TokenType,

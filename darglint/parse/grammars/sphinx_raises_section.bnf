@@ -6,11 +6,8 @@ Grammar: RaisesGrammar
 start: <raises-section>
 
 <raises-section>
-    ::= <rhead> <rbody>
+    ::= <rhead> <item-body> <newlines>
+    | <rhead> <blanks> <item-body> <newlines>
 
 <rhead>
     ::= <colon> <raises> <word> <colon>
-
-<rbody>
-    ::= <line>
-    | <line> <block-indented>

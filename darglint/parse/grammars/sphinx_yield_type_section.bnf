@@ -5,11 +5,7 @@ Grammar: YieldTypeGrammar
 start: <yield-type-section>
 
 <yield-type-section>
-    ::= <ythead> <ytbody> <newlines>
+    ::= <ythead> <item-body> <newlines>
 
 <ythead>
     ::= <colon> <yield-type> <colon>
-
-<ytbody>
-    ::= <line>
-    | <line> <block-indented>

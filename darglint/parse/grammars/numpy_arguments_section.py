@@ -1,4 +1,4 @@
-# Generated on 2020-03-07 10:28:30.625975
+# Generated on 2020-03-07 20:50:15.699510
 
 from darglint.parse.identifiers import (
     NoqaIdentifier,
@@ -55,7 +55,7 @@ class ArgumentsGrammar(BaseGrammar):
         P("argument-item-header4", ([], "colon", "argument-item-header5", 0)),
         P("argument-item-header5", ([], "line", "newline", 0)),
         P("argument-item-body0", ([], "newline", "argument-item-body1", 0), (TokenType.NEWLINE, 0)),
-        P("argument-item-body1", ([], "indents", "newlines", 0), ([], "newline", "newlines", 0), (TokenType.NEWLINE, 0), ([], "indent", "indents", 0), (TokenType.INDENT, 0)),
+        P("argument-item-body1", ([], "indents", "newlines", 0), ([], "indent", "indents", 0), (TokenType.INDENT, 0), ([], "newline", "newlines", 0), (TokenType.NEWLINE, 0)),
         P("noqa-statement1", ([], "colon", "words", 0)),
         P("block-indented0", ([], "split", "block-indented", 0)),
         P("block-indented1", ([], "split-indented", "block-indented", 0)),
