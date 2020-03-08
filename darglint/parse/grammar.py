@@ -11,8 +11,8 @@ from typing import (  # noqa: F401
 )
 
 
-NonTerminalDerivation = Tuple[str, str]  # Add BaseGrammar to this as union.
-TerminalDerivation = str
+NonTerminalDerivation = Tuple[List, str, str, int]
+TerminalDerivation = Tuple[str, int]
 Derivation = Union[NonTerminalDerivation, TerminalDerivation]
 
 
@@ -20,7 +20,7 @@ class Production(object):
     """Represents a production in a grammar."""
 
     def __init__(self, lhs, *rhs, annotations=list()):
-        # type: (str, Union[NonTerminalDerivation, TerminalDerivation], Optional[List[Any]]) -> None  # noqa: E501
+        # type: (str, Derivation, Optional[List[Any]]) -> None
         """Create a new production.
 
         Args:

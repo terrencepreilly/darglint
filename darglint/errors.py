@@ -113,7 +113,7 @@ class GenericSyntaxError(DarglintError):
     )
 
     def __init__(self, function, message, line_numbers=None):
-        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None  # noqa: E501
         """Instantiate the error's message.
 
         Args:
@@ -138,7 +138,7 @@ class EmptyDescriptionError(DarglintError):
     description = 'An argument/exception lacks a description'
 
     def __init__(self, function, message, line_numbers=None):
-        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None  # noqa: E501
         """Instantiate the error's message.
 
         Args:

@@ -1,11 +1,19 @@
 import sphinx_base.bnf
 
+from darglint.errors import (
+    EmptyDescriptionError,
+)
+
 Grammar: ArgumentsGrammar
 
 start: <arguments-section>
 
 <arguments-section>
     ::= <ahead> <item-body>
+    #
+    # FIXME: Does not get translated to a production correctly.
+    #
+    # | @EmptyDescriptionError <ahead>
 
 <ahead>
     ::= <colon> <arguments> <word> <colon> <newlines>

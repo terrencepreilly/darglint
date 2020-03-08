@@ -3,6 +3,7 @@ import google_types.bnf
 import noqa_statement.bnf
 
 from darglint.errors import (
+    EmptyDescriptionError,
     IndentError,
 )
 from darglint.parse.identifiers import (
@@ -22,29 +23,10 @@ start: <arguments-section>
     ::= <item-argument> <newline> <items-argument>
     | <item-argument>
 
-# The normal <paragraph> can be indented any number of times,
-# but <paragraph-indented-two> has at least two indents.  By
-# weighing it more in the grammar, we capture under-indented
-# lines.
-#
-# We also need to have a version with a newline and one without
-# a newline, so that we can handle the last line in the arguments
-# section as well as all other lines.
 <item-argument>
-    ::= 2 @ArgumentItemIdentifier
-      <head-argument> <line> <newline> <paragraph-indented-two>
-    | 2 @ArgumentItemIdentifier
-      <head-argument> <line> <newline> <paragraph-indented-two> <newline>
-    | 2 @ArgumentItemIdentifier
-      <head-argument> <line> <newline>
-    | 2 @ArgumentItemIdentifier
-      <head-argument> <line>
-    | @IndentError
-      @ArgumentItemIdentifier
-      <head-argument> <line> <newline> <paragraph>
-    | @IndentError
-      @ArgumentItemIdentifier
-      <head-argument> <line> <newline> <paragraph> <newline>
+    ::= @ArgumentItemIdentifier
+        <head-argument> <item-body>
+    | @EmptyDescriptionError <head-argument>
 
 <head-argument>
     ::= @ArgumentIdentifier
@@ -54,3 +36,21 @@ start: <arguments-section>
       <indent> <ident> <type-section-parens> <colon>
     | @ArgumentIdentifier
       <indent> <ident> <colon> <newline>
+
+# The normal <paragraph> can be indented any number of times,
+# but <paragraph-indented-two> has at least two indents.  By
+# weighing it more in the grammar, we capture under-indented
+# lines.
+#
+# We also need to have a version with a newline and one without
+# a newline, so that we can handle the last line in the arguments
+# section as well as all other lines.
+<item-body>
+    ::= 2 <line> <newline> <paragraph-indented-two>
+    | 2 <line> <newline> <paragraph-indented-two> <newline>
+    | 2 <line> <newline>
+    | 2 <line>
+    | @IndentError
+      <line> <newline> <paragraph>
+    | @IndentError
+      <line> <newline> <paragraph> <newline>

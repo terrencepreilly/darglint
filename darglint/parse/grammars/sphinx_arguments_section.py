@@ -1,4 +1,4 @@
-# Generated on 2020-03-07 20:54:09.660148
+# Generated on 2020-03-08 09:43:57.233011
 
 from darglint.parse.grammar import (
     BaseGrammar,
@@ -11,6 +11,10 @@ from darglint.token import (
 
 from darglint.parse.identifiers import (
     NoqaIdentifier,
+)
+
+from darglint.errors import (
+    EmptyDescriptionError,
 )
 
 class ArgumentsGrammar(BaseGrammar):

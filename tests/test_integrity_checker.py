@@ -18,6 +18,7 @@ from darglint.function_description import (
     get_function_descriptions,
 )
 from darglint.errors import (
+    EmptyDescriptionError,
     ExcessParameterError,
     ExcessRaiseError,
     ExcessVariableError,
@@ -28,8 +29,8 @@ from darglint.errors import (
     MissingRaiseError,
     MissingReturnError,
     MissingYieldError,
-    ParameterTypeMissingError,
     ParameterTypeMismatchError,
+    ParameterTypeMissingError,
     ReturnTypeMismatchError,
 )
 
@@ -119,11 +120,31 @@ class IntegrityCheckerSphinxTestCase(TestCase):
         function = get_function_descriptions(tree)[0]
         checker = IntegrityChecker(self.config)
         checker.run_checks(function)
-        # errors = checker.errors
-        # self.assertEqual(
-        #     len(errors), 1,
-        #     [(x.message()) for x in errors]
-        # )
+        errors = checker.errors
+        self.assertEqual(
+            len(errors), 1,
+            [(x.message()) for x in errors]
+        )
+
+    @skip('Production doesn\'t get translated correctly.')
+    def test_empty_description_error(self):
+        program = '\n'.join([
+            'def f(x):',
+            '    """Makes the thing scream.'
+            '    ',
+            '    :param x:',
+            '    """',
+            '    x.scream()',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        checker = IntegrityChecker(self.config)
+        checker.run_checks(function)
+        errors = checker.errors
+        self.assertEqual(
+            len(errors), 1,
+        )
+        self.assertTrue(isinstance(errors[0], EmptyDescriptionError))
 
     def test_missing_parameter_types(self):
         program = '\n'.join([
@@ -711,8 +732,9 @@ class IntegrityCheckerTestCase(TestCase):
         functions = get_function_descriptions(tree)
         checker = IntegrityChecker()
         checker.run_checks(functions[0])
-        # errors = checker.errors
-        # self.assertTrue(isinstance(errors[0], EmptyDescriptionError))
+        errors = checker.errors
+        self.assertEqual(len(errors), 1)
+        self.assertTrue(isinstance(errors[0], EmptyDescriptionError))
 
     def test_bare_noqa(self):
         program = '\n'.join([
