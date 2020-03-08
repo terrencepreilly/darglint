@@ -1,4 +1,4 @@
-# Generated on 2020-03-08 09:43:57.233011
+# Generated on 2020-03-08 11:01:59.777239
 
 from darglint.parse.grammar import (
     BaseGrammar,
@@ -19,7 +19,7 @@ from darglint.errors import (
 
 class ArgumentsGrammar(BaseGrammar):
     productions = [
-        P("arguments-section", ([], "ahead", "item-body", 0)),
+        P("arguments-section", ([], "ahead", "item-body", 0), ([EmptyDescriptionError], "colon", "ahead-no-follow1", 0), ([EmptyDescriptionError], "colon", "ahead-no-follow5", 0), ([EmptyDescriptionError], "colon", "ahead-no-follow9", 0), ([EmptyDescriptionError], "colon", "ahead-no-follow14", 0)),
         P("ahead", ([], "colon", "ahead0", 0), ([], "colon", "ahead3", 0), ([], "colon", "ahead6", 0), ([], "colon", "ahead10", 0)),
         P("argument-type-section", (TokenType.COLON, 0), (TokenType.HASH, 0), (TokenType.INDENT, 0), (TokenType.LPAREN, 0), (TokenType.RPAREN, 0), (TokenType.WORD, 0), (TokenType.RAISES, 0), (TokenType.ARGUMENTS, 0), (TokenType.ARGUMENT_TYPE, 0), (TokenType.RETURNS, 0), (TokenType.RETURN_TYPE, 0), (TokenType.YIELDS, 0), (TokenType.YIELD_TYPE, 0), (TokenType.VARIABLES, 0), (TokenType.VARIABLE_TYPE, 0), (TokenType.NOQA, 0), (TokenType.OTHER, 0), (TokenType.RECEIVES, 0), (TokenType.WARNS, 0), (TokenType.SEE, 0), (TokenType.ALSO, 0), (TokenType.NOTES, 0), (TokenType.EXAMPLES, 0), (TokenType.REFERENCES, 0), (TokenType.HEADER, 0)),
         P("item-body", ([], "line", "item-body0", 0), ([], "line", "item-body1", 0), ([], "line", "item-body2", 0), ([], "word", "line", 0), ([], "word", "noqa-maybe", 0), ([NoqaIdentifier], "hash", "noqa", 0), ([NoqaIdentifier], "noqa-head", "noqa-statement1", 0), (TokenType.INDENT, 0), (TokenType.COLON, 0), (TokenType.HASH, 0), (TokenType.LPAREN, 0), (TokenType.RPAREN, 0), (TokenType.WORD, 0), (TokenType.RAISES, 0), (TokenType.ARGUMENTS, 0), (TokenType.ARGUMENT_TYPE, 0), (TokenType.RETURNS, 0), (TokenType.RETURN_TYPE, 0), (TokenType.YIELDS, 0), (TokenType.YIELD_TYPE, 0), (TokenType.VARIABLES, 0), (TokenType.VARIABLE_TYPE, 0), (TokenType.NOQA, 0), (TokenType.OTHER, 0), (TokenType.RECEIVES, 0), (TokenType.WARNS, 0), (TokenType.SEE, 0), (TokenType.ALSO, 0), (TokenType.NOTES, 0), (TokenType.EXAMPLES, 0), (TokenType.REFERENCES, 0), (TokenType.HEADER, 0)),
@@ -55,6 +55,20 @@ class ArgumentsGrammar(BaseGrammar):
         P("ahead11", ([], "argument-type-section", "ahead12", 0)),
         P("ahead12", ([], "newline", "ahead13", 0)),
         P("ahead13", ([], "block-indented", "newlines", 0), ([], "paragraph-indented", "block-indented0", 0), ([], "paragraph-indented", "block-indented1", 0), ([], "indented", "paragraph-indented0", 0), ([], "indented", "line", 0)),
+        P("ahead-no-follow1", ([], "arguments", "ahead-no-follow2", 0)),
+        P("ahead-no-follow2", ([], "word", "ahead-no-follow3", 0)),
+        P("ahead-no-follow3", ([], "colon", "newlines", 0), (TokenType.COLON, 0)),
+        P("ahead-no-follow5", ([], "arguments", "ahead-no-follow6", 0)),
+        P("ahead-no-follow6", ([], "newline", "ahead-no-follow7", 0)),
+        P("ahead-no-follow7", ([], "block-indented", "newlines", 0), ([], "paragraph-indented", "block-indented0", 0), ([], "paragraph-indented", "block-indented1", 0), ([], "indented", "paragraph-indented0", 0), ([], "indented", "line", 0)),
+        P("ahead-no-follow9", ([], "arguments", "ahead-no-follow10", 0)),
+        P("ahead-no-follow10", ([], "argument-type-section", "ahead-no-follow11", 0)),
+        P("ahead-no-follow11", ([], "word", "ahead-no-follow12", 0)),
+        P("ahead-no-follow12", ([], "colon", "newlines", 0), (TokenType.COLON, 0)),
+        P("ahead-no-follow14", ([], "arguments", "ahead-no-follow15", 0)),
+        P("ahead-no-follow15", ([], "argument-type-section", "ahead-no-follow16", 0)),
+        P("ahead-no-follow16", ([], "newline", "ahead-no-follow17", 0)),
+        P("ahead-no-follow17", ([], "block-indented", "newlines", 0), ([], "paragraph-indented", "block-indented0", 0), ([], "paragraph-indented", "block-indented1", 0), ([], "indented", "paragraph-indented0", 0), ([], "indented", "line", 0)),
         P("item-body0", ([], "newline", "block-indented", 0)),
         P("item-body1", ([], "newlines", "block-indented", 0), ([], "paragraph-indented", "block-indented0", 0), ([], "paragraph-indented", "block-indented1", 0), ([], "indented", "paragraph-indented0", 0), ([], "indented", "line", 0)),
         P("item-body2", ([], "newline", "item-body3", 0)),

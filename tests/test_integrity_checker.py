@@ -126,25 +126,39 @@ class IntegrityCheckerSphinxTestCase(TestCase):
             [(x.message()) for x in errors]
         )
 
-    @skip('Production doesn\'t get translated correctly.')
     def test_empty_description_error(self):
-        program = '\n'.join([
-            'def f(x):',
+        program_template = '\n'.join([
+            'def f():',
             '    """Makes the thing scream.'
             '    ',
-            '    :param x:',
+            '    :{}:',
             '    """',
-            '    x.scream()',
+            '    scream()',
         ])
-        tree = ast.parse(program)
-        function = get_function_descriptions(tree)[0]
-        checker = IntegrityChecker(self.config)
-        checker.run_checks(function)
-        errors = checker.errors
-        self.assertEqual(
-            len(errors), 1,
-        )
-        self.assertTrue(isinstance(errors[0], EmptyDescriptionError))
+
+        for section in ['param x', 'return', 'var x',
+                        'type x', 'vartype x', 'raises Exception',
+                        'yield', 'ytype', 'rtype']:
+            program = program_template.format(section)
+            tree = ast.parse(program)
+            function = get_function_descriptions(tree)[0]
+            checker = IntegrityChecker(self.config)
+            checker.run_checks(function)
+            errors = checker.errors
+            self.assertTrue(
+                len(errors) > 0,
+                'EmptyDescriptionError not defined for {}'.format(section),
+            )
+            self.assertTrue(
+                any([
+                    isinstance(error, EmptyDescriptionError)
+                    for error in errors
+                ]),
+                'EmptyDescriptionError not defined for {}: {}'.format(
+                    section,
+                    errors,
+                ),
+            )
 
     def test_missing_parameter_types(self):
         program = '\n'.join([

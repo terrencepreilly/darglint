@@ -1,11 +1,16 @@
 import sphinx_base.bnf
 
+from darglint.errors import (
+    EmptyDescriptionError,
+)
+
 Grammar: YieldsGrammar
 
 start: <yields-section>
 
 <yields-section>
     ::= <yhead> <item-body> <newlines>
+    | <yhead-no-follow> <newlines>
 
 <yield-type-section>
     ::= <word>
@@ -13,3 +18,9 @@ start: <yields-section>
 <yhead>
     ::= <colon> <yields> <colon>
     | <colon> <yields> <yield-type-section> <colon>
+
+<yhead-no-follow>
+    ::= @EmptyDescriptionError
+        <colon> <yields> <colon>
+    | @EmptyDescriptionError
+        <colon> <yields> <yield-type-section> <colon>

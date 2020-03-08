@@ -1,14 +1,23 @@
 import sphinx_base.bnf
 
+from darglint.errors import (
+    EmptyDescriptionError,
+)
+
 Grammar: ReturnTypeGrammar
 
 start: <return-type-section>
 
 <return-type-section>
     ::= <rthead> <rtbody> <newlines>
+    | <rthead-no-follow> <newlines>
 
 <rthead>
     ::= <colon> <return-type> <colon>
+
+<rthead-no-follow>
+    ::= @EmptyDescriptionError
+        <colon> <return-type> <colon>
 
 <rtbody>
     ::= <line>

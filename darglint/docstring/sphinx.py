@@ -119,7 +119,7 @@ class Docstring(BaseDocstring):
         ret = dict()  # type: Dict[str, Optional[str]]
         for section in self._lookup['arguments-section']:
             assert section.lchild
-            argument = section.lchild.first_instance('word')
+            argument = section.first_instance('word')
             if argument and argument.value:
                 ret[argument.value.value] = None
         for argtype in self._lookup['argument-type-section']:

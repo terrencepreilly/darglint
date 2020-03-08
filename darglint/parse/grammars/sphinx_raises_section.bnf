@@ -1,5 +1,9 @@
 import sphinx_base.bnf
 
+from darglint.errors import (
+    EmptyDescriptionError,
+)
+
 
 Grammar: RaisesGrammar
 
@@ -8,6 +12,11 @@ start: <raises-section>
 <raises-section>
     ::= <rhead> <item-body> <newlines>
     | <rhead> <blanks> <item-body> <newlines>
+    | <rhead-no-follow> <newlines>
 
 <rhead>
     ::= <colon> <raises> <word> <colon>
+
+<rhead-no-follow>
+    ::= @EmptyDescriptionError
+        <colon> <raises> <word> <colon>

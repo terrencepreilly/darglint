@@ -1,16 +1,25 @@
 import sphinx_base.bnf
 
+from darglint.errors import (
+    EmptyDescriptionError,
+)
+
 
 Grammar: VariablesSectionGrammar
 
 start: <variables-section>
 
 <variables-section>
-    ::= <vhead> <item-body>
+    ::= <vhead> <item-body> <newlines>
+    | <vhead-no-follow> <newlines>
 
 <vhead>
     ::= <colon> <variables> <word> <colon>
     | <colon> <variables> <variable-type-section> <word> <colon>
+
+<vhead-no-follow>
+    ::= @EmptyDescriptionError <colon> <variables> <word> <colon>
+    | @EmptyDescriptionError <colon> <variables> <variable-type-section> <word> <colon>
 
 <variable-type-section>
     ::= <word>

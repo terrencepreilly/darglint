@@ -1,11 +1,19 @@
 import sphinx_base.bnf
 
+from darglint.errors import (
+    EmptyDescriptionError,
+)
+
 Grammar: YieldTypeGrammar
 
 start: <yield-type-section>
 
 <yield-type-section>
     ::= <ythead> <item-body> <newlines>
+    | <ythead-no-follow> <newlines>
 
 <ythead>
     ::= <colon> <yield-type> <colon>
+
+<ythead-no-follow>
+    ::= @EmptyDescriptionError <colon> <yield-type> <colon>

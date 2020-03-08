@@ -1,11 +1,20 @@
 import sphinx_base.bnf
 
+from darglint.errors import (
+    EmptyDescriptionError,
+)
+
 Grammar: ArgumentTypeGrammar
 
 start: <argument-type-section>
 
 <argument-type-section>
     ::= <ahead> <item-body> <newlines>
+    | <ahead-no-follow> <newlines>
 
 <ahead>
     ::= <colon> <argument-type> <word> <colon>
+
+<ahead-no-follow>
+    ::= @EmptyDescriptionError
+        <colon> <argument-type> <word> <colon>

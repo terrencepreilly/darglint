@@ -1,4 +1,4 @@
-# Generated on 2020-03-07 20:52:53.238934
+# Generated on 2020-03-08 11:23:24.498926
 
 from darglint.parse.grammar import (
     BaseGrammar,
@@ -13,10 +13,15 @@ from darglint.parse.identifiers import (
     NoqaIdentifier,
 )
 
+from darglint.errors import (
+    EmptyDescriptionError,
+)
+
 class RaisesGrammar(BaseGrammar):
     productions = [
-        P("raises-section", ([], "rhead", "raises-section1", 0), ([], "rhead", "raises-section2", 0)),
+        P("raises-section", ([], "rhead", "raises-section1", 0), ([], "rhead", "raises-section2", 0), ([], "rhead-no-follow", "newlines", 0), ([EmptyDescriptionError], "colon", "rhead-no-follow1", 0)),
         P("rhead", ([], "colon", "rhead0", 0)),
+        P("rhead-no-follow", ([EmptyDescriptionError], "colon", "rhead-no-follow1", 0)),
         P("item-body", ([], "line", "item-body0", 0), ([], "line", "item-body1", 0), ([], "line", "item-body2", 0), ([], "word", "line", 0), ([], "word", "noqa-maybe", 0), ([NoqaIdentifier], "hash", "noqa", 0), ([NoqaIdentifier], "noqa-head", "noqa-statement1", 0), (TokenType.INDENT, 0), (TokenType.COLON, 0), (TokenType.HASH, 0), (TokenType.LPAREN, 0), (TokenType.RPAREN, 0), (TokenType.WORD, 0), (TokenType.RAISES, 0), (TokenType.ARGUMENTS, 0), (TokenType.ARGUMENT_TYPE, 0), (TokenType.RETURNS, 0), (TokenType.RETURN_TYPE, 0), (TokenType.YIELDS, 0), (TokenType.YIELD_TYPE, 0), (TokenType.VARIABLES, 0), (TokenType.VARIABLE_TYPE, 0), (TokenType.NOQA, 0), (TokenType.OTHER, 0), (TokenType.RECEIVES, 0), (TokenType.WARNS, 0), (TokenType.SEE, 0), (TokenType.ALSO, 0), (TokenType.NOTES, 0), (TokenType.EXAMPLES, 0), (TokenType.REFERENCES, 0), (TokenType.HEADER, 0)),
         P("blanks", ([], "newline", "split0", 0), ([], "newline", "split-indented0", 0), (TokenType.NEWLINE, 0)),
         P("block-indented", ([], "paragraph-indented", "block-indented0", 0), ([], "paragraph-indented", "block-indented1", 0), ([], "indented", "paragraph-indented0", 0), ([], "indented", "line", 0)),
@@ -42,6 +47,8 @@ class RaisesGrammar(BaseGrammar):
         P("raises-section3", ([], "item-body", "newlines", 0), ([], "line", "item-body0", 0), ([], "line", "item-body1", 0), ([], "line", "item-body2", 0), ([], "word", "line", 0), ([], "word", "noqa-maybe", 0), ([NoqaIdentifier], "hash", "noqa", 0), ([NoqaIdentifier], "noqa-head", "noqa-statement1", 0), (TokenType.INDENT, 0), (TokenType.COLON, 0), (TokenType.HASH, 0), (TokenType.LPAREN, 0), (TokenType.RPAREN, 0), (TokenType.WORD, 0), (TokenType.RAISES, 0), (TokenType.ARGUMENTS, 0), (TokenType.ARGUMENT_TYPE, 0), (TokenType.RETURNS, 0), (TokenType.RETURN_TYPE, 0), (TokenType.YIELDS, 0), (TokenType.YIELD_TYPE, 0), (TokenType.VARIABLES, 0), (TokenType.VARIABLE_TYPE, 0), (TokenType.NOQA, 0), (TokenType.OTHER, 0), (TokenType.RECEIVES, 0), (TokenType.WARNS, 0), (TokenType.SEE, 0), (TokenType.ALSO, 0), (TokenType.NOTES, 0), (TokenType.EXAMPLES, 0), (TokenType.REFERENCES, 0), (TokenType.HEADER, 0)),
         P("rhead0", ([], "raises", "rhead1", 0)),
         P("rhead1", ([], "word", "colon", 0)),
+        P("rhead-no-follow1", ([], "raises", "rhead-no-follow2", 0)),
+        P("rhead-no-follow2", ([], "word", "colon", 0)),
         P("item-body0", ([], "newline", "block-indented", 0)),
         P("item-body1", ([], "newlines", "block-indented", 0), ([], "paragraph-indented", "block-indented0", 0), ([], "paragraph-indented", "block-indented1", 0), ([], "indented", "paragraph-indented0", 0), ([], "indented", "line", 0)),
         P("item-body2", ([], "newline", "item-body3", 0)),
