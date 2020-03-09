@@ -401,31 +401,23 @@ Then run `pre-commit install` and you're ready to go. Before commiting,
 is notified and the commit is aborted. Store necessary configuration (such as
 error formatting) in `.darglint`, `config.cfg` or `tox.ini`.
 
+
 ## Roadmap
 
-The below list is the current roadmap for *darglint*.  For each
-version number, it specifies which features will be added.
-To see the most recently implemented features, see the *CHANGELOG*.
-
-
-### 1.0
+Below are some of the current features or efforts.  Where a milestone or
+issue is associated with the idea, it will be mentioned.  Some of these
+ideas are moonshots and may not get implemented.  They are ordered
+roughly according to current priority/feasibility.
 
 - [ ] Robust logging for errors caused/encountered by *darglint*.
-- [ ] Add style errors and suggestions.  In particular, allow for multiple
-levels of strictness, (lenient by default).  Then warn for no newline after
-short description, and for excess whitespace between sections, etc.
-- [ ] Add support for numpydoc style docstrings.
-
-
-
-### Other features
-I haven't decided when to add the below features.
-
+- [ ] Check super classes of errors/exceptions raised to allow for more
+general descriptions in the interface.
+- [ ] Check class docstrings (See Issue #25).
+- [ ] Autoformatting docstrings.  (See Milestone #3).
 - [ ] ALE support.
 - [ ] Syntastic support. (Syntastic is not accepting new checkers until
 their next API stabilizes, so this may take some time.)
-- [ ] Check super classes of errors/exceptions raised to allow for more
-general descriptions in the interface.
+
 
 ## Development and Contributions
 
@@ -481,3 +473,6 @@ If you would like to tackle an issue or feature, email me or comment on the
 issue to make sure it isn't already being worked on.  Contributions will
 be accepted through pull requests.  New features should include unit tests,
 and, of course, properly formatted documentation.
+
+Also, check out the wiki prior to updating the grammar.  It includes a
+description of darglint's parsing pipline.
