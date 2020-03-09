@@ -851,6 +851,21 @@ class DocstringForNumpyTest(TestCase):
             ['x', 'y', 'z'],
         )
 
+    def test_arguments_without_description(self):
+        raw_docstring = '\n'.join([
+            'Has arguments.',
+            '',
+            'Parameters',
+            '----------',
+            'x',
+            '',
+        ])
+        docstring = Docstring.from_numpy(raw_docstring)
+        self.assertEqual(
+            docstring.get_items(Sections.ARGUMENTS_SECTION),
+            ['x'],
+        )
+
     def test_arguments_section_with_break_after_description(self):
         raw_docstring = '\n'.join([
             'Has arguments.',

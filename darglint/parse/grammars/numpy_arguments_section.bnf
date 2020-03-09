@@ -2,6 +2,9 @@ import terminals.bnf
 import noqa_statement.bnf
 import numpy.bnf
 
+from darglint.errors import (
+    EmptyDescriptionError,
+)
 from darglint.parse.grammar import (
     BaseGrammar,
     P,
@@ -27,15 +30,29 @@ start: <arguments-section>
 <arguments-body>
     ::= <argument-item-header> <argument-item-body> <newline> <arguments-body>
     | <argument-item-header> <argument-item-body>
+    | <argument-item-header-no-follow> <newline> <arguments-body>
+    | <argument-item-header-no-follow>
 
 <argument-item-header>
     ::= @ArgumentItemIdentifier
-        <ident-list> <newline>
+        <ident-list> <newlines>
     | @ArgumentItemIdentifier
-        <ident-list> <colon> <newline>
+        <ident-list> <colon> <newlines>
     | @ArgumentItemIdentifier
       @ArgumentTypeIdentifier
-        <ident-list> <colon> <line> <newline>
+        <ident-list> <colon> <line> <newlines>
+
+<argument-item-header-no-follow>
+    ::= @ArgumentItemIdentifier
+        @EmptyDescriptionError
+        <ident-list> <newlines>
+    | @ArgumentItemIdentifier
+      @EmptyDescriptionError
+        <ident-list> <colon> <newlines>
+    | @ArgumentItemIdentifier
+      @ArgumentTypeIdentifier
+      @EmptyDescriptionError
+        <ident-list> <colon> <line> <newlines>
 
 <argument-item-body>
     ::= <block-indented> <newlines>

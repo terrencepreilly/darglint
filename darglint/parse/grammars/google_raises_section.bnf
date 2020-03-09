@@ -3,6 +3,7 @@ import google_types.bnf
 
 from darglint.errors import (
     IndentError,
+    EmptyDescriptionError,
 )
 from darglint.parse.identifiers import (
     ExceptionIdentifier,
@@ -31,6 +32,8 @@ start: <raises-section>
     | @IndentError
       @ExceptionItemIdentifier
       <head-exception> <line> <newline> <paragraph> <newline>
+    | @EmptyDescriptionError
+      <head-exception>
 
 <head-exception>
     ::= @ExceptionIdentifier <indent> <exception> <colon>

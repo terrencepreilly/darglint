@@ -73,6 +73,46 @@ class IntegrityCheckerNumpyTestCase(TestCase):
         )
         self.assertTrue(isinstance(errors[0], MissingParameterError))
 
+    @skip('See Issue #69: https://github.com/terrencepreilly/darglint/issues/69#issuecomment-596273866')  # noqa: E501
+    def test_empty_description_error(self):
+        program_template = '\n'.join([
+            'def f():',
+            '    """Has arguments.',
+            '    ',
+            '    {}',
+            '    {}',
+            '    {}',
+            '',
+            '    """',
+            '    scream()',
+        ])
+
+        for section, item in [('Parameters', 'x')]:
+            program = program_template.format(
+                section,
+                '-' * len(section),
+                item,
+            )
+            tree = ast.parse(program)
+            function = get_function_descriptions(tree)[0]
+            checker = IntegrityChecker(self.config)
+            checker.run_checks(function)
+            errors = checker.errors
+            self.assertTrue(
+                len(errors) > 0,
+                'EmptyDescriptionError not defined for {}'.format(section),
+            )
+            self.assertTrue(
+                any([
+                    isinstance(error, EmptyDescriptionError)
+                    for error in errors
+                ]),
+                'EmptyDescriptionError not defined for {}: {}'.format(
+                    section,
+                    errors,
+                ),
+            )
+
 
 class IntegrityCheckerSphinxTestCase(TestCase):
 
@@ -732,23 +772,37 @@ class IntegrityCheckerTestCase(TestCase):
         self.assertTrue(isinstance(errors[0], IndentError))
 
     def test_raises_style_error_if_no_content_after_colon(self):
-        program = '\n'.join([
-            'def hello_world(name):',
+        program_template = '\n'.join([
+            'def hello_world():',
             '    """Tell the person hello.',
             '',
-            '    Args:',
-            '        name:',
+            '    {}:',
+            '        {}:',
             '',
             '    """',
-            '    print("Hello, {}".format(name))',
+            '    person.hello()',
         ])
-        tree = ast.parse(program)
-        functions = get_function_descriptions(tree)
-        checker = IntegrityChecker()
-        checker.run_checks(functions[0])
-        errors = checker.errors
-        self.assertEqual(len(errors), 1)
-        self.assertTrue(isinstance(errors[0], EmptyDescriptionError))
+        for section, item in [
+            ('Args', 'name'),
+            ('Raises', 'Exception'),
+        ]:
+            program = program_template.format(section, item)
+            tree = ast.parse(program)
+            functions = get_function_descriptions(tree)
+            checker = IntegrityChecker()
+            checker.run_checks(functions[0])
+            errors = checker.errors
+            self.assertTrue(
+                len(errors) > 0,
+                'Failed to raise any errors for {}'.format(section),
+            )
+            self.assertTrue(
+                any([
+                    isinstance(error, EmptyDescriptionError)
+                    for error in errors
+                ]),
+                'Failed to raise EmptyDescriptionError for {}'.format(section),
+            )
 
     def test_bare_noqa(self):
         program = '\n'.join([
