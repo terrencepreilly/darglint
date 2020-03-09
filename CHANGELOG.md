@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   Thanks to @mikaelKvalvaer for the PR and @nioncode for
   pointing out the advantages of this configuration.
 
+### Fixed
+
+- Fixed the handling of breaks in item descriptions.  Thanks to
+  lvermue@ for the pull request and submitting the bug.
+
 ## [1.2.0]
 
 ### Added
