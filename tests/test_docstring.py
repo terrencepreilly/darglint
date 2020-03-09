@@ -663,6 +663,37 @@ class DocstringForSphinxTests(TestCase):
             docstring.get_section(Sections.RETURNS_SECTION),
         ]))
 
+    def test_has_everything_for_sphinx_multiline(self):
+        has_everything_multiline_root = '\n'.join([
+            'Short decscription.',
+            '',
+            'Long description.',
+            '',
+            ':param Test: Some value.',
+            '    Over multiples lines.',
+            ':raises IntegrityError: Sometimes.',
+            '    Also over multiples lines',
+            ':yields: The occasional value.',
+            ':returns: When it completes.',
+            '    But what about multiple lines?',
+            ''
+        ])
+        docstring = Docstring.from_sphinx(has_everything_multiline_root)
+        for section in [
+            Sections.SHORT_DESCRIPTION,
+            Sections.LONG_DESCRIPTION,
+            Sections.ARGUMENTS_SECTION,
+            Sections.RAISES_SECTION,
+            Sections.YIELDS_SECTION,
+            Sections.RETURNS_SECTION,
+        ]:
+            self.assertTrue(
+                docstring.get_section(section),
+                'Expected to have section {}, but it did not.'.format(
+                    section,
+                )
+            )
+
     def test_get_argument_types(self):
         """Make sure we can get a dictionary of arguments to types."""
         root = '\n'.join([

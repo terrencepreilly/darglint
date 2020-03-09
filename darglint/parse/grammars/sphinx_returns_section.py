@@ -1,4 +1,4 @@
-# Generated on 2020-03-08 11:19:20.999242
+# Generated on 2020-03-09 06:48:02.091446
 
 from darglint.parse.grammar import (
     BaseGrammar,
@@ -55,7 +55,7 @@ class ReturnsGrammar(BaseGrammar):
         P("item-body5", ([], "newlines", "block-indented", 0), ([], "paragraph-indented", "block-indented0", 0), ([], "paragraph-indented", "block-indented1", 0), ([], "indented", "paragraph-indented0", 0), ([], "indented", "line", 0)),
         P("block-indented0", ([], "split", "block-indented", 0)),
         P("block-indented1", ([], "split-indented", "block-indented", 0)),
-        P("split-indented0", ([], "indents", "newlines", 0), ([], "indent", "indents", 0), (TokenType.INDENT, 0), ([], "newline", "newlines", 0), (TokenType.NEWLINE, 0)),
+        P("split-indented0", ([], "indents", "newlines", 0), ([], "newline", "newlines", 0), (TokenType.NEWLINE, 0), ([], "indent", "indents", 0), (TokenType.INDENT, 0)),
         P("paragraph-indented0", ([], "line", "paragraph-indented1", 0)),
         P("paragraph-indented1", ([], "newline", "paragraph-indented", 0)),
         P("split0", ([], "newline", "newlines", 0), (TokenType.NEWLINE, 0)),
