@@ -1,6 +1,7 @@
-- id: darglint
-  name: darglint
-  description: "darglint: a functional docstring linter which checks whether a
-  docstring's' description matches the actual function/method implementation"
-  entry: darglint
-  language: python
+-   id: darglint
+    name: darglint
+    description: '`darglint` is a tool for linting python docstrings.'
+    entry: darglint
+    language: python
+    types: [python]
+    require_serial: true
