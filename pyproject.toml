@@ -1,9 +1,21 @@
 [tool.poetry]
 name = "darglint"
-version = "1.0.0-alpha.1"
+version = "1.2.1"
 description = "A utility for ensuring Google-style docstrings stay up to date with the source code."
 authors = ["terrencepreilly <terrencepreilly@gmail.com>"]
 license = "MIT"
+keywords = ["documentation", "linter", "development"]
+classifiers = [
+    'Intended Audience :: Developers',
+    'Topic :: Software Development :: Documentation',
+    'Topic :: Software Development :: Quality Assurance',
+    'License :: OSI Approved :: MIT License',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.5',
+]
+readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.7"
@@ -16,6 +28,12 @@ neovim = "^0.3.1"
 mypy = "^0.730.0"
 pydocstyle = "^4.0"
 twine = "^3.1"
+
+[tool.poetry.scripts]
+darglint = "darglint.driver:main"
+
+[tool.poetry.plugins."flake8.extension"]
+"DAR" = "darglint.flake8_entry:DarglintChecker"
 
 [build-system]
 requires = ["poetry>=0.12"]
