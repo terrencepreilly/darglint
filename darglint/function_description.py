@@ -14,6 +14,9 @@ from typing import (
     Any,
 )
 
+from .analysis.raise_visitor import (
+    RaiseVisitor,
+)
 from .config import get_logger
 
 
@@ -240,14 +243,9 @@ def _get_exception_name(raises):  # type: (ast.Raise) -> str
 
 
 def _get_exceptions_raised(fn):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Set[str]  # noqa: E501
-    ret = set()  # type: Set[str]
-    for raises in _get_all_raises(fn):
-        # TODO: Handle this?
-        # There is a bare raise in the function, no type given.
-        if raises.exc is None:
-            continue
-        ret.add(_get_exception_name(raises))
-    return ret
+    visitor = RaiseVisitor()
+    visitor.visit(fn)
+    return visitor.exceptions
 
 
 def _get_return_type(fn):

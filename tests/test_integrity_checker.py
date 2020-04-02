@@ -251,6 +251,28 @@ class IntegrityCheckerSphinxTestCase(TestCase):
         self.assertTrue(isinstance(errors[0], ExcessVariableError))
         self.assertEqual(errors[0].terse_message, '+v pi')
 
+    def test_catch_and_raise(self):
+        program = '\n'.join([
+            'def false_positive() -> None:',
+            '    """summary',
+            '',
+            '    :raises ValueError: description',
+            '    """',
+            '    try:',
+            '        raise ValueError("233")',
+            '    except ValueError as e:',
+            '        raise e from None',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        checker = IntegrityChecker(self.config)
+        checker.run_checks(function)
+        self.assertEqual(
+            len(checker.errors),
+            0,
+            checker.errors,
+        )
+
 
 class IntegrityCheckerTestCase(TestCase):
 

@@ -4,13 +4,73 @@ This file should not be imported into Darglint,
 and should ideally be excluded from the sources.
 
 """
-
-from .node import CykNode
+from ast import (
+    AST,
+)
+from collections import (
+    deque,
+)
 from typing import (
     Any,
-    Set,
+    List,
     Optional,
+    Set,
 )
+from .node import CykNode
+
+
+class AstNodeUtils(object):
+
+    @staticmethod
+    def iter_fields(node):
+        for field in node._fields:
+            try:
+                yield field, getattr(node, field)
+            except AttributeError:
+                pass
+
+    @staticmethod
+    def to_dot(node):
+        # type: (AST) -> str
+        dot = ['digraph G {']  # type: List[str]
+        id = 0
+        queue = deque([(id, node)])
+        while queue:
+            parent_id, curr = queue.pop()
+            dot.insert(1, '  {}_{} [label="{}"];'.format(
+                curr.__class__.__name__,
+                parent_id,
+                curr.__class__.__name__,
+            ))
+            for field, value in AstNodeUtils.iter_fields(curr):
+                if isinstance(value, list):
+                    for item in value:
+                        if isinstance(item, AST):
+                            id += 1
+                            queue.appendleft((id, item))
+                            dot.append('  {}_{} -> {}_{};'.format(
+                                curr.__class__.__name__, parent_id,
+                                item.__class__.__name__, id,
+                            ))
+                elif isinstance(value, AST):
+                    id += 1
+                    queue.appendleft((id, value))
+                    dot.append('  {}_{} -> {}_{};'.format(
+                        curr.__class__.__name__, parent_id,
+                        value.__class__.__name__, id,
+                    ))
+        dot.append('}')
+        return '\n'.join(dot)
+
+# def generic_visit(self, node):
+#         """Called if no explicit visitor function exists for a node."""
+#         for field, value in iter_fields(node):
+#             if isinstance(value, list):
+#                 for item in value:
+#                     if isinstance(item, AST):
+#                         self.visit(item)
+#             elif isinstance(value, AST):
+#                 self.visit(value)
 
 
 class CykNodeUtils(object):
