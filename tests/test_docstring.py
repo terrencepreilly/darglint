@@ -694,6 +694,19 @@ class DocstringForSphinxTests(TestCase):
                 )
             )
 
+    def test_arguments_section_with_newline(self):
+        """Make sure we can parse an arguments section with a newline."""
+        root = '\n'.join([
+            'Something.',
+            '',
+            ':param condition:',
+            '    The first.',
+            '\n',
+        ])
+        docstring = Docstring.from_sphinx(root)
+        items = docstring.get_items(Sections.ARGUMENTS_SECTION)
+        self.assertEqual(items, ['condition'])
+
     def test_get_argument_types(self):
         """Make sure we can get a dictionary of arguments to types."""
         root = '\n'.join([
