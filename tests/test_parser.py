@@ -172,6 +172,18 @@ class DocstringTestCase(TestCase):
             ['param1', 'param2'],
         )
 
+    def test_type_is_type(self):
+        docstring = '\n'.join([
+            'Takes a class and returns an instance.',
+            '',
+            'Args:',
+            '    klass (type): A class to instantiate.',
+            '    args (List[int]): The initial arguments to pass to it.',
+            '',
+        ])
+        node = parse(condense(lex(docstring)))
+        self.assertTrue(CykNodeUtils.contains(node, 'type-section-parens'))
+
     def test_crazy_argument_type_signatures(self):
         possible_types = [
             # '(int)',

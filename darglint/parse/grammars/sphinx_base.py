@@ -1,4 +1,4 @@
-# Generated on 2020-03-07 20:52:20.534465
+# Generated on 2020-04-04 11:23:43.279344
 
 from darglint.parse.identifiers import (
     NoqaIdentifier,
@@ -78,3 +78,4 @@ class Grammar(BaseGrammar):
         P("noqa-statement0", ([], "noqa-head", "noqa-statement1", 0)),
         P("noqa-statement1", ([], "colon", "words", 0)),
     ]
+    start = "None"
