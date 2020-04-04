@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   Thanks to @mikaelKvalvaer for the PR and @nioncode for
   pointing out the advantages of this configuration.
 
+### Changed
+
+- Made error analysis more robust.  Previously, errors were
+  compared simply by looking a the name in the `raises` statement.
+  Now analysis builds contexts around try-except blocks, and
+  accounts for the catch-and-throw pattern.  Anything unusual
+  will still raise an error, but it's more robust than previously.
+
 ### Fixed
 
 - Fixed the handling of breaks in item descriptions.  Thanks to
