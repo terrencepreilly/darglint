@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "darglint"
-version = "1.2.1"
+version = "1.2.2"
 description = "A utility for ensuring Google-style docstrings stay up to date with the source code."
 authors = ["terrencepreilly <terrencepreilly@gmail.com>"]
 license = "MIT"
@@ -18,7 +18,7 @@ classifiers = [
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.5"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

@@ -191,7 +191,7 @@ def print_error_list():
 
 
 def print_version():
-    print('1.2.1')
+    print('1.2.2')
 
 
 def main():
