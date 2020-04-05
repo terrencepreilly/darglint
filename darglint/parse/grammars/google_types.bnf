@@ -24,7 +24,7 @@ start: <type-section>
     | ε
 
 <type-word-colon>
-    ::= "TokenType\.WORD"
+    ::= <ident>
     | "TokenType\.COLON"
     | "TokenType\.INDENT"
 
@@ -34,4 +34,4 @@ start: <type-section>
     | ε
 
 <type-word>
-    ::= "TokenType\.WORD"
+    ::= <ident>

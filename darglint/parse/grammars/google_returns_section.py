@@ -1,4 +1,4 @@
-# Generated on 2020-03-07 20:50:05.445922
+# Generated on 2020-04-04 11:23:38.917759
 
 from darglint.parse.grammar import (
     BaseGrammar,
@@ -40,8 +40,8 @@ class ReturnsGrammar(BaseGrammar):
         P("noqa-maybe", ([NoqaIdentifier], "hash", "noqa", 0), ([NoqaIdentifier], "noqa-head", "noqa-statement1", 0)),
         P("noqa-head", ([], "hash", "noqa", 0)),
         P("words", ([], "word", "words", 0), (TokenType.COLON, 0), (TokenType.HASH, 0), (TokenType.INDENT, 0), (TokenType.LPAREN, 0), (TokenType.RPAREN, 0), (TokenType.WORD, 0), (TokenType.RAISES, 0), (TokenType.ARGUMENTS, 0), (TokenType.ARGUMENT_TYPE, 0), (TokenType.RETURNS, 0), (TokenType.RETURN_TYPE, 0), (TokenType.YIELDS, 0), (TokenType.YIELD_TYPE, 0), (TokenType.VARIABLES, 0), (TokenType.VARIABLE_TYPE, 0), (TokenType.NOQA, 0), (TokenType.OTHER, 0), (TokenType.RECEIVES, 0), (TokenType.WARNS, 0), (TokenType.SEE, 0), (TokenType.ALSO, 0), (TokenType.NOTES, 0), (TokenType.EXAMPLES, 0), (TokenType.REFERENCES, 0), (TokenType.HEADER, 0)),
-        P("type-words", ([], "type-word", "type-words", 0), ([], "type-word", "type-words0", 0), (TokenType.WORD, 0)),
-        P("type-word", (TokenType.WORD, 0)),
+        P("type-words", ([], "type-word", "type-words", 0), ([], "type-word", "type-words0", 0), (TokenType.WORD, 0), (TokenType.RAISES, 0), (TokenType.ARGUMENTS, 0), (TokenType.ARGUMENT_TYPE, 0), (TokenType.RETURNS, 0), (TokenType.RETURN_TYPE, 0), (TokenType.YIELDS, 0), (TokenType.YIELD_TYPE, 0), (TokenType.VARIABLES, 0), (TokenType.VARIABLE_TYPE, 0), (TokenType.NOQA, 0), (TokenType.OTHER, 0), (TokenType.RECEIVES, 0), (TokenType.WARNS, 0), (TokenType.SEE, 0), (TokenType.ALSO, 0), (TokenType.NOTES, 0), (TokenType.EXAMPLES, 0), (TokenType.REFERENCES, 0)),
+        P("type-word", (TokenType.WORD, 0), (TokenType.RAISES, 0), (TokenType.ARGUMENTS, 0), (TokenType.ARGUMENT_TYPE, 0), (TokenType.RETURNS, 0), (TokenType.RETURN_TYPE, 0), (TokenType.YIELDS, 0), (TokenType.YIELD_TYPE, 0), (TokenType.VARIABLES, 0), (TokenType.VARIABLE_TYPE, 0), (TokenType.NOQA, 0), (TokenType.OTHER, 0), (TokenType.RECEIVES, 0), (TokenType.WARNS, 0), (TokenType.SEE, 0), (TokenType.ALSO, 0), (TokenType.NOTES, 0), (TokenType.EXAMPLES, 0), (TokenType.REFERENCES, 0)),
         P("returns-head0", ([], "colon", "newline", 0)),
         P("returns-body0", ([], "returns-type", "returns-content", 0)),
         P("returns-content0", ([], "newline", "returns-content1", 0)),
@@ -54,6 +54,6 @@ class ReturnsGrammar(BaseGrammar):
         P("split0", ([], "newline", "newlines", 0), (TokenType.NEWLINE, 0)),
         P("noqa-statement1", ([], "colon", "words", 0)),
         P("type-words0", ([], "newline", "type-words1", 0), (TokenType.NEWLINE, 0)),
-        P("type-words1", ([], "indents", "type-words", 0), ([], "type-word", "type-words", 0), ([], "type-word", "type-words0", 0), (TokenType.WORD, 0), ([], "indent", "indents", 0), (TokenType.INDENT, 0)),
+        P("type-words1", ([], "indents", "type-words", 0), ([], "indent", "indents", 0), (TokenType.INDENT, 0), ([], "type-word", "type-words", 0), ([], "type-word", "type-words0", 0), (TokenType.WORD, 0), (TokenType.RAISES, 0), (TokenType.ARGUMENTS, 0), (TokenType.ARGUMENT_TYPE, 0), (TokenType.RETURNS, 0), (TokenType.RETURN_TYPE, 0), (TokenType.YIELDS, 0), (TokenType.YIELD_TYPE, 0), (TokenType.VARIABLES, 0), (TokenType.VARIABLE_TYPE, 0), (TokenType.NOQA, 0), (TokenType.OTHER, 0), (TokenType.RECEIVES, 0), (TokenType.WARNS, 0), (TokenType.SEE, 0), (TokenType.ALSO, 0), (TokenType.NOTES, 0), (TokenType.EXAMPLES, 0), (TokenType.REFERENCES, 0)),
     ]
     start = "returns-section"

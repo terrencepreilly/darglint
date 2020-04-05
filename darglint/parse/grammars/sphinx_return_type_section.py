@@ -1,4 +1,4 @@
-# Generated on 2020-03-08 11:27:07.603590
+# Generated on 2020-04-04 11:23:45.693522
 
 from darglint.parse.grammar import (
     BaseGrammar,
@@ -46,7 +46,7 @@ class ReturnTypeGrammar(BaseGrammar):
         P("rthead-no-follow1", ([], "return-type", "colon", 0)),
         P("block-indented0", ([], "split", "block-indented", 0)),
         P("block-indented1", ([], "split-indented", "block-indented", 0)),
-        P("split-indented0", ([], "indents", "newlines", 0), ([], "newline", "newlines", 0), (TokenType.NEWLINE, 0), ([], "indent", "indents", 0), (TokenType.INDENT, 0)),
+        P("split-indented0", ([], "indents", "newlines", 0), ([], "indent", "indents", 0), (TokenType.INDENT, 0), ([], "newline", "newlines", 0), (TokenType.NEWLINE, 0)),
         P("paragraph-indented0", ([], "line", "paragraph-indented1", 0)),
         P("paragraph-indented1", ([], "newline", "paragraph-indented", 0)),
         P("split0", ([], "newline", "newlines", 0), (TokenType.NEWLINE, 0)),
