@@ -36,7 +36,7 @@ class SphinxParserTest(TestCase):
 
     def test_short_description_can_have_colons_cyk(self):
         """Make sure special characters are fine."""
-        content = ":param Something: Should be okay, I guess."
+        content = ":Something Should be okay, I guess."
         node = parse(condense(lex(content)))
         self.assertTrue(
             CykNodeUtils.contains(node, 'short-description')
@@ -306,6 +306,22 @@ class SphinxParserTest(TestCase):
         )
         self.assertTrue(
             CykNodeUtils.contains(node, 'arguments-section'),
+        )
+
+    def test_no_short_description_checks_for_others(self):
+        program = '\n'.join([
+            '@abstract.abstractmethod',
+            'def __init__(self, config: dict):',
+            '     """',
+            '',
+            '    :param config: config dict user defined in config file.',
+            '    """',
+        ])
+        doc = ast.get_docstring(ast.parse(program).body[0])
+        tokens = condense(lex(doc))
+        node = parse(tokens)
+        self.assertTrue(
+            CykNodeUtils.contains(node, 'arguments-section')
         )
 
 

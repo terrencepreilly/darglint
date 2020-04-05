@@ -144,7 +144,20 @@ def lookup(section, section_index=-1):
     else:
         grammars = [long_description_parse]
     if section_index == 0:
-        return [ShortDescriptionGrammar] + grammars
+        # Add the short description right before the long
+        # description.  That way, the short description will
+        # always be captured, if possible, and any other
+        # possible sections will be captured, if possible.
+        #
+        # Assumes that the long description will always come
+        # after all other possible grammars, if it appears at
+        # all.
+        if long_description_parse not in grammars:
+            grammars.append(ShortDescriptionGrammar)
+            return grammars
+        long_index = grammars.index(long_description_parse)
+        grammars.insert(long_index, ShortDescriptionGrammar)
+        return grammars
     return grammars
 
 
