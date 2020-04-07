@@ -19,8 +19,7 @@ from .docstring.base import DocstringStyle
 
 # TODO: Configure this logger and allow the user to specify
 # the whether they want warnings.
-#
-# All warnings will be printed at the ERROR level.
+logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger('darglint')
 
 POSSIBLE_CONFIG_FILENAMES = (

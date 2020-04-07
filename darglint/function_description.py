@@ -216,7 +216,7 @@ def _get_exception_name(raises):  # type: (ast.Raise) -> str
         elif hasattr(raises.exc.func, 'attr'):
             return getattr(raises.exc.func, 'attr')
         else:
-            logger.error(
+            logger.debug(
                 'Raises function call has neither id nor attr.'
                 'has only: %s' % str(dir(raises.exc.func))
             )
@@ -236,7 +236,7 @@ def _get_exception_name(raises):  # type: (ast.Raise) -> str
             n_repr,
         )
     else:
-        logger.error('Unexpected type in raises expression: {}'.format(
+        logger.debug('Unexpected type in raises expression: {}'.format(
             raises.exc
         ))
     return ''
@@ -330,7 +330,7 @@ class FunctionDescription(object):
             self.raises = _get_exceptions_raised(function)
         except Exception as ex:
             msg = '{}: {}'.format(self.name, ex)
-            logger.error(msg)
+            logger.debug(msg)
             raise
         self.variables = _get_all_variable_names(function)
 

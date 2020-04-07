@@ -48,7 +48,7 @@ class Context(object):
             elif hasattr(raises.exc.func, 'attr'):
                 return getattr(raises.exc.func, 'attr')
             else:
-                logger.error(
+                logger.debug(
                     'Raises function call has neither id nor attr.'
                     'has only: %s' % str(dir(raises.exc.func))
                 )
@@ -68,7 +68,7 @@ class Context(object):
                 n_repr,
             )
         else:
-            logger.error('Unexpected type in raises expression: {}'.format(
+            logger.debug('Unexpected type in raises expression: {}'.format(
                 raises.exc
             ))
         return ''
@@ -134,9 +134,13 @@ class RaiseVisitor(ast.NodeVisitor):
             if handler.type:
                 if handler.name and isinstance(handler.type, ast.Name):
                     self.context.add_variable(handler.name, handler.type)
-                id = getattr(handler.type, 'id')
-                if id:
-                    self.context.remove_exception(id)
+                if hasattr(handler.type, 'id'):
+                    id = getattr(handler.type, 'id')
+                    if id:
+                        self.context.remove_exception(id)
+                else:
+                    # TODO: What is this?  Only in 3.8?
+                    pass
             else:
                 self.context.remove_all_exceptions()
         for handler in node.handlers:
