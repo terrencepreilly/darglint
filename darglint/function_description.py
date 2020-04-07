@@ -331,7 +331,6 @@ class FunctionDescription(object):
         except Exception as ex:
             msg = '{}: {}'.format(self.name, ex)
             logger.debug(msg)
-            raise
         self.variables = _get_all_variable_names(function)
 
 
