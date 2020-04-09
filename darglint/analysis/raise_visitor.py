@@ -134,13 +134,9 @@ class RaiseVisitor(ast.NodeVisitor):
             if handler.type:
                 if handler.name and isinstance(handler.type, ast.Name):
                     self.context.add_variable(handler.name, handler.type)
-                if hasattr(handler.type, 'id'):
-                    id = getattr(handler.type, 'id')
-                    if id:
-                        self.context.remove_exception(id)
-                else:
-                    # TODO: What is this?  Only in 3.8?
-                    pass
+                id = getattr(handler.type, 'id', None)
+                if id:
+                    self.context.remove_exception(id)
             else:
                 self.context.remove_all_exceptions()
         for handler in node.handlers:
