@@ -1,5 +1,7 @@
 # Darglint
 
+[![Build Status](https://travis-ci.com/terrencepreilly/darglint.svg?branch=master)](https://travis-ci.com/terrencepreilly/darglint)
+
 A functional docstring linter which checks whether a docstring's
 description matches the actual function/method implementation.
 *Darglint* expects docstrings to be formatted using the
