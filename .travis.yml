@@ -1,0 +1,18 @@
+language: python
+
+dist: xenial
+
+install: pip install tox pytest
+
+script: tox
+
+matrix:
+  include:
+    - env: TOXENV=py35
+      python: 3.5
+    - env: TOXENV=py36
+      python: 3.6
+    - env: TOXENV=py37
+      python: 3.7
+    - env: TOXENV=py38
+      python: 3.8
