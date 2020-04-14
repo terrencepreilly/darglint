@@ -106,6 +106,8 @@ def _walk(fun, skip):
             queue.extendleft(curr.body)
         if hasattr(curr, 'handlers'):
             queue.extendleft(curr.handlers)
+        if hasattr(curr, 'orelse'):
+            queue.extendleft(curr.orelse)
         yield curr
 
 

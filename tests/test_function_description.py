@@ -173,6 +173,30 @@ class GetFunctionsAndDocstrings(TestCase):
         function = get_function_descriptions(tree)[0]
         self.assertTrue(function.has_return)
 
+    def test_return_in_try_else(self):
+        """Make sure we can have a return statement in any part of a try."""
+        program_template = '\n'.join([
+            'def check_module_installed(name):',
+            '    try:',
+            '        {}',
+            '    except ImportError:',
+            '        {}',
+            '    else:',
+            '        {}',
+        ])
+        for pattern in [
+            ['pass', 'pass', 'return name'],
+            ['pass', 'return name', 'pass'],
+            ['return name', 'pass', 'pass'],
+        ]:
+            program = program_template.format(*pattern)
+            tree = ast.parse(program)
+            function = get_function_descriptions(tree)[0]
+            self.assertTrue(
+                function.has_return,
+                'Failed for \n{}'.format(program),
+            )
+
     def test_keyword_only_arguments(self):
         """PEP 3102"""
         program = '\n'.join([
