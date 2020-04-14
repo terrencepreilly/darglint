@@ -4,6 +4,7 @@ import noqa_statement.bnf
 
 from darglint.errors import (
     EmptyDescriptionError,
+    EmptyTypeError,
     IndentError,
 )
 from darglint.parse.identifiers import (
@@ -31,6 +32,9 @@ start: <arguments-section>
 <head-argument>
     ::= @ArgumentIdentifier
       <indent> <ident> <colon>
+    | 2 @ArgumentIdentifier
+      @EmptyTypeError
+      <indent> <ident> <lparen> <rparen> <colon>
     | @ArgumentIdentifier
       @ArgumentTypeIdentifier
       <indent> <ident> <type-section-parens> <colon>

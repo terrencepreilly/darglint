@@ -19,6 +19,7 @@ from darglint.function_description import (
 )
 from darglint.errors import (
     EmptyDescriptionError,
+    EmptyTypeError,
     ExcessParameterError,
     ExcessRaiseError,
     ExcessVariableError,
@@ -885,6 +886,29 @@ class IntegrityCheckerTestCase(TestCase):
             '    return []',
         ])
         self.has_no_errors(program)
+
+    def test_empty_type_section(self):
+        program = '\n'.join([
+            'def foo(bar):',
+            '    """Foo.',
+            '',
+            '    Args:',
+            '        bar (): A bar.',
+            '    """',
+            '    print(bar)',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertEqual(
+            len(errors), 1,
+            [(x.message()) for x in errors]
+        )
+        self.assertTrue(isinstance(
+            errors[0], EmptyTypeError
+        ), errors[0].__class__.__name__)
 
 
 class StrictnessTests(TestCase):

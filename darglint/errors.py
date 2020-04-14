@@ -200,6 +200,34 @@ class ExcessNewlineError(DarglintError):
         )
 
 
+class EmptyTypeError(DarglintError):
+    """Describes when an item has parentheses, but no type."""
+
+    error_code = 'DAR005'
+    description = (
+        'The item contains a type section (parentheses), but no type.'
+    )
+
+    def __init__(self, function, message, line_numbers=None):
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None  # noqa: E501
+        """Instantiate the error's message.
+
+        Args:
+            function: An ast node for the function.
+            message: The parser error's message.
+            line_numbers: The line numbers where this error occurs.
+                Unused.
+
+        """
+        self.general_message = 'Empty type'
+        self.terse_message = 'e {}'.format(message)
+
+        super(EmptyTypeError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
+
+
 class MissingParameterError(DarglintError):
     """Describes when a docstring is missing a parameter in the definition."""
 
