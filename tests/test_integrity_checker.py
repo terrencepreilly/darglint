@@ -794,6 +794,30 @@ class IntegrityCheckerTestCase(TestCase):
         errors = checker.errors
         self.assertTrue(isinstance(errors[0], IndentError))
 
+    def test_catch_and_raise(self):
+        program = '\n'.join([
+            'def false_positive() -> None:',
+            '    """summary',
+            '',
+            '    Raises:',
+            '        ValueError: description',
+            '',
+            '    """',
+            '    try:',
+            '        raise ValueError("233")',
+            '    except ValueError as e:',
+            '        raise',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        checker = IntegrityChecker()
+        checker.run_checks(function)
+        self.assertEqual(
+            len(checker.errors),
+            0,
+            checker.errors,
+        )
+
     def test_raises_style_error_if_no_content_after_colon(self):
         program_template = '\n'.join([
             'def hello_world():',

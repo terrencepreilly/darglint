@@ -4,6 +4,7 @@ from collections import (
 )
 from typing import (
     Dict,
+    Optional,
     Set,
 )
 from ..config import get_logger
@@ -23,6 +24,12 @@ class Context(object):
         # If the variable name occurs in a raise expression,
         # then the exception will be added using this lookup.
         self.variables = dict()  # type: Dict[str, str]
+
+        # The error(s) which the current exception block is
+        # handling. (Since we only handle one handler at a time
+        # in the context, and since they don't repeat the
+        # exception, it's fine to overwrite this value.)
+        self.handling = None  # type: Optional[str]
 
     def _get_name_name(self, name):
         # type: (ast.Name) -> str
@@ -67,6 +74,8 @@ class Context(object):
                 id_repr,
                 n_repr,
             )
+        elif raises.exc is None:
+            return self.handling or ''
         else:
             logger.debug('Unexpected type in raises expression: {}'.format(
                 raises.exc
@@ -82,6 +91,7 @@ class Context(object):
         name = self._get_exception_name(node)
         if name in self.exceptions:
             self.exceptions.remove(name)
+            self.handling = name
 
     def remove_all_exceptions(self):
         # type: () -> None
@@ -98,6 +108,10 @@ class Context(object):
     def extend(self, other):
         # type: (Context) -> None
         self.exceptions |= other.exceptions
+
+    def finish_handling(self):
+        # type: () -> None
+        self.handling = None
 
 
 class RaiseVisitor(ast.NodeVisitor):
@@ -141,5 +155,10 @@ class RaiseVisitor(ast.NodeVisitor):
                 self.context.remove_all_exceptions()
         for handler in node.handlers:
             self.generic_visit(handler)
+
+            # We need to signal that we've finished handling
+            # the given handler section, otherwise the caught
+            # error could bleed over into a bare except clause.
+            self.context.finish_handling()
         context = self.contexts.pop()
         self.context.extend(context)

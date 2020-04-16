@@ -19,6 +19,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Handle empty type in Google-style arguments (previously raised
   an exception, now it's a darglint error with a description.)
 - Handle exceptions raised by the Python module, ast.
+- Handle a bare raise statement within an exception handler.
+  For example, if you have
+
+    try:
+        raise SyntaxError('Wrong!')
+    except SyntaxError:
+        raise
+
+  Then you know that you really have to document a syntax
+  error.
 
 ## [1.2.2]
 
