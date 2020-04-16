@@ -53,11 +53,11 @@ class ErrorReport(object):
         self.errors.sort(key=lambda x: x.function.lineno)
 
     def _group_errors_by_function(self):
-        # type: () -> Dict[Union[ast.FunctionDef, ast.AsyncFunctionDef], List[DarglintError]]
+        # type: () -> Dict[Union[ast.FunctionDef, ast.AsyncFunctionDef], List[DarglintError]]  # noqa: E501
         """Sort the current errors by function, and put into an OrderedDict.
 
         Returns:
-            An ordered dictionary of funcitons and their errors.
+            An ordered dictionary of functions and their errors.
 
         """
         self._sort()
@@ -68,6 +68,17 @@ class ErrorReport(object):
                 current = error.function
                 error_dict[current] = list()
             error_dict[current].append(error)
+
+        # Sort all of the errors returned by the function
+        # alphabetically.
+        for key in error_dict:
+            error_dict[key].sort(key=lambda x: x.message() or '')
+
+        # Sort all of the errors returned by the key
+        # by the line numbers.
+        for key in error_dict:
+            error_dict[key].sort(key=lambda x: x.line_numbers or (0, 0))
+
         return error_dict
 
     def _get_error_description(self, error):  # type: (DarglintError) -> str

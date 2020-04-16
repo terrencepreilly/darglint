@@ -104,6 +104,27 @@ class DarglintError(BaseException):
             raise NotImplementedError
 
 
+class PythonSyntaxError(DarglintError):
+    """Describes a syntax error in parsing the python module.."""
+
+    error_code = 'DAR000'
+    description = (
+        'Failed to parse file due to syntax error.'
+    )
+
+    def __init__(self, source):
+        # type: (SyntaxError) -> None  # noqa: E501
+        """Instantiate the error's message.
+
+        Args:
+            source: The syntax error which was raised by ast.
+
+        """
+        self.general_message = 'Python syntax error'
+        self.terse_message = 's {}'.format(source)
+        self.line_numbers = (source.lineno, source.lineno)
+
+
 class GenericSyntaxError(DarglintError):
     """Describes that something went wrong in parsing the docstring."""
 

@@ -21,6 +21,7 @@ from .config import (
 )
 from .docstring.base import DocstringStyle
 import darglint.errors
+from darglint.error_report import ErrorReport
 
 
 # ---------------------- ARGUMENT PARSER -----------------------------
@@ -165,19 +166,24 @@ def get_error_report(filename,
 
     """
     program = read_program(filename)
-    tree = ast.parse(program)
-    functions = get_function_descriptions(tree)
-    checker = IntegrityChecker(
-        config,
-        raise_errors=raise_errors_for_syntax,
-    )
-    for function in functions:
-        checker.schedule(function)
-    return checker.get_error_report_string(
-        verbosity,
-        filename,
-        message_template=message_template,
-    )
+    try:
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker(
+            config,
+            raise_errors=raise_errors_for_syntax,
+        )
+        for function in functions:
+            checker.schedule(function)
+        return checker.get_error_report_string(
+            verbosity,
+            filename,
+            message_template=message_template,
+        )
+    except SyntaxError as e:
+        error = darglint.errors.PythonSyntaxError(e)
+        report = ErrorReport([error], filename, verbosity, message_template)
+        return str(report)
 
 
 def print_error_list():
@@ -191,7 +197,7 @@ def print_error_list():
 
 
 def print_version():
-    print('1.2.2')
+    print('1.2.3')
 
 
 def main():

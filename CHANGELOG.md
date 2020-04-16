@@ -3,6 +3,23 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.2.3]
+
+### Changed
+
+- Made ordering of error messages more strict.  Error messages
+  are grouped by function, then sorted alphabetically, then
+  sorted in place by their line numbers within the function
+  groups.
+
+### Fixed
+
+- Handle the else branch of try-except statements when searching
+  for raise statements during analysis.
+- Handle empty type in Google-style arguments (previously raised
+  an exception, now it's a darglint error with a description.)
+- Handle exceptions raised by the Python module, ast.
+
 ## [1.2.2]
 
 ### Fixed
