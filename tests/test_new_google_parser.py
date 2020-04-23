@@ -291,3 +291,21 @@ class NewGoogleParserTests(TestCase):
             'arguments-section',
             str(node),
         )
+
+    def test_parse_raises_section_with_newline_after_item_name(self):
+        tokens = condense(lex('\n'.join([
+            'Raises:',
+            '    SyntaxError:',
+            '        There\'s basically a 50% chance of this.',
+            '    IOError:',
+            '    There\'s also a 90% chance of this.',
+            '    Exception:',
+            '            Overindented.',
+            '',
+        ])))
+        node = parse(tokens)
+        self.assertEqual(
+            node.symbol,
+            'raises-section',
+            str(node),
+        )

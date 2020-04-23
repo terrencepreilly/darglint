@@ -982,7 +982,13 @@ class DocstringTestCase(TestCase):
             'Returns:',
             '  A value.',
         ])
-        config = Configuration([], None, DocstringStyle.GOOGLE, Strictness.FULL_DESCRIPTION, indentation=2)
+        config = Configuration(
+            [],
+            None,
+            DocstringStyle.GOOGLE,
+            Strictness.FULL_DESCRIPTION,
+            indentation=2,
+        )
         tokens = condense(lex(docstring, config=config))
         node = parse(tokens)
         annotation_lookup = self.get_annotation_lookup(node)

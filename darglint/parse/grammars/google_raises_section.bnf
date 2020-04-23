@@ -32,6 +32,9 @@ start: <raises-section>
     | @IndentError
       @ExceptionItemIdentifier
       <head-exception> <line> <newline> <paragraph> <newline>
+    | @IndentError
+      @ExceptionItemIdentifier
+      <head-exception> <newline> <paragraph>
     | @EmptyDescriptionError
       <head-exception>
 
