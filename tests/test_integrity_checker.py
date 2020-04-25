@@ -5,7 +5,6 @@ from unittest import (
 )
 
 from darglint.config import (
-    Configuration,
     Strictness,
 )
 from darglint.docstring.base import (
@@ -34,17 +33,24 @@ from darglint.errors import (
     ParameterTypeMissingError,
     ReturnTypeMismatchError,
 )
+from .utils import (
+    ConfigurationContext,
+)
 
 
 class IntegrityCheckerNumpyTestCase(TestCase):
 
     def setUp(self):
-        self.config = Configuration(
+        self.context = ConfigurationContext(
             ignore=[],
             message_template=None,
             style=DocstringStyle.NUMPY,
             strictness=Strictness.FULL_DESCRIPTION,
         )
+        self.config = self.context.__enter__()
+
+    def tearDown(self):
+        self.context.__exit__(None, None, None)
 
     def test_missing_parameter(self):
         program = '\n'.join([
@@ -118,12 +124,16 @@ class IntegrityCheckerNumpyTestCase(TestCase):
 class IntegrityCheckerSphinxTestCase(TestCase):
 
     def setUp(self):
-        self.config = Configuration(
+        self.context = ConfigurationContext(
             ignore=[],
             message_template=None,
             style=DocstringStyle.SPHINX,
             strictness=Strictness.FULL_DESCRIPTION,
         )
+        self.config = self.context.__enter__()
+
+    def tearDown(self):
+        self.context.__exit__(None, None, None)
 
     def test_missing_parameter(self):
         """Make sure we capture missing parameters."""
@@ -215,17 +225,18 @@ class IntegrityCheckerSphinxTestCase(TestCase):
         tree = ast.parse(program)
         functions = get_function_descriptions(tree)
 
-        checker = IntegrityChecker(config=Configuration(
+        with ConfigurationContext(
             ignore=[],
             message_template=None,
             style=DocstringStyle.GOOGLE,
             strictness=Strictness.FULL_DESCRIPTION,
             enable=['DAR104']
-        ))
-        checker.run_checks(functions[0])
-        errors = checker.errors
-        self.assertEqual(len(errors), 1)
-        self.assertTrue(isinstance(errors[0], ParameterTypeMissingError))
+        ):
+            checker = IntegrityChecker()
+            checker.run_checks(functions[0])
+            errors = checker.errors
+            self.assertEqual(len(errors), 1)
+            self.assertTrue(isinstance(errors[0], ParameterTypeMissingError))
 
     def test_variable_doesnt_exist(self):
         """Ensure described variables must exist in the function."""
@@ -289,20 +300,19 @@ class IntegrityCheckerTestCase(TestCase):
         ])
         tree = ast.parse(program)
         functions = get_function_descriptions(tree)
-        checker = IntegrityChecker(
-            config=Configuration(
-                ignore=[],
-                message_template=None,
-                style=DocstringStyle.GOOGLE,
-                strictness=Strictness.FULL_DESCRIPTION,
-                ignore_regex=r'^_(.*)'
-            )
-        )
-        checker.run_checks(functions[0])
-        checker.run_checks(functions[1])
+        with ConfigurationContext(
+            ignore=[],
+            message_template=None,
+            style=DocstringStyle.GOOGLE,
+            strictness=Strictness.FULL_DESCRIPTION,
+            ignore_regex=r'^_(.*)'
+        ):
+            checker = IntegrityChecker()
+            checker.run_checks(functions[0])
+            checker.run_checks(functions[1])
 
-        errors = checker.errors
-        self.assertEqual(len(errors), 1)
+            errors = checker.errors
+            self.assertEqual(len(errors), 1)
 
     def test_missing_parameter_added(self):
         program = '\n'.join([
@@ -938,49 +948,49 @@ class IntegrityCheckerTestCase(TestCase):
 class StrictnessTests(TestCase):
 
     def setUp(self):
-        self.short_google_config = Configuration(
-            ignore=[],
-            message_template=None,
-            style=DocstringStyle.GOOGLE,
-            strictness=Strictness.SHORT_DESCRIPTION,
-        )
-        self.long_google_config = Configuration(
-            ignore=[],
-            message_template=None,
-            style=DocstringStyle.GOOGLE,
-            strictness=Strictness.LONG_DESCRIPTION,
-        )
-        self.full_google_config = Configuration(
-            ignore=[],
-            message_template=None,
-            style=DocstringStyle.GOOGLE,
-            strictness=Strictness.FULL_DESCRIPTION,
-        )
-        self.short_sphinx_config = Configuration(
-            ignore=[],
-            message_template=None,
-            style=DocstringStyle.SPHINX,
-            strictness=Strictness.SHORT_DESCRIPTION,
-        )
-        self.long_sphinx_config = Configuration(
-            ignore=[],
-            message_template=None,
-            style=DocstringStyle.SPHINX,
-            strictness=Strictness.LONG_DESCRIPTION,
-        )
-        self.full_sphinx_config = Configuration(
-            ignore=[],
-            message_template=None,
-            style=DocstringStyle.SPHINX,
-            strictness=Strictness.FULL_DESCRIPTION,
-        )
-        self.two_spaces_config = Configuration(
-            ignore=[],
-            message_template=None,
-            style=DocstringStyle.GOOGLE,
-            strictness=Strictness.FULL_DESCRIPTION,
-            indentation=2,
-        )
+        self.short_google_config = {
+            'ignore': [],
+            'message_template': None,
+            'style': DocstringStyle.GOOGLE,
+            'strictness': Strictness.SHORT_DESCRIPTION,
+        }
+        self.long_google_config = {
+            'ignore': [],
+            'message_template': None,
+            'style': DocstringStyle.GOOGLE,
+            'strictness': Strictness.LONG_DESCRIPTION,
+        }
+        self.full_google_config = {
+            'ignore': [],
+            'message_template': None,
+            'style': DocstringStyle.GOOGLE,
+            'strictness': Strictness.FULL_DESCRIPTION,
+        }
+        self.short_sphinx_config = {
+            'ignore': [],
+            'message_template': None,
+            'style': DocstringStyle.SPHINX,
+            'strictness': Strictness.SHORT_DESCRIPTION,
+        }
+        self.long_sphinx_config = {
+            'ignore': [],
+            'message_template': None,
+            'style': DocstringStyle.SPHINX,
+            'strictness': Strictness.LONG_DESCRIPTION,
+        }
+        self.full_sphinx_config = {
+            'ignore': [],
+            'message_template': None,
+            'style': DocstringStyle.SPHINX,
+            'strictness': Strictness.FULL_DESCRIPTION,
+        }
+        self.two_spaces_config = {
+            'ignore': [],
+            'message_template': None,
+            'style': DocstringStyle.GOOGLE,
+            'strictness': Strictness.FULL_DESCRIPTION,
+            'indentation': 2,
+        }
         self.short_docstring = 'Adds an item to the head of the list.'
         self.long_docstring = '\n'.join([
             'Adds an item to the head of the list',
@@ -1025,22 +1035,24 @@ class StrictnessTests(TestCase):
         return get_function_descriptions(tree)[0]
 
     def assertHasNoErrors(self, config, docstring):
-        checker = IntegrityChecker(config)
-        checker.run_checks(self.get_function_with(docstring))
-        errors = checker.errors
-        self.assertEqual(
-            len(errors),
-            0,
-            [(x.message()) for x in errors]
-        )
+        with ConfigurationContext(**config):
+            checker = IntegrityChecker()
+            checker.run_checks(self.get_function_with(docstring))
+            errors = checker.errors
+            self.assertEqual(
+                len(errors),
+                0,
+                [(x.message()) for x in errors]
+            )
 
     def assertHasErrors(self, config, docstring):
-        checker = IntegrityChecker(config)
-        checker.run_checks(self.get_function_with(docstring))
-        errors = checker.errors
-        self.assertTrue(
-            len(errors) > 0
-        )
+        with ConfigurationContext(**config):
+            checker = IntegrityChecker()
+            checker.run_checks(self.get_function_with(docstring))
+            errors = checker.errors
+            self.assertTrue(
+                len(errors) > 0
+            )
 
     def test_short_google_strictness(self):
         self.assertHasNoErrors(self.short_google_config, self.short_docstring)

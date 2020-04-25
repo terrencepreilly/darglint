@@ -1,4 +1,11 @@
-"""This module reads the configuration file."""
+"""A module to read/define configuration and logging.
+
+This module contains two global instances which should
+be accessed only through their getter/setter methods.
+These instances are not threadsafe: they should be
+updated only prior to spawning any threads.
+
+"""
 
 import configparser
 from enum import Enum
@@ -20,7 +27,20 @@ from .docstring.base import DocstringStyle
 # TODO: Configure this logger and allow the user to specify
 # the whether they want warnings.
 logging.basicConfig(level=logging.ERROR)
-logger = logging.getLogger('darglint')
+
+# The global instance of the logger to use.
+_logger = logging.getLogger('darglint')
+
+
+def get_logger():  # type: () -> Logger
+    """Get the default logger for darglint.
+
+    Returns:
+        The default logger for darglint.
+
+    """
+    return _logger
+
 
 POSSIBLE_CONFIG_FILENAMES = (
     '.darglint',
@@ -86,6 +106,15 @@ class Configuration(object):
         self.errors_to_ignore = self._get_errors_to_ignore()
         self.ignore_regex = ignore_regex
         self.indentation = indentation
+
+    @classmethod
+    def get_default_instance(cls):
+        return cls(
+            ignore=list(),
+            message_template=None,
+            style=DocstringStyle.GOOGLE,
+            strictness=Strictness.FULL_DESCRIPTION,
+        )
 
     @property
     def enable(self):
@@ -250,7 +279,7 @@ def find_config_file_in_path(path):  # type: (str) -> Optional[str]
                 if 'darglint' in config.sections():
                     return fully_qualified_path
             except configparser.ParsingError:
-                logger.error('Unable to parse file {}'.format(
+                _logger.error('Unable to parse file {}'.format(
                     fully_qualified_path
                 ))
     return None
@@ -272,7 +301,7 @@ def find_config_file():  # type: () -> Optional[str]
     return None
 
 
-def get_config():  # type: () -> Configuration
+def get_config_from_file():  # type: () -> Configuration
     """Locate the configuration file and return its Configuration.
 
     Returns:
@@ -282,20 +311,25 @@ def get_config():  # type: () -> Configuration
     """
     filename = find_config_file()
     if filename is None:
-        return Configuration(
-            ignore=list(),
-            message_template=None,
-            style=DocstringStyle.GOOGLE,
-            strictness=Strictness.FULL_DESCRIPTION,
-        )
+        return Configuration.get_default_instance()
     return load_config_file(filename)
 
 
-def get_logger():  # type: () -> Logger
-    """Get the default logger for darglint.
+# The global instance of the config file to use.
+_config = get_config_from_file()
+
+
+def get_config():
+    """Get the global instance of the configuration.
+
+    This instance is not threadsafe, and should only
+    be updated in the initial launching script.
+    I considered adding a mutability option, to make
+    this more explicit, but I think it's obvious enough
+    that you shouldn't modify the configuration elsewhere.
 
     Returns:
-        The default logger for darglint.
+        A global configuration instance.
 
     """
-    return logger
+    return _config

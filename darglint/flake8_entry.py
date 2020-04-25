@@ -15,7 +15,7 @@ from .config import (
 )
 
 
-__version__ = '0.4.1'
+__version__ = '1.2.4'
 
 
 class DarglintChecker(object):
@@ -27,11 +27,11 @@ class DarglintChecker(object):
         self.tree = tree
         self.filename = filename
         self.verbosity = 2
-        self.config = get_config()
 
     def run(self):
         # type: () -> Iterator[Tuple[int, int, str, type]]
-        if '*' in self.config.ignore:
+        config = get_config()
+        if '*' in config.ignore:
             return
 
         # Remember the last line number, so that if there is an
@@ -41,7 +41,6 @@ class DarglintChecker(object):
         try:
             functions = get_function_descriptions(self.tree)
             checker = IntegrityChecker(
-                self.config,
                 raise_errors=False,
             )
             for function in functions:

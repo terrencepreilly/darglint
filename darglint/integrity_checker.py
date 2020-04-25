@@ -41,7 +41,7 @@ from .error_report import (
     ErrorReport,
 )
 from .config import (
-    Configuration,
+    get_config,
     Strictness,
 )
 
@@ -57,21 +57,11 @@ class IntegrityChecker(object):
     docstring = None  # type: BaseDocstring
     function = None  # type: FunctionDescription
 
-    def __init__(self,
-                 config=Configuration(
-                     ignore=[],
-                     message_template=None,
-                     style=DocstringStyle.GOOGLE,
-                     strictness=Strictness.FULL_DESCRIPTION,
-                 ),
-                 raise_errors=False
-                 ):
-        # type: (Configuration, bool) -> None
+    def __init__(self, raise_errors=False):
+        # type: (bool) -> None
         """Create a new checker for the given function and docstring.
 
         Args:
-            config: The configuration object for this checker.  Will
-                determine which errors to show, etc.
             raise_errors: If true, we will allow ParserExceptions to
                 propagate, crashing darglint.  This is mostly useful
                 for development.
@@ -79,7 +69,7 @@ class IntegrityChecker(object):
         """
         self.errors = list()  # type: List[DarglintError]
         self._sorted = True
-        self.config = config
+        self.config = get_config()
         self.raise_errors = raise_errors
 
         # TODO: Move max workers into a configuration option.
@@ -112,25 +102,20 @@ class IntegrityChecker(object):
         if self.config.style == DocstringStyle.GOOGLE:
             self.docstring = Docstring.from_google(
                 function.docstring,
-                config=self.config,
             )
         elif self.config.style == DocstringStyle.SPHINX:
             self.docstring = Docstring.from_sphinx(
                 function.docstring,
-                config=self.config,
             )
             self._check_variables(function)
         elif self.config.style == DocstringStyle.NUMPY:
             self.docstring = Docstring.from_numpy(
                 function.docstring,
-                config=self.config,
             )
         else:
             raise Exception('Unsupported docstring format.')
         if self.config.strictness != Strictness.FULL_DESCRIPTION:
-            if self.docstring.satisfies_strictness(
-                self.config.strictness
-            ):
+            if self.docstring.satisfies_strictness(self.config.strictness):
                 return
         if self.docstring.ignore_all:
             return

@@ -7,7 +7,9 @@ from typing import (
 )
 from .peaker import Peaker
 from .token import Token, TokenType
-from .config import Configuration
+from .config import (
+    get_config,
+)
 
 # These convenience functions take an optional string
 # because the peaker could return None when at the end
@@ -84,13 +86,12 @@ def _is_word(char):
     ])
 
 
-def lex(program, config=None):
-    # type: (str, Optional[Configuration]) -> Iterator[Token]
+def lex(program):
+    # type: (str) -> Iterator[Token]
     """Create a stream of tokens from the string.
 
     Args:
         program: The program to lex, as a string.
-        config: The configuration global, if present.
 
     Yields:
         Tokens lexed from the string.
@@ -101,16 +102,14 @@ def lex(program, config=None):
     line_number = 0
 
     # Set the amount of spaces which count as an indent.
-    indentation = 4
-    if config:
-        indentation = config.indentation
+    config = get_config()
 
     while peaker.has_next():
         # Each of the following conditions must move the stream
         # forward and -- excepting separators -- yield a token.
         if _is_space(peaker.peak()):
             spaces = ''.join(peaker.take_while(_is_space))
-            for _ in range(len(spaces) // indentation):
+            for _ in range(len(spaces) // config.indentation):
                 yield Token(' ' * 4, TokenType.INDENT, line_number)
         elif _is_newline(peaker.peak()):
             value = peaker.next()

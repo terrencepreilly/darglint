@@ -29,7 +29,6 @@ from ..node import (
     CykNode,
 )
 from ..config import (
-    Configuration,
     Strictness,
 )
 from ..parse.numpy import (
@@ -46,8 +45,8 @@ from ..errors import (
 
 class Docstring(BaseDocstring):
 
-    def __init__(self, root, style=DocstringStyle.SPHINX, config=None):
-        # type: (Union[CykNode, str], DocstringStyle, Optional[Configuration]) -> None  # noqa: E501
+    def __init__(self, root, style=DocstringStyle.SPHINX):
+        # type: (Union[CykNode, str], DocstringStyle) -> None  # noqa: E501
         """Create a new docstring from the AST.
 
         Args:
@@ -56,15 +55,12 @@ class Docstring(BaseDocstring):
                 string will be parsed.
             style: The docstring style.  Discarded, since this
                 docstring always represents the Numpy style.
-            config: The configuration parameters.  Passed to
-                lex to change the number of spaces which count
-                as an indentation.
 
         """
         if isinstance(root, CykNode):
             self.root = root  # type: Optional[CykNode]
         else:
-            self.root = parse(condense(lex(root, config)))
+            self.root = parse(condense(lex(root)))
         self._lookup = self._discover()
 
     def _discover(self):

@@ -15,7 +15,6 @@ from .function_description import (
 )
 from .integrity_checker import IntegrityChecker
 from .config import (
-    Configuration,
     get_config,
     Strictness,
 )
@@ -143,17 +142,15 @@ parser.add_argument(
 
 def get_error_report(filename,
                      verbosity,
-                     config,
                      raise_errors_for_syntax,
                      message_template=None,
                      ):
-    # type: (str, int, Configuration, bool, str) -> str
+    # type: (str, int, bool, str) -> str
     """Get the error report for the given file.
 
     Args:
         filename: The name of the module to check.
         verbosity: The level of verbosity, in the range [1, 3].
-        config: The configuration for the error report.
         raise_errors_for_syntax: True if we want parser errors
             to propagate up (crashing darglint.)  This is useful
             if we are developing on darglint -- we can get the stack
@@ -170,7 +167,6 @@ def get_error_report(filename,
         tree = ast.parse(program)
         functions = get_function_descriptions(tree)
         checker = IntegrityChecker(
-            config,
             raise_errors=raise_errors_for_syntax,
         )
         for function in functions:
@@ -262,7 +258,6 @@ def main():
             error_report = get_error_report(
                 filename,
                 args.verbosity,
-                config,
                 raise_errors_for_syntax,
                 message_template=args.message_template,
             )

@@ -35,14 +35,13 @@ from ..config import (
 from ..errors import (
     DarglintError,
 )
-from ..config import Configuration
 
 
 class Docstring(BaseDocstring):
     """The docstring class interprets the AST of a docstring."""
 
-    def __init__(self, root, style=DocstringStyle.SPHINX, config=None):
-        # type: (Union[CykNode, str], DocstringStyle, Optional[Configuration]) -> None  # noqa: E501
+    def __init__(self, root, style=DocstringStyle.SPHINX):
+        # type: (Union[CykNode, str], DocstringStyle) -> None  # noqa: E501
         """Create a new docstring from the AST.
 
         Args:
@@ -59,7 +58,7 @@ class Docstring(BaseDocstring):
         if isinstance(root, CykNode):
             self.root = root
         else:
-            self.root = parse(condense(lex(root, config)))
+            self.root = parse(condense(lex(root)))
         self._lookup = self._discover()
 
     def _discover(self):

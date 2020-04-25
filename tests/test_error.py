@@ -8,35 +8,38 @@ from darglint.function_description import get_function_descriptions
 from darglint.integrity_checker import IntegrityChecker
 from darglint.docstring.base import DocstringStyle
 from darglint.config import (
-    Configuration,
     Strictness,
+)
+from .utils import (
+    ConfigurationContext,
 )
 
 
 class ErrorTest(TestCase):
     """Tests for the error class."""
 
-    def get_n_errors(self, amount, src, config=None):
+    def get_n_errors(self, amount, src, config=dict()):
         tree = ast.parse(src)
         functions = get_function_descriptions(tree)
-        if config:
-            checker = IntegrityChecker(config)
-        else:
+        with ConfigurationContext(**config):
             checker = IntegrityChecker()
-        checker.run_checks(functions[0])
-        errors = checker.errors
-        self.assertEqual(
-            len(errors),
-            amount,
-            'There should only be {} errors, but there were {}: {}.'.format(
-                amount,
+            checker.run_checks(functions[0])
+            errors = checker.errors
+            self.assertEqual(
                 len(errors),
-                ' '.join([x.__class__.__name__ for x in errors])
+                amount,
+                (
+                    'There should only be {} errors, '
+                    'but there were {}: {}.'
+                ).format(
+                    amount,
+                    len(errors),
+                    ' '.join([x.__class__.__name__ for x in errors])
+                )
             )
-        )
         return errors
 
-    def get_single_error(self, src, config=None):
+    def get_single_error(self, src, config=dict()):
         return self.get_n_errors(1, src, config)[0]
 
     def test_missing_section_has_no_line_number(self):
@@ -298,20 +301,20 @@ class ErrorTest(TestCase):
         )
 
     def test_default_disabled_error(self):
-        not_enabled_config = Configuration(
-            ignore=[],
-            message_template=None,
-            style=DocstringStyle.GOOGLE,
-            strictness=Strictness.FULL_DESCRIPTION,
-            enable=[],
-        )
-        enabled_config = Configuration(
-            ignore=[],
-            message_template=None,
-            style=DocstringStyle.GOOGLE,
-            strictness=Strictness.FULL_DESCRIPTION,
-            enable=['DAR104'],
-        )
+        not_enabled_config = {
+            'ignore': [],
+            'message_template': None,
+            'style': DocstringStyle.GOOGLE,
+            'strictness': Strictness.FULL_DESCRIPTION,
+            'enable': [],
+        }
+        enabled_config = {
+            'ignore': [],
+            'message_template': None,
+            'style': DocstringStyle.GOOGLE,
+            'strictness': Strictness.FULL_DESCRIPTION,
+            'enable': ['DAR104'],
+        }
         src = '\n'.join([
             'def double(x):',
             '    """Double the value.',

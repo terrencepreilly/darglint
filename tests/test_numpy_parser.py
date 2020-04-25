@@ -8,7 +8,6 @@ from darglint.docstring.base import (
     DocstringStyle,
 )
 from darglint.config import (
-    Configuration,
     Strictness,
 )
 from darglint.lex import (
@@ -26,17 +25,24 @@ from darglint.parse.identifiers import (
 from darglint.utils import (
     CykNodeUtils,
 )
+from .utils import (
+    ConfigurationContext,
+)
 
 
 class NumpydocTests(TestCase):
 
     def setUp(self):
-        self.config = Configuration(
+        self.config_context = ConfigurationContext(
             ignore=[],
             message_template=None,
             style=DocstringStyle.NUMPY,
             strictness=Strictness.FULL_DESCRIPTION,
         )
+        self.config = self.config_context.__enter__()
+
+    def tearDown(self):
+        self.config_context.__exit__(None, None, None)
 
     def assertContains(self, docstring, node_name, msg=''):
         self.assertTrue(
@@ -71,7 +77,7 @@ class NumpydocTests(TestCase):
             'The sum of two numbers.',
             '',
         ])
-        tokens = condense(lex(raw_docstring, self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertContains(docstring, 'short-description')
 
@@ -85,7 +91,7 @@ class NumpydocTests(TestCase):
             '    This will be removed in NumPy 2.0.0',
             '',
         ])
-        tokens = condense(lex(raw_docstring, self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         for node_name in [
             'deprecation-warning',
@@ -104,7 +110,7 @@ class NumpydocTests(TestCase):
             'Not to be confused with sabotage.',
             '',
         ])
-        tokens = condense(lex(raw_docstring, self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertContains(docstring, 'long-description')
 
@@ -124,7 +130,7 @@ class NumpydocTests(TestCase):
             '----------',
             '',
         ])
-        tokens = condense(lex(raw_docstring, self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         for node_name in ['arguments-section']:
             self.assertContains(docstring, node_name)
@@ -141,7 +147,7 @@ class NumpydocTests(TestCase):
                 '{}',
                 '',
             ]).format(underline)
-            tokens = condense(lex(raw_docstring, self.config))
+            tokens = condense(lex(raw_docstring))
             docstring = parse(tokens)
             self.assertContains(docstring, 'arguments-section')
 
@@ -164,7 +170,7 @@ class NumpydocTests(TestCase):
                 '    {}',
                 '',
             ]).format(parameter_description)
-            tokens = condense(lex(raw_docstring, self.config))
+            tokens = condense(lex(raw_docstring))
             docstring = parse(tokens)
             self.assertContains(
                 docstring,
@@ -197,7 +203,7 @@ class NumpydocTests(TestCase):
                 for name in names
             ])
         )
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertContains(docstring, 'arguments-section')
         self.assertIdentified(docstring, ArgumentItemIdentifier, set(names))
@@ -216,7 +222,7 @@ class NumpydocTests(TestCase):
             '    The person to fontainify.',
             '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertIdentified(docstring, ArgumentTypeIdentifier, {'Person'})
 
@@ -230,7 +236,7 @@ class NumpydocTests(TestCase):
             '    The lists to use for the product.',
             '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertIdentified(docstring, ArgumentItemIdentifier, {'x1, x2'})
 
@@ -244,7 +250,7 @@ class NumpydocTests(TestCase):
             '    The number two.',
             '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertContains(docstring, 'returns-section')
 
@@ -258,7 +264,7 @@ class NumpydocTests(TestCase):
             'The number three.',
             '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertContains(docstring, 'returns-section')
         # self.assertTrueHasIdentifier(docstring, ReturnTypeMissingException)
@@ -274,7 +280,7 @@ class NumpydocTests(TestCase):
             '    A number to use.',
             '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertContains(docstring, 'returns-section')
         # self.assertIdentified(docstring, RetrunTypeIdentifier, {'int'})
@@ -291,7 +297,7 @@ class NumpydocTests(TestCase):
             '    The representation of the number.',
             '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertContains(docstring, 'returns-section')
         # self.assertIdentified(
@@ -308,7 +314,7 @@ class NumpydocTests(TestCase):
             '    The number two.',
             '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertContains(docstring, 'yields-section')
 
@@ -322,7 +328,7 @@ class NumpydocTests(TestCase):
             'The number three.',
             '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertContains(docstring, 'yields-section')
         # self.assertTrueHasIdentifier(docstring, YieldTypeMissingException)
@@ -338,7 +344,7 @@ class NumpydocTests(TestCase):
             '    A number to use.',
             '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertContains(docstring, 'yields-section')
         # self.assertIdentified(docstring, RetrunTypeIdentifier, {'int'})
@@ -355,7 +361,7 @@ class NumpydocTests(TestCase):
             '    The representation of the number.',
             '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertContains(docstring, 'yields-section')
         # self.assertIdentified(
@@ -373,7 +379,7 @@ class NumpydocTests(TestCase):
             '    Whether to yield a representation or number.',
             '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertContains(docstring, 'yields-section')
         # self.assertHasIdentifier(
@@ -395,7 +401,7 @@ class NumpydocTests(TestCase):
             '    The next number up to the maximum.',
             '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertContains(docstring, 'receives-section')
 
@@ -414,7 +420,7 @@ class NumpydocTests(TestCase):
             '    The target language.',
             '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertContains(docstring, 'other-arguments-section')
         self.assertIdentified(
@@ -433,7 +439,7 @@ class NumpydocTests(TestCase):
             '    Under all conditions.',
             '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertContains(docstring, 'raises-section')
 
@@ -450,7 +456,7 @@ class NumpydocTests(TestCase):
                 '    Seemingly at random.',
                 '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertContains(docstring, 'raises-section')
 
@@ -464,7 +470,7 @@ class NumpydocTests(TestCase):
             '    Under all conditions.',
             '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertContains(docstring, 'warns-section')
 
@@ -475,7 +481,7 @@ class NumpydocTests(TestCase):
             '# noqa: DAR101',
             '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertIdentified(
             docstring,
@@ -493,7 +499,7 @@ class NumpydocTests(TestCase):
             '    The lists to use for the product. # noqa: DAR101',
             '',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertIdentified(
             docstring,
@@ -505,7 +511,7 @@ class NumpydocTests(TestCase):
         raw_docstring = '\n'.join([
             'Gave gambol grubble goince # noqa: *',
         ])
-        tokens = condense(lex(raw_docstring, config=self.config))
+        tokens = condense(lex(raw_docstring))
         docstring = parse(tokens)
         self.assertIdentified(
             docstring,
