@@ -80,11 +80,18 @@ class Strictness(Enum):
     FULL_DESCRIPTION = 3
 
 
+class AssertStyle(Enum):
+    """Describes how to handle assertions."""
+    RAISE = 1
+    LOG = 2
+
+
 class Configuration(object):
 
     def __init__(self, ignore, message_template, style, strictness,
-                 ignore_regex=None, enable=[], indentation=4):
-        # type: (List[str], Optional[str], DocstringStyle, Strictness, Optional[str], List[str], int) -> None  # noqa: E501
+                 ignore_regex=None, enable=[], indentation=4,
+                 assert_style=AssertStyle.LOG):
+        # type: (List[str], Optional[str], DocstringStyle, Strictness, Optional[str], List[str], int, AssertStyle) -> None  # noqa: E501
         """Initialize the configuration object.
 
         Args:
@@ -96,6 +103,8 @@ class Configuration(object):
                 functions/methods by name.
             enable: A list of of error codes that are disabled by default.
             indentation: The number of spaces to count as an indent.
+            assert_style: The assert style to use (e.g. log on failed
+                assertions, or raise exception on failed assertions.)
 
         """
         self._enable = enable
@@ -106,6 +115,7 @@ class Configuration(object):
         self.errors_to_ignore = self._get_errors_to_ignore()
         self.ignore_regex = ignore_regex
         self.indentation = indentation
+        self.assert_style = assert_style
 
     @classmethod
     def get_default_instance(cls):
