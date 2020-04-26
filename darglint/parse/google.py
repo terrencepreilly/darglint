@@ -6,6 +6,7 @@ from functools import (
     reduce,
 )
 
+from ..custom_assert import Assert
 from ..token import (
     Token,
     TokenType,
@@ -159,7 +160,7 @@ def _match(token):
 
 
 def lookup(section, section_index=-1):
-    assert len(section) > 0
+    Assert(len(section) > 0, 'Expected non-empty section.')
     grammars = _match(section[0])
     if section_index == 0:
         return [ShortDescriptionGrammar] + grammars

@@ -1,12 +1,169 @@
 import abc
 
+from ..custom_assert import Assert
 from .cyk import CykNode
 from typing import (
+    Callable,
     List,
+    Optional,
+    Union,
+    Tuple,
 )
 from ..token import (
     TokenType,
 )
+
+
+class Continuation(object):
+    """Represents a continuation of a path.
+
+    This is the actual representation of the path in the parse
+    tree.  The wrapper, Path, returns continuations.  Each
+    continuation either performs a branching or a chain.
+
+    """
+
+    def __init__(self, path, condition, child=None):
+        # type: (str, Callable[[CykNode], bool], Union[Continuation, Tuple[Continuation, ...], None]) -> None  # noqa: E501
+        self.path = path
+        self.condition = condition
+        self.child = child
+        self._sealed = False
+
+    def of(self, path):
+        # type: (str) -> Continuation
+        assert not self._sealed
+        if isinstance(self.child, Continuation):
+            self.child.of(path)
+        elif self.child is None:
+            self.child = Continuation(path, lambda _: True, None)
+        return self
+
+    def branch(self, *continuations):
+        # type: (Continuation) -> Continuation
+        assert not self._sealed
+        self.child = continuations
+        self._sealed = True
+        return self
+
+    def extract(self, node):
+        # type: (CykNode) -> Optional[str]
+        """Extract the value of the leaf node described by this path.
+
+        Args:
+            node: The root of the path we're about to follow.
+
+        Returns:
+            The value of the token, if correctly described by this
+            path.
+
+        """
+        if not self.condition(node):
+            return None
+        curr = node  # type: Optional[CykNode]
+        for letter in self.path:
+            if curr and letter == 'r':
+                curr = curr.rchild
+            elif curr and letter == 'l':
+                curr = curr.lchild
+            elif curr and letter == 'v' and curr.value:
+                return curr.value.value
+        if curr is None:
+            return None
+        if isinstance(self.child, tuple):
+            for subchild in self.child:
+                next_curr = subchild.extract(curr)
+                if isinstance(next_curr, str):
+                    return next_curr
+                elif next_curr is None:
+                    # In branching, we try each branch until
+                    # one succeeds.
+                    continue
+                else:
+                    Assert(
+                        False,
+                        'Expected path extraction to yield str '
+                        'or None but was {}'.format(
+                            next_curr.__class__.__name__
+                        )
+                    )
+                    return None
+        elif isinstance(self.child, Continuation):
+            next_curr = self.child.extract(curr)
+            if isinstance(next_curr, str):
+                return next_curr
+            elif next_curr is None:
+                # In an unconditional chain, we fail if any
+                # in the chain fail.
+                return None
+            else:
+                Assert(
+                    False,
+                    'Expected path extraction to yield str '
+                    'or None but was {}'.format(
+                        next_curr.__class__.__name__
+                    )
+                )
+                return None
+        return None
+
+
+class Path(object):
+    """Represents a path which can be taken in a parse tree.
+
+    The purpose of this path is to extract the value of a
+    token in the leaves of the tree.  We previously handled
+    this my simply accessing the members of the CykNodes
+    in the tree, and making asserts.  However, that can sometimes
+    result in runtime errors.  Rather, we should want to
+    log the failure in a type-safe manner.
+
+    """
+
+    @staticmethod
+    def of(path):
+        # type: (str) -> Continuation
+        """Construct a path composed of left and right turns.
+
+        If this is the terminal path, it should end with the
+        character, 'v'.
+
+        Args:
+            path: The path to take.  Should be a string composed
+                of the characters, 'l', 'r', and 'v'.
+
+        Returns:
+            A continuation of the path.
+
+        """
+        return Continuation(path, lambda _: True)
+
+    @staticmethod
+    def branch(*paths):
+        # type: (Continuation) -> Continuation
+        """A path which accepts the first succeeding path.
+
+        Args:
+            paths: The paths to try, in order.
+
+        Returns:
+            A continuation representing the path.
+
+        """
+        return Continuation('', lambda _: True, paths)
+
+    # These methods are technically unnecessary -- they are
+    # synonymous with an `of`.  However, it makes for nicer
+    # documentation of intent, I think.
+    @staticmethod
+    def if_left(path):
+        # type: (str) -> Continuation
+        return Continuation(path, lambda x: bool(x.lchild))
+
+    @staticmethod
+    def if_right(path):
+        # type: (str) -> Continuation
+        return Continuation(path, lambda x: bool(x.rchild))
 
 
 class Identifier(abc.ABC):
@@ -36,10 +193,6 @@ class Identifier(abc.ABC):
 
     def __repr__(self):
         return str(self)
-
-
-# TODO: Write a class to extract a given value from a base node
-# given a path.  Use that to simplify the extract methods below.
 
 
 class ArgumentItemIdentifier(Identifier):

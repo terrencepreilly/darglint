@@ -16,6 +16,7 @@ from ..token import (
 from ..node import (
     CykNode,
 )
+from ..custom_assert import Assert
 from .cyk import (
     parse as cyk_parse,
 )
@@ -201,7 +202,7 @@ def _match(token):
 
 
 def lookup(section, section_index=-1):
-    assert len(section) > 0
+    Assert(len(section) > 0, 'Expected a non-empty section.')
     grammars = _match(section[0])
     if section_index == 0:
         return [ShortDescriptionGrammar] + grammars

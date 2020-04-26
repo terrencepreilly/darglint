@@ -10,6 +10,8 @@ from typing import (  # noqa: F401
     Union,
 )
 
+from ..custom_assert import Assert
+
 
 NonTerminalDerivation = Tuple[List, str, str, int]
 TerminalDerivation = Tuple[str, int]
@@ -67,7 +69,12 @@ class BaseGrammar(abc.ABC):
         # We have to tell the type checker that productions is, in fact,
         # a list, since enumerate actually takes a wider type (Iterable),
         # and it gets confused.
-        assert isinstance(cls.productions, list)
+        Assert(
+            isinstance(cls.productions, list),
+            'Expected productions to be a list.'
+        )
+        if not isinstance(cls.productions, list):
+            return dict()
         for i, production in enumerate(cls.productions):
             symbol = production.lhs
             lookup[symbol] = i

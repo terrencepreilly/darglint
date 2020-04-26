@@ -15,6 +15,7 @@ from .base import (
     DocstringStyle,
     Sections,
 )
+from ..custom_assert import Assert
 from ..node import (
     CykNode,
 )
@@ -50,9 +51,6 @@ class Docstring(BaseDocstring):
                 string will be parsed.
             style: The docstring style.  Discarded, since this
                 docstring always represents the Sphinx style.
-            config: The configuration parameters.  Passed to
-                lex to change the number of spaces which count
-                as an indentation.
 
         """
         if isinstance(root, CykNode):
@@ -117,7 +115,11 @@ class Docstring(BaseDocstring):
         # type: () -> Dict[str, Optional[str]]
         ret = dict()  # type: Dict[str, Optional[str]]
         for section in self._lookup['arguments-section']:
-            assert section.lchild
+
+            Assert(section.lchild, 'Section unexpected had no left child.')
+            if section.lchild is None:
+                continue
+
             argument = section.lchild.first_instance('word')
             if argument and argument.value:
                 ret[argument.value.value] = None
@@ -130,7 +132,9 @@ class Docstring(BaseDocstring):
                         argument_type = (
                             argtype.rchild.reconstruct_string().strip()
                         )
-                    assert word.value
+                    Assert(word.value, 'Word unexpectedly had no value')
+                    if not word.value:
+                        continue
                     ret[word.value.value] = argument_type or None
         return ret
 
@@ -138,7 +142,9 @@ class Docstring(BaseDocstring):
         # type: () -> List[Optional[str]]
         ret = list()  # type: List[Optional[str]]
         for section in self._lookup['raises-section']:
-            assert section.lchild
+            Assert(section.lchild, 'Section unexpected had no left child.')
+            if section.lchild is None:
+                continue
             exception = section.lchild.first_instance('word')
             if exception and exception.value:
                 ret.append(exception.value.value)
@@ -150,15 +156,24 @@ class Docstring(BaseDocstring):
         # type: () -> Dict[str, Optional[str]]
         ret = defaultdict()  # type: Dict[str, Optional[str]]
         for section in self._lookup['variables-section']:
-            assert section.lchild
+            Assert(section.lchild, 'Section unexpected had no left child.')
+            if section.lchild is None:
+                continue
             variable = section.lchild.first_instance('word')
             if variable and variable.value:
                 ret[variable.value.value] = None
         for section in self._lookup['variable-type-section']:
-            assert section.lchild
+            Assert(section.lchild, 'Section unexpected had no left child.')
+            if section.lchild is None:
+                continue
             variable = section.lchild.first_instance('word')
             if variable and variable.value:
-                assert section.rchild
+                Assert(
+                    section.rchild,
+                    'Section unexpected had no right child.'
+                )
+                if section.rchild is None:
+                    continue
                 vartype = section.rchild.reconstruct_string().strip()
                 ret[variable.value.value] = vartype
         return ret
@@ -168,7 +183,13 @@ class Docstring(BaseDocstring):
         if 'return-type-section' not in self._lookup:
             return None
         return_type_section = self._lookup['return-type-section'][0]
-        assert return_type_section.rchild
+
+        Assert(
+            return_type_section.rchild,
+            'Return type unexpectedly had no right child.'
+        )
+        if not return_type_section.rchild:
+            return None
         return return_type_section.rchild.reconstruct_string().strip()
 
     def _get_yield_type(self):
@@ -176,7 +197,13 @@ class Docstring(BaseDocstring):
         if 'yield-type-section' not in self._lookup:
             return None
         yield_type_section = self._lookup['yield-type-section'][0]
-        assert yield_type_section.rchild
+
+        Assert(
+            yield_type_section.rchild,
+            'Yield type unexpectedly had not right child.'
+        )
+        if not yield_type_section.rchild:
+            return None
         return yield_type_section.rchild.reconstruct_string().strip()
 
     def _sorted_values(self, lookup):
