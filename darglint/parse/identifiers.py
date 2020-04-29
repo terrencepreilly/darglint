@@ -32,7 +32,10 @@ class Continuation(object):
 
     def of(self, path):
         # type: (str) -> Continuation
-        assert not self._sealed
+        Assert(
+            not self._sealed,
+            'Sealed continuations shouldn\'t be extended!',
+        )
         if isinstance(self.child, Continuation):
             self.child.of(path)
         elif self.child is None:
@@ -41,13 +44,16 @@ class Continuation(object):
 
     def branch(self, *continuations):
         # type: (Continuation) -> Continuation
-        assert not self._sealed
+        Assert(
+            not self._sealed,
+            'Sealed continuations shouldn\'t be extended!',
+        )
         self.child = continuations
         self._sealed = True
         return self
 
     def extract(self, node):
-        # type: (CykNode) -> Optional[str]
+        # type: (CykNode) -> Union[str, CykNode, None]
         """Extract the value of the leaf node described by this path.
 
         Args:
@@ -68,28 +74,38 @@ class Continuation(object):
                 curr = curr.lchild
             elif curr and letter == 'v' and curr.value:
                 return curr.value.value
+            else:
+                return None
         if curr is None:
             return None
-        if isinstance(self.child, tuple):
-            for subchild in self.child:
-                next_curr = subchild.extract(curr)
+
+        is_branch = isinstance(self.child, tuple)
+        is_continuation = isinstance(self.child, Continuation)
+        if is_branch:
+            for branch in self.child:  # type: ignore
+                next_curr = branch.extract(curr)
                 if isinstance(next_curr, str):
                     return next_curr
                 elif next_curr is None:
                     # In branching, we try each branch until
                     # one succeeds.
                     continue
+                elif isinstance(next_curr, CykNode):
+                    return next_curr
                 else:
                     Assert(
                         False,
                         'Expected path extraction to yield str '
-                        'or None but was {}'.format(
+                        'or None or CykNode but was {}'.format(
                             next_curr.__class__.__name__
                         )
                     )
                     return None
-        elif isinstance(self.child, Continuation):
-            next_curr = self.child.extract(curr)
+            # Branches are always terminal.  If we haven't
+            # found the result by this point, there is none.
+            return None
+        elif is_continuation:
+            next_curr = self.child.extract(curr)  # type: ignore
             if isinstance(next_curr, str):
                 return next_curr
             elif next_curr is None:
@@ -105,7 +121,7 @@ class Continuation(object):
                     )
                 )
                 return None
-        return None
+        return curr
 
 
 class Path(object):
@@ -182,11 +198,22 @@ class Identifier(abc.ABC):
         # type: () -> str
         pass
 
-    @staticmethod
+    @property
     @abc.abstractmethod
-    def extract(node):
-        # type: (CykNode) -> str
+    def path(self):
+        # type: () -> Continuation
         pass
+
+    @classmethod
+    def extract(cls, node):
+        # type: (CykNode) -> str
+        # TODO: Fix the type annotation here.
+        value = cls.path.extract(node)  # type: ignore
+        Assert(
+            value is not None,
+            'Failed to extract {}'.format(cls.key)
+        )
+        return value or ''
 
     def __str__(self):
         return '<identifier: {}>'.format(self.key)
@@ -198,117 +225,103 @@ class Identifier(abc.ABC):
 class ArgumentItemIdentifier(Identifier):
 
     key = 'id_ArgsItem'
-
-    @staticmethod
-    def extract(node):
-        return node.lchild.value.value
+    path = Path.of('lv')
 
 
 class ArgumentIdentifier(Identifier):
 
     key = 'id_Args'
-
-    @staticmethod
-    def extract(node):
-        # type: (CykNode) -> str
-        assert node.rchild
-        assert node.rchild.lchild
-        assert node.rchild.lchild.value
-        assert node.rchild.lchild.value.value
-        return node.rchild.lchild.value.value
+    path = Path.of('rlv')
 
 
 class ArgumentTypeIdentifier(Identifier):
 
     key = 'id_ArgType'
+    path = Path.of('rrl').branch(
+        Path.if_right('r').branch(Path.of('lv'), Path.of('l')),
+        Path.of('v'),
+        Path.of(''),
+    )
 
     @staticmethod
     def extract(node):
         # type: (CykNode) -> str
-        assert node.rchild
-        assert node.rchild.rchild
-        assert node.rchild.rchild.lchild
-        if node.rchild.rchild.lchild.rchild:
-            assert node.rchild.rchild.lchild.rchild.lchild
-            if node.rchild.rchild.lchild.rchild.lchild.value:
-                return node.rchild.rchild.lchild.rchild.lchild.value.value
-            else:
-                return (
-                    node.rchild.rchild.lchild.rchild
-                        .lchild.reconstruct_string()
-                )
+        value = ArgumentTypeIdentifier.path.extract(node)
+        is_leaf = isinstance(value, str)
+        is_branch = isinstance(value, CykNode)
+        Assert(is_leaf or is_branch, 'Unable to extract argument type.')
+        if is_leaf:
+            return value  # type: ignore
+        elif is_branch:
+            return value.reconstruct_string()  # type: ignore
         else:
-            if node.rchild.rchild.lchild.value:
-                return node.rchild.rchild.lchild.value.value
-            return node.rchild.rchild.lchild.reconstruct_string()
+            return ''
 
 
 class ExceptionItemIdentifier(Identifier):
 
     key = 'id_ExceptItem'
-
-    @staticmethod
-    def extract(node):
-        # type: (CykNode) -> str
-        assert node.lchild
-        assert node.lchild.value
-        return node.lchild.value.value
+    path = Path.of('lv')
 
 
 class ExceptionIdentifier(Identifier):
 
     key = 'id_Except'
-
-    @staticmethod
-    def extract(node):
-        # type: (CykNode) -> str
-        assert node.rchild
-        assert node.rchild.lchild
-        assert node.rchild.lchild.value
-        return node.rchild.lchild.value.value
+    path = Path.of('rlv')
 
 
 class ReturnTypeIdentifier(Identifier):
 
     key = 'id_ReturnType'
-
-    @staticmethod
-    def extract(node):
-        # type: (CykNode) -> str
-        assert node.lchild
-        assert node.lchild.value
-        return node.lchild.value.value
+    path = Path.of('lv')
 
 
 class YieldTypeIdentifier(Identifier):
 
     key = 'id_YieldType'
-
-    @staticmethod
-    def extract(node):
-        # type: (CykNode) -> str
-        assert node.lchild
-        assert node.lchild.value
-        return node.lchild.value.value
+    path = Path.of('lv')
 
 
 class NoqaIdentifier(Identifier):
 
     key = 'id_Noqa'
+    path = Path.of('rr').branch(Path.of('v'), Path.if_left('lv'))
 
     @staticmethod
     def extract(node):
         # type: (CykNode) -> str
         if node.rchild and node.rchild.rchild:
-            if node.rchild.rchild.value:
-                return node.rchild.rchild.value.value
-            elif node.rchild.rchild.lchild:
-                assert node.rchild.rchild.lchild.value
-                return node.rchild.rchild.lchild.value.value
-            else:
-                assert False
+            path = Path.branch(Path.of('rrv'), Path.of('rrlv'))
+            value = path.extract(node)
+            if isinstance(value, str):
+                return value
+            # path2 = Path.of('rrlv')
+            # value = path2.extract(node)
+            # if isinstance(value, str):
+            #     return value
+            return ''
         else:
             return ''
+        #     if node.rchild.rchild.value:
+        #         return node.rchild.rchild.value.value
+        #     elif node.rchild.rchild.lchild:
+        #         assert node.rchild.rchild.lchild.value
+        #         return node.rchild.rchild.lchild.value.value
+        #     else:
+        #         assert False
+        # else:
+        #     return ''
+        #
+        # if node.rchild and node.rchild.rchild:
+        #     if node.rchild.rchild.value:
+        #         return node.rchild.rchild.value.value
+        #     elif node.rchild.rchild.lchild:
+        #         assert node.rchild.rchild.lchild.value
+        #         return node.rchild.rchild.lchild.value.value
+        #     else:
+        #         assert False
+        # else:
+        #     return ''
 
     @staticmethod
     def extract_targets(node):

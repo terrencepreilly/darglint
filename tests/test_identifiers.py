@@ -34,7 +34,7 @@ target = 'target'
 
 def _v():
     return CykNode(
-        '',
+        'value',
         value=Token(target, TokenType.WORD, 0)
     )
 
@@ -116,6 +116,18 @@ class PathTestCase(TestCase):
                 target,
                 'Failed to extract for path {}'.format(i + 1),
             )
+
+    def test_can_extract_non_leaf(self):
+        node = _l(_r(_v()))
+        path = Path.of('lr')
+        found = path.extract(node)
+        self.assertTrue(
+            isinstance(found, CykNode)
+        )
+        self.assertEqual(
+            found.symbol,
+            'value',
+        )
 
     def _random_node(self, minlength=1, maxlength=100):
         curr = _v()

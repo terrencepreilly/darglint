@@ -5,6 +5,7 @@ from typing import (
     List,
     Optional,
 )
+from .custom_assert import Assert
 from .peaker import Peaker
 from .token import Token, TokenType
 from .config import (
@@ -147,7 +148,10 @@ def lex(program):
             if extra != '':
                 value = extra + value
                 extra = ''
-            assert len(value) > 0, "There should be non-special characters."
+            Assert(
+                len(value) > 0,
+                "There should be non-special characters.",
+            )
             yield Token(value, TokenType.WORD, line_number)
 
 

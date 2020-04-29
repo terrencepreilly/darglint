@@ -123,6 +123,7 @@ class Docstring(BaseDocstring):
             argument = section.lchild.first_instance('word')
             if argument and argument.value:
                 ret[argument.value.value] = None
+        # TODO: Change to use @ArgumentTypeIdentifier
         for argtype in self._lookup['argument-type-section']:
             if argtype.lchild:
                 word = argtype.lchild.first_instance('word')

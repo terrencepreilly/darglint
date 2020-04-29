@@ -894,6 +894,10 @@ class DocstringForNumpyTest(TestCase):
             docstring.get_items(Sections.ARGUMENTS_SECTION),
             ['x', 'y', 'z'],
         )
+        self.assertEqual(
+            docstring.get_types(Sections.ARGUMENTS_SECTION),
+            ['int', 'Optional[int]', 'Optional[int]'],
+        )
 
     def test_arguments_without_description(self):
         raw_docstring = '\n'.join([

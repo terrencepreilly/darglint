@@ -13,6 +13,9 @@ from typing import (  # noqa: F401
     Union,
 )
 
+from ..custom_assert import (
+    Assert,
+)
 from .base import (  # noqa: F401
     BaseDocstring,
     DocstringStyle,
@@ -81,7 +84,7 @@ class _CykVisitor(object):
             raise StopIteration()
 
     def mark(self, mark):
-        assert not self.marks, 'Marks should be non-overlapping.'
+        Assert(not self.marks, 'Marks should be non-overlapping.')
         self.marks.append(mark)
 
 
