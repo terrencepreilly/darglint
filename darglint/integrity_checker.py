@@ -54,9 +54,6 @@ BARE_NOQA = re.compile(r'#\s*noqa([^:]|$)')
 class IntegrityChecker(object):
     """Checks the integrity of the docstring compared to the definition."""
 
-    docstring = None  # type: BaseDocstring
-    function = None  # type: FunctionDescription
-
     def __init__(self, raise_errors=False):
         # type: (bool) -> None
         """Create a new checker for the given function and docstring.
@@ -100,33 +97,33 @@ class IntegrityChecker(object):
             return
 
         if self.config.style == DocstringStyle.GOOGLE:
-            self.docstring = Docstring.from_google(
+            docstring = Docstring.from_google(
                 function.docstring,
             )
         elif self.config.style == DocstringStyle.SPHINX:
-            self.docstring = Docstring.from_sphinx(
+            docstring = Docstring.from_sphinx(
                 function.docstring,
             )
-            self._check_variables(function)
+            self._check_variables(docstring, function)
         elif self.config.style == DocstringStyle.NUMPY:
-            self.docstring = Docstring.from_numpy(
+            docstring = Docstring.from_numpy(
                 function.docstring,
             )
         else:
             raise Exception('Unsupported docstring format.')
         if self.config.strictness != Strictness.FULL_DESCRIPTION:
-            if self.docstring.satisfies_strictness(self.config.strictness):
+            if docstring.satisfies_strictness(self.config.strictness):
                 return
-        if self.docstring.ignore_all:
+        if docstring.ignore_all:
             return
-        self._check_parameters(function)
-        self._check_parameter_types(function)
-        self._check_parameter_types_missing(function)
-        self._check_return(function)
-        self._check_return_type(function)
-        self._check_yield(function)
-        self._check_raises(function)
-        self._check_style(function)
+        self._check_parameters(docstring, function)
+        self._check_parameter_types(docstring, function)
+        self._check_parameter_types_missing(docstring, function)
+        self._check_return(docstring, function)
+        self._check_return_type(docstring, function)
+        self._check_yield(docstring, function)
+        self._check_raises(docstring, function)
+        self._check_style(docstring, function)
         self._sorted = False
 
     def _skip_checks(self, function):
@@ -139,15 +136,15 @@ class IntegrityChecker(object):
 
         return bool(no_docsting or skip_by_regex)
 
-    def _check_parameter_types(self, function):
+    def _check_parameter_types(self, docstring, function):
         # type: (FunctionDescription) -> None
         error_code = ParameterTypeMismatchError.error_code
-        if self._ignore_error(ParameterTypeMismatchError):
+        if self._ignore_error(docstring, ParameterTypeMismatchError):
             return
 
         argument_types = dict(
-            zip(self.docstring.get_items(Sections.ARGUMENTS_SECTION) or [],
-                self.docstring.get_types(Sections.ARGUMENTS_SECTION) or [])
+            zip(docstring.get_items(Sections.ARGUMENTS_SECTION) or [],
+                docstring.get_types(Sections.ARGUMENTS_SECTION) or [])
         )
         doc_arg_types = list()  # type: List[Optional[str]]
         for name in function.argument_names:
@@ -155,7 +152,7 @@ class IntegrityChecker(object):
                 doc_arg_types.append(None)
             else:
                 doc_arg_types.append(argument_types[name])
-        noqa_lookup = self.docstring.get_noqas()
+        noqa_lookup = docstring.get_noqas()
         for name, expected, actual in zip(
                 function.argument_names,
                 function.argument_types,
@@ -166,10 +163,10 @@ class IntegrityChecker(object):
             noqa_exists = error_code in noqa_lookup
             name_has_noqa = noqa_exists and name in noqa_lookup[error_code]
             if not (expected == actual or name_has_noqa):
-                default_line_numbers = self.docstring.get_line_numbers(
+                default_line_numbers = docstring.get_line_numbers(
                     'arguments-section'
                 )
-                line_numbers = self.docstring.get_line_numbers_for_value(
+                line_numbers = docstring.get_line_numbers_for_value(
                     'ident',
                     name,
                 ) or default_line_numbers
@@ -183,28 +180,28 @@ class IntegrityChecker(object):
                     )
                 )
 
-    def _check_parameter_types_missing(self, function):
+    def _check_parameter_types_missing(self, docstring, function):
         # type: (FunctionDescription) -> None
         error_code = ParameterTypeMissingError.error_code
-        if self._ignore_error(ParameterTypeMissingError):
+        if self._ignore_error(docstring, ParameterTypeMissingError):
             return
 
         argument_types = dict(
-            zip(self.docstring.get_items(Sections.ARGUMENTS_SECTION) or [],
-                self.docstring.get_types(Sections.ARGUMENTS_SECTION) or [])
+            zip(docstring.get_items(Sections.ARGUMENTS_SECTION) or [],
+                docstring.get_types(Sections.ARGUMENTS_SECTION) or [])
         )
 
-        noqa_lookup = self.docstring.get_noqas()
+        noqa_lookup = docstring.get_noqas()
         noqa_exists = error_code in noqa_lookup
 
         for name, argument_type in argument_types.items():
             name_has_no_qa = noqa_exists and name in noqa_lookup[error_code]
 
             if argument_type is None and not name_has_no_qa:
-                default_line_numbers = self.docstring.get_line_numbers(
+                default_line_numbers = docstring.get_line_numbers(
                     'arguments-section'
                 )
-                line_numbers = self.docstring.get_line_numbers_for_value(
+                line_numbers = docstring.get_line_numbers_for_value(
                     'ident',
                     name,
                 ) or default_line_numbers
@@ -216,18 +213,18 @@ class IntegrityChecker(object):
                     )
                 )
 
-    def _check_return_type(self, function):
+    def _check_return_type(self, docstring, function):
         # type: (FunctionDescription) -> None
-        if self._ignore_error(ReturnTypeMismatchError):
+        if self._ignore_error(docstring, ReturnTypeMismatchError):
             return
 
         fun_type = function.return_type
-        doc_type = self.docstring.get_types(Sections.RETURNS_SECTION)
+        doc_type = docstring.get_types(Sections.RETURNS_SECTION)
         if not doc_type or isinstance(doc_type, list):
             doc_type = None
         if fun_type is not None and doc_type is not None:
             if fun_type != doc_type:
-                line_numbers = self.docstring.get_line_numbers(
+                line_numbers = docstring.get_line_numbers(
                     'returns-section',
                 )
                 self.errors.append(
@@ -239,18 +236,18 @@ class IntegrityChecker(object):
                     ),
                 )
 
-    def _check_yield(self, function):
+    def _check_yield(self, docstring, function):
         # type: (FunctionDescription) -> None
-        doc_yield = self.docstring.get_section(Sections.YIELDS_SECTION)
+        doc_yield = docstring.get_section(Sections.YIELDS_SECTION)
         fun_yield = function.has_yield
-        ignore_missing = self._ignore_error(MissingYieldError)
-        ignore_excess = self._ignore_error(ExcessYieldError)
+        ignore_missing = self._ignore_error(docstring, MissingYieldError)
+        ignore_excess = self._ignore_error(docstring, ExcessYieldError)
         if fun_yield and not doc_yield and not ignore_missing:
             self.errors.append(
                 MissingYieldError(function.function)
             )
         elif doc_yield and not fun_yield and not ignore_excess:
-            line_numbers = self.docstring.get_line_numbers(
+            line_numbers = docstring.get_line_numbers(
                 'yields-section',
             )
             self.errors.append(
@@ -260,18 +257,18 @@ class IntegrityChecker(object):
                 )
             )
 
-    def _check_return(self, function):
+    def _check_return(self, docstring, function):
         # type: (FunctionDescription) -> None
-        doc_return = self.docstring.get_section(Sections.RETURNS_SECTION)
+        doc_return = docstring.get_section(Sections.RETURNS_SECTION)
         fun_return = function.has_return
-        ignore_missing = self._ignore_error(MissingReturnError)
-        ignore_excess = self._ignore_error(ExcessReturnError)
+        ignore_missing = self._ignore_error(docstring, MissingReturnError)
+        ignore_excess = self._ignore_error(docstring, ExcessReturnError)
         if fun_return and not doc_return and not ignore_missing:
             self.errors.append(
                 MissingReturnError(function.function)
             )
         elif doc_return and not fun_return and not ignore_excess:
-            line_numbers = self.docstring.get_line_numbers(
+            line_numbers = docstring.get_line_numbers(
                 'returns-section',
             )
             self.errors.append(
@@ -281,20 +278,21 @@ class IntegrityChecker(object):
                 )
             )
 
-    def _check_parameters(self, function):
+    def _check_parameters(self, docstring, function):
         # type: (FunctionDescription) -> None
-        docstring_arguments = set(self.docstring.get_items(
+        docstring_arguments = set(docstring.get_items(
             Sections.ARGUMENTS_SECTION
         ) or [])
         actual_arguments = set(function.argument_names)
         missing_in_doc = actual_arguments - docstring_arguments
         missing_in_doc = self._remove_ignored(
+            docstring,
             missing_in_doc,
             MissingParameterError,
         )
 
         # Get a default line number.
-        default_line_numbers = self.docstring.get_line_numbers(
+        default_line_numbers = docstring.get_line_numbers(
             'arguments-section'
         )
 
@@ -321,6 +319,7 @@ class IntegrityChecker(object):
 
         missing_in_function = docstring_arguments - actual_arguments
         missing_in_function = self._remove_ignored(
+            docstring,
             missing_in_function,
             ExcessParameterError,
         )
@@ -333,7 +332,7 @@ class IntegrityChecker(object):
                 '**' + missing in actual_arguments
             ):
                 continue
-            line_numbers = self.docstring.get_line_numbers_for_value(
+            line_numbers = docstring.get_line_numbers_for_value(
                 'arguments-section',
                 missing,
             ) or default_line_numbers
@@ -345,21 +344,21 @@ class IntegrityChecker(object):
                 )
             )
 
-    def _check_variables(self, function):
+    def _check_variables(self, docstring, function):
         # type: (FunctionDescription) -> None
         described_variables = set(
-            self.docstring.get_items(Sections.VARIABLES_SECTION) or []
+            docstring.get_items(Sections.VARIABLES_SECTION) or []
         )  # type: Set[str]
         actual_variables = set(function.variables)
         excess_in_doc = described_variables - actual_variables
 
         # Get a default line number.
-        default_line_numbers = self.docstring.get_line_numbers(
+        default_line_numbers = docstring.get_line_numbers(
             'variables-section',
         )
 
         for excess in excess_in_doc:
-            line_numbers = self.docstring.get_line_numbers_for_value(
+            line_numbers = docstring.get_line_numbers_for_value(
                 'variables-section',
                 excess,
             ) or default_line_numbers
@@ -371,7 +370,7 @@ class IntegrityChecker(object):
                 )
             )
 
-    def _ignore_error(self, error):
+    def _ignore_error(self, docstring, error):
         # type: (Any) -> bool
         """Return true if we should ignore this error.
 
@@ -386,13 +385,13 @@ class IntegrityChecker(object):
         error_code = error.error_code
         if error_code in self.config.errors_to_ignore:
             return True
-        noqa_lookup = self.docstring.get_noqas()
+        noqa_lookup = docstring.get_noqas()
         inline_error = error_code in noqa_lookup
         if inline_error and not noqa_lookup[error_code]:
             return True
         return False
 
-    def _remove_ignored(self, missing, error):
+    def _remove_ignored(self, docstring, missing, error):
         # type: (Set[str], Any) -> Set[str]
         """Remove ignored from missing.
 
@@ -407,11 +406,11 @@ class IntegrityChecker(object):
         error_code = error.error_code
 
         # Ignore globally
-        if self._ignore_error(error):
+        if self._ignore_error(docstring, error):
             return set()
 
         # There are no noqa statements
-        noqa_lookup = self.docstring.get_noqas()
+        noqa_lookup = docstring.get_noqas()
         inline_ignore = error_code in noqa_lookup
         if not inline_ignore:
             return missing
@@ -419,22 +418,23 @@ class IntegrityChecker(object):
         # We are to ignore specific instances.
         return missing - set(noqa_lookup[error_code])
 
-    def _check_style(self, function):
+    def _check_style(self, docstring, function):
         # type: (FunctionDescription) -> None
-        for StyleError, line_numbers in self.docstring.get_style_errors():
+        for StyleError, line_numbers in docstring.get_style_errors():
             self.errors.append(StyleError(
                 function.function,
                 line_numbers,
             ))
 
-    def _check_raises(self, function):
+    def _check_raises(self, docstring, function):
         # type: (FunctionDescription) -> None
-        exception_types = self.docstring.get_items(Sections.RAISES_SECTION)
+        exception_types = docstring.get_items(Sections.RAISES_SECTION)
         docstring_raises = set(exception_types or [])
         actual_raises = function.raises
         missing_in_doc = actual_raises - docstring_raises
 
         missing_in_doc = self._remove_ignored(
+            docstring,
             missing_in_doc,
             MissingRaiseError,
         )
@@ -452,14 +452,15 @@ class IntegrityChecker(object):
         #
         missing_in_function = docstring_raises - actual_raises
         missing_in_function = self._remove_ignored(
+            docstring,
             missing_in_function,
             ExcessRaiseError,
         )
-        default_line_numbers = self.docstring.get_line_numbers(
+        default_line_numbers = docstring.get_line_numbers(
             'raises-section',
         )
         for missing in missing_in_function:
-            line_numbers = self.docstring.get_line_numbers_for_value(
+            line_numbers = docstring.get_line_numbers_for_value(
                 'raises-section',
                 missing,
             ) or default_line_numbers

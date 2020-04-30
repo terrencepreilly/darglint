@@ -3,6 +3,20 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.3.0]
+
+### Fixed
+
+- A race condition in the integrity checker.  I had moved
+  the function to be an instance variable, rather than a
+  member of the class, but I had forgotten to do so with
+  the docstring representation.  So, if the next docstring
+  was fast enough to parse, it could override the previous
+  docstring.  This didn't happen often because parsing
+  is what takes the longest, and there is a high variability
+  between the time it takes to parse each docstring.
+ 
+
 ## [1.2.4]
 
 ### Fixed

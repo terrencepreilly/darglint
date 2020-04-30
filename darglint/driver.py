@@ -193,7 +193,7 @@ def print_error_list():
 
 
 def print_version():
-    print('1.2.4')
+    print('1.3.0')
 
 
 def main():
