@@ -15,12 +15,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   docstring.  This didn't happen often because parsing
   is what takes the longest, and there is a high variability
   between the time it takes to parse each docstring.
- 
-
-## [1.2.4]
-
-### Fixed
-
 - Handle newline after exception in raises section.  Rather
   than failing to parse the raises section, it now reports
   an indentation error.
