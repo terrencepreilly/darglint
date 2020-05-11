@@ -135,6 +135,19 @@ class GetFunctionsAndDocstrings(TestCase):
         function = get_function_descriptions(tree)[0]
         self.assertEqual(function.raises, {'aiohttp.web.HTTPException'})
 
+    def test_implicit_error_caught_and_raised(self):
+        program = '\n'.join([
+            'def parse(value):',
+            '    try:',
+            '        default_parser.parse(value)',
+            '    except ParserError:',
+            '        logger.log("Default parser failed.")',
+            '        raise',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        self.assertEqual(function.raises, {'ParserError'})
+
     def test_extracts_type_hints_for_arguments(self):
         program = '\n'.join([
             'def square_root(x: int) -> float:',

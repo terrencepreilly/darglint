@@ -23,6 +23,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   resolves the situation, at lest somewhat.  It expects
   the documented exception and the caught exception to
   match exactly.
+- Implicitly raised exceptions which are rethrown was
+  also not handled. So, for example, if you had:
+
+    def throwing_up():
+        """Throws up.
+    
+        Raises:
+            ProxyError: If failed to yarf.
+    
+        """
+        try:
+            proxy_puke()
+        except ProxyError:
+            raise
+            
+  Darglint would report an error.  It no longer reports
+  an error in this case.  See Issue #88 and Issue #68.
 
 ## [1.3.0]
 

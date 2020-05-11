@@ -112,7 +112,11 @@ class Context(object):
 
     def add_exception(self, node):
         # type: (ast.Raise) -> None
-        self.exceptions.add(self._get_exception_name(node))
+        name = self._get_exception_name(node)
+        if name:
+            self.exceptions.add(name)
+        else:
+            logger.warning('Node {} name extraction failed.')
 
     def remove_exception(self, node):
         # type: (ast.Raise) -> None
@@ -180,7 +184,7 @@ class RaiseVisitor(ast.NodeVisitor):
             if handler.type:
                 if handler.name and isinstance(handler.type, ast.Name):
                     self.context.add_variable(handler.name, handler.type)
-                elif isinstance(handler.type, ast.Attribute):
+                else:
                     self.context.set_handling(handler.type)
                 id = getattr(handler.type, 'id', None)
                 if id:
