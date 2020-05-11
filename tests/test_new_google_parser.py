@@ -20,7 +20,9 @@ from darglint.lex import (
 from darglint.parse.cyk import (
     parse as cyk_parse,
 )
-
+from darglint.parse.identifiers import (
+    ExceptionIdentifier,
+)
 from .utils import (
     random_tokens,
 )
@@ -308,4 +310,22 @@ class NewGoogleParserTests(TestCase):
             node.symbol,
             'raises-section',
             str(node),
+        )
+
+    def test_parse_library_exception(self):
+        tokens = condense(lex('\n'.join([
+            'Use custom handlers for error conditions.',
+            '',
+            'Raises:',
+            '    aiohttp.web.HTTPException: Reraises any HTTPExceptions we don\'t have an override for.',
+            ''
+        ])))
+        node = parse(tokens)
+        CykNodeUtils.contains(node, 'raises-section')
+        exceptions = CykNodeUtils.get_annotated(node, ExceptionIdentifier)
+        self.assertEqual(len(exceptions), 1)
+        exception = list(exceptions)[0]
+        self.assertEqual(
+            ExceptionIdentifier.extract(exception),
+            'aiohttp.web.HTTPException',
         )

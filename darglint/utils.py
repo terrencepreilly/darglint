@@ -30,6 +30,21 @@ class AstNodeUtils(object):
                 pass
 
     @staticmethod
+    def _get_node_label(node):
+        if hasattr(node, 'id'):
+            return r'{}\nid: {}'.format(
+                node.__class__.__name__,
+                node.id,
+            )
+        elif hasattr(node, 'attr') and isinstance(node.attr, str):
+            return r'{}\nattr: {}'.format(
+                node.__class__.__name__,
+                node.attr,
+             )
+        else:
+            return node.__class__.__name__
+
+    @staticmethod
     def to_dot(node):
         # type: (AST) -> str
         dot = ['digraph G {']  # type: List[str]
@@ -40,7 +55,7 @@ class AstNodeUtils(object):
             dot.insert(1, '  {}_{} [label="{}"];'.format(
                 curr.__class__.__name__,
                 parent_id,
-                curr.__class__.__name__,
+                AstNodeUtils._get_node_label(curr),
             ))
             for field, value in AstNodeUtils.iter_fields(curr):
                 if isinstance(value, list):

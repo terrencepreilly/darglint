@@ -114,6 +114,27 @@ class GetFunctionsAndDocstrings(TestCase):
         function = get_function_descriptions(tree)[0]
         self.assertEqual(function.raises, {'ValidationError'})
 
+    def test_qualified_error_from_library(self):
+        program = '\n'.join([
+            'async def error_middleware(overrides: Mapping[int, _Handler], request: web.Request,',
+            '        handler: _Handler) -> web.Response:',
+            '    """Use custom handlers for error conditions.',
+            '',
+            '    Raises:',
+            '        aiohttp.web.HTTPException: Reraises any HTTPExceptions we don\'t have an override for.',
+            '    """',
+            '    try:',
+            '        return await handler(request)',
+            '    except aiohttp.web.HTTPException as e:',
+            '        override = overrides.get(e.status)',
+            '        if override is not None:',
+            '            return await override(request)',
+            '        raise',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        self.assertEqual(function.raises, {'aiohttp.web.HTTPException'})
+
     def test_extracts_type_hints_for_arguments(self):
         program = '\n'.join([
             'def square_root(x: int) -> float:',

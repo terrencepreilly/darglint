@@ -3,6 +3,27 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.3.1]
+
+### Fixed
+
+- Qualified exceptions in a raise section were not being
+  handled correctly by the `FunctionDescription` class.
+  So, if you had a catch statement like,
+
+    def finish_me():
+        try:
+            raise requests.exceptions.ProxyError()
+        except requests.exceptions.ProxyError:
+            raise
+ 
+  It wouldn't have been handled correctly.  That is, if
+  you documented `requests.exceptions.ProxyError` in the
+  docstring, darglint would throw an error.  This change
+  resolves the situation, at lest somewhat.  It expects
+  the documented exception and the caught exception to
+  match exactly.
+
 ## [1.3.0]
 
 ### Fixed

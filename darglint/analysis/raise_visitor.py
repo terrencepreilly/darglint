@@ -3,7 +3,9 @@ from collections import (
     deque,
 )
 from typing import (
+    Any,
     Dict,
+    List,
     Optional,
     Set,
 )
@@ -30,6 +32,32 @@ class Context(object):
         # in the context, and since they don't repeat the
         # exception, it's fine to overwrite this value.)
         self.handling = None  # type: Optional[str]
+
+    def _get_attr_name(self, attr):
+        # type: (ast.Attribute) -> str
+        curr = attr  # type: Any
+        parts = list()  # type: List[str]
+
+        # We assume here that the ast has a limited
+        # depth.  Even if it's several thousand long,
+        # it should work fine.
+        while curr:
+            if isinstance(curr, ast.Attribute):
+                parts.append(curr.attr)
+                curr = curr.value
+            elif isinstance(curr, ast.Name):
+                parts.append(curr.id)
+                curr = None
+            else:
+                logger.error(
+                    'While getting ast.Attribute representation '
+                    'a node had an unexpected type {}'.format(
+                        curr.__class__.__name__
+                    )
+                )
+                curr = None
+        parts.reverse()
+        return '.'.join(parts)
 
     def _get_name_name(self, name):
         # type: (ast.Name) -> str
@@ -101,6 +129,10 @@ class Context(object):
         # type: (str, ast.Name) -> None
         self.variables[variable] = self._get_name_name(exception)
 
+    def set_handling(self, attr):
+        # type: (ast.Attribute) -> None
+        self.handling = self._get_attr_name(attr)
+
     def remove_variable(self, variable):
         # type: (str) -> None
         del self.variables[variable]
@@ -148,6 +180,8 @@ class RaiseVisitor(ast.NodeVisitor):
             if handler.type:
                 if handler.name and isinstance(handler.type, ast.Name):
                     self.context.add_variable(handler.name, handler.type)
+                elif isinstance(handler.type, ast.Attribute):
+                    self.context.set_handling(handler.type)
                 id = getattr(handler.type, 'id', None)
                 if id:
                     self.context.remove_exception(id)
