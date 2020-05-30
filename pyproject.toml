@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "darglint"
-version = "1.3.1"
+version = "1.4.0"
 description = "A utility for ensuring Google-style docstrings stay up to date with the source code."
 authors = ["terrencepreilly <terrencepreilly@gmail.com>"]
 license = "MIT"

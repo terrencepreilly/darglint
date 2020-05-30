@@ -80,6 +80,79 @@ class IntegrityCheckerNumpyTestCase(TestCase):
         )
         self.assertTrue(isinstance(errors[0], MissingParameterError))
 
+    def test_doesnt_require_private_arguments(self):
+        program = '\n'.join([
+            'def reduce(fn, l, _curr=None):',
+            '    """Reduce the list with the given function.',
+            '',
+            '    Parameters',
+            '    ----------',
+            '    fn',
+            '        A function which takes two items and produces',
+            '        one as a result.',
+            '    l',
+            '        The list to reduce.',
+            '',
+            '    Returns',
+            '    -------',
+            '    The final, reduced result of the list.',
+            '',
+            '    """',
+            '    if not l:',
+            '        return _curr',
+            '    if not _curr:',
+            '        return reduce(fn, l[1:], l[0])',
+            '    return reduce(fn, l[1:], fn(l[0], _curr))',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker(self.config)
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertEqual(
+            len(errors), 0,
+            [(x.message()) for x in errors],
+        )
+
+    def test_runs_other_checks_on_private_arguments(self):
+        program = '\n'.join([
+            'def reduce(fn, l, _curr=None):',
+            '    """Reduce the list with the given function.',
+            '',
+            '    Parameters',
+            '    ----------',
+            '    fn',
+            '        A function which takes two items and produces',
+            '        one as a result.',
+            '    l',
+            '        The list to reduce.',
+            '    _curr',
+            '',
+            '    Returns',
+            '    -------',
+            '    The final, reduced result of the list.',
+            '',
+            '    """',
+            '    if not l:',
+            '        return _curr',
+            '    if not _curr:',
+            '        return reduce(fn, l[1:], l[0])',
+            '    return reduce(fn, l[1:], fn(l[0], _curr))',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker(self.config)
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertEqual(
+            len(errors), 1,
+            [(x.message()) for x in errors],
+        )
+        self.assertTrue(
+            isinstance(errors[0], EmptyDescriptionError),
+            errors[0].__class__.__name__
+        )
+
     @skip('See Issue #69: https://github.com/terrencepreilly/darglint/issues/69#issuecomment-596273866')  # noqa: E501
     def test_empty_description_error(self):
         program_template = '\n'.join([
@@ -285,6 +358,64 @@ class IntegrityCheckerSphinxTestCase(TestCase):
             checker.errors,
         )
 
+    def test_doesnt_require_private_arguments(self):
+        program = '\n'.join([
+            'def reduce(fn, l, _curr=None):',
+            '    """Reduce the list with the given function.',
+            '',
+            '    :param fn: A function which takes two items and produces',
+            '        one as a result.',
+            '    :param l: The list to reduce.',
+            '    :return: The final, reduced result of the list.',
+            '',
+            '    """',
+            '    if not l:',
+            '        return _curr',
+            '    if not _curr:',
+            '        return reduce(fn, l[1:], l[0])',
+            '    return reduce(fn, l[1:], fn(l[0], _curr))',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker(self.config)
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertEqual(
+            len(errors), 0,
+            [(x.message()) for x in errors],
+        )
+
+    def test_runs_other_checks_on_private_arguments(self):
+        program = '\n'.join([
+            'def reduce(fn, l, _curr=None):',
+            '    """Reduce the list with the given function.',
+            '',
+            '    :param fn: A function which takes two items and produces',
+            '        one as a result.',
+            '    :param l: The list to reduce.',
+            '    :param _curr:',
+            '    :return: The final, reduced result of the list.',
+            '',
+            '    """',
+            '    if not l:',
+            '        return _curr',
+            '    if not _curr:',
+            '        return reduce(fn, l[1:], l[0])',
+            '    return reduce(fn, l[1:], fn(l[0], _curr))',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker(self.config)
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertEqual(
+            len(errors), 1,
+            [(x.message()) for x in errors],
+        )
+        self.assertTrue(
+            isinstance(errors[0], EmptyDescriptionError),
+            errors[0].__class__.__name__
+        )
 
 class IntegrityCheckerTestCase(TestCase):
 
@@ -944,6 +1075,70 @@ class IntegrityCheckerTestCase(TestCase):
             errors[0], EmptyTypeError
         ), errors[0].__class__.__name__)
 
+    def test_doesnt_require_private_arguments(self):
+        program = '\n'.join([
+            'def reduce(fn, l, _curr=None):',
+            '    """Reduce the list with the given function.',
+            '',
+            '    Args:',
+            '        fn: A function which takes two items and produces',
+            '            one as a result.',
+            '        l: The list to reduce.',
+            '',
+            '    Returns:',
+            '        The final, reduced result of the list.',
+            '',
+            '    """',
+            '    if not l:',
+            '        return _curr',
+            '    if not _curr:',
+            '        return reduce(fn, l[1:], l[0])',
+            '    return reduce(fn, l[1:], fn(l[0], _curr))',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertEqual(
+            len(errors), 0,
+            [(x.message()) for x in errors],
+        )
+
+    def test_runs_other_checks_on_private_arguments(self):
+        program = '\n'.join([
+            'def reduce(fn, l, _curr=None):',
+            '    """Reduce the list with the given function.',
+            '',
+            '    Args:',
+            '        fn: A function which takes two items and produces',
+            '            one as a result.',
+            '        l: The list to reduce.',
+            '        _curr:',
+            '',
+            '    Returns:',
+            '        The final, reduced result of the list.',
+            '',
+            '    """',
+            '    if not l:',
+            '        return _curr',
+            '    if not _curr:',
+            '        return reduce(fn, l[1:], l[0])',
+            '    return reduce(fn, l[1:], fn(l[0], _curr))',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertEqual(
+            len(errors), 1,
+            [(x.message()) for x in errors],
+        )
+        self.assertTrue(
+            isinstance(errors[0], EmptyDescriptionError),
+            errors[0].__class__.__name__
+        )
 
 class StrictnessTests(TestCase):
 

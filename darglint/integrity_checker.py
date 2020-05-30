@@ -307,6 +307,10 @@ class IntegrityChecker(object):
             ):
                 continue
 
+            # Don't require private arguments.
+            if missing.startswith('_'):
+                continue
+
             # We use the default line numbers because a missing
             # parameter, by definition, will not have line numbers.
             self.errors.append(
