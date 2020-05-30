@@ -5,6 +5,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [1.3.1]
 
+### Changed
+
+- Updated README to be more explicit about how Darglint
+  handles types and style.
+
 ### Fixed
 
 - Qualified exceptions in a raise section were not being

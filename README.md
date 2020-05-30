@@ -17,6 +17,7 @@ would like a feature in *darglint*.
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Usage](#usage)
+- [Scope](#scope)
 - [Sphinx](#sphinx)
 - [Numpy](#numpy)
 - [Integrations](#integrations)
@@ -288,6 +289,19 @@ So, in this case, the argument for `noqa` is really all the way to
 the left.  (Or whatever description we are parsing.)  We could also
 have put it on its own line, as `# noqa: DAR402 ZeroDivisionError`.
 
+### Type Annotations
+
+Darglint parses type annotations in docstrings, and can, optionally,
+compare the documented type to the actual type annotation.  This can
+be useful when migrating a codebase to use type annotations.
+
+In order to make these comparisons, Darglint only accepts types
+accepted by Python (see [PEP 484](https://www.python.org/dev/peps/pep-0484/).)
+That is, it does not accept parentheses in type signatures. (If
+parentheses are used in the type signature, Darglint will mark that
+argument as missing.  See Issue #90.)
+
+
 ### Error Codes
 
 - *DAR001*: The docstring was not parsed correctly due to a syntax error.
@@ -325,6 +339,15 @@ codes.
 enable=DAR104
 ```
 
+## Scope
+
+Darglint's primary focus is to identify incorrect and missing documentationd
+of a function's signature. Checking style is a stretch goal, and is supported
+on a best-effort basis.  Darglint does not check stylistic preferences expressed
+by tools in the Python Code Quality Authority (through tools such as `pydocstyle`).
+So when using Darglint, it may be a good idea to also use `pydocstyle`, if you
+want to enforce style.  (For example, `pydocstyle` requires the short summary
+to be separated from other sections by a line break.  Darglint makes no such check.)
 
 ## Sphinx
 
@@ -417,6 +440,7 @@ roughly according to current priority/feasibility.
 general descriptions in the interface.
 - [ ] Check class docstrings (See Issue #25).
 - [ ] Autoformatting docstrings.  (See Milestone #3).
+- [ ] Optional aggressive style checking through command line flag.
 - [ ] ALE support.
 - [ ] Syntastic support. (Syntastic is not accepting new checkers until
 their next API stabilizes, so this may take some time.)
