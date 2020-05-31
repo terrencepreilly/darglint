@@ -357,6 +357,29 @@ class ParameterTypeMissingError(DarglintError):
         )
 
 
+class ParameterMalformedError(DarglintError):
+    """Describes when an argument type is malformed."""
+
+    error_code = 'DAR105'
+    description = (
+        'The docstring parameter type is malformed. '
+        'Expected parameter type to match syntax from PEP484. '
+        'If your parameter contains parentheses, you may want '
+        'to switch them to brackets.  E.g. `Union[str, int]`.'
+    )
+
+    def __init__(self, function, name, line_numbers=None):
+        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, Tuple[int, int]) -> None
+        self.general_message = 'Parameter type malformed.'
+        self.terse_message = ' #{}: type malformed'.format(
+            name
+        )
+        self.name = name
+        super(ParameterMalformedError, self).__init__(
+            function,
+            line_numbers=line_numbers,
+        )
+
 
 class MissingReturnError(DarglintError):
     """Describes when a docstring is missing a return from definition."""

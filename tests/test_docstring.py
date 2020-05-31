@@ -233,8 +233,8 @@ class DocstringBaseMethodTests(TestCase):
                 self.assertEqual(
                     google_types,
                     sphinx_doc.get_types(section),
-                    'Sections differ for {} type.'.format(
-                        section
+                    'Sections differ for {} type'.format(
+                        section,
                     ),
                 )
                 self.assertEqual(

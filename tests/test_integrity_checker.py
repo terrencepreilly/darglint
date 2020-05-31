@@ -31,6 +31,7 @@ from darglint.errors import (
     MissingYieldError,
     ParameterTypeMismatchError,
     ParameterTypeMissingError,
+    ParameterMalformedError,
     ReturnTypeMismatchError,
 )
 from .utils import (
@@ -508,6 +509,30 @@ class IntegrityCheckerTestCase(TestCase):
         errors = checker.errors
         self.assertEqual(len(errors), 1)
         self.assertTrue(isinstance(errors[0], ExcessParameterError))
+
+    def test_malformed_errors_raise_appropriate_warning(self):
+        program = '\n'.join([
+            'def append_markdown(content):',
+            '    """Adds the content to this markdown.',
+            '',
+            '    Args:',
+            '        content (str | list(str)): The content to add.',
+            '',
+            '    """',
+            '    if isinstance(content, str):',
+            '        this.contents.append(content)',
+            '    elif isinstance(content, list):',
+            '        this.content.extend(content)',
+            '    else:',
+            '        logger.warning("Invalid content type")',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertEqual(len(errors), 1)
+        self.assertTrue(isinstance(errors[0], ParameterMalformedError))
 
     def test_missing_return_parameter_added(self):
         program = '\n'.join([

@@ -352,7 +352,9 @@ class NewGoogleParserTests(TestCase):
             ''
         ])))
         node = parse(tokens)
-        CykNodeUtils.contains(node, 'raises-section')
+        self.assertTrue(
+            CykNodeUtils.contains(node, 'raises-section')
+        )
         exceptions = CykNodeUtils.get_annotated(node, ExceptionIdentifier)
         self.assertEqual(len(exceptions), 1)
         exception = list(exceptions)[0]
@@ -360,3 +362,13 @@ class NewGoogleParserTests(TestCase):
             ExceptionIdentifier.extract(exception),
             'aiohttp.web.HTTPException',
         )
+
+    def test_nonstandard_types_captures_argument(self):
+        tokens = condense(lex('\n'.join([
+            'Args:',
+            '    content (str | list(str)): The content to add.',
+            '',
+        ])))
+        node = parse(tokens)
+        print([x.token_type for x in tokens])
+        self.assertEqual(node.symbol, 'arguments-section')
