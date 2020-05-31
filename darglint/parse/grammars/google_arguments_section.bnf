@@ -39,6 +39,9 @@ start: <arguments-section>
       @ArgumentTypeIdentifier
       <indent> <ident> <type-section-parens> <colon>
     | @ArgumentIdentifier
+      @ArgumentTypeIdentifier
+      <indent> <ident> <type-section-parens> <colon> <newline>
+    | @ArgumentIdentifier
       <indent> <ident> <colon> <newline>
 
 # The normal <paragraph> can be indented any number of times,

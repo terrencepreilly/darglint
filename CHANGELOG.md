@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   subject to other checks. (For example, if the description
   is missing, an error will be reported.)
 
+### Fixed
+
+- Handled newlines after Google argument types.  Newlines
+  were handled in most other situations (inside of types,
+  after an untyped item, etc.) but this one slipped through.
+
 ## [1.3.1]
 
 ### Changed

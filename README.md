@@ -436,8 +436,6 @@ roughly according to current priority/feasibility.
 
 - [ ] Expose command-line options through sphinx.
 - [ ] Robust logging for errors caused/encountered by *darglint*.
-- [ ] Check super classes of errors/exceptions raised to allow for more
-general descriptions in the interface.
 - [ ] Check class docstrings (See Issue #25).
 - [ ] Autoformatting docstrings.  (See Milestone #3).
 - [ ] Optional aggressive style checking through command line flag.

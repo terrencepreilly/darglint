@@ -294,6 +294,37 @@ class NewGoogleParserTests(TestCase):
             str(node),
         )
 
+    def test_parse_args_section_with_newline_after_type(self):
+        tokens = condense(lex('\n'.join([
+            'Args:',
+            '    points (:class:`numpy.ndarray`):',
+            '        The points to test.',
+        ])))
+        node = parse(tokens)
+        self.assertEqual(
+            node.symbol,
+            'arguments-section',
+            str(node),
+        )
+
+    def test_parse_args_section_with_newline_after_type_in_context(self):
+        tokens = condense(lex('\n'.join([
+            'Args:',
+            '    unbroken (int): without breaks.',
+            '    points (:class:`numpy.ndarray`):',
+            '        The points to test.',
+            '    other (:class: `numpy.ndarray`):',
+            '        Something.',
+            '    nonbroken (int): without extra break',
+        ])))
+        node = parse(tokens)
+        self.assertEqual(
+            node.symbol,
+            'arguments-section',
+            str(node),
+        )
+
+
     def test_parse_raises_section_with_newline_after_item_name(self):
         tokens = condense(lex('\n'.join([
             'Raises:',
