@@ -114,3 +114,29 @@ class RaiseVisitorTestCase(TestCase):
             '        pass',
         ])
         self.assertNoneFound(program)
+
+    def test_caught_multiple_exceptions(self):
+        program = '\n'.join([
+            'def f(x):',
+            '    try:',
+            '        y = int(x)',
+            '        return 2 / y',
+            '    except (ValueError, ZeroDivisionError) as vezde:',
+            '        pass',
+        ])
+        self.assertNoneFound(program)
+
+    def test_reraise_one_of_multiple_exceptions(self):
+        program = '\n'.join([
+            'def f(x):',
+            '    try:',
+            '        y = int(x)',
+            '        return 2 / y',
+            '    except (ValueError, ZeroDivisionError) as vezde:',
+            '        raise vezde',
+        ])
+        self.assertFound(
+            program,
+            'ValueError',
+            'ZeroDivisionError',
+        )

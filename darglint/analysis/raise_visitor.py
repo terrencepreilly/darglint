@@ -5,9 +5,11 @@ from collections import (
 from typing import (
     Any,
     Dict,
+    Iterator,
     List,
     Optional,
     Set,
+    Union,
 )
 from ..config import get_logger
 
@@ -25,16 +27,16 @@ class Context(object):
         # A lookup from variable names to AST nodes.
         # If the variable name occurs in a raise expression,
         # then the exception will be added using this lookup.
-        self.variables = dict()  # type: Dict[str, str]
+        self.variables = dict()  # type: Dict[str, Union[str, List[str]]]
 
         # The error(s) which the current exception block is
         # handling. (Since we only handle one handler at a time
         # in the context, and since they don't repeat the
         # exception, it's fine to overwrite this value.)
-        self.handling = None  # type: Optional[str]
+        self.handling = None  # type: Optional[List[str]]
 
     def _get_attr_name(self, attr):
-        # type: (ast.Attribute) -> str
+        # type: (Union[ast.Attribute, ast.Name]) -> List[str]
         curr = attr  # type: Any
         parts = list()  # type: List[str]
 
@@ -48,6 +50,21 @@ class Context(object):
             elif isinstance(curr, ast.Name):
                 parts.append(curr.id)
                 curr = None
+            elif isinstance(curr, ast.Tuple):
+                names = list()
+                for node in curr.elts:
+                    if isinstance(node, ast.Name):
+                        names.extend(self._get_attr_name(node))
+                    else:
+                        logger.error(
+                            'While getting the names from a caught '
+                            'tuple of exceptions, encountered '
+                            'something other than an ast.Name: '
+                            '{}'.format(
+                                node.__class__.__name__
+                            )
+                        )
+                return names
             else:
                 logger.error(
                     'While getting ast.Attribute representation '
@@ -57,14 +74,21 @@ class Context(object):
                 )
                 curr = None
         parts.reverse()
-        return '.'.join(parts)
+        return ['.'.join(parts)]
 
     def _get_name_name(self, name):
-        # type: (ast.Name) -> str
-        return name.id
+        # type: (Union[ast.Name, ast.Tuple]) -> Union[str, List[str]]
+        if isinstance(name, ast.Name):
+            return name.id
+        elif isinstance(name, ast.Tuple):
+            ret = list()
+            for node in name.elts:
+                if isinstance(node, ast.Name):
+                    ret.append(node.id)
+            return ret
 
     def _get_exception_name(self, raises):
-        # type: (ast.Raise) -> str
+        # type: (ast.Raise) -> Union[str, List[str]]
         if isinstance(raises, str):
             return raises
         if isinstance(raises.exc, ast.Name):
@@ -103,7 +127,12 @@ class Context(object):
                 n_repr,
             )
         elif raises.exc is None:
-            return self.handling or ''
+            if not self.handling:
+                return ''
+            elif len(self.handling) == 1:
+                return self.handling[0]
+            else:
+                return self.handling
         else:
             logger.debug('Unexpected type in raises expression: {}'.format(
                 raises.exc
@@ -113,28 +142,36 @@ class Context(object):
     def add_exception(self, node):
         # type: (ast.Raise) -> None
         name = self._get_exception_name(node)
-        if name:
+        if isinstance(name, str):
             self.exceptions.add(name)
+        elif isinstance(name, list):
+            for part in name:
+                self.exceptions.add(part)
         else:
             logger.warning('Node {} name extraction failed.')
 
     def remove_exception(self, node):
         # type: (ast.Raise) -> None
         name = self._get_exception_name(node)
-        if name in self.exceptions:
+        if isinstance(name, str) and name in self.exceptions:
             self.exceptions.remove(name)
-            self.handling = name
+            self.handling = [name]
+        elif isinstance(name, list):
+            self.handling = []
+            for part in name:
+                self.exceptions.remove(part)
+                self.handling.append(part)
 
     def remove_all_exceptions(self):
         # type: () -> None
         self.exceptions = set()
 
     def add_variable(self, variable, exception):
-        # type: (str, ast.Name) -> None
+        # type: (str, Union[ast.Name, ast.Tuple]) -> None
         self.variables[variable] = self._get_name_name(exception)
 
     def set_handling(self, attr):
-        # type: (ast.Attribute) -> None
+        # type: (Union[ast.Attribute, ast.Name]) -> None
         self.handling = self._get_attr_name(attr)
 
     def remove_variable(self, variable):
@@ -182,10 +219,23 @@ class RaiseVisitor(ast.NodeVisitor):
             self.visit(child)
         for handler in node.handlers:
             if handler.type:
-                if handler.name and isinstance(handler.type, ast.Name):
+                if handler.name and (
+                    isinstance(handler.type, ast.Name) or
+                    isinstance(handler.type, ast.Tuple)
+                ):
                     self.context.add_variable(handler.name, handler.type)
-                else:
+                elif isinstance(handler.type, ast.Attribute):
                     self.context.set_handling(handler.type)
+                elif isinstance(handler.type, ast.Name):
+                    self.context.set_handling(handler.type)
+                else:
+                    logger.error(
+                        'While getting the types of exceptions in '
+                        'the handler, expected to find an ast.Name, '
+                        'ast.Tuple, or ast.Attribute, but got {}'.format(
+                            handler.type
+                        )
+                    )
                 id = getattr(handler.type, 'id', None)
                 if id:
                     self.context.remove_exception(id)
