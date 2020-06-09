@@ -36,7 +36,7 @@ class Context(object):
         self.handling = None  # type: Optional[List[str]]
 
     def _get_attr_name(self, attr):
-        # type: (Union[ast.Attribute, ast.Name]) -> List[str]
+        # type: (Union[ast.Attribute, ast.Name, ast.Tuple]) -> List[str]
         curr = attr  # type: Any
         parts = list()  # type: List[str]
 
@@ -171,7 +171,7 @@ class Context(object):
         self.variables[variable] = self._get_name_name(exception)
 
     def set_handling(self, attr):
-        # type: (Union[ast.Attribute, ast.Name]) -> None
+        # type: (Union[ast.Attribute, ast.Name, ast.Tuple]) -> None
         self.handling = self._get_attr_name(attr)
 
     def remove_variable(self, variable):
@@ -227,6 +227,8 @@ class RaiseVisitor(ast.NodeVisitor):
                 elif isinstance(handler.type, ast.Attribute):
                     self.context.set_handling(handler.type)
                 elif isinstance(handler.type, ast.Name):
+                    self.context.set_handling(handler.type)
+                elif isinstance(handler.type, ast.Tuple):
                     self.context.set_handling(handler.type)
                 else:
                     logger.error(
