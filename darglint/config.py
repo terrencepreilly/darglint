@@ -83,11 +83,11 @@ class Strictness(Enum):
     def from_string(cls, strictness):
         strictness = strictness.lower().strip()
         if strictness in {'short_description', 'short'}:
-            return Strictness.SHORT_DESCRIPTION
+            return cls.SHORT_DESCRIPTION
         if strictness in {'long_description', 'long'}:
-            return Strictness.LONG_DESCRIPTION
+            return cls.LONG_DESCRIPTION
         if strictness in {'full_description', 'full'}:
-            return Strictness.FULL_DESCRIPTION
+            return cls.FULL_DESCRIPTION
 
         raise Exception(
             'Unrecognized strictness amount "{}".  '.format(strictness) +

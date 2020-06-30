@@ -12,6 +12,7 @@ from .function_description import (
 )
 from .integrity_checker import IntegrityChecker
 from .config import (
+    Configuration,
     get_config,
     Strictness,
 )
@@ -67,7 +68,7 @@ class DarglintChecker(object):
 
     @classmethod
     def add_options(cls, option_manager):
-        defaults = get_config().get_default_instance()
+        defaults = Configuration.get_default_instance()
 
         option_manager.add_option(
             '--docstring-style',
@@ -86,6 +87,4 @@ class DarglintChecker(object):
     @classmethod
     def parse_options(cls, options):
         cls.config.style = DocstringStyle.from_string(options.docstring_style)
-        print("Parsed style to be", cls.config.style)
         cls.config.strictness = Strictness.from_string(options.strictness)
-        print("Parsed strictness to be", cls.config.strictness)
