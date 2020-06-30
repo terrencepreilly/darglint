@@ -6,12 +6,14 @@ from typing import (  # noqa
     Tuple,
 )
 
+from .docstring.base import DocstringStyle
 from .function_description import (
     get_function_descriptions,
 )
 from .integrity_checker import IntegrityChecker
 from .config import (
     get_config,
+    Strictness,
 )
 
 
@@ -22,6 +24,7 @@ class DarglintChecker(object):
 
     name = 'flake8-darglint'
     version = __version__
+    config = get_config()
 
     def __init__(self, tree, filename):
         self.tree = tree
@@ -30,8 +33,7 @@ class DarglintChecker(object):
 
     def run(self):
         # type: () -> Iterator[Tuple[int, int, str, type]]
-        config = get_config()
-        if '*' in config.ignore:
+        if '*' in self.config.ignore:
             return
 
         # Remember the last line number, so that if there is an
@@ -43,6 +45,7 @@ class DarglintChecker(object):
             checker = IntegrityChecker(
                 raise_errors=False,
             )
+            checker.config = self.config
             for function in functions:
                 checker.run_checks(function)
 
@@ -61,3 +64,28 @@ class DarglintChecker(object):
                 'DAR000: Unexpected exception in darglint: ' + str(ex),
                 type(self)
             )
+
+    @classmethod
+    def add_options(cls, option_manager):
+        defaults = get_config().get_default_instance()
+
+        option_manager.add_option(
+            '--docstring-style',
+            default=defaults.style.name,
+            parse_from_config=True,
+            help='Docstring style to use for Darglint',
+        )
+
+        option_manager.add_option(
+            '--strictness',
+            default=defaults.strictness.name,
+            parse_from_config=True,
+            help='Strictness level to use for Darglint',
+        )
+
+    @classmethod
+    def parse_options(cls, options):
+        cls.config.style = DocstringStyle.from_string(options.docstring_style)
+        print("Parsed style to be", cls.config.style)
+        cls.config.strictness = Strictness.from_string(options.strictness)
+        print("Parsed strictness to be", cls.config.strictness)
