@@ -79,6 +79,21 @@ class Strictness(Enum):
     # Require everything.
     FULL_DESCRIPTION = 3
 
+    @classmethod
+    def from_string(cls, strictness):
+        strictness = strictness.lower().strip()
+        if strictness in {'short_description', 'short'}:
+            return cls.SHORT_DESCRIPTION
+        if strictness in {'long_description', 'long'}:
+            return cls.LONG_DESCRIPTION
+        if strictness in {'full_description', 'full'}:
+            return cls.FULL_DESCRIPTION
+
+        raise Exception(
+            'Unrecognized strictness amount "{}".  '.format(strictness) +
+            'Should be one of {"short", "long", "full"}'
+        )
+
 
 class AssertStyle(Enum):
     """Describes how to handle assertions."""
@@ -200,32 +215,13 @@ def load_config_file(filename):  # type: (str) -> Configuration
         if 'ignore_regex' in config['darglint']:
             ignore_regex = config['darglint']['ignore_regex']
         if 'docstring_style' in config['darglint']:
-            raw_style = config['darglint']['docstring_style'].lower().strip()
-            if raw_style == 'google':
-                style = DocstringStyle.GOOGLE
-            elif raw_style == 'sphinx':
-                style = DocstringStyle.SPHINX
-            elif raw_style == 'numpy':
-                style = DocstringStyle.NUMPY
-            else:
-                raise Exception(
-                    'Unrecognized style.  Should be one of {}'.format(
-                        [x.name for x in DocstringStyle]
-                    )
-                )
+            raw_style = config['darglint']['docstring_style']
+            style = DocstringStyle.from_string(raw_style)
+
         if 'strictness' in config['darglint']:
-            raw_strictness = config['darglint']['strictness'].lower().strip()
-            if raw_strictness in {'short_description', 'short'}:
-                strictness = Strictness.SHORT_DESCRIPTION
-            elif raw_strictness in {'long_description', 'long'}:
-                strictness = Strictness.LONG_DESCRIPTION
-            elif raw_strictness in {'full_description', 'full'}:
-                strictness = Strictness.FULL_DESCRIPTION
-            else:
-                raise Exception(
-                    'Unrecognized stricteness amount.  '
-                    'Should be one of {"short", "long", "full"}'
-                )
+            raw_strictness = config['darglint']['strictness']
+            style = Strictness.from_string(raw_strictness)
+
         if 'indentation' in config['darglint']:
             try:
                 indentation = int(config['darglint']['indentation'])
