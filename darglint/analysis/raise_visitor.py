@@ -2,6 +2,7 @@ import ast
 from collections import (
     deque,
 )
+import copy
 from typing import (
     Any,
     Dict,
@@ -12,9 +13,11 @@ from typing import (
     Union,
 )
 from ..config import get_logger
+from ..custom_assert import Assert
 
 
 logger = get_logger()
+
 
 
 class Context(object):
@@ -23,6 +26,14 @@ class Context(object):
     def __init__(self):
         # type: () -> None
         self.exceptions = set()  # type: Set[str]
+
+        # If we're in a bare handler, we have to capture new
+        # exceptions raised separately from the existing ones.
+        # So, we copy the existing exceptions over here.
+        # This complicates the logic, for the calling class (as
+        # contextual operations have to account for two cases),
+        # but it doesn't seem avoidable.
+        self.bare_handler_exceptions = None # type: Optional[Set[str]]
 
         # A lookup from variable names to AST nodes.
         # If the variable name occurs in a raise expression,
@@ -34,6 +45,15 @@ class Context(object):
         # in the context, and since they don't repeat the
         # exception, it's fine to overwrite this value.)
         self.handling = None  # type: Optional[List[str]]
+
+    @property
+    def in_bare_handler(self):
+        # type: () -> bool
+        return self.bare_handler_exceptions is not None
+
+    def set_in_bare_handler(self):
+        self.bare_handler_exceptions = set(self.exceptions)
+        self.remove_all_exceptions()
 
     def _get_attr_name(self, attr):
         # type: (Union[ast.Attribute, ast.Name, ast.Tuple]) -> List[str]
@@ -140,8 +160,27 @@ class Context(object):
         return ''
 
     def add_exception(self, node):
-        # type: (ast.Raise) -> None
+        # type: (ast.Raise) -> Set[str]
+        """Add an exception to the context.
+
+        If the exception(s) doesn't have a name and doesn't have
+        more children, then it's a bare raise.  In that case, we
+        return the exception(s) to the parent context.
+
+        Args:
+            node: A raise ast node.
+
+        Returns:
+            A list of exceptions to be passed up to the parent
+            context.
+
+        """
         name = self._get_exception_name(node)
+        if name == '':
+            if self.in_bare_handler:
+                return self.bare_handler_exceptions | self.exceptions
+            else:
+                return self.exceptions
         if isinstance(name, str):
             self.exceptions.add(name)
         elif isinstance(name, list):
@@ -149,6 +188,7 @@ class Context(object):
                 self.exceptions.add(part)
         else:
             logger.warning('Node {} name extraction failed.')
+        return []
 
     def remove_exception(self, node):
         # type: (ast.Raise) -> None
@@ -209,7 +249,17 @@ class RaiseVisitor(ast.NodeVisitor):
 
     def visit_Raise(self, node):
         # type: (ast.Raise) -> ast.AST
-        self.context.add_exception(node)
+        bubbles = self.context.add_exception(node)
+        if bubbles:
+            Assert(
+                len(self.contexts) > 1,
+                'We should only encounter bare raises in a handler.'
+            )
+            if len(self.contexts) < 2:
+                return self.generic_visit(node)
+            parent_context = self.contexts[-2]
+            parent_context.exceptions |= bubbles
+
         return self.generic_visit(node)
 
     def visit_Try(self, node):
@@ -241,14 +291,23 @@ class RaiseVisitor(ast.NodeVisitor):
                 id = getattr(handler.type, 'id', None)
                 if id:
                     self.context.remove_exception(id)
-            else:
-                self.context.remove_all_exceptions()
-        for handler in node.handlers:
-            self.generic_visit(handler)
 
-            # We need to signal that we've finished handling
-            # the given handler section, otherwise the caught
-            # error could bleed over into a bare except clause.
-            self.context.finish_handling()
+                self.generic_visit(handler)
+                self.context.finish_handling()
+            else:
+                # Handle a bare except.
+                #
+                # Since the bare except handles all exceptions,
+                # we have to clear all exceptions from the context.
+                # However, exceptions could also be raised from
+                # this handler.  So we can't clear the exceptions
+                # first.  But if we clear the exceptions second,
+                # then remove any new exceptions raised in the handler.
+                # What we need, then, is to know which new exceptions
+                # are raised, and clear all but them.  For that,
+                # we use a temporary context.
+                self.context.set_in_bare_handler()
+                self.generic_visit(handler)
+
         context = self.contexts.pop()
         self.context.extend(context)

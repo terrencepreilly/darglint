@@ -6,6 +6,14 @@ from darglint.analysis.raise_visitor import RaiseVisitor
 class RaiseVisitorTestCase(TestCase):
 
     def assertFound(self, program, *exceptions):
+        """Assert that the given exceptions were detected.
+
+        Args:
+            program: The program to run the analysis on.
+            exceptions: The exceptions which should have been
+                detected as being raised.
+
+        """
         function = ast.parse(program).body[0]
         visitor = RaiseVisitor()
         visitor.visit(function)
@@ -168,3 +176,44 @@ class RaiseVisitorTestCase(TestCase):
             'ValueError',
             'ZeroDivisionError',
         )
+
+    def test_bare_reraise_in_multiple_handlers(self):
+        program = '\n'.join([
+            'def f(x):',
+            '    try:',
+            '        risky.attempt(x)',
+            '    except risky.Failed:',
+            '        raise',
+            '    except Exception:',
+            '        logger.log("Something else went wrong!")',
+            '',
+        ])
+        self.assertFound(program, 'risky.Failed')
+
+    def test_reraise_any_exception_in_bare_handler(self):
+        program = '\n'.join([
+            'def f(x):',
+            '    try:',
+            '        if x == "Racoon":',
+            '            raise Rabies()',
+            '        elif x == "Bird":',
+            '            raise H1N1()',
+            '    except:',
+            '        raise',
+        ])
+        self.assertFound(program, 'Rabies', 'H1N1')
+
+    def test_reraise_any_exception_in_bare_handler(self):
+        program = '\n'.join([
+            'def f(x):',
+            '    try:',
+            '        if x == "Racoon":',
+            '            raise Rabies()',
+            '        elif x == "Bird":',
+            '            raise H1N1()',
+            '    except Rabies:',
+            '        raise',
+            '    except H1N1:',
+            '        raise Unexpected()',
+        ])
+        self.assertFound(program, 'Rabies', 'Unexpected')
