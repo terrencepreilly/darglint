@@ -3,6 +3,19 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.5.0]
+
+### Added
+
+- Settings can now be configured from flake8's configuration
+  file, or from the flake8 command.  Thanks to @Harrison88 for
+  the PR!
+
+### Fixed
+
+- Handle bare raise statement in multiple exception handlers.
+- Handle bare raise statement in catch-all exception handler.
+
 ## [1.4.1]
 
 ### Fixed
