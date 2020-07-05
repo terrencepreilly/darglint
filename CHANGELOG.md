@@ -3,6 +3,13 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.5.1]
+
+### Fixed
+
+- Make flake8 config use default config as a base configuration.
+- Fix style being parsed for strictness in configuration parsing.
+
 ## [1.5.0]
 
 ### Added

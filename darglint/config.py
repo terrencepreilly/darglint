@@ -132,6 +132,17 @@ class Configuration(object):
         self.indentation = indentation
         self.assert_style = assert_style
 
+    def __str__(self):
+        # type: () -> str
+        return '\n'.join([
+            'message_template={message_template}',
+            'style={style}',
+            'strictness={strictness}',
+            'indentation={indentation}',
+            'ignore={errors_to_ignore}',
+            'ignore_regex={ignore_regex}',
+        ]).format(**self.__dict__)
+
     @classmethod
     def get_default_instance(cls):
         return cls(
@@ -220,7 +231,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
 
         if 'strictness' in config['darglint']:
             raw_strictness = config['darglint']['strictness']
-            style = Strictness.from_string(raw_strictness)
+            strictness = Strictness.from_string(raw_strictness)
 
         if 'indentation' in config['darglint']:
             try:

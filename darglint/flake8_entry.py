@@ -68,7 +68,7 @@ class DarglintChecker(object):
 
     @classmethod
     def add_options(cls, option_manager):
-        defaults = Configuration.get_default_instance()
+        defaults = cls.config
 
         option_manager.add_option(
             '--docstring-style',
