@@ -3,7 +3,7 @@
 import re
 from collections import defaultdict
 import subprocess
-from unittest import (TestCase, skip)
+from unittest import (TestCase)
 import os
 from typing import (
     Dict,
@@ -109,7 +109,6 @@ class CompatibilityTest(TestCase):
         errors = ERROR.findall(result)
         collection[filename] |= set(errors)
 
-    @skip('')
     def test_with_darglint_is_superset(self):
         errors = defaultdict(lambda: set())  # type: Dict[str, Set[str]]
         self.create_no_darglint_setup()
