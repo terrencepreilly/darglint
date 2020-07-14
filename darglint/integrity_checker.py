@@ -379,6 +379,7 @@ class IntegrityChecker(object):
         """Return true if we should ignore this error.
 
         Args:
+            docstring: The docstring we are reporting on.
             error: The error we might be ignoring.
 
         Returns:
@@ -400,6 +401,7 @@ class IntegrityChecker(object):
         """Remove ignored from missing.
 
         Args:
+            docstring: The docstring we are reporting on.
             missing: A set of missing items.
             error: The error being checked.
 
