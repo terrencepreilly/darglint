@@ -154,6 +154,33 @@ class IntegrityCheckerNumpyTestCase(TestCase):
             errors[0].__class__.__name__
         )
 
+    def test_empty_type_in_raises_section(self):
+        program = '\n'.join([
+            'def never():',
+            '    """Is never called.',
+            '',
+            '    Raises',
+            '    ------',
+            '    AssertionError :',
+            '        If it has been called.',
+            '',
+            '    """',
+            '    raise AssertionError()',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker(self.config)
+        checker.run_checks(functions[0])
+        errors  =checker.errors
+        self.assertEqual(
+            len(errors), 1,
+            [(x.message()) for x in errors],
+        )
+        self.assertTrue(
+            isinstance(errors[0], EmptyTypeError),
+            errors[0].__class__.__name__,
+        )
+
     @skip('See Issue #69: https://github.com/terrencepreilly/darglint/issues/69#issuecomment-596273866')  # noqa: E501
     def test_empty_description_error(self):
         program_template = '\n'.join([

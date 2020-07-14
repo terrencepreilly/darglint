@@ -3,6 +3,22 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.5.2]
+
+### Added
+
+- A colon after an error in Numpy format is now reported
+  as an empty type error.  Even though exception types are not a
+  part of the function signature, and even though it's not a
+  part of the numpy standard, this at least gives a hint to the
+  user that a dangling colon should be removed.  Incidentally,
+  exceptions could have different types, and it could be somewhat
+  useful to know what those are.
+
+### Fixed
+
+- Typo in readme fixed thanks to cthoyt@.
+
 ## [1.5.1]
 
 ### Fixed

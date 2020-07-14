@@ -21,6 +21,11 @@ from darglint.parse.identifiers import (
     ArgumentItemIdentifier,
     ArgumentTypeIdentifier,
     NoqaIdentifier,
+    ExceptionIdentifier,
+    ExceptionItemIdentifier,
+)
+from darglint.errors import (
+    EmptyTypeError,
 )
 from darglint.utils import (
     CykNodeUtils,
@@ -517,4 +522,88 @@ class NumpydocTests(TestCase):
             docstring,
             NoqaIdentifier,
             {'*'},
+        )
+
+    def test_colon_after_error_parses_with_error(self):
+        raw_docstring = '\n'.join([
+            'Raises an error.',
+            '',
+            'Raises',
+            '------',
+            'ValueError :',
+            '    Raised at random intervals.',
+            '',
+        ])
+        tokens = condense(lex(raw_docstring))
+        docstring = parse(tokens)
+        self.assertIdentified(
+            docstring,
+            ExceptionItemIdentifier,
+            {'ValueError'},
+        )
+        self.assertHasIdentifier(
+            docstring,
+            EmptyTypeError,
+        )
+
+    def test_colon_after_error_with_noqa(self):
+        raw_docstring = '\n'.join([
+            'Raises an error.',
+            '',
+            'Raises',
+            '------',
+            'ValueError: # noqa',
+            '    Always.',
+            '',
+        ])
+        tokens = condense(lex(raw_docstring))
+        docstring = parse(tokens)
+        self.assertIdentified(
+            docstring,
+            ExceptionItemIdentifier,
+            {'ValueError'},
+        )
+        self.assertHasIdentifier(
+            docstring,
+            NoqaIdentifier,
+        )
+
+    def test_noqa_may_appear_after_raises_item(self):
+        raw_docstring = '\n'.join([
+            'Exceptionally good.',
+            '',
+            'Raises',
+            '------',
+            'Good # noqa',
+            '    Exceptionally.',
+        ])
+        tokens = condense(lex(raw_docstring))
+        docstring = parse(tokens)
+        self.assertIdentified(
+            docstring,
+            ExceptionItemIdentifier,
+            {'Good'},
+        )
+        self.assertHasIdentifier(
+            docstring,
+            NoqaIdentifier,
+        )
+
+    @skip('Resolve fixme note in bnf.')
+    def test_raises_item_without_body(self):
+        raw_docstring = '\n'.join([
+            'Exceptionally bad.',
+            '',
+            'Raises',
+            '------',
+            'Bad',
+            'ValueError',
+            '    Sometimes.',
+        ])
+        tokens = condense(lex(raw_docstring))
+        docstring = parse(tokens)
+        self.assertIdentified(
+            docstring,
+            ExceptionItemIdentifier,
+            {'Bad', 'ValueError'},
         )

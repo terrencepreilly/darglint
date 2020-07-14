@@ -302,26 +302,6 @@ class NoqaIdentifier(Identifier):
             return ''
         else:
             return ''
-        #     if node.rchild.rchild.value:
-        #         return node.rchild.rchild.value.value
-        #     elif node.rchild.rchild.lchild:
-        #         assert node.rchild.rchild.lchild.value
-        #         return node.rchild.rchild.lchild.value.value
-        #     else:
-        #         assert False
-        # else:
-        #     return ''
-        #
-        # if node.rchild and node.rchild.rchild:
-        #     if node.rchild.rchild.value:
-        #         return node.rchild.rchild.value.value
-        #     elif node.rchild.rchild.lchild:
-        #         assert node.rchild.rchild.lchild.value
-        #         return node.rchild.rchild.lchild.value.value
-        #     else:
-        #         assert False
-        # else:
-        #     return ''
 
     @staticmethod
     def extract_targets(node):
