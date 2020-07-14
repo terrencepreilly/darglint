@@ -361,7 +361,7 @@ To analyze Sphinx-style docstrings, pass the style flag to the command:
 
 ```bash
 darglint -s sphinx example.py
-darglint --docsting-style sphinx example.py
+darglint --docstring-style sphinx example.py
 ```
 
 Alternatively, you can specify the style in the configuration file using
