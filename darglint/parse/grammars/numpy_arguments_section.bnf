@@ -4,6 +4,7 @@ import numpy.bnf
 
 from darglint.errors import (
     EmptyDescriptionError,
+    EmptyTypeError,
 )
 from darglint.parse.grammar import (
     BaseGrammar,
@@ -37,6 +38,7 @@ start: <arguments-section>
     ::= @ArgumentItemIdentifier
         <ident-list> <newlines>
     | @ArgumentItemIdentifier
+      @EmptyTypeError
         <ident-list> <colon> <newlines>
     | @ArgumentItemIdentifier
       @ArgumentTypeIdentifier
@@ -48,6 +50,7 @@ start: <arguments-section>
         <ident-list> <newlines>
     | @ArgumentItemIdentifier
       @EmptyDescriptionError
+      @EmptyTypeError
         <ident-list> <colon> <newlines>
     | @ArgumentItemIdentifier
       @ArgumentTypeIdentifier

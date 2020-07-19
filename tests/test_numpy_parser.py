@@ -231,6 +231,46 @@ class NumpydocTests(TestCase):
         docstring = parse(tokens)
         self.assertIdentified(docstring, ArgumentTypeIdentifier, {'Person'})
 
+    def test_class_method_with_types(self):
+        raw_docstring = '\n'.join([
+            'Instantiate the class from a given load name and directory.',
+            '',
+            'Parameters',
+            '----------',
+            'load_name : str',
+            '    The load name (one of \'ambient\', \'hot_load\', \'open\' or \'short\').',
+            'direc : path',
+            '    The top-level calibration observation directory.',
+            'run_num : int',
+            '    The run number to use for the spectra.',
+            'filetype : str',
+            '    The filetype to look for (acq or h5).',
+
+            # This line should raise an empty type error.
+            'kwargs :',
+            '    All other arguments to :class:`LoadSpectrum`.',
+            '',
+            'Returns',
+            '-------',
+            ':class:`LoadSpectrum`.',
+        ])
+        tokens = condense(lex(raw_docstring))
+        docstring = parse(tokens)
+        self.assertIdentified(
+            docstring,
+            ArgumentItemIdentifier,
+            {'load_name', 'direc', 'run_num', 'filetype', 'kwargs'},
+        )
+        self.assertIdentified(
+            docstring,
+            ArgumentTypeIdentifier,
+            {'str', 'path', 'int'},
+        )
+        self.assertHasIdentifier(
+            docstring,
+            EmptyTypeError,
+        )
+
     def test_two_combined_parameters(self):
         raw_docstring = '\n'.join([
             'Get the cartesian product of two lists.',

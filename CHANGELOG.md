@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Fixed
 
 - Typo in readme fixed thanks to cthoyt@.
+- Underspecified types previously resulted in confusing error
+  messages because dargint incorrectly matched types up with the
+  arguments they describe.  This is now corrected.
 
 ## [1.5.1]
 

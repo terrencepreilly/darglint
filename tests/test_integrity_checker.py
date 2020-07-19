@@ -221,6 +221,58 @@ class IntegrityCheckerNumpyTestCase(TestCase):
                 ),
             )
 
+    def test_parameter_types_captured(self):
+        program = '\n'.join([
+            'class Spectrum:',
+            '    @classmethod',
+            '    def from_load_name(',
+            '        cls,',
+            '        load_name: str,',
+            '        direc: [str, Path],',
+            '        run_num: Optional[int] = None,',
+            '        filetype: Optional[str] = None,',
+            '        **kwargs,',
+            '    ):',
+            '        """Instantiate the class from a given load name and directory.',
+            '',
+            '        Parameters',
+            '        ----------',
+            '        load_name : str',
+            '            The load name (one of \'ambient\', \'hot_load\', \'open\' or \'short\').',
+            '        direc : Union[str, Path]',
+            '            The top-level calibration observation directory.',
+            '        run_num : Optional[int]',
+            '            The run number to use for the spectra.',
+            '        filetype : Optional[str]',
+            '            The filetype to look for (acq or h5).',
+            '        kwargs :',
+            '            All other arguments to :class:`LoadSpectrum`.',
+            '',
+            '        Returns',
+            '        -------',
+            '        :class:`LoadSpectrum`.',
+            '        """',
+            '        return LoadSpectrum()',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        checker = IntegrityChecker(self.config)
+        checker.run_checks(function)
+        errors = checker.errors
+
+        self.assertTrue(
+            len(errors) == 1,
+            'EmptyTypeError not defined among {}'.format(
+                '\n'.join(map(lambda x: x.message(2), errors)),
+            ),
+        )
+        self.assertTrue(
+            isinstance(errors[0], EmptyTypeError),
+            'EmptyTypeError not defined: {}'.format(
+                errors,
+            ),
+        )
+
 
 class IntegrityCheckerSphinxTestCase(TestCase):
 
@@ -277,6 +329,39 @@ class IntegrityCheckerSphinxTestCase(TestCase):
             len(errors), 1,
             [(x.message()) for x in errors]
         )
+
+    def test_underspecified_parameter_types(self):
+        program = '\n'.join([
+            'def f(x: int, y, z: str):',
+            '    """Some fn.',
+            '',
+            '    :param x: The first argument.',
+            '    :type x: int',
+            '    :param y: The second argument.',
+            '    :param z: The third argument.',
+            '    :type z: str',
+            '',
+            '    """',
+            '    print(z + str(x * y))',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        checker = IntegrityChecker(self.config)
+        checker.run_checks(function)
+        errors = checker.errors
+        # It's okay if we allow underspecified types -- so long
+        # as we don't incorrectly raise an execption.
+        self.assertTrue(
+            len(errors) <= 1,
+            [(x.message()) for x in errors]
+        )
+        if errors:
+            self.assertTrue(
+                isinstance(errors[0], ParameterTypeMissingError),
+                'Expected {} to be a ParameterTypeMissingError'.format(
+                    errors[0].__class__.__name__,
+                ),
+            )
 
     def test_empty_description_error(self):
         program_template = '\n'.join([
@@ -486,6 +571,38 @@ class IntegrityCheckerTestCase(TestCase):
         errors = checker.errors
         self.assertEqual(len(errors), 1)
         self.assertTrue(isinstance(errors[0], MissingParameterError))
+
+    def test_underspecified_parameter_types(self):
+        program = '\n'.join([
+            'def f(x: int, y, z: str):',
+            '    """Some fn.',
+            '',
+            '    Args:',
+            '        x (int): Some value.',
+            '        y: Some value.',
+            '        z (str): Some value.',
+            '',
+            '    """',
+            '    print(z + str(x * y))',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        checker = IntegrityChecker()
+        checker.run_checks(function)
+        errors = checker.errors
+        # It's okay if we allow underspecified types -- so long
+        # as we don't incorrectly raise an execption.
+        self.assertTrue(
+            len(errors) <= 1,
+            [(x.message()) for x in errors]
+        )
+        if errors:
+            self.assertTrue(
+                isinstance(errors[0], ParameterTypeMissingError),
+                'Expected {} to be a ParameterTypeMissingError'.format(
+                    errors[0].__class__.__name__,
+                ),
+            )
 
     def test_try_block_no_excess_error(self):
         """Make sure the else and except blocks are checked.

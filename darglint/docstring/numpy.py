@@ -1,3 +1,11 @@
+"""Contains a subclass of `Docstring`, which is for numpy.
+
+TODO: Consider refactoring docstring's discover method so that it 
+builds up a tree of identifiers, rather than a dictionary.  That is, 
+if it's proven more efficient or is much cleaner. 
+
+"""
+import copy
 from typing import (
     Callable,
     Dict,
@@ -41,6 +49,9 @@ from ..lex import (
 from ..errors import (
     DarglintError,
 )
+from ..custom_assert import (
+    Assert,
+)
 
 
 class Docstring(BaseDocstring):
@@ -63,20 +74,21 @@ class Docstring(BaseDocstring):
             self.root = parse(condense(lex(root)))
         self._lookup = self._discover()
 
-    def _discover(self):
-        # type: () -> Dict[str, List[CykNode]]
+    def _discover(self, node = None):
+        # type: (Optional[CykNode]) -> Dict[str, List[CykNode]]
         """Walk the tree, finding all non-terminal nodes.
 
         Returns:
             A lookup table for compound Nodes by their NodeType.
 
         """
-        if not self.root:
+        root = node if node else self.root
+        if not root:
             return dict()
         lookup = defaultdict(
             lambda: list()
         )  # type: Dict[str, List[CykNode]]
-        for node in self.root.in_order_traverse():
+        for node in root.in_order_traverse():
             lookup[node.symbol].append(node)
             for annotation in node.annotations:
                 if issubclass(annotation, Identifier):
@@ -166,36 +178,50 @@ class Docstring(BaseDocstring):
                     'Multiple types should be combined into a Union'
                 )
 
-        # Sort the types according to the sorted items section.
-        # This ensures that the results are always in the same
-        # order.
+        # Extract the item type from the item node.
         items = self._get_items_unsorted(section)
         if not items:
             return None
-        types = self._get_types_unsorted(section)
-        if not types:
-            return []
 
-        # Handle the case when two arguments are listed in
-        # one line (like "m, n: int").
-        sorted_types = list()
-        for arg, _type in sorted(zip(items, types)):
-            for _ in arg.split(','):
-                sorted_types.append(_type)
+        if section == Sections.ARGUMENTS_SECTION:
+            item_identifier = ArgumentItemIdentifier
+            type_identifier = ArgumentTypeIdentifier
+        elif section == Sections.RAISES_SECTION:
+            item_identifier = ExceptionItemIdentifier
+            type_identifier = ExceptionTypeIdentifier
+
+
+        type_lookup = dict()
+        for item in items:
+            lookup = self._discover(item)
+            item_value = item_identifier.extract(item)
+            type_nodes = lookup.get(type_identifier.key, [])
+            if not type_nodes:
+                type_lookup[item_value] = ''
+            else:
+                Assert(
+                    isinstance(type_nodes, list) and len(type_nodes) == 1,
+                    "Expected there to only be one type per item.",
+                )
+                for value in item_value.split(','):
+                    type_lookup[value.strip()] = type_identifier.extract(type_nodes[0])
+
+        item_type_pairs = sorted(type_lookup.items())
+        sorted_types = [x[1] for x in item_type_pairs]
         return sorted_types
 
     def _get_items_unsorted(self, section):
-        # type: (Sections) -> Optional[List[str]]
+        # type: (Sections) -> Optional[List[CykNode]]
         if section == Sections.ARGUMENTS_SECTION:
-            return [
-                ArgumentItemIdentifier.extract(x)
-                for x in self._lookup.get(ArgumentItemIdentifier.key, [])
-            ] or None
+            items = self._lookup.get(ArgumentItemIdentifier.key, [])
+
+            # Copy the list to prevent mutation.
+            return copy.copy(items) or None
         elif section == Sections.RAISES_SECTION:
-            return sorted(
-                ExceptionItemIdentifier.extract(x)
-                for x in self._lookup.get(ExceptionItemIdentifier.key, [])
-            ) or None
+            items = self._lookup.get(ExceptionItemIdentifier.key, [])
+
+            # Copy the list to prevent mutation.
+            return copy.copy(items) or None
         else:
             raise Exception(
                 'Section type {} does not have items, '.format(
@@ -209,8 +235,16 @@ class Docstring(BaseDocstring):
         items = self._get_items_unsorted(section)
         if not items:
             return None
+
+        if section == Sections.ARGUMENTS_SECTION:
+            item_values = [ArgumentItemIdentifier.extract(item) for item in items]
+        elif section == Sections.RAISES_SECTION:
+            item_values = [ExceptionItemIdentifier.extract(item) for item in items]
+        else:
+            return None
+
         sorted_items = list()
-        for item in sorted(items):
+        for item in sorted(item_values):
             sorted_items.extend([
                 x.strip() for x in item.split(',')
             ])
