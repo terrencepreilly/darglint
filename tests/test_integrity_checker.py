@@ -231,7 +231,7 @@ class IntegrityCheckerNumpyTestCase(TestCase):
             '        direc: [str, Path],',
             '        run_num: Optional[int] = None,',
             '        filetype: Optional[str] = None,',
-            '        **kwargs,',
+            '        **kwargs',
             '    ):',
             '        """Instantiate the class from a given load name and directory.',
             '',
