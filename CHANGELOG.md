@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Underspecified types previously resulted in confusing error
   messages because dargint incorrectly matched types up with the
   arguments they describe.  This is now corrected.
+- Ignoring style errors wasn't working.  Any error captured during
+  the parsing phase was just being added without respecting the
+  "ignore" configuration.
 
 ## [1.5.1]
 

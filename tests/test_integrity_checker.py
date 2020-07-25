@@ -558,6 +558,32 @@ class IntegrityCheckerTestCase(TestCase):
             errors = checker.errors
             self.assertEqual(len(errors), 1)
 
+    def test_ignore_style_errors(self):
+        program = '\n'.join([
+            'class WebsiteChecker:',
+            '    def add_to_bloom_filter(self, x):',
+            '        """Add the item to the bloom filter.',
+            '    ',
+            '        Args:',
+            '            x: The item to add to the bloom filter.',
+            '              Assumed to be hashable.',
+            '    ',
+            '        """',
+            '        self.bloom.update(x)',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        with ConfigurationContext(
+            ignore=['DAR003'],
+            message_template=None,
+            style=DocstringStyle.GOOGLE,
+            strictness=Strictness.FULL_DESCRIPTION,
+        ):
+            checker = IntegrityChecker()
+            checker.run_checks(functions[0])
+            errors = checker.errors
+            self.assertEqual(len(errors), 0)
+
     def test_missing_parameter_added(self):
         program = '\n'.join([
             'def function_with_missing_parameter(x):',

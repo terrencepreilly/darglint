@@ -427,6 +427,8 @@ class IntegrityChecker(object):
     def _check_style(self, docstring, function):
         # type: (FunctionDescription) -> None
         for StyleError, line_numbers in docstring.get_style_errors():
+            if self._ignore_error(docstring, StyleError):
+                continue
             self.errors.append(StyleError(
                 function.function,
                 line_numbers,
