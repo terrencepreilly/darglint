@@ -5,13 +5,17 @@ from darglint.parse.grammar import (
     BaseGrammar,
     P,
 )
+from darglint.errors import (
+    IndentError,
+)
 
 
 <item-body>
-    ::= <line>
-    | <line> <newline> <block-indented>
-    | <line> <newlines> <block-indented>
-    | <line> <newline> <indent> <newline> <newlines> <block-indented>
+    ::= 2 <line>
+    | 2 <line> <newline> <block-indented>
+    | 2 <line> <newlines> <block-indented>
+    | 2 <line> <newline> <indent> <newline> <newlines> <block-indented>
+    | 1 @IndentError <line> <newline> <block>
 
 <blanks>
     ::= <split>

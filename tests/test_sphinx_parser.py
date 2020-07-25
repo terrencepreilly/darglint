@@ -12,9 +12,27 @@ from .sphinx_docstrings import docstrings
 from darglint.utils import (
     CykNodeUtils,
 )
+from darglint.errors import (
+    IndentError,
+)
 
 
 class SphinxParserTest(TestCase):
+
+    def assert_has_annotation(self, node, annotation):
+        for child in node.walk():
+            for a in child.annotations:
+                if a == annotation:
+                    return
+        self.fail('Could not find annotation {}'.format(annotation.__name__))
+
+    def assert_has_no_annotation(self, node, annotation):
+        for child in node.walk():
+            for a in child.annotations:
+                if a == annotation:
+                    self.fail('Unexpectedly encountered {}'.format(
+                        annotation,
+                    ))
 
     def test_parse_short_description_is_line_cyk(self):
         """Make sure a short description is just a single line."""
@@ -323,6 +341,46 @@ class SphinxParserTest(TestCase):
         self.assertTrue(
             CykNodeUtils.contains(node, 'arguments-section')
         )
+
+    def test_multiline_param_without_indent_raises_error(self):
+        program = '\n'.join([
+            'def f(x):',
+            '    """Maps some x to some y.',
+            '',
+            '    :param x: A value of',
+            '    some kind.',
+            '    :return: Some value of the same kind.',
+            '',
+            '    """',
+            '    return x',
+        ])
+        doc = ast.get_docstring(ast.parse(program).body[0])
+        tokens = condense(lex(doc))
+        node = parse(tokens)
+        self.assertTrue(
+            CykNodeUtils.contains(node, 'arguments-section')
+        )
+        self.assert_has_annotation(node, IndentError)
+
+    def test_multiline_param_with_indent_doesnt_raise_error(self):
+        program = '\n'.join([
+            'def f(x):',
+            '    """Maps some x to some y.',
+            '',
+            '    :param x: A value of',
+            '        some kind.',
+            '    :return: Some value of the same kind.',
+            '',
+            '    """',
+            '    return x',
+        ])
+        doc = ast.get_docstring(ast.parse(program).body[0])
+        tokens = condense(lex(doc))
+        node = parse(tokens)
+        self.assertTrue(
+            CykNodeUtils.contains(node, 'arguments-section')
+        )
+        self.assert_has_no_annotation(node, IndentError)
 
 
 class CompatibilityTest(TestCase):
