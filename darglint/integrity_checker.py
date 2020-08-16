@@ -464,6 +464,12 @@ class IntegrityChecker(object):
             missing_in_function,
             ExcessRaiseError,
         )
+
+        # Remove AssertionError if there is an assert.
+        if 'AssertionError' in missing_in_function:
+            if function.raises_assert:
+                missing_in_function.remove('AssertionError')
+
         default_line_numbers = docstring.get_line_numbers(
             'raises-section',
         )

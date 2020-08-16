@@ -1335,6 +1335,30 @@ class IntegrityCheckerTestCase(TestCase):
             errors[0].__class__.__name__
         )
 
+    def test_assertion_error_allowed(self):
+        program = '\n'.join([
+            'def assertEven(x):',
+            '    """Ensures that the argument is even.',
+            '',
+            '    Args:',
+            '        x: The argument to check.',
+            '',
+            '    Raises:',
+            '        AssertionError: If the argument is odd.',
+            '',
+            '    """',
+            '    assert x % 2 == 0, "Not even!"',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        errors = checker.errors
+        self.assertEqual(
+            len(errors),
+            0,
+        )
+
 class StrictnessTests(TestCase):
 
     def setUp(self):

@@ -250,6 +250,13 @@ def _get_exceptions_raised(fn):  # type: (Union[ast.FunctionDef, ast.AsyncFuncti
     return visitor.exceptions
 
 
+def _raises_assert(fn):
+    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> bool  # noqa: E501
+    for node in ast.walk(fn):
+        if isinstance(node, ast.Assert):
+            return True
+    return False
+
 def _get_return_type(fn):
     # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Optional[str]
     if fn.returns is not None and hasattr(fn.returns, 'id'):
@@ -334,6 +341,7 @@ class FunctionDescription(object):
             msg = '{}: {}'.format(self.name, ex)
             logger.debug(msg)
         self.variables = _get_all_variable_names(function)
+        self.raises_assert = _raises_assert(function)
 
 
 def get_function_descriptions(program):

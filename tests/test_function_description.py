@@ -251,3 +251,52 @@ class GetFunctionsAndDocstrings(TestCase):
         function = get_function_descriptions(tree)[0]
         self.assertEqual(function.argument_names, ['a', 'key'])
         self.assertEqual(function.argument_types, ['int', 'bool'])
+
+    def test_has_assert(self):
+        asserting_programs = [
+            '\n'.join([
+                'def f():',
+                '    assert False, "Always fail."',
+            ]),
+            '\n'.join([
+                'def f():',
+                '    if True:',
+                '        assert False, "Always fail."',
+            ]),
+            '\n'.join([
+                'def f():',
+                '    with open("/dev/null", "rb") as fin:',
+                '        if "thevoid" in fin.read():',
+                '            assert False, "Never fail."',
+            ]),
+        ]
+        nonasserting_programs = [
+            '\n'.join([
+                'def f():',
+                '    return "hey"',
+            ]),
+            '\n'.join([
+                'def f():',
+                '    if x < 10:',
+                '        global x',
+                '        x += 1',
+            ]),
+            '\n'.join([
+                'def f():',
+                '    with open("/dev/null", "rb") as fin:',
+                '        if "thevoid" in fin.read():',
+                '            return True',
+            ]),
+        ]
+        for program in asserting_programs:
+            tree = ast.parse(program)
+            function = get_function_descriptions(tree)[0]
+            self.assertTrue(
+                function.raises_assert,
+            )
+        for program in nonasserting_programs:
+            tree = ast.parse(program)
+            function = get_function_descriptions(tree)[0]
+            self.assertFalse(
+                function.raises_assert,
+            )
