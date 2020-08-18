@@ -46,11 +46,6 @@ class Context(object):
         # exception, it's fine to overwrite this value.)
         self.handling = None  # type: Optional[List[str]]
 
-    @property
-    def in_bare_handler(self):
-        # type: () -> bool
-        return self.bare_handler_exceptions is not None
-
     def set_in_bare_handler(self):
         self.bare_handler_exceptions = set(self.exceptions)
         self.remove_all_exceptions()
@@ -74,6 +69,8 @@ class Context(object):
                 names = list()
                 for node in curr.elts:
                     if isinstance(node, ast.Name):
+                        names.extend(self._get_attr_name(node))
+                    elif isinstance(node, ast.Attribute):
                         names.extend(self._get_attr_name(node))
                     else:
                         logger.error(
@@ -177,7 +174,7 @@ class Context(object):
         """
         name = self._get_exception_name(node)
         if name == '':
-            if self.in_bare_handler:
+            if self.bare_handler_exceptions is not None:
                 return self.bare_handler_exceptions | self.exceptions
             else:
                 return self.exceptions
@@ -188,7 +185,7 @@ class Context(object):
                 self.exceptions.add(part)
         else:
             logger.warning('Node {} name extraction failed.')
-        return []
+        return set()
 
     def remove_exception(self, node):
         # type: (ast.Raise) -> None

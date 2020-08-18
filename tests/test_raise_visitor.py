@@ -177,6 +177,20 @@ class RaiseVisitorTestCase(TestCase):
             'ZeroDivisionError',
         )
 
+    def test_capture_tuple(self):
+        program = '\n'.join([
+            'def f(x):',
+            '    try:',
+            '        risky()',
+            '    except (a.AError, b.BError):',
+            '        raise',
+        ])
+        self.assertFound(
+            program,
+            'a.AError',
+            'b.BError',
+        )
+
     def test_bare_reraise_in_multiple_handlers(self):
         program = '\n'.join([
             'def f(x):',

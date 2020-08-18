@@ -3,14 +3,6 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [1.5.4]
-
-### Fixed
-
-- Allowed `AssertionError` for functions which contain an `assert`
-  statement.  Previously, this would result in an excess raises
-  error.
-
 ## [1.5.3]
 
 ### Added
@@ -19,6 +11,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   line is underindented in an item definition.  This makes
   troubleshooting incorrect indentation easier.  (Previously,
   it would have just failed to parse.)
+
+### Fixed
+
+- Allowed `AssertionError` for functions which contain an `assert`
+  statement.  Previously, this would result in an excess raises
+  error.
+- Allowed qualified names in tuple exception handlers.
 
 ## [1.5.2]
 
