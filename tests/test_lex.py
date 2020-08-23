@@ -45,18 +45,11 @@ class LexTestCase(TestCase):
         token = tokens[0]
         self.assertEqual(token.value, string)
 
-    def test_docterminator(self):
-        tokens = list(lex('"""'))
-        self.assertEqual(len(tokens), 1)
-        self.assertEqual(tokens[0].token_type, TokenType.DOCTERM)
-
     def test_oneline_docstring(self):
         docstring = '"""A simple explanation using `variable`."""'
         tokens = list(lex(docstring))
-        self.assertEqual(len(tokens), 7)
-        self.assertEqual(tokens[0].token_type, TokenType.DOCTERM)
-        self.assertEqual(tokens[-1].token_type, TokenType.DOCTERM)
-        for token in tokens[1:-1]:
+        self.assertEqual(len(tokens), 5)
+        for token in tokens:
             self.assertEqual(token.token_type, TokenType.WORD)
 
     def test_hash(self):
@@ -74,10 +67,8 @@ class LexTestCase(TestCase):
             '"""',
         ])
         tokens = list(lex(docstring))
-        self.assertEqual(tokens[0].token_type, TokenType.DOCTERM)
-        self.assertEqual(tokens[-1].token_type, TokenType.DOCTERM)
-        self.assertEqual(tokens[4].token_type, TokenType.NEWLINE)
-        self.assertEqual(tokens[5].token_type, TokenType.INDENT)
+        self.assertEqual(tokens[3].token_type, TokenType.NEWLINE)
+        self.assertEqual(tokens[4].token_type, TokenType.INDENT)
 
     def test_args(self):
         docstring = '\n'.join([
@@ -91,10 +82,10 @@ class LexTestCase(TestCase):
             '    """',
         ])
         tokens = list(lex(docstring))
-        self.assertEqual(tokens[9].token_type, TokenType.WORD)
-        self.assertEqual(tokens[10].token_type, TokenType.COLON)
-        self.assertEqual(tokens[11].token_type, TokenType.NEWLINE)
-        self.assertEqual(tokens[12].token_type, TokenType.INDENT)
+        self.assertEqual(tokens[8].token_type, TokenType.WORD)
+        self.assertEqual(tokens[9].token_type, TokenType.COLON)
+        self.assertEqual(tokens[10].token_type, TokenType.NEWLINE)
+        self.assertEqual(tokens[11].token_type, TokenType.INDENT)
 
     def test_parenthesis_in_types(self):
         """Make sure paretheses are their own token."""

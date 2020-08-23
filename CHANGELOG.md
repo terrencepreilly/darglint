@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   statement.  Previously, this would result in an excess raises
   error.
 - Allowed qualified names in tuple exception handlers.
+- Removed legacy token for quotation mark, which could cause poor
+  parsing in edge cases (due to the token not being used.)
 
 ## [1.5.2]
 

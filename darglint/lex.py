@@ -53,11 +53,6 @@ def _is_separator(char):
     return char.isspace() and not (_is_space(char) or _is_newline(char))
 
 
-def _is_double_quotation(char):
-    # type: (Optional[str]) -> bool
-    return char == '"'
-
-
 def _is_lparen(char):
     # type: (Optional[str]) -> bool
     return char == '('
@@ -80,7 +75,6 @@ def _is_word(char):
         _is_newline(char),
         _is_colon(char),
         _is_separator(char),
-        _is_double_quotation(char),
         _is_hash(char),
         _is_lparen(char),
         _is_rparen(char),
@@ -121,13 +115,6 @@ def lex(program):
             yield Token(value, TokenType.COLON, line_number)
         elif _is_separator(peaker.peak()):
             peaker.take_while(_is_separator)
-        elif _is_double_quotation(peaker.peak()):
-            value = ''.join(peaker.take_while(_is_double_quotation))
-            if len(value) >= 3:
-                for _ in range(len(value) // 3):
-                    yield Token('"""', TokenType.DOCTERM, line_number)
-            else:
-                extra = value
         elif _is_hash(peaker.peak()):
             value = peaker.next()
             yield Token(value, TokenType.HASH, line_number)

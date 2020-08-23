@@ -21,6 +21,7 @@ from darglint.parse.cyk import (
     parse as cyk_parse,
 )
 from darglint.parse.identifiers import (
+    ArgumentIdentifier,
     ExceptionIdentifier,
 )
 from .utils import (
@@ -223,6 +224,24 @@ class NewGoogleParserTests(TestCase):
             node.symbol,
             'arguments-section',
             str(node),
+        )
+
+    def test_parse_args_section_with_quotation(self):
+        tokens = condense(lex('\n'.join([
+            'Args:',
+            '    x: Some description with "quotes"',
+            '    y: The next item, which should appear.',
+        ])))
+        node = parse(tokens)
+        self.assertEqual(
+            node.symbol,
+            'arguments-section',
+            str(node),
+        )
+        args = CykNodeUtils.get_annotated(node, ArgumentIdentifier)
+        self.assertEqual(
+            {ArgumentIdentifier.extract(x) for x in args},
+            {'x', 'y'},
         )
 
     def test_parse_args_section_with_type(self):
