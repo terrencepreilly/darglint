@@ -16,6 +16,8 @@ from .function_description import (
 from .integrity_checker import IntegrityChecker
 from .config import (
     get_config,
+    get_logger,
+    LogLevel,
     Strictness,
 )
 from .docstring.base import DocstringStyle
@@ -136,6 +138,26 @@ parser.add_argument(
         'guide, you would set --indentation=2.'
     ),
 )
+parser.add_argument(
+    '--log-level',
+    '-l',
+    type=str,
+    default=None,
+    choices=[
+        'CRITICAL',
+        'ERROR',
+        'WARNING',
+        'INFO',
+        'DEBUG',
+    ],
+    help=(
+        'The level at which to log.  Can help with debugging '
+        'when something strange is happening.  The default '
+        'level, CRITICAL, means that only the most severe of '
+        'errors will be logged.  Assertions are logged at the '
+        'ERROR level.'
+    )
+)
 
 # ---------------------- MAIN SCRIPT ---------------------------------
 
@@ -253,6 +275,9 @@ def main():
         elif args.strictness == 'full':
             config.strictness = Strictness.FULL_DESCRIPTION
 
+        if args.log_level:
+            config.log_level = LogLevel.from_string(args.log_level)
+
         raise_errors_for_syntax = args.raise_syntax or False
         for filename in files:
             error_report = get_error_report(
@@ -268,7 +293,8 @@ def main():
         # Exit with status 129 regardless of whether user wants a
         # exit code or not -- darglint failed, and it should
         # look like it failed.
-        print(exc, file=sys.stderr)
+        logger = get_logger()
+        logger.critical(exc)
         sys.exit(129)
     if encountered_errors and exit_code:
         sys.exit(1)

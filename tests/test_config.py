@@ -14,6 +14,11 @@ from darglint.config import (
     walk_path,
     POSSIBLE_CONFIG_FILENAMES,
     find_config_file_in_path,
+    get_logger,
+    LogLevel,
+)
+from .utils import (
+    ConfigurationContext,
 )
 
 
@@ -84,3 +89,14 @@ class FindConfigFileInPathTestCase(TestCase):
             set(contents_checked),
             {'./' + x for x in POSSIBLE_CONFIG_FILENAMES}
         )
+
+
+class LoggingTestCase(TestCase):
+
+    def test_log_level_set_by_config(self):
+        with ConfigurationContext():
+            logger = get_logger()
+            self.assertEqual(logger.level, LogLevel.CRITICAL.value)
+        with ConfigurationContext(log_level=LogLevel.ERROR):
+            logger = get_logger()
+            self.assertEqual(logger.level, LogLevel.ERROR.value)

@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   line is underindented in an item definition.  This makes
   troubleshooting incorrect indentation easier.  (Previously,
   it would have just failed to parse.)
+- Configuration for log level.  By default, now, all assertions
+  are logged at `ERROR`, and the default log level is `CRITICAL`.
+  If darglint doesn't act as expeced, then, the user could pass
+  the `--log-level` flag to rerun and see if an expectation was
+  missed.
 
 ### Fixed
 

@@ -24,14 +24,6 @@ from typing import (  # noqa
 from .docstring.base import DocstringStyle
 
 
-# TODO: Configure this logger and allow the user to specify
-# the whether they want warnings.
-logging.basicConfig(level=logging.ERROR)
-
-# The global instance of the logger to use.
-_logger = logging.getLogger('darglint')
-
-
 def get_logger():  # type: () -> Logger
     """Get the default logger for darglint.
 
@@ -39,7 +31,7 @@ def get_logger():  # type: () -> Logger
         The default logger for darglint.
 
     """
-    return _logger
+    return logging.getLogger('darglint')
 
 
 POSSIBLE_CONFIG_FILENAMES = (
@@ -101,11 +93,46 @@ class AssertStyle(Enum):
     LOG = 2
 
 
+class LogLevel(Enum):
+    """Describes the level of error which should be logged.
+
+    These levels correspond to the levels in logging.
+    This wrapper primarily serves as a means of conveniently
+    parsing the levels, while maintaining the same interface
+    as other options.
+
+    """
+    CRITICAL = logging.CRITICAL
+    ERROR = logging.ERROR
+    WARNING = logging.WARNING
+    INFO = logging.INFO
+    DEBUG = logging.DEBUG
+
+    @classmethod
+    def from_string(cls, level):
+        # type: (str) -> LogLevel
+        normalized_level = level.lower().strip()
+        if normalized_level == 'critical':
+            return cls.CRITICAL
+        elif normalized_level == 'error':
+            return cls.ERROR
+        elif normalized_level == 'warning':
+            return cls.WARNING
+        elif normalized_level == 'info':
+            return cls.INFO
+        elif normalized_level == 'debug':
+            return cls.DEBUG
+        else:
+            raise ValueError('Unrecognized log level, "{}"'.format(
+                level
+            ))
+
+
 class Configuration(object):
 
     def __init__(self, ignore, message_template, style, strictness,
                  ignore_regex=None, enable=[], indentation=4,
-                 assert_style=AssertStyle.LOG):
+                 assert_style=AssertStyle.LOG, log_level=LogLevel.CRITICAL):
         # type: (List[str], Optional[str], DocstringStyle, Strictness, Optional[str], List[str], int, AssertStyle) -> None  # noqa: E501
         """Initialize the configuration object.
 
@@ -131,6 +158,19 @@ class Configuration(object):
         self.ignore_regex = ignore_regex
         self.indentation = indentation
         self.assert_style = assert_style
+        self.log_level = log_level
+
+    @property
+    def log_level(self):
+        # type: () -> LogLevel
+        return self._log_level
+
+    @log_level.setter
+    def log_level(self, log_level):
+        # type: (LogLevel) -> None
+        self._log_level = log_level
+        logger = get_logger()
+        logger.setLevel(log_level.value)
 
     def __str__(self):
         # type: () -> str
@@ -212,6 +252,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
     style = DocstringStyle.GOOGLE
     strictness = Strictness.FULL_DESCRIPTION
     indentation = 4
+    log_level = LogLevel.CRITICAL
     if 'darglint' in config.sections():
         if 'ignore' in config['darglint']:
             errors = config['darglint']['ignore']
@@ -243,6 +284,9 @@ def load_config_file(filename):  # type: (str) -> Configuration
                         config['darglint']['indentation']
                     )
                 )
+
+        if 'log_level' in config['darglint']:
+            log_level = LogLevel.from_string(config['darglint']['log_level'])
     return Configuration(
         ignore=ignore,
         message_template=message_template,
@@ -296,7 +340,7 @@ def find_config_file_in_path(path):  # type: (str) -> Optional[str]
                 if 'darglint' in config.sections():
                     return fully_qualified_path
             except configparser.ParsingError:
-                _logger.error('Unable to parse file {}'.format(
+                get_logger().error('Unable to parse file {}'.format(
                     fully_qualified_path
                 ))
     return None

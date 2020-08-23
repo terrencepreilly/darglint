@@ -159,6 +159,19 @@ strictness=short
 
 In your configuration file.
 
+### Logging
+
+When *darglint* fails unexpectedly, you can try to gather more
+information when submitting a bug by running with logging.
+For example,
+
+```bash
+darglint --log-level=INFO unexpected_failures.py
+```
+
+*Darglint* accepts the levels, `DEBUG`, `INFO`, `WARNING`, `ERROR`, and
+`CRITICAL`.
+
 
 ## Usage
 
