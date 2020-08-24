@@ -10,7 +10,7 @@ from darglint.custom_assert import (
 from darglint.config import (
     AssertStyle,
 )
-from .utils import (
+from darglint.utils import (
     ConfigurationContext,
 )
 

@@ -20,14 +20,12 @@ from darglint.errors import (
     IndentError,
 )
 from darglint.utils import (
+    ConfigurationContext,
     CykNodeUtils,
 )
 from darglint.config import (
     DocstringStyle,
     Strictness,
-)
-from .utils import (
-    ConfigurationContext,
 )
 
 

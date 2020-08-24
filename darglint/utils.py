@@ -17,6 +17,10 @@ from typing import (
     Set,
 )
 from .node import CykNode
+from .config import (
+    get_config,
+    Configuration,
+)
 
 
 class AstNodeUtils(object):
@@ -193,3 +197,37 @@ class CykNodeUtils(object):
         if is_root:
             ret += '}'
         return ret
+
+
+class ConfigurationContext(object):
+    """A context manager for the configuration.
+
+    Resets the configuration to the value it had prior
+    to entering the context.
+
+    """
+
+    def __init__(self, **kwargs):
+        self.original = dict()
+        self.config = get_config()
+        self.kwargs = kwargs
+
+    def __enter__(self):
+        # Save the state of the original item.
+        for keyword, value in vars(self.config).items():
+            self.original[keyword] = getattr(self.config, keyword)
+
+        # Override with the default configuration.
+        default_config = Configuration.get_default_instance()
+        for keyword in self.original:
+            setattr(self.config, keyword, getattr(default_config, keyword))
+
+        # Apply test-specific values.
+        for keyword, value in self.kwargs.items():
+            setattr(self.config, keyword, value)
+
+        return self.config
+
+    def __exit__(self, exc_type, exc_value, exc_traceack):
+        for keyword, value in self.original.items():
+            setattr(self.config, keyword, value)

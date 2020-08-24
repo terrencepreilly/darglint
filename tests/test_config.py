@@ -17,7 +17,7 @@ from darglint.config import (
     get_logger,
     LogLevel,
 )
-from .utils import (
+from darglint.utils import (
     ConfigurationContext,
 )
 

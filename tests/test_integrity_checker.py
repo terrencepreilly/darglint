@@ -34,7 +34,7 @@ from darglint.errors import (
     ParameterMalformedError,
     ReturnTypeMismatchError,
 )
-from .utils import (
+from darglint.utils import (
     ConfigurationContext,
 )
 

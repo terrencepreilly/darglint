@@ -10,7 +10,7 @@ from darglint.docstring.base import DocstringStyle
 from darglint.config import (
     Strictness,
 )
-from .utils import (
+from darglint.utils import (
     ConfigurationContext,
 )
 

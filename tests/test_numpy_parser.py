@@ -28,10 +28,8 @@ from darglint.errors import (
     EmptyTypeError,
 )
 from darglint.utils import (
-    CykNodeUtils,
-)
-from .utils import (
     ConfigurationContext,
+    CykNodeUtils,
 )
 
 
