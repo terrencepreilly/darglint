@@ -3,6 +3,13 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.5.4]
+
+### Added
+
+- Added handling of positional-only arguments, and some tests for
+  mixing with positional/keyword arguments and keyword-only arguments.
+
 ## [1.5.3]
 
 ### Added

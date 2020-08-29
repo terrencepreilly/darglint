@@ -60,6 +60,9 @@ def _get_arguments(fn):
         else:
             types.append(None)
 
+    for arg in fn.args.posonlyargs:
+        add_arg_by_name(arg.arg, arg)
+
     for arg in fn.args.args:
         add_arg_by_name(arg.arg, arg)
 

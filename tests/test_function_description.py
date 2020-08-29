@@ -300,3 +300,113 @@ class GetFunctionsAndDocstrings(TestCase):
             self.assertFalse(
                 function.raises_assert,
             )
+
+    def test_positional_arguments_token_ignored(self):
+        programs = [
+            '\n'.join([
+                'def f(a, b, /):',
+                '    return a * b',
+            ]),
+            '\n'.join([
+                'def f(a, /, b):',
+                '    return a * b',
+            ]),
+            '\n'.join([
+                'def f(a, b=2, /):',
+                '    return a * b',
+            ]),
+            '\n'.join([
+                'def f(a, /, b=2):',
+                '    return a * b',
+            ]),
+            '\n'.join([
+                'def f(a: int, b: int, /):',
+                '    return a * b',
+            ]),
+            '\n'.join([
+                'def f(a: int, /, b: int = 2):',
+                '    return a * b',
+            ]),
+        ]
+        for program in programs:
+            tree = ast.parse(program)
+            function = get_function_descriptions(tree)[0]
+            self.assertEqual(
+                function.argument_names,
+                ['a', 'b'],
+                'Failed for program:\n\n```\n{}\n```\n'.format(
+                    program,
+                ),
+            )
+
+    def test_keyword_only_arguments_token_ignored(self):
+        programs = [
+            '\n'.join([
+                'def f(*, a, b):',
+                '    return a * b',
+            ]),
+            '\n'.join([
+                'def f(a, *, b):',
+                '    return a * b',
+            ]),
+            '\n'.join([
+                'def f(*, a, b=2):',
+                '    return a * b',
+            ]),
+            '\n'.join([
+                'def f(*, a=1, b=2):',
+                '    return a * b',
+            ]),
+            '\n'.join([
+                'def f(*, a: int, b: int):',
+                '    return a * b',
+            ]),
+            '\n'.join([
+                'def f(a: int, *, b: int):',
+                '    return a * b',
+            ]),
+            '\n'.join([
+                'def f(*, a: int, b: int = 2):',
+                '    return a * b',
+            ]),
+        ]
+        for program in programs:
+            tree = ast.parse(program)
+            function = get_function_descriptions(tree)[0]
+            self.assertEqual(
+                function.argument_names,
+                ['a', 'b'],
+                'Failed for program:\n\n```\n{}\n```\n'.format(
+                    program,
+                ),
+            )
+
+    def test_positional_and_keyword_only_token_ignored(self):
+        programs = [
+            '\n'.join([
+                'def f(a, /, b, *, c):',
+                '    return a * b * c',
+            ]),
+            '\n'.join([
+                'def f(a, /, *, b, c):',
+                '    return a * b * c',
+            ]),
+            '\n'.join([
+                'def f(a, /, b=2, *, c=5):',
+                '    return a * b * c',
+            ]),
+            '\n'.join([
+                'def f(a: int, /, *, b: int, c: float):',
+                '    return a * b * c',
+            ]),
+        ]
+        for program in programs:
+            tree = ast.parse(program)
+            function = get_function_descriptions(tree)[0]
+            self.assertEqual(
+                function.argument_names,
+                ['a', 'b', 'c'],
+                'Failed for program:\n\n```\n{}\n```\n'.format(
+                    program,
+                ),
+            )
