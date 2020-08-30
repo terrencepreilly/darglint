@@ -1,6 +1,7 @@
 import ast
 from unittest import TestCase
 from darglint.function_description import get_function_descriptions
+from .utils import require_python
 
 
 class GetFunctionsAndDocstrings(TestCase):
@@ -301,6 +302,7 @@ class GetFunctionsAndDocstrings(TestCase):
                 function.raises_assert,
             )
 
+    @require_python(3, 8)
     def test_positional_arguments_token_ignored(self):
         programs = [
             '\n'.join([
@@ -381,6 +383,7 @@ class GetFunctionsAndDocstrings(TestCase):
                 ),
             )
 
+    @require_python(3, 8)
     def test_positional_and_keyword_only_token_ignored(self):
         programs = [
             '\n'.join([

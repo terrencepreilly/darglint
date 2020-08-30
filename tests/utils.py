@@ -1,12 +1,13 @@
-
 import random
 import string
+import sys
 from typing import (
     Callable,
     Iterable,
     List,
     Set,
 )
+from unittest import skip
 
 from darglint.token import (
     TokenType,
@@ -19,6 +20,26 @@ from darglint.config import (
 
 
 REFACTORING_COMPLETE = True
+
+
+def require_python(major=3, minor=8):
+    """Skip a unit test if the python version is too old.
+
+    Args:
+        major: The major python version.
+        minor: The minor python version.
+
+    Returns:
+        The function, possibly wrapped by `skip`.
+
+    """
+    def _wrapper(fn):
+        if sys.version_info.major < major:
+            return skip(fn)
+        if sys.version_info.minor < minor:
+            return skip(fn)
+        return fn
+    return _wrapper
 
 
 def replace(name=''):
