@@ -412,9 +412,24 @@ Add issues or suggestions to the tracking bug, Issue #69.
 
 Darglint can be used in conjunction with Flake8 as a plugin.  The only
 setup necessary is to install Flake8 and Darglint in the same environment.
-Darglint will pull its configuration from any configuration file present.
-(So, if you would like to lint Sphinx-style comments, then you should have
-that setting enabled in a configuration file in the project directory.)
+Darglint will pull its configuration from Flake8. So, if you would like to
+lint Sphinx-style comments, then you should have `docstring_style=sphinx` in a
+Flake8 configuration file in the project directory.  The settings would
+be entered under the flake8 configuration, not a separate configuration
+for Darglint.  E.g.:
+
+```init
+[flake8]
+strictness=short
+docstring_style=sphinx
+```
+
+To see which options are exposed through Flake8, you can check the Flake8
+tool:
+
+```bash
+flake8 --help | grep --before-context=2 Darglint
+```
 
 ### SublimeLinter
 
