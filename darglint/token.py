@@ -39,7 +39,13 @@ class TokenType(BaseTokenType):
     EXAMPLES = 26
     REFERENCES = 27
 
-    # next: 28
+    # For temporary example.
+    DIGIT = 28
+    NUMBER_PREFIX = 29
+    SPACE = 30
+    INVALID = 31
+
+    # next: 32
 
 
 KEYWORDS = {

@@ -123,7 +123,24 @@ class CykNode(object):
             return False
         return True
 
-    def reconstruct_string(self, strictness=0):
+    def reconstruct_string(self):
+        ret = list()
+        buff = ''
+        for node in self.in_order_traverse():
+            if node.value and node.value.token_type == TokenType.NEWLINE:
+                if buff:
+                    ret.append(buff)
+                    buff = ''
+            elif node.value:
+                buff += node.value.value
+        if buff:
+            ret.append(buff)
+        return '\n'.join(ret)
+
+
+    # We'll have to update this to print everything with the correct
+    # whitespace, linebreaks, etc.
+    def old_reconstruct_string(self, strictness=0):
         # type: (int) -> str
         """Reconstruct the docstring.
 

@@ -1,0 +1,35 @@
+from darglint.parse.grammar import (
+    BaseGrammar,
+    P,
+)
+from darglint.token import (
+    TokenType,
+)
+from darglint.formatter.errors import (
+    BrokenNumberException,
+)
+
+Grammar: HexNumberGrammar
+
+start: <numbers>
+
+<numbers>
+  ::= <number> <newlines> <numbers>
+  | <number>
+
+<newlines>
+  ::= <newline> <newlines>
+  | <newline>
+
+<number>
+  ::= <prefix> <digits>
+
+<digits>
+  ::= <digit> <digits>
+    | @BrokenNumberException <space> <digits>
+    | <digit>
+
+<prefix> ::= "TokenType\.NUMBER_PREFIX"
+<digit> ::= "TokenType\.DIGIT"
+<newline> ::= "TokenType\.NEWLINE"
+<space> ::= "TokenType\.SPACE"
