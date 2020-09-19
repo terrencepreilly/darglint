@@ -23,6 +23,10 @@ class NodeTest(TestCase):
             NodeType.GRAMMAR,
             children=[
                 Node(
+                    NodeType.NAME,
+                    value='MyGrammar',
+                ),
+                Node(
                     NodeType.PRODUCTION,
                     children=[
                         Node(
@@ -82,6 +86,8 @@ class NodeTest(TestCase):
         self.assertEqual(
             str(node),
             '\n'.join([
+                'Grammar: MyGrammar',
+                '',
                 '<header> ::= <arg> | <returns>',
                 '<arg> ::= "Arg"',
             ]),

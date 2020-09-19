@@ -1,5 +1,6 @@
 from collections import (
     deque,
+    defaultdict,
 )
 from enum import Enum
 from typing import (
@@ -54,6 +55,7 @@ TERMINAL_NODES = {
     NodeType.START,
     NodeType.SOURCE,
     NodeType.FILENAME,
+    NodeType.NAME,
 }
 NONTERMINAL_NODES = {
     NodeType.GRAMMAR,
@@ -82,7 +84,21 @@ class Node(object):
 
     def __str__(self):
         if self.node_type == NodeType.GRAMMAR:
-            return '\n'.join([str(child) for child in self.children])
+            # Create a lookup, so that we can force the
+            # name and start symbol to come first.
+            children = defaultdict(list)
+            for child in self.children:
+                children[child.node_type].append(child)
+            ret = list()
+            for node_type in [NodeType.IMPORTS, NodeType.EXTERNAL_IMPORTS,
+                              NodeType.NAME, NodeType.START]:
+                if node_type in children:
+                    for node in children.pop(node_type):
+                        ret.append(str(node))
+            for _, nodes in children.items():
+                ret.extend(map(str, nodes))
+            return '\n'.join(ret)
+            # return '\n'.join([str(child) for child in self.children])
         elif self.node_type == NodeType.PRODUCTION:
             if len(self.children) == 2:
                 return f'{self.children[0]} ::= {self.children[1]}'
@@ -121,6 +137,8 @@ class Node(object):
             return f'start: <{self.value}>'
         elif self.node_type == NodeType.EXTERNAL_IMPORTS:
             return '\n'.join(map(str, self.children)) + '\n'
+        elif self.node_type == NodeType.NAME:
+            return f'Grammar: {self.value}\n'
         elif self.node_type == NodeType.EXTERNAL_IMPORT:
             source = self.children[0].value
             filenames = sorted([x.value for x in self.children[1].children])

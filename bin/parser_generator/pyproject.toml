@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "parser_generator"
+version = "0.1.0"
+description = "Generates a parser from the given grammar."
+authors = ["Terrence Reilly <terrencepreilly@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+bnf_to_cnf = { path = "../bnf_to_cnf" }
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.0.1"
+mypy = "^0.782"
+autopep8 = "^1.5.4"
+python-language-server = {extras = ["all"], version = "^0.35.0"}
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

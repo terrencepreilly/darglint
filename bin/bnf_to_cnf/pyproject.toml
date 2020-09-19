@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bnf_to_cnf"
-version = "0.1.0"
+version = "0.0.3"
 description = "Converts BNF notation to CNF, as a python class."
 authors = ["Terrence Reilly <terrencepreilly@gmail.com>"]
 license = "MIT"
