@@ -231,3 +231,26 @@ class RaiseVisitorTestCase(TestCase):
             '        raise Unexpected()',
         ])
         self.assertFound(program, 'Rabies', 'Unexpected')
+
+    def test_visits_finally_block(self):
+        program = '\n'.join([
+            'def f():',
+            '    try:',
+            '        dangerous_operation()',
+            '    finally:',
+            '        raise AnException()',
+            '',
+        ])
+        self.assertFound(program, 'AnException')
+
+    def test_visits_or_else_block(self):
+        program = '\n'.join([
+            'def f():',
+            '    try:',
+            '        pass',
+            '    except Exception:',
+            '        pass',
+            '    else:',
+            '        raise MyException()',
+        ])
+        self.assertFound(program, 'MyException')
