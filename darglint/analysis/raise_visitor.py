@@ -306,5 +306,11 @@ class RaiseVisitor(ast.NodeVisitor):
                 self.context.set_in_bare_handler()
                 self.generic_visit(handler)
 
+        for child in node.finalbody:
+            self.visit(child)
+
+        for child in node.orelse:
+            self.visit(child)
+
         context = self.contexts.pop()
         self.context.extend(context)
