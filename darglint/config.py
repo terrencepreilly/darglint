@@ -330,7 +330,10 @@ def find_config_file_in_path(path):  # type: (str) -> Optional[str]
         in this directory, otherwise none.
 
     """
-    filenames = os.listdir(path)
+    try:
+        filenames = os.listdir(path)
+    except PermissionError:
+        return None
     for filename in filenames:
         if filename in POSSIBLE_CONFIG_FILENAMES:
             config = configparser.ConfigParser()
