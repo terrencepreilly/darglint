@@ -491,6 +491,13 @@ source .env/bin/activate
 pip install -e .
 ```
 
+You can install dependencies using
+
+```bash
+pip install poetry
+poetry install
+```
+
 You can run the tests using
 
 ```bash
