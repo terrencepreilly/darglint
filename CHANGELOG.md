@@ -3,6 +3,17 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.5.5]
+
+### Fixed
+
+- Permissions errors from searching for a config would previously
+  crash darglint.  Fixed thanks to @pawamoy.
+- Some code highlighting issues fixed thanks to @sobolevn.
+- Documentation on installing test dependencies updated thanks to @mathieu.
+- Finally/else blocks for try statements are now handled when analyzing
+  whether an exception can be raised.
+
 ## [1.5.4]
 
 ### Added
