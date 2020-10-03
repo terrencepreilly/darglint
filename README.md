@@ -205,7 +205,7 @@ darglint -m "{path}:{line} -> {msg_id}" darglint/driver.py
 
 Then we would get back error messages like
 
-```
+```bash
 darglint/driver.py :61 -> DAR101
 ```
 
@@ -398,7 +398,7 @@ darglint --docstring-style numpy example.py
 
 Or set it in a configuration file:
 
-```init
+```ini
 [darglint]
 docstring_style=numpy
 ```
@@ -418,7 +418,7 @@ Flake8 configuration file in the project directory.  The settings would
 be entered under the flake8 configuration, not a separate configuration
 for Darglint.  E.g.:
 
-```init
+```ini
 [flake8]
 strictness=short
 docstring_style=sphinx
