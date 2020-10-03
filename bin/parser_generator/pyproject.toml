@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "parser_generator"
-version = "0.1.0"
+version = "0.0.1"
 description = "Generates a parser from the given grammar."
 authors = ["Terrence Reilly <terrencepreilly@gmail.com>"]
 license = "MIT"
