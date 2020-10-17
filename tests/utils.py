@@ -171,3 +171,33 @@ def random_tokens(min_length=1, max_length=20, exclude=set()):
         ))
         line_number += random.choice([0, 1])
     return ret
+
+
+
+def reindent(program):
+    """Reindent the program.
+
+    This makes it a little more natural for writing the
+    program in a string.
+
+    Args:
+        program: A program which is indented too much.
+
+    Returns:
+        The program, reindented.
+
+    """
+    # Find the first non-space character in a line.
+    def _non_space(line):
+        for i, c in enumerate(line):
+            if c == ' ':
+                continue
+            else:
+                return i
+        return -1
+    lines = program.split('\n')
+    amount = min(filter(lambda x: x >= 0, map(_non_space, lines)))
+    ret = '\n'.join([
+        line[amount:] for line in lines
+    ])
+    return ret

@@ -8,6 +8,9 @@ from darglint.analysis.return_visitor import (
 from darglint.analysis.function_scoped_visitor import (
     FunctionScopedVisitorMixin,
 )
+from .utils import (
+    reindent,
+)
 
 
 class ScopedReturnVisitor(ReturnVisitor, FunctionScopedVisitorMixin):
@@ -15,24 +18,6 @@ class ScopedReturnVisitor(ReturnVisitor, FunctionScopedVisitorMixin):
 
 
 class FunctionScopedVisitorMixinTests(TestCase):
-
-    def _reindent(self, program):
-        """Reindent the program.
-
-        This makes it a little more natural for writing the
-        program in a string.
-
-        Args:
-            program: A program which is indented too much.
-
-        Returns:
-            The program, reindented.
-
-        """
-        return '\n'.join([
-            x[12:] for x in program.split('\n')
-            if x[12:]
-        ])
 
     def assertFound(self, program):
         """Assert that the return was found.
@@ -44,7 +29,7 @@ class FunctionScopedVisitorMixinTests(TestCase):
             The visitor, in case you want to do more analysis.
 
         """
-        function = ast.parse(self._reindent(program)).body[0]
+        function = ast.parse(reindent(program)).body[0]
         visitor = ScopedReturnVisitor()
         visitor.visit(function)
         self.assertTrue(visitor.returns)
@@ -60,7 +45,7 @@ class FunctionScopedVisitorMixinTests(TestCase):
             The visitor, in case you want to do more analysis.
 
         """
-        function = ast.parse(self._reindent(program)).body[0]
+        function = ast.parse(reindent(program)).body[0]
         visitor = ScopedReturnVisitor()
         visitor.visit(function)
         self.assertEqual(visitor.returns, [])

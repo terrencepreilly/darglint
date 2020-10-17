@@ -2,56 +2,56 @@ import ast
 from unittest import (
     TestCase,
 )
-from darglint.analysis.return_visitor import (
-    ReturnVisitor,
+from darglint.analysis.yield_visitor import (
+    YieldVisitor,
 )
 from .utils import (
     reindent,
 )
 
 
-class ReturnsVisitorTests(TestCase):
+class YieldsVisitorTests(TestCase):
 
     def assertFound(self, program):
-        """Assert that the return was found.
+        """Assert that the yield was found.
 
         Args:
             program: The program to run the analysis on.
 
-        Returns:
+        Yields:
             The visitor, in case you want to do more analysis.
 
         """
         function = ast.parse(reindent(program)).body[0]
-        visitor = ReturnVisitor()
+        visitor = YieldVisitor()
         visitor.visit(function)
-        self.assertTrue(visitor.returns)
+        self.assertTrue(visitor.yields)
         return visitor
 
     def assertNoneFound(self, program):
-        """Assert that no return was found.
+        """Assert that no yield was found.
 
         Args:
             program: The program to run the analysis on.
 
-        Returns:
+        Yields:
             The visitor, in case you want to do more analysis.
 
         """
         function = ast.parse(reindent(program)).body[0]
-        visitor = ReturnVisitor()
+        visitor = YieldVisitor()
         visitor.visit(function)
-        self.assertEqual(visitor.returns, [])
+        self.assertEqual(visitor.yields, [])
         return visitor
 
-    def test_no_return(self):
+    def test_no_yield(self):
         program = r'''
             def f():
                 pass
         '''
         self.assertNoneFound(program)
 
-    def test_nested_no_return(self):
+    def test_nested_no_yield(self):
         program = r'''
             def f():
                 def g():
@@ -62,56 +62,57 @@ class ReturnsVisitorTests(TestCase):
     def test_simplest_function(self):
         program = r'''
             def f():
-                return 3
+                yield 3
         '''
         self.assertFound(program)
 
-    def test_early_return(self):
+    def test_early_yield(self):
         program = r'''
             def f(x):
                 if x < 0:
-                    return -1
+                    yield -1
                 for i in range(x):
                     if complex_condition(x, i):
-                        return i
+                        yield i
         '''
         self.assertFound(program)
 
-    def test_conditional_return(self):
+    def test_conditional_yield(self):
         program = r'''
             def f():
                 if MY_GLOBAL:
-                    return 1
+                    yield 1
                 else:
-                    return 2
+                    yield 2
         '''
         self.assertFound(program)
 
-    def test_return_in_context(self):
+    def test_yield_in_context(self):
         program = r'''
             def f():
                 with open('/tmp/input', 'r') as fin:
-                    return fin.readlines()
+                    yield fin.readlines()
         '''
         self.assertFound(program)
 
-    def test_returns_none(self):
+    def test_yields_none(self):
         program = r'''
             def f():
-                return
+                yield
         '''
         visitor = self.assertFound(program)
         self.assertEqual(
-            visitor.returns[0].value,
+            visitor.yields[0].value,
             None,
         )
 
-    def test_returns_non_none(self):
+    def test_yields_non_none(self):
         program = r'''
             def f():
-                return 3
+                yield 3
         '''
         visitor = self.assertFound(program)
         self.assertTrue(
-            isinstance(visitor.returns[0].value, ast.AST),
+            isinstance(visitor.yields[0].value, ast.AST),
         )
+
