@@ -90,3 +90,4 @@ class FunctionScopedVisitorMixinTests(TestCase):
                     return 3
                 yield g()
         '''
+        self.assertNoneFound(program)
