@@ -91,3 +91,19 @@ class FunctionScopedVisitorMixinTests(TestCase):
                 yield g()
         '''
         self.assertNoneFound(program)
+
+    def test_outer_async_function_captured(self):
+        program = r'''
+            async def f():
+                return 3
+        '''
+        self.assertFound(program)
+
+    def test_inner_async_skipped(self):
+        program = r'''
+            async def f():
+                async def g():
+                    return 3
+                yield await g()
+        '''
+        self.assertNoneFound(program)

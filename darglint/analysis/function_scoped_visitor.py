@@ -19,3 +19,9 @@ class FunctionScopedVisitorMixin(ast.NodeVisitor):
         if not self.in_function:
             self.in_function = True
             return self.generic_visit(node)
+
+    def visit_AsyncFunctionDef(self, node):
+        # type: (ast.AsyncFunctionDef) -> ast.AST
+        if not self.in_function:
+            self.in_function = True
+            return self.generic_visit(node)
