@@ -91,6 +91,16 @@ class _CykVisitor(object):
 class Docstring(BaseDocstring):
     """The docstring class interprets the AST of a docstring."""
 
+    _supported_sections = (
+        Sections.SHORT_DESCRIPTION,
+        Sections.LONG_DESCRIPTION,
+        Sections.ARGUMENTS_SECTION,
+        Sections.RAISES_SECTION,
+        Sections.YIELDS_SECTION,
+        Sections.RETURNS_SECTION,
+        Sections.NOQAS,
+    )  # type: Tuple[Sections, ...]
+
     def __init__(self, root, style=DocstringStyle.GOOGLE):
         # type: (Union[CykNode, str], DocstringStyle) -> None
         """Create a new docstring from the AST.
@@ -414,16 +424,7 @@ class Docstring(BaseDocstring):
 
         """
         sections = {
-            section for section in Sections
-            for section in {
-                Sections.SHORT_DESCRIPTION,
-                Sections.LONG_DESCRIPTION,
-                Sections.ARGUMENTS_SECTION,
-                Sections.RAISES_SECTION,
-                Sections.YIELDS_SECTION,
-                Sections.RETURNS_SECTION,
-                Sections.NOQAS,
-            }
+            section for section in self._supported_sections
             if self.get_section(section)
         }
         if strictness == Strictness.SHORT_DESCRIPTION:
