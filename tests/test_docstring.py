@@ -13,6 +13,7 @@ from random import (
     shuffle,
 )
 
+from darglint.config import Strictness
 from darglint.docstring.base import Sections
 from darglint.docstring.docstring import Docstring
 
@@ -939,3 +940,128 @@ class DocstringForNumpyTest(TestCase):
             docstring.get_items(Sections.ARGUMENTS_SECTION),
             ['x', 'y', 'z'],
         )
+
+    def test_satisfies_strictness_short_description(self):
+        parameters = [
+            (None, False),
+            ('', False),
+            ('Dostring with just title.', True),
+            (
+                '\n'.join([
+                    'Dostring with title and parameters.',
+                    '',
+                    'Parameters',
+                    '----------',
+                    'x: int',
+                    '    The first parameter.',
+                    '',
+                    'y: Optional[int]',
+                    '    The second parameter.',
+                    '',
+                ]),
+                False,
+            ),
+            (
+                '\n'.join([
+                    'Dostring with only long,',
+                    'long, really long description.',
+                    '',
+                ]),
+                False,
+            ),
+        ]
+        for raw_docstring, is_strictness_satisfied in parameters:
+            docstring = Docstring.from_numpy(raw_docstring)
+            with self.subTest(raw_docstring):
+                self.assertIs(
+                    docstring.satisfies_strictness(
+                        Strictness.SHORT_DESCRIPTION,
+                    ),
+                    is_strictness_satisfied,
+                    msg=raw_docstring,
+                )
+
+    def test_satisfies_strictness_long_description(self):
+        parameters = [
+            (None, False),
+            ('', False),
+            ('Dostring with just title.', True),
+            (
+                '\n'.join([
+                    'Dostring with title, long description and parameters.',
+                    '',
+                    'Long description goes here.',
+                    '',
+                    'Parameters',
+                    '----------',
+                    'x: int',
+                    '    The only parameter.',
+                    '',
+                ]),
+                False,
+            ),
+            (
+                '\n'.join([
+                    '',
+                    'Dostring with only long,',
+                    'long, really long description.',
+                    '',
+                    '',
+                ]),
+                True,
+            ),
+        ]
+        for raw_docstring, is_strictness_satisfied in parameters:
+            docstring = Docstring.from_numpy(raw_docstring)
+            with self.subTest(raw_docstring):
+                self.assertIs(
+                    docstring.satisfies_strictness(
+                        Strictness.LONG_DESCRIPTION,
+                    ),
+                    is_strictness_satisfied,
+                    msg=raw_docstring,
+                )
+
+    def test_satisfies_strictness_full_description(self):
+        parameters = [
+            (None, False),
+            ('', False),
+            ('Dostring with just title.', False),
+            (
+                '\n'.join([
+                    'Dostring with title, long description and parameters.',
+                    '',
+                    'Long description goes here.',
+                    '',
+                    'Parameters',
+                    '----------',
+                    'x: int',
+                    '    The only parameter.',
+                    '',
+                    'Returns',
+                    '-------',
+                    'int',
+                    '    Magic, random number.',
+                    '',
+                ]),
+                False,
+            ),
+            (
+                '\n'.join([
+                    'Dostring with only long,',
+                    'long, really long description.',
+                    '',
+                ]),
+                False,
+            ),
+        ]
+        for raw_docstring, is_strictness_satisfied in parameters:
+            docstring = Docstring.from_numpy(raw_docstring)
+            with self.subTest(raw_docstring):
+                self.assertIs(
+                    docstring.satisfies_strictness(
+                        Strictness.FULL_DESCRIPTION,
+                    ),
+                    is_strictness_satisfied,
+                    msg=raw_docstring,
+                )
