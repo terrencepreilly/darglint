@@ -10,6 +10,8 @@ from typing import (
     Iterable,
 )
 
+from ..strictness import Strictness
+
 
 class DocstringStyle(enum.Enum):
     GOOGLE = 0
@@ -160,8 +162,7 @@ class BaseDocstring(ABC):
 
     @abstractmethod
     def satisfies_strictness(self, strictness):
-        # NOTE: We can't add the type signature because adding Strictness
-        # to the imports would cause a circular dependency.
+        # type(Strictness) -> bool
         """Return true if the docstring has no more than the min strictness.
 
         Args:

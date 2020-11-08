@@ -40,10 +40,8 @@ from .errors import (  # noqa: F401
 from .error_report import (
     ErrorReport,
 )
-from .config import (
-    get_config,
-    Strictness,
-)
+from .config import get_config
+from .strictness import Strictness
 
 
 SYNTAX_NOQA = re.compile(r'#\s*noqa:\sS001')

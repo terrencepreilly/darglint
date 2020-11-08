@@ -36,9 +36,7 @@ from .base import (
 from ..node import (
     CykNode,
 )
-from ..config import (
-    Strictness,
-)
+from ..strictness import Strictness
 from ..parse.numpy import (
     parse,
 )

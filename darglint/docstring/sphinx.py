@@ -30,9 +30,7 @@ from ..lex import (
     lex,
     condense,
 )
-from ..config import (
-    Strictness,
-)
+from ..strictness import Strictness
 from ..errors import (
     DarglintError,
 )

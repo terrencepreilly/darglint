@@ -7,9 +7,7 @@ from unittest import (
 from darglint.docstring.base import (
     DocstringStyle,
 )
-from darglint.config import (
-    Strictness,
-)
+from darglint.strictness import Strictness
 from darglint.lex import (
     condense,
     lex,

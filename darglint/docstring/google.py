@@ -34,9 +34,7 @@ from ..lex import (
 from ..errors import (
     DarglintError,
 )
-from ..config import (
-    Strictness,
-)
+from ..strictness import Strictness
 from ..parse.identifiers import (
     ArgumentIdentifier,
     ArgumentItemIdentifier,

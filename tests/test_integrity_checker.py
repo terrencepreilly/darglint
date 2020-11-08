@@ -4,9 +4,7 @@ from unittest import (
     skip,
 )
 
-from darglint.config import (
-    Strictness,
-)
+from darglint.strictness import Strictness
 from darglint.docstring.base import (
     DocstringStyle,
 )

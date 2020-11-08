@@ -14,8 +14,8 @@ from .integrity_checker import IntegrityChecker
 from .config import (
     Configuration,
     get_config,
-    Strictness,
 )
+from .strictness import Strictness
 
 
 __version__ = '1.5.5'
