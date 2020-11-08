@@ -23,7 +23,7 @@ from darglint.utils import (
     ConfigurationContext,
     CykNodeUtils,
 )
-from darglint.config import DocstringStyle
+from darglint.docstring.style import DocstringStyle
 from darglint.strictness import Strictness
 
 

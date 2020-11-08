@@ -12,16 +12,14 @@ from typing import (  # noqa: F401
 from .function_description import (  # noqa: F401
     FunctionDescription,
 )
-from .docstring.base import (  # noqa: F401
-    BaseDocstring,
-    DocstringStyle,
-)
 from .docstring.base import (
+    BaseDocstring,
     Sections,
 )
 from .docstring.docstring import (
     Docstring,
 )
+from .docstring.style import DocstringStyle
 from .errors import (  # noqa: F401
     DarglintError,
     ExcessParameterError,

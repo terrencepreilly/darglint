@@ -6,7 +6,7 @@ from unittest import (
 
 from darglint.function_description import get_function_descriptions
 from darglint.integrity_checker import IntegrityChecker
-from darglint.docstring.base import DocstringStyle
+from darglint.docstring.style import DocstringStyle
 from darglint.strictness import Strictness
 from darglint.utils import (
     ConfigurationContext,

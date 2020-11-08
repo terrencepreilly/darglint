@@ -6,7 +6,7 @@ from typing import (  # noqa
     Tuple,
 )
 
-from .docstring.base import DocstringStyle
+from .docstring.style import DocstringStyle
 from .function_description import (
     get_function_descriptions,
 )

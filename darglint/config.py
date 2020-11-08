@@ -21,7 +21,7 @@ from typing import (  # noqa
     Optional,
 )
 
-from .docstring.base import DocstringStyle
+from .docstring.style import DocstringStyle
 from .strictness import Strictness
 
 

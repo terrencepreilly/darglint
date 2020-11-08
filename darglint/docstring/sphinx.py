@@ -12,9 +12,9 @@ from typing import (  # noqa
 
 from .base import (
     BaseDocstring,
-    DocstringStyle,
     Sections,
 )
+from .style import DocstringStyle
 from ..custom_assert import Assert
 from ..node import (
     CykNode,

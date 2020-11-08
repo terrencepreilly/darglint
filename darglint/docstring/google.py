@@ -18,9 +18,9 @@ from ..custom_assert import (
 )
 from .base import (  # noqa: F401
     BaseDocstring,
-    DocstringStyle,
     Sections,
 )
+from .style import DocstringStyle
 from ..node import (
     CykNode,
 )

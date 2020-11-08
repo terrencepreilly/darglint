@@ -30,9 +30,9 @@ from ..parse.identifiers import (
 )
 from .base import (
     BaseDocstring,
-    DocstringStyle,
     Sections,
 )
+from .style import DocstringStyle
 from ..node import (
     CykNode,
 )

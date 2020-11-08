@@ -19,7 +19,7 @@ from .config import (
     get_logger,
     LogLevel,
 )
-from .docstring.base import DocstringStyle
+from .docstring.style import DocstringStyle
 from .strictness import Strictness
 import darglint.errors
 from darglint.error_report import ErrorReport
