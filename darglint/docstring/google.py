@@ -16,10 +16,8 @@ from typing import (  # noqa: F401
 from ..custom_assert import (
     Assert,
 )
-from .base import (  # noqa: F401
-    BaseDocstring,
-    Sections,
-)
+from .base import BaseDocstring
+from .sections import Sections
 from .style import DocstringStyle
 from ..node import (
     CykNode,

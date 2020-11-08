@@ -28,10 +28,8 @@ from ..parse.identifiers import (
     Identifier,
     NoqaIdentifier,
 )
-from .base import (
-    BaseDocstring,
-    Sections,
-)
+from .base import BaseDocstring
+from .sections import Sections
 from .style import DocstringStyle
 from ..node import (
     CykNode,

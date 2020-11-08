@@ -1,0 +1,13 @@
+import enum
+
+
+class Sections(enum.Enum):
+    SHORT_DESCRIPTION = 0
+    LONG_DESCRIPTION = 1
+    ARGUMENTS_SECTION = 2
+    RAISES_SECTION = 4
+    YIELDS_SECTION = 6
+    RETURNS_SECTION = 8
+    VARIABLES_SECTION = 10
+    NOQAS = 13
+

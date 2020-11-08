@@ -12,13 +12,9 @@ from typing import (  # noqa: F401
 from .function_description import (  # noqa: F401
     FunctionDescription,
 )
-from .docstring.base import (
-    BaseDocstring,
-    Sections,
-)
-from .docstring.docstring import (
-    Docstring,
-)
+from .docstring.base import BaseDocstring
+from .docstring.docstring import Docstring
+from .docstring.sections import Sections
 from .docstring.style import DocstringStyle
 from .errors import (  # noqa: F401
     DarglintError,

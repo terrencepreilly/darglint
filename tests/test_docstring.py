@@ -14,7 +14,7 @@ from random import (
 )
 
 from darglint.strictness import Strictness
-from darglint.docstring.base import Sections
+from darglint.docstring.sections import Sections
 from darglint.docstring.docstring import Docstring
 
 

@@ -10,10 +10,8 @@ from typing import (  # noqa
     Union,
 )
 
-from .base import (
-    BaseDocstring,
-    Sections,
-)
+from .base import BaseDocstring
+from .sections import Sections
 from .style import DocstringStyle
 from ..custom_assert import Assert
 from ..node import (
