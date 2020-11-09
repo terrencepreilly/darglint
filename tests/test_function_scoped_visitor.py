@@ -13,7 +13,7 @@ from .utils import (
 )
 
 
-class ScopedReturnVisitor(ReturnVisitor, FunctionScopedVisitorMixin):
+class ScopedReturnVisitor(FunctionScopedVisitorMixin, ReturnVisitor):
     pass
 
 
