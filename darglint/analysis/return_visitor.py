@@ -28,8 +28,7 @@ class ReturnVisitor(ast.NodeVisitor):
             self.return_types.append(None)
         else:
             self.return_types.append(node.returns)
-        return super().generic_visit(node)
-        # return self.generic_visit(node)
+        return super(ReturnVisitor, self).generic_visit(node)
 
     def visit_FunctionDef(self, node):
         # type: (ast.FunctionDef) -> ast.AST
