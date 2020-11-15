@@ -116,3 +116,9 @@ class YieldsVisitorTests(TestCase):
             isinstance(visitor.yields[0].value, ast.AST),
         )
 
+    def test_yield_from(self):
+        program = r'''
+            def f():
+                yield from (x for x in range(10))
+        '''
+        self.assertFound(program)

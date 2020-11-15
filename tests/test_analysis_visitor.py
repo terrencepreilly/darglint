@@ -41,7 +41,7 @@ class AnalysisVisitorTests(TestCase):
 
     def test_analyze_single_function_with_everything(self):
         program = r'''
-            def f(x):
+            def f(x: int) -> int:
                 """Halves the argument."""
                 assert x > 0
                 ret = x / 2
@@ -51,6 +51,7 @@ class AnalysisVisitorTests(TestCase):
                 return ret
         '''
         self.assertFound(program, 'arguments', ['x'])
+        self.assertFound(program, 'types', ['int'])
         self.assertFound(program, 'exceptions', {'Exception'})
 
         # Just check that an assert is present by registering a number.
