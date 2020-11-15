@@ -1,13 +1,19 @@
 import ast
 from typing import (
+    Any,
+    Dict,
     List,
 )
 
 
 class DocstringVisitor(ast.NodeVisitor):
 
-    def __init__(self):
-        # type: () -> None
+    def __init__(self, *args, **kwargs):
+        # type: (List[Any], Dict[str, Any]) -> None
+
+        # Allow the raise visitor to be used in a mixin.
+        super(DocstringVisitor, self).__init__(*args, **kwargs)
+
         self.docstrings = list()  # type: List[ast.Constant]
 
     def visit_FunctionDef(self, node):

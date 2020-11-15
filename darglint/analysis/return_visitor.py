@@ -1,5 +1,7 @@
 import ast
 from typing import (
+    Any,
+    Dict,
     List,
     Optional,
     Union,
@@ -16,6 +18,7 @@ class ReturnVisitor(ast.NodeVisitor):
     """A visitor which checks for *returns* nodes."""
 
     def __init__(self, *args, **kwargs):
+        # type: (List[Any], Dict[str, Any]) -> None
         super(ReturnVisitor, self).__init__(*args, **kwargs)
 
         # A list of the return nodes encountered.

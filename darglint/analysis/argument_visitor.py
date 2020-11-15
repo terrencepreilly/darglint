@@ -1,5 +1,7 @@
 import ast
 from typing import (
+    Any,
+    Dict,
     List,
 )
 
@@ -7,7 +9,10 @@ from typing import (
 class ArgumentVisitor(ast.NodeVisitor):
     """Reports which arguments a function contains."""
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        # type: (List[Any], Dict[str, Any]) -> None
+        super(ArgumentVisitor, self).__init__(*args, **kwargs)
+
         # The arguments found in the function.
         self.arguments = list()  # type: List[str]
         self.types = list()  # type: List[str]

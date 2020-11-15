@@ -10,7 +10,9 @@ class FunctionScopedVisitorMixin(ast.NodeVisitor):
     """
 
     def __init__(self, *args, **kwargs):
+        # type: (List[Any], Dict[str, Any]) -> None
         super(FunctionScopedVisitorMixin, self).__init__(*args, **kwargs)
+
         # Whether we have passed the initial `FunctionDef` node.
         self.in_function = False
 
