@@ -17,6 +17,9 @@ from typing import (
 from .analysis.analysis_visitor import (
     AnalysisVisitor,
 )
+from .analysis.function_and_method_visitor import (
+    FunctionAndMethodVisitor,
+)
 from .config import get_logger
 
 
@@ -186,12 +189,12 @@ def get_function_descriptions(program):
     """
     ret = list()  # type: List[FunctionDescription]
 
-    methods = set(_get_all_methods(program))
-    for method in methods:
+    visitor = FunctionAndMethodVisitor()
+    visitor.visit(program)
+    for method in visitor.methods:
         ret.append(FunctionDescription(is_method=True, function=method))
 
-    functions = set(_get_all_functions(program)) - methods
-    for function in functions:
+    for function in visitor.functions:
         ret.append(FunctionDescription(is_method=False, function=function))
 
     return ret
