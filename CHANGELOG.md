@@ -36,10 +36,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
           except ZeroDivisionError as zde:
               raise
 
-   darglint would incorrectly drop the `ZeroDivisionError` as a possible
-   error source when examining the function.  This was due to named exception
-   handlers being handled differently from other exceptions.  (The name had
-   to be stored in case a user did something like `raise err`.)
+  darglint would incorrectly drop the `ZeroDivisionError` as a possible
+  error source when examining the function.  This was due to named exception
+  handlers being handled differently from other exceptions.  (The name had
+  to be stored in case a user did something like `raise err`.)
+- Removed variables section from numpy's supported sections.  Thanks to @skarzi
+  for the pull request!
 
 ## [1.5.5]
 
