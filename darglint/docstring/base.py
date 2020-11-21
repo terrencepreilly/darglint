@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-import enum
 from typing import (
     Callable,
     Dict,
@@ -10,39 +9,8 @@ from typing import (
     Iterable,
 )
 
-
-class DocstringStyle(enum.Enum):
-    GOOGLE = 0
-    SPHINX = 1
-    NUMPY = 2
-
-    @classmethod
-    def from_string(cls, style):
-        style = style.lower().strip()
-        if style == 'google':
-            return cls.GOOGLE
-        if style == 'sphinx':
-            return cls.SPHINX
-        if style == 'numpy':
-            return cls.NUMPY
-
-        raise Exception(
-                'Unrecognized style "{}".  Should be one of {}'.format(
-                    style,
-                    [x.name for x in DocstringStyle]
-                )
-            )
-
-
-class Sections(enum.Enum):
-    SHORT_DESCRIPTION = 0
-    LONG_DESCRIPTION = 1
-    ARGUMENTS_SECTION = 2
-    RAISES_SECTION = 4
-    YIELDS_SECTION = 6
-    RETURNS_SECTION = 8
-    VARIABLES_SECTION = 10
-    NOQAS = 13
+from .sections import Sections  # noqa: F401
+from ..strictness import Strictness  # noqa: F401
 
 
 class BaseDocstring(ABC):
@@ -160,8 +128,7 @@ class BaseDocstring(ABC):
 
     @abstractmethod
     def satisfies_strictness(self, strictness):
-        # NOTE: We can't add the type signature because adding Strictness
-        # to the imports would cause a circular dependency.
+        # type(Strictness) -> bool
         """Return true if the docstring has no more than the min strictness.
 
         Args:
