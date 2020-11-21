@@ -176,8 +176,21 @@ class Context(object):
         if name == '':
             if self.bare_handler_exceptions is not None:
                 return self.bare_handler_exceptions | self.exceptions
-            else:
+            elif self.exceptions:
                 return self.exceptions
+            elif self.variables:
+                values = set()
+                for value in self.variables.values():
+                    if isinstance(value, list):
+                        values |= set(value)
+                    else:
+                        values.add(value)
+                return values
+            else:
+                logger.warning(
+                    'Unexpectedly had no exception name raised and no exception '
+                    'in context.'
+                )
         if isinstance(name, str):
             self.exceptions.add(name)
         elif isinstance(name, list):

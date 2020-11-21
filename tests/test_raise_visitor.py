@@ -149,6 +149,19 @@ class RaiseVisitorTestCase(TestCase):
             'ZeroDivisionError',
         )
 
+    def test_bare_reraise_with_as(self):
+        program = '\n'.join([
+            'def f(x):',
+            '    try:',
+            '        return 1 / x',
+            '    except ZeroDivisionError as zde:',
+            '        raise',
+        ])
+        self.assertFound(
+            program,
+            'ZeroDivisionError',
+        )
+
     def test_bare_reraise_single_exception(self):
         program = '\n'.join([
             'def f(x):',
