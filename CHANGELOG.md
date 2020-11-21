@@ -3,6 +3,44 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.5.6]
+
+### Added
+
+- Dockerfiles for testing each supported Python version.  Also added a tox
+  section to allow for testing these dockerfiles.  To build the images, you
+  can first do
+
+      make -C docker-build
+
+  then you can run
+
+      tox -e docker
+
+  And it will run the unit tests against Python3.5 to Python3.8.
+
+### Fixed
+
+- Nested functions/methods.  We should now handle nested functions/methods
+  explicitly.  Previously, some attributes (such as returns, etc.) would
+  leak through nested functions into their parents.  (Since we were just
+  walking the tree and looking for the presence of certain tokens.)
+  This also allowed for a nice refactoring of how we walk through/collect
+  data on the function ast.
+- Exception handlers with named instances now have the correct type reported
+  with bare raises.  Previously, if you had something like
+
+      def inverse(x):
+          try:
+              return 1 / x
+          except ZeroDivisionError as zde:
+              raise
+
+   darglint would incorrectly drop the `ZeroDivisionError` as a possible
+   error source when examining the function.  This was due to named exception
+   handlers being handled differently from other exceptions.  (The name had
+   to be stored in case a user did something like `raise err`.)
+
 ## [1.5.5]
 
 ### Fixed
