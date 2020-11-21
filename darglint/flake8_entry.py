@@ -6,7 +6,7 @@ from typing import (  # noqa
     Tuple,
 )
 
-from .docstring.base import DocstringStyle
+from .docstring.style import DocstringStyle
 from .function_description import (
     get_function_descriptions,
 )
@@ -14,8 +14,8 @@ from .integrity_checker import IntegrityChecker
 from .config import (
     Configuration,
     get_config,
-    Strictness,
 )
+from .strictness import Strictness
 
 
 __version__ = '1.5.6'

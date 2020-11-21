@@ -4,12 +4,8 @@ from unittest import (
     TestCase,
     skip,
 )
-from darglint.docstring.base import (
-    DocstringStyle,
-)
-from darglint.config import (
-    Strictness,
-)
+from darglint.docstring.style import DocstringStyle
+from darglint.strictness import Strictness
 from darglint.lex import (
     condense,
     lex,

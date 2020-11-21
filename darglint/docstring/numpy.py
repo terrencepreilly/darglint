@@ -28,17 +28,13 @@ from ..parse.identifiers import (
     Identifier,
     NoqaIdentifier,
 )
-from .base import (
-    BaseDocstring,
-    DocstringStyle,
-    Sections,
-)
+from .base import BaseDocstring
+from .sections import Sections
+from .style import DocstringStyle
 from ..node import (
     CykNode,
 )
-from ..config import (
-    Strictness,
-)
+from ..strictness import Strictness
 from ..parse.numpy import (
     parse,
 )

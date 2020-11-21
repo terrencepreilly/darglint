@@ -10,11 +10,9 @@ from typing import (  # noqa
     Union,
 )
 
-from .base import (
-    BaseDocstring,
-    DocstringStyle,
-    Sections,
-)
+from .base import BaseDocstring
+from .sections import Sections
+from .style import DocstringStyle
 from ..custom_assert import Assert
 from ..node import (
     CykNode,
@@ -30,9 +28,7 @@ from ..lex import (
     lex,
     condense,
 )
-from ..config import (
-    Strictness,
-)
+from ..strictness import Strictness
 from ..errors import (
     DarglintError,
 )
