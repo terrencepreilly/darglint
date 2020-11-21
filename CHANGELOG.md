@@ -3,6 +3,13 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.5.7]
+
+### Changed
+
+- Refactored some enumerations into their own files.  Thanks to @skarzi for
+  the pull request!
+
 ## [1.5.6]
 
 ### Added
