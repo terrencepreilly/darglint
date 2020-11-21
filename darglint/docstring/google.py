@@ -16,11 +16,9 @@ from typing import (  # noqa: F401
 from ..custom_assert import (
     Assert,
 )
-from .base import (  # noqa: F401
-    BaseDocstring,
-    DocstringStyle,
-    Sections,
-)
+from .base import BaseDocstring
+from .sections import Sections
+from .style import DocstringStyle
 from ..node import (
     CykNode,
 )
@@ -34,9 +32,7 @@ from ..lex import (
 from ..errors import (
     DarglintError,
 )
-from ..config import (
-    Strictness,
-)
+from ..strictness import Strictness
 from ..parse.identifiers import (
     ArgumentIdentifier,
     ArgumentItemIdentifier,

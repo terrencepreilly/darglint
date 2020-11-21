@@ -23,10 +23,8 @@ from darglint.utils import (
     ConfigurationContext,
     CykNodeUtils,
 )
-from darglint.config import (
-    DocstringStyle,
-    Strictness,
-)
+from darglint.docstring.style import DocstringStyle
+from darglint.strictness import Strictness
 
 
 class DocstringTestCase(TestCase):

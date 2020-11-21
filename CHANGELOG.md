@@ -3,6 +3,13 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.5.7]
+
+### Changed
+
+- Refactored some enumerations into their own files.  Thanks to @skarzi for
+  the pull request!
+
 ## [1.5.6]
 
 ### Added
@@ -40,7 +47,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   error source when examining the function.  This was due to named exception
   handlers being handled differently from other exceptions.  (The name had
   to be stored in case a user did something like `raise err`.)
-- Removed variables section from numpy's supported sections.  Thanks to @skarzi
+- Remove variables section from the numpy supported sections.  Thanks to @skarzi
   for the pull request!
 
 ## [1.5.5]

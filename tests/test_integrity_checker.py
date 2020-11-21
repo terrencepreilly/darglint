@@ -4,12 +4,8 @@ from unittest import (
     skip,
 )
 
-from darglint.config import (
-    Strictness,
-)
-from darglint.docstring.base import (
-    DocstringStyle,
-)
+from darglint.strictness import Strictness
+from darglint.docstring.style import DocstringStyle
 from darglint.integrity_checker import (
     IntegrityChecker,
 )

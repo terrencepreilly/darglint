@@ -14,7 +14,7 @@ from unittest import ( # noqa
 from darglint.docstring.docstring import (
     Docstring,
 )
-from darglint.docstring.base import (
+from darglint.docstring.sections import (
     Sections,
 )
 

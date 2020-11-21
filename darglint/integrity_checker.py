@@ -12,16 +12,10 @@ from typing import (  # noqa: F401
 from .function_description import (  # noqa: F401
     FunctionDescription,
 )
-from .docstring.base import (  # noqa: F401
-    BaseDocstring,
-    DocstringStyle,
-)
-from .docstring.base import (
-    Sections,
-)
-from .docstring.docstring import (
-    Docstring,
-)
+from .docstring.base import BaseDocstring
+from .docstring.docstring import Docstring
+from .docstring.sections import Sections
+from .docstring.style import DocstringStyle
 from .errors import (  # noqa: F401
     DarglintError,
     ExcessParameterError,
@@ -40,10 +34,8 @@ from .errors import (  # noqa: F401
 from .error_report import (
     ErrorReport,
 )
-from .config import (
-    get_config,
-    Strictness,
-)
+from .config import get_config
+from .strictness import Strictness
 
 
 SYNTAX_NOQA = re.compile(r'#\s*noqa:\sS001')
