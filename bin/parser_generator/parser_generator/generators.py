@@ -1,3 +1,4 @@
+import datetime
 from copy import copy
 from typing import (
     Dict,
@@ -25,9 +26,8 @@ class LLTableGenerator:
     def __init__(self, grammar: str) -> None:
         self.bnf = Parser().parse(grammar)
         self._table = None  # type: Optional[List[Production]]
-        self._adjacency_matrix = None # type: Optional[Dict[str, List[List[str]]]]
-        assert self.bnf.children[0].node_type == NodeType.START
-        self.start = self.bnf.children[0].value
+        self._adjacency_matrix = None  # type: Optional[Dict[str, List[List[str]]]]  # noqa
+        self.start = next(self.bnf.filter(Node.is_start)).value
 
     @property
     def terminals(self) -> Iterable[str]:
@@ -306,7 +306,9 @@ class LLTableGenerator:
         }  # type: Dict[str, Dict[str, Production]]
         for nonterm, terms in first.items():
             for term in terms:
-                productions = list(self.get_production_leading_to_terminal(nonterm, term))
+                productions = list(self.get_production_leading_to_terminal(
+                    nonterm, term
+                ))
                 assert len(productions) == 1, 'Ambiguous grammar.'
                 production = productions[0]
                 if term == 'ε':
@@ -315,3 +317,110 @@ class LLTableGenerator:
                 else:
                     table[nonterm][term] = production
         return table
+
+
+def normalize_for_table(symbol: str) -> str:
+    if symbol.startswith('"') and symbol.endswith('"'):
+        return symbol[1:-1]
+    return repr(symbol)
+
+
+PARSE_EXCEPTION = r'''
+class ParseException(Exception):
+    pass
+'''
+
+PARSE = r'''
+    def parse(self):
+        # type: () -> Optional[Node]
+        encountered = list()
+        stack = deque([{start_symbol}])
+        token = next(self.tokens)
+        token_type = token.token_type
+        while stack:
+            curr = stack.popleft()
+            if curr == 'ε':
+                continue
+            if isinstance(curr, TokenType):
+                if curr == token_type:
+                    try:
+                        token = next(self.tokens)
+                        token_type = token.token_type
+                    except StopIteration:
+                        token = None
+                        token_type = '$'
+                    continue
+                else:
+                    raise ParseException(
+                        'Expected token type {{}}, but got {{}}'.format(
+                            token_type, curr.token_type
+                        )
+                    )
+            if curr not in self.table:
+                raise ParseException(
+                    'Expected {{}} to be in grammar, but was not.'.format(
+                        curr,
+                    )
+                )
+            if token_type not in self.table[curr]:
+                raise ParseException(
+                    'Expected {{}} to be in a production '
+                    'of {{}}, but was not.'.format(
+                        token, curr
+                    )
+                )
+            lhs, rhs = self.table[curr][token_type]
+
+            # `extendleft` appends in reverse order,
+            # so we have to reverse before extending.
+            # Otherwise, right-recursive productions will
+            # never finish parsing.
+            stack.extendleft(rhs[::-1])
+            import pdb; pdb.set_trace()
+            encountered.append(lhs)
+        return encountered
+'''
+
+
+def generate_parser(grammar: str, imports: Optional[str]) -> str:
+    generator = LLTableGenerator(grammar)
+    first = generator.first()
+    follow = generator.follow(first)
+    table = generator.generate_table(first, follow)
+    if imports:
+        imports_or_blank = f'\n{imports}\n'
+    else:
+        imports_or_blank = ''
+
+    parser = [
+        f'# Generated on {datetime.datetime.now()}',
+        '',
+        'from collections import deque',
+        'from typing import (Iterator, Optional)',
+        imports_or_blank,
+        PARSE_EXCEPTION,
+        'class Parser(object):',
+        '    table = {'
+    ]
+    for row_value, row in table.items():
+        parser.append(' ' * 8 + f'{normalize_for_table(row_value)}: {{')
+        for col_value, production in row.items():
+            parser.append(' ' * 12 + f'{normalize_for_table(col_value)}: (')
+            lhs, rhs = production
+            parser.append(' ' * 16 + f'{normalize_for_table(lhs)},')
+            parser.append(' ' * 16 + '[')
+            for value in rhs:
+                parser.append(' ' * 20 + f'{normalize_for_table(value)},')
+            parser.append(' ' * 16 + ']')
+            parser.append(' ' * 12 + '),')
+        parser.append(' ' * 8 + '},')
+    parser.append(' ' * 4 + '}')
+
+    parser.append('')
+    parser.append('    def __init__(self, tokens):')
+    parser.append('        # type: (Iterator[Token]) -> None')
+    parser.append('        self.tokens = tokens')
+    parser.append('')
+    parser.append(PARSE.strip('\n').format(start_symbol=repr(generator.start)))
+
+    return '\n'.join(parser)
