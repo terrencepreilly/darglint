@@ -1,8 +1,8 @@
 """Contains a subclass of `Docstring`, which is for numpy.
 
-TODO: Consider refactoring docstring's discover method so that it 
-builds up a tree of identifiers, rather than a dictionary.  That is, 
-if it's proven more efficient or is much cleaner. 
+TODO: Consider refactoring docstring's discover method so that it
+builds up a tree of identifiers, rather than a dictionary.  That is,
+if it's proven more efficient or is much cleaner.
 
 """
 import copy
@@ -55,6 +55,15 @@ from ..custom_assert import (
 
 
 class Docstring(BaseDocstring):
+    _supported_sections = (
+        Sections.SHORT_DESCRIPTION,
+        Sections.LONG_DESCRIPTION,
+        Sections.ARGUMENTS_SECTION,
+        Sections.RAISES_SECTION,
+        Sections.YIELDS_SECTION,
+        Sections.RETURNS_SECTION,
+        Sections.NOQAS,
+    )  # type: Tuple[Sections, ...]
 
     def __init__(self, root, style=DocstringStyle.SPHINX):
         # type: (Union[CykNode, str], DocstringStyle) -> None  # noqa: E501
@@ -351,7 +360,7 @@ class Docstring(BaseDocstring):
 
         """
         sections = {
-            section for section in Sections
+            section for section in self._supported_sections
             if self.get_section(section)
         }
         if strictness == Strictness.SHORT_DESCRIPTION:

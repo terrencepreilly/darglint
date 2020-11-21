@@ -1,7 +1,10 @@
 import ast
 from unittest import TestCase
 from darglint.function_description import get_function_descriptions
-from .utils import require_python
+from .utils import (
+    require_python,
+    reindent,
+)
 
 
 class GetFunctionsAndDocstrings(TestCase):
@@ -413,3 +416,43 @@ class GetFunctionsAndDocstrings(TestCase):
                     program,
                 ),
             )
+
+    def test_nested_functions_partition_signatures(self):
+        program = reindent(r'''
+            def f(x):
+                """Always raise an exception from another function."""
+                def g(y):
+                    """Always raise an exception."""
+                    raise Exception('Always fail')
+                return g(y)
+        ''')
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        self.assertEqual(
+            len(functions),
+            2,
+        )
+        outer_function = [x for x in functions if x.name == 'f'][0]
+        inner_function = [x for x in functions if x.name == 'g'][0]
+        self.assertEqual(
+            outer_function.argument_names,
+            ['x'],
+        )
+        self.assertTrue(
+            outer_function.has_return,
+        )
+        self.assertEqual(
+            outer_function.raises,
+            set(),
+        )
+        self.assertEqual(
+            inner_function.argument_names,
+            ['y'],
+        )
+        self.assertEqual(
+            inner_function.raises,
+            {'Exception'},
+        )
+        self.assertFalse(
+            inner_function.has_return,
+        )
