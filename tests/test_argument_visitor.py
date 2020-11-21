@@ -7,6 +7,7 @@ from darglint.analysis.argument_visitor import (
 
 from .utils import (
     reindent,
+    require_python,
 )
 
 
@@ -58,7 +59,7 @@ class ArgumentVisitorTests(TestCase):
         '''
         self.assertFound(
             program,
-            *'abcdef',
+            'a', 'b', 'c', 'd', 'e', 'f',
         )
 
     def test_keyword_arguments(self):
@@ -74,23 +75,25 @@ class ArgumentVisitorTests(TestCase):
     def test_keyword_only_arguments(self):
         program = '''
             def f(x, y, *, z):
-                return f"{x * y}: {z}"
+                return "{}: {}".format(x * y, z)
         '''
         self.assertFound(
             program,
-            *'xyz'
+            'x', 'y', 'z'
         )
 
+    @require_python(3, 8)
     def test_order_only_arguments(self):
         program = '''
             def f(x, y, /, z):
-                return f"{x * y}: {z}"
+                return f'{x * y}: {z}'
         '''
         self.assertFound(
             program,
-            *'xyz'
+            'x', 'y', 'z'
         )
 
+    @require_python(3, 8)
     def test_order_and_keyword_arguments(self):
         program = '''
             def f(x, y, /, z, *, q):
@@ -98,7 +101,7 @@ class ArgumentVisitorTests(TestCase):
         '''
         self.assertFound(
             program,
-            *'xyzq'
+            'x', 'y', 'z', 'q'
         )
 
     def test_method(self):
@@ -119,7 +122,7 @@ class ArgumentVisitorTests(TestCase):
     def test_no_argument_type(self):
         program = '''
             def f(x) -> str:
-                return f"{x}'s"
+                return "{}'s".format(x)
         '''
         self.assertTypesFound(program, None)
 

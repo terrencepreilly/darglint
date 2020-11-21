@@ -1,4 +1,4 @@
-FROM python:3.4-alpine
+FROM python:3.5-alpine
 
 
 RUN apk update && \
@@ -10,6 +10,7 @@ RUN apk update && \
 RUN python -m pip install -U pip && \
     python -m pip install pytest \
                           mypy \
+                          flake8 \
                           typing
 
 
