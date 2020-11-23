@@ -8,18 +8,44 @@ from darglint.analysis.return_visitor import (
 from darglint.analysis.function_scoped_visitor import (
     FunctionScopedVisitorMixin,
 )
+from darglint.analysis.argument_visitor import (
+    ArgumentVisitor,
+)
 from .utils import (
     reindent,
 )
 
 
-class ScopedReturnVisitor(FunctionScopedVisitorMixin, ReturnVisitor):
+class ScopedReturnAndArgumentVisitor(
+    FunctionScopedVisitorMixin,
+    ArgumentVisitor,
+    ReturnVisitor
+):
     pass
 
 
 class FunctionScopedVisitorMixinTests(TestCase):
 
-    def assertFound(self, program):
+    def assertArgsFound(self, program, *args):
+        """Assert that the given arguments were present.
+
+        Args:
+            program: The program to analyze.
+            args: The arguments which should be present (or empty if none.)
+
+        Returns:
+            The visitor, in case further analysis is required.
+
+        """
+        function = ast.parse(reindent(program)).body[0]
+        visitor = ScopedReturnAndArgumentVisitor()
+        visitor.visit(function)
+        self.assertEqual(
+            sorted(visitor.arguments),
+            sorted(args),
+        )
+
+    def assertReturnFound(self, program):
         """Assert that the return was found.
 
         Args:
@@ -30,12 +56,12 @@ class FunctionScopedVisitorMixinTests(TestCase):
 
         """
         function = ast.parse(reindent(program)).body[0]
-        visitor = ScopedReturnVisitor()
+        visitor = ScopedReturnAndArgumentVisitor()
         visitor.visit(function)
         self.assertTrue(visitor.returns)
         return visitor
 
-    def assertNoneFound(self, program):
+    def assertNoReturnFound(self, program):
         """Assert that no return was found.
 
         Args:
@@ -46,7 +72,7 @@ class FunctionScopedVisitorMixinTests(TestCase):
 
         """
         function = ast.parse(reindent(program)).body[0]
-        visitor = ScopedReturnVisitor()
+        visitor = ScopedReturnAndArgumentVisitor()
         visitor.visit(function)
         self.assertEqual(visitor.returns, [])
         return visitor
@@ -58,7 +84,7 @@ class FunctionScopedVisitorMixinTests(TestCase):
                     return 'Hello nesting!'
                 print(g())
         '''
-        self.assertNoneFound(program)
+        self.assertNoReturnFound(program)
 
     def test_deeply_nested_return(self):
         program = r'''
@@ -71,7 +97,7 @@ class FunctionScopedVisitorMixinTests(TestCase):
                     h()
                 g()
         '''
-        self.assertNoneFound(program)
+        self.assertNoReturnFound(program)
 
     def test_only_outermost_captured(self):
         """Test that only the outermost function is analyzed.
@@ -90,14 +116,14 @@ class FunctionScopedVisitorMixinTests(TestCase):
                     return 3
                 yield g()
         '''
-        self.assertNoneFound(program)
+        self.assertNoReturnFound(program)
 
     def test_outer_async_function_captured(self):
         program = r'''
             async def f():
                 return 3
         '''
-        self.assertFound(program)
+        self.assertReturnFound(program)
 
     def test_inner_async_skipped(self):
         program = r'''
@@ -106,4 +132,16 @@ class FunctionScopedVisitorMixinTests(TestCase):
                     return 3
                 yield await g()
         '''
-        self.assertNoneFound(program)
+        self.assertNoReturnFound(program)
+
+    def test_lambda_forms_scope(self):
+        """A lambda must form its own scope, to prevent leaking into parent."""
+        program = r'''
+            def f(xs):
+                ys = copy(xs)
+                ys.sort(key=lambda x: x[0])
+                return ys
+        '''
+        self.assertReturnFound(program)
+        self.assertArgsFound(program, 'xs')
+
