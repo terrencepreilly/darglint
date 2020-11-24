@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import (
+    ClassVar,
     Callable,
     Dict,
     List,
@@ -9,8 +10,8 @@ from typing import (
     Iterable,
 )
 
-from .sections import Sections  # noqa: F401
-from ..strictness import Strictness  # noqa: F401
+from .sections import Sections
+from ..strictness import Strictness
 
 
 class BaseDocstring(ABC):
@@ -23,6 +24,8 @@ class BaseDocstring(ABC):
     consistent as possible.
 
     """
+
+    supported_sections = tuple(Sections) # type: ClassVar[Tuple[Sections, ...]]
 
     @abstractmethod
     def get_section(self, section):
@@ -126,7 +129,6 @@ class BaseDocstring(ABC):
         # type: () -> bool
         pass
 
-    @abstractmethod
     def satisfies_strictness(self, strictness):
         # type(Strictness) -> bool
         """Return true if the docstring has no more than the min strictness.
@@ -139,4 +141,20 @@ class BaseDocstring(ABC):
             True if there is no more than the minimum amount of strictness.
 
         """
-        pass
+        sections = {
+            section
+            for section in self.supported_sections
+            if self.get_section(section)
+        }
+        if strictness == Strictness.SHORT_DESCRIPTION:
+            return sections == {Sections.SHORT_DESCRIPTION}
+        elif strictness == Strictness.LONG_DESCRIPTION:
+            return sections in (
+                {Sections.SHORT_DESCRIPTION},
+                # Shouldn't be possible, but if it is in the future, then
+                # we should allow this.
+                {Sections.LONG_DESCRIPTION},
+                {Sections.SHORT_DESCRIPTION, Sections.LONG_DESCRIPTION},
+            )
+        else:
+            return False

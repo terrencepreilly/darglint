@@ -456,3 +456,21 @@ class GetFunctionsAndDocstrings(TestCase):
         self.assertFalse(
             inner_function.has_return,
         )
+
+    def test_lambda_doesnt_alter_signature(self):
+        program = reindent(r'''
+            def f():
+                get_message = lambda x: '{}!'.format(x)
+                print(get_message(7))
+        ''')
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        self.assertEqual(
+            len(functions),
+            1,
+        )
+        function = functions[0]
+        self.assertEqual(
+            function.argument_names,
+            [],
+        )

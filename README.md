@@ -321,10 +321,12 @@ argument as missing.  See Issue #90.)
 - *DAR002*: An argument/exception lacks a description
 - *DAR003*: A line is under-indented or over-indented.
 - *DAR004*: The docstring contains an extra newline where it shouldn't.
+- *DAR005*: The item contains a type section (parentheses), but no type.
 - *DAR101*: The docstring is missing a parameter in the definition.
 - *DAR102*: The docstring contains a parameter not in function.
 - *DAR103*: The docstring parameter type doesn't match function.
 - *DAR104*: (disabled) The docstring parameter has no type specified 
+- *DAR105*: The docstring parameter type is malformed.
 - *DAR201*: The docstring is missing a return from definition.
 - *DAR202*: The docstring has a return not in definition.
 - *DAR203*: The docstring parameter type doesn't match function.

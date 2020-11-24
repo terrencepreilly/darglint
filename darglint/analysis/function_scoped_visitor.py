@@ -16,6 +16,12 @@ class FunctionScopedVisitorMixin(ast.NodeVisitor):
         # Whether we have passed the initial `FunctionDef` node.
         self.in_function = False
 
+    def visit_Lambda(self, node):
+        # type: (ast.Lambda) -> ast.AST
+        if not self.in_function:
+            self.in_function = True
+            return self.generic_visit(node)
+
     def visit_FunctionDef(self, node):
         # type: (ast.FunctionDef) -> ast.AST
         if not self.in_function:

@@ -251,6 +251,13 @@ class IntegrityChecker(object):
 
     def _check_return(self, docstring, function):
         # type: (FunctionDescription) -> None
+
+        # If there is an empty return, we don't want to make any
+        # judgement about whether it should be reported, as it is
+        # probably an early escape.
+        if function.has_empty_return:
+            return
+
         doc_return = docstring.get_section(Sections.RETURNS_SECTION)
         fun_return = function.has_return
         ignore_missing = self._ignore_error(docstring, MissingReturnError)

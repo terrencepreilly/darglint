@@ -3,12 +3,31 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.5.8]
+
+### Fixed
+
+- Bare returns now do not have to be documented.  This aligns better with
+  expectations for docstrings, and matches what darglint did prior to refactoring
+  to handle nested functions.
+
 ## [1.5.7]
 
 ### Changed
 
-- Refactored some enumerations into their own files.  Thanks to @skarzi for
-  the pull request!
+- Refactored some enumerations into their own files, and moved strictness
+  checks to the base docstring method. Thanks to @skarzi for the pull requests! 
+  It makes the code a good deal cleaner.
+
+### Fixed
+
+- Lambdas no longer result in erroneous arguments in the docstring.
+  Lambdas apparently reuse the Arguments ast node, which means that, since they
+  were scoped in the same function, they were adding erroneous arguments.
+  By moving lambdas into their own scope, we resolve that issue.  Of course,
+  if a lambda raises an exception, we will no longer catch that in the
+  function description.  However, doing that seems far less likely, and not
+  worth the excess logic to handle.
 
 ## [1.5.6]
 
