@@ -165,6 +165,7 @@ class FunctionDescription(object):
                 self.argument_names.pop(0)
                 self.argument_types.pop(0)
         self.has_return = bool(visitor.returns)
+        self.has_empty_return = self.has_return and visitor.returns[0].value is None
         self.return_type = _get_return_type(function)
         self.has_yield = bool(visitor.yields)
         self.raises = visitor.exceptions

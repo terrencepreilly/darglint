@@ -34,6 +34,8 @@ from darglint.utils import (
     ConfigurationContext,
 )
 
+from .utils import reindent
+
 
 class IntegrityCheckerNumpyTestCase(TestCase):
 
@@ -1182,6 +1184,34 @@ class IntegrityCheckerTestCase(TestCase):
                 ]),
                 'Failed to raise EmptyDescriptionError for {}'.format(section),
             )
+
+    def test_bare_return_doesnt_count_but_doesnt_count_against(self):
+        program_template = reindent(r'''
+            def f(x):
+                """{}"""
+                if x == 0:
+                    return
+                print(1 / x)
+        ''')
+        without_return = program_template.format(reindent(r'''
+            Print the inverse.
+
+            Args:
+                x: The value whose inverse we may print.
+        '''))
+        self.has_no_errors(without_return)
+        with_return = program_template.format(reindent(r'''
+            Print the inverse.
+
+            Args:
+                x: The value whose inverse we may print.
+
+            Returns:
+                Nothing.
+        '''))
+        self.has_no_errors(with_return)
+
+
 
     def test_bare_noqa(self):
         program = '\n'.join([
