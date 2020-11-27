@@ -1,6 +1,7 @@
 """High level integration tests for the parser generator."""
 
 from unittest import TestCase
+from collections import deque
 
 from parser_generator.generators import generate_parser
 
@@ -14,10 +15,31 @@ from .grammars import (
 
 class ParserGeneratorTests(TestCase):
 
+    def assertTerminals(self, node, *terminals):
+        """Assert the node's terminal values in an In-Order Traversal.
+
+        Args:
+            node: The root of the tree we're checking.
+            terminals: The terminal values we expect to encounter during
+                an in-order traversal of the tree.
+        """
+        stack = deque([node])
+        terminals_remaining = deque(terminals)
+        while stack:
+            curr = stack.pop()
+            if isinstance(curr.node_type, TokenType):
+                terminal = terminals_remaining.popleft()
+                self.assertEqual(
+                    terminal,
+                    curr.value.value,
+                )
+            stack.extend(curr.children[::-1])
+
+
     def test_one_token_grammar(self):
         parser_repr = generate_parser(
             ONE_TOKEN_GRAMMAR,
-            'from .grammars import (TokenType, Node)'
+            'from .grammars import (Token, TokenType, Node)'
         )
         module = globals()
         exec(parser_repr, module)
@@ -27,15 +49,15 @@ class ParserGeneratorTests(TestCase):
             node.node_type,
             'one',
         )
-        self.assertEqual(
-            node.value.value,
+        self.assertTerminals(
+            node,
             '1',
         )
 
     def test_binary_grammar(self):
         parser_repr = generate_parser(
             BINARY_GRAMMAR,
-            'from .grammars import (TokenType, Node)'
+            'from .grammars import (Token, TokenType, Node)'
         )
         module = globals()
         exec(parser_repr, module)
@@ -49,11 +71,7 @@ class ParserGeneratorTests(TestCase):
             node.value,
             None,
         )
-        self.assertEqual(
-            len(node.children),
-            7,
-        )
-        self.assertEqual(
-            node.children[-1].value.value,
-            '1',
+        self.assertTerminals(
+            node,
+            *'0010101'
         )

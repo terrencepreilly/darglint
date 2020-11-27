@@ -1,8 +1,8 @@
 """Defines some grammars useful for testing."""
 
-from dataclasses import dataclass
+from dataclasses import (dataclass, field)
 import enum
-from typing import (Union, Optional)
+from typing import (List, Optional, Union)
 
 
 ONE_TOKEN_GRAMMAR = r'''
@@ -42,7 +42,17 @@ class Token:
 @dataclass
 class Node:
     node_type: Union[str, TokenType]
-    value: Optional[Token]
+    value: Optional[Token] = None
+    children: List['Node'] = field(default_factory=list)
+
+    def __str__(self, indent: int = 0) -> str:
+        ret = f'<Node {self.node_type}'
+        if self.value is not None:
+            ret += f' {self.value}'
+        for child in self.children:
+            ret += f'\n{" " * indent}{child.__str__(indent=indent + 2)}'
+        ret += '>'
+        return ret
 
 
 def lex(contents):

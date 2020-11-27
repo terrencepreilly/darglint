@@ -41,17 +41,6 @@ class LLTableGenerator:
         for rhs, _ in self.table:
             yield rhs
 
-    @property
-    def rules(self) -> List[Tuple[str, Node]]:
-        """Return a list of rules.
-
-        Returns:
-            A list of rules.  Each rule is a tuple,
-            containing the production and the RHS.
-
-        """
-        pass
-
     def _normalize_terminal_value(self, value: str) -> str:
         return value.replace('\\', '')
 
@@ -174,6 +163,7 @@ class LLTableGenerator:
 
         Args:
             rhs: The right-hand side.
+            first: The first set.
 
         Yields:
             Non-terminals at the end of the production.  Yields
@@ -232,6 +222,9 @@ class LLTableGenerator:
 
     def follow(self, first: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
         """Calculate the follow set for generating an LL(1) table.
+
+        Args:
+            first: The previously calculated first-set.
 
         Returns:
             A mapping from non-terminal productions to the first
@@ -333,16 +326,17 @@ class ParseException(Exception):
 PARSE = r'''
     def parse(self):
         # type: () -> Optional[Node]
-        encountered = list()
-        stack = deque([{start_symbol}])
+        root = Node(node_type={start_symbol})
+        stack = deque([root])
         token = next(self.tokens)
         token_type = token.token_type
         while stack:
             curr = stack.popleft()
-            if curr == 'ε':
+            if curr.node_type == 'ε':
                 continue
-            if isinstance(curr, TokenType):
-                if curr == token_type:
+            if isinstance(curr.node_type, TokenType):
+                if curr.node_type == token_type:
+                    curr.value = token
                     try:
                         token = next(self.tokens)
                         token_type = token.token_type
@@ -353,32 +347,32 @@ PARSE = r'''
                 else:
                     raise ParseException(
                         'Expected token type {{}}, but got {{}}'.format(
-                            token_type, curr.token_type
+                            token_type, curr.node_type
                         )
                     )
-            if curr not in self.table:
+            if curr.node_type not in self.table:
                 raise ParseException(
                     'Expected {{}} to be in grammar, but was not.'.format(
                         curr,
                     )
                 )
-            if token_type not in self.table[curr]:
+            if token_type not in self.table[curr.node_type]:
                 raise ParseException(
                     'Expected {{}} to be in a production '
                     'of {{}}, but was not.'.format(
                         token, curr
                     )
                 )
-            lhs, rhs = self.table[curr][token_type]
+            lhs, rhs = self.table[curr.node_type][token_type]
 
             # `extendleft` appends in reverse order,
             # so we have to reverse before extending.
             # Otherwise, right-recursive productions will
             # never finish parsing.
-            stack.extendleft(rhs[::-1])
-            import pdb; pdb.set_trace()
-            encountered.append(lhs)
-        return encountered
+            children = [Node(x) for x in rhs]
+            curr.children = children
+            stack.extendleft(children[::-1])
+        return root
 '''
 
 

@@ -8,6 +8,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.8"
 bnf_to_cnf = { path = "../bnf_to_cnf" }
+darglint = "^1.5.8"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.0.1"
