@@ -1,12 +1,15 @@
 import datetime
 from copy import copy
+from functools import (lru_cache, reduce)
 from typing import (
+    Any,
     Dict,
     List,
     Iterable,
     Optional,
     Set,
     Tuple,
+    Union,
 )
 from itertools import (
     chain,
@@ -17,13 +20,171 @@ from bnf_to_cnf.parser import (  # type: ignore
     NodeType,
     Node,
 )
+from .production import Production
 
-Production = Tuple[str, List[str]]
+
+def is_term(symbol: str) -> bool:
+    return symbol.startswith('"') and symbol.endswith('"')
+
+
+def gen_cache(max_iterator_depth=200):
+    """A memoization wrapper for functions which return generators.
+
+    The generator is evaluated at cache time, and a new generator
+    is returned based on those results.  This means that the generator
+    which is returned cannot be cyclic in nature, or caching it will
+    loop forever.  For that reason, you can specify a max recursion depth
+    for this cache.
+
+    Args:
+        max_iterator_depth: The maximum amount of items which can be pulled
+            from the generator.
+
+    Raises:
+        Exception: If the maximum iterator depth has been exceeded.
+
+    Returns:
+        A decorator which caches the results from functions which return
+        generators.
+
+    """
+    def _wrapper(fun):
+        _cache = dict()
+
+        def _inner(*args, **kwargs):
+            key = (tuple(args), tuple(kwargs.items()))
+            if key not in _cache:
+                _cache[key] = list()
+                counter = 0
+                for value in fun(*args, **kwargs):
+                    _cache[key].append(value)
+                    counter += 1
+                    if counter > max_iterator_depth:
+                        raise Exception('Max iterator depth reached.')
+            return (x for x in _cache[key])
+        return _inner
+    return _wrapper
+
+
+class SubProduction:
+    """Identifies a subset of a give production.
+
+    A subset of a production is here given to be some
+    ordered set of terminal and non-terminal symbols which
+    occur on the RHS of some production P in G:
+
+        ⟨s₁, s₂, ..., sₙ⟩
+
+    """
+
+    def __init__(self, symbols: List[str]):
+        self.symbols = symbols
+
+    def head(self) -> Tuple[Optional[str], 'SubProduction']:
+        if self.symbols:
+            return self.symbols[0], SubProduction(self.symbols[1:])
+        return None, self
+
+    def initial_terminals(self, k: int
+                          ) -> Tuple['SubProduction', 'SubProduction']:
+        if k == 0 and self.symbols and self.symbols[0] == 'ε':
+            return SubProduction(['ε']), SubProduction([])
+        i = 0
+        while i < k and i < len(self.symbols) and (
+                is_term(self.symbols[i]) or self.symbols[i] == 'ε'):
+            i += 1
+        return SubProduction(self.symbols[:i]), SubProduction(self.symbols[i:])
+
+    def normalized(self) -> List[str]:
+        if len(self) <= 1:
+            return self.symbols
+        return [x for x in self.symbols if x != 'ε']
+
+    def __add__(self, other: 'SubProduction') -> 'SubProduction':
+        return SubProduction(self.symbols + other.symbols)
+
+    def __str__(self) -> str:
+        return repr(self.symbols)
+
+    def __repr__(self) -> str:
+        return str(self)
+
+    def __bool__(self) -> bool:
+        return bool(self.symbols)
+
+    def __len__(self) -> int:
+        return len(self.symbols)
+
+    def __key(self) -> Tuple[str, ...]:
+        return tuple(self.symbols)
+
+    def __hash__(self) -> int:
+        return hash(self.__key())
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, SubProduction):
+            return self.__key() == other.__key()
+        return False
+
+
+class FirstSet:
+
+    def __init__(self, *sequences: SubProduction):
+        self.sequences = list(sequences)
+
+    def __len__(self) -> int:
+        return len(self.sequences)
+
+    def __mul__(self, other: 'FirstSet') -> 'FirstSet':
+        result = FirstSet()
+        for first_sequence in self.sequences:
+            for second_sequence in other.sequences:
+                if first_sequence == ['ε']:
+                    result.sequences.append(second_sequence)
+                elif second_sequence == ['ε']:
+                    result.sequences.append(first_sequence)
+                else:
+                    result.sequences.append(first_sequence + second_sequence)
+        return result
+
+    def __bool__(self) -> bool:
+        return bool(self.sequences)
+
+    def __or__(self, other: 'FirstSet') -> 'FirstSet':
+        return FirstSet(*self.sequences, *other.sequences)
+
+    def __str__(self) -> str:
+        return '{' + ', '.join(map(str, self.sequences)) + '}'
+
+    def __repr__(self) -> str:
+        return str(self)
+
+
+class Grammar:
+    def __init__(self, table: List[Production]):
+        self.table = table
+
+    def __getitem__(
+        self,
+        key: Union[int, str]
+    ) -> Union[SubProduction, List[SubProduction]]:
+        if isinstance(key, int):
+            return SubProduction(self.table[key][1])
+        elif isinstance(key, str):
+            return [
+                SubProduction(rhs) for lhs, rhs in self.table if lhs == key
+            ]
+        else:
+            raise ValueError(
+                'Grammar only indexed by production index '
+                'or non-terminal symbol.'
+            )
 
 
 class LLTableGenerator:
 
-    def __init__(self, grammar: str) -> None:
+    def __init__(self, grammar: str, lookahead: int = 1) -> None:
+        self.lookahead = lookahead
         self.bnf = Parser().parse(grammar)
         self._table = None  # type: Optional[List[Production]]
         self._adjacency_matrix = None  # type: Optional[Dict[str, List[List[str]]]]  # noqa
@@ -184,6 +345,99 @@ class LLTableGenerator:
                 else:
                     yield rhs[i]
 
+    @gen_cache(max_iterator_depth=1000)
+    def _kfirst(self, symbol: Union[str, SubProduction], k: int
+                ) -> Iterable[FirstSet]:
+        """Get the k-first lookup table.
+
+        This method satisfies
+
+            _kfirst(k) = ⋃ Fi(s0, n) ∀ n ∊ 1..k
+
+        Where `s0` is a symbol in the grammar and
+
+            Fi(s0, n) = ∀ p ∊ G, the set of all
+                | ⟨x1⟩
+                |   if p = s0 -> x1 where x1 is terminal or ε, and n = 1
+                | ⟨x1, x2, ..., xn⟩
+                |   if s0 -> x1 x2 ... xn, ... is in G
+                |       where x1..xn are terminals
+                | ⟨x1, x2, ..., xj⟩ × Fi(⟨s1, ...⟩, n - j)
+                |   if s0 -> x1 x2 ... xj, s1, ..., where x1-xn are terminals,
+                |   s1 is non-terminal, and Fi(s1, n - j) is defined.
+
+        The symbol ε counts as length 1, and could be found in the
+        middle of any of the subproductions in the yielded sets.
+        These are valid, even if they're not of the correct length.
+
+        """
+        G = Grammar(self.table)
+
+        # Fi(S, k)
+        if isinstance(symbol, str):
+            for subproduction in G[symbol]:
+                yield from self._kfirst(subproduction, k)
+            return
+
+        assert isinstance(symbol, SubProduction)
+        # Fi(<>, k)
+        if not symbol:
+            yield FirstSet()
+            return
+
+        # Fi(<s1, s2, ..., s_k>, k)
+        terms, rest = symbol.initial_terminals(k)
+        # There will be more than k terms if k = 0 and symbol contains ε.
+        if len(terms) == 1 and k == 0:
+            yield FirstSet(terms)
+            return
+        if terms and len(terms) == k:
+            yield FirstSet(terms)
+            return
+        # len(terms) < k
+
+        # Fi(<s1, s2, ..., s_(k - n)>, k), where n > 0
+        # We can't build up to k symbols.
+        if not rest:
+            return
+
+        # Fi(<S, s2, ...>, k)
+        # The first symbol is non-terminal.
+        if len(terms) == 0:
+            head, rest = symbol.head()
+            assert head is not None
+            yield from self._kfirst(head, k)
+            # At i = k, first_first will be _kfirst(head, 0)
+            # This is meaningful if head has <ε>.
+            for i in range(1, k + 1):
+                for first_first in self._kfirst(head, k - i):
+                    for second_first in self._kfirst(rest, i):
+                        yield first_first * second_first
+            return
+
+        # Fi(<s1, s2, ..., s_(k - n), S, ...>, k), where n > 0
+        # There are < k terminals, followed by at least one non-terminal.
+        rest_kfirst = self._kfirst(rest, k - len(terms))
+        rest_kfirst = reduce(FirstSet.__or__, rest_kfirst, FirstSet())
+        yield FirstSet(terms) * rest_kfirst
+
+    def kfirst(self, k: int) -> Dict[str, Set[str]]:
+        F = {x: set() for x, _ in self.table}
+        for i in range(1, k + 1):
+            for symbol in F.keys():
+                first_set = reduce(
+                    FirstSet.__or__,
+                    self._kfirst(symbol, i),
+                    FirstSet()
+                )
+                for subproduction in first_set.sequences:
+                    normalized = subproduction.normalized()
+                    if len(normalized) == 1:
+                        F[symbol].add(normalized[0])
+                    else:
+                        F[symbol].add(tuple(normalized))
+        return F
+
     def first(self) -> Dict[str, Set[str]]:
         """Calculate the first set for generating an LL(1) table.
 
@@ -276,6 +530,8 @@ class LLTableGenerator:
                     stack.append(lhs[0])
         return False
 
+    # TODO: Change to handle multiple terminals
+    # TODO: Change to be stored as an intermediate result of Fi, Fo
     def get_production_leading_to_terminal(self,
                                            nonterm: str,
                                            term: str
@@ -333,6 +589,7 @@ PARSE = r'''
         while stack:
             curr = stack.popleft()
             if curr.node_type == 'ε':
+                # TODO: Should this ever happen?
                 continue
             if isinstance(curr.node_type, TokenType):
                 if curr.node_type == token_type:

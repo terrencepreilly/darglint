@@ -10,6 +10,7 @@ from .grammars import (
     TokenType,
     ONE_TOKEN_GRAMMAR,
     BINARY_GRAMMAR,
+    TWO_LOOKAHEAD,
 )
 
 
@@ -75,3 +76,22 @@ class ParserGeneratorTests(TestCase):
             node,
             *'0010101'
         )
+
+    def test_two_lookahead_grammar(self):
+        parser_repr = generate_parser(
+            TWO_LOOKAHEAD,
+            'from .grammars import (Token, TokenType, Node)'
+        )
+        module = globals()
+        exec(parser_repr, module)
+        Parser = module['Parser']
+        content = 'aabbcacb'
+        node = Parser(lex('aabbcacb')).parse()
+        self.assertEqual(
+            node.node_type,
+            'S',
+        )
+        self.assertTerminals(
+            node,
+            *content,
+       )

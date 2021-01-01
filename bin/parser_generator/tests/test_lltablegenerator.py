@@ -6,6 +6,9 @@ from unittest import (
 from parser_generator.generators import (
     LLTableGenerator,
 )
+from .grammars import (
+    TWO_LOOKAHEAD,
+)
 from .utils import (
     GrammarGenerator,
 )
@@ -324,6 +327,27 @@ class LLTableGeneratorTests(TestCase):
                 '"Int"': ('F', ['"Int"']),
             },
         }
+        self.assertEqual(
+            actual,
+            expected,
+        )
+
+    def test_first_with_two_lookahead(self):
+        expected = {
+            'S': {
+                '"TokenType.A"',
+                'ε',
+                ('"TokenType.A"', '"TokenType.A"'),
+                ('"TokenType.A"', '"TokenType.C"')
+            },
+            'A': {
+                '"TokenType.A"',
+                '"TokenType.C"',
+                ('"TokenType.A"', '"TokenType.B"'),
+            },
+        }
+        gen = LLTableGenerator(TWO_LOOKAHEAD, lookahead=2)
+        actual = gen.kfirst(2)
         self.assertEqual(
             actual,
             expected,

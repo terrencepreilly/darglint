@@ -27,10 +27,25 @@ start: <number>
 <zero> ::= "TokenType\.ZERO"
 '''
 
+# This grammar is LL(2) but not LL(1).
+TWO_LOOKAHEAD = r'''
+Grammar: TwoLookaheadGrammar
+
+start: <S>
+
+<S> ::= "TokenType\.A" <S> <A>
+  | ε
+<A> ::= "TokenType\.A" "TokenType\.B" <S>
+  | "TokenType\.C"
+'''
+
 
 class TokenType(enum.Enum):
     ONE = "1"
     ZERO = "0"
+    A = "a"
+    B = "b"
+    C = "c"
 
 
 @dataclass
@@ -61,5 +76,11 @@ def lex(contents):
             yield Token(TokenType.ONE, '1')
         elif char == '0':
             yield Token(TokenType.ZERO, '0')
+        elif char == 'a':
+            yield Token(TokenType.A, 'a')
+        elif char == 'b':
+            yield Token(TokenType.B, 'b')
+        elif char == 'c':
+            yield Token(TokenType.C, 'c')
         else:
             raise Exception(f'Unrecognized token "{char}"')
