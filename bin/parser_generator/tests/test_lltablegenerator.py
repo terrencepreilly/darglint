@@ -352,3 +352,128 @@ class LLTableGeneratorTests(TestCase):
             actual,
             expected,
         )
+
+    def test_first_with_three_lookahead(self):
+        grammar = r'''
+            start: <S>
+
+            <S> ::= <A>
+              | <B>
+            <A> ::= "a" "a" "a"
+            <B> ::= "a" "a" "b"
+        '''
+        expected = {
+            'S': {
+                ('"a"', '"a"', '"a"'),
+                ('"a"', '"a"', '"b"'),
+                ('"a"', '"a"'),
+                '"a"',
+            },
+            'A': {
+                ('"a"', '"a"', '"a"'),
+                ('"a"', '"a"'),
+                '"a"',
+            },
+            'B': {
+                ('"a"', '"a"', '"b"'),
+                ('"a"', '"a"'),
+                '"a"',
+            },
+        }
+        gen = LLTableGenerator(grammar, lookahead=3)
+        actual = gen.kfirst(3)
+        self.assertEqual(actual, expected)
+
+    def test_first_with_two_lookahead_no_partials(self):
+        """Make sure we don't get fragments mixed in.
+
+        If we have a subproduction, S, of the form
+
+            <E, s_0, s_1, ..., s_n>
+
+        And we want kfirst(S, k), where k > 1,
+        we have to make sure that when iterating through possible
+        kfirst sets of E, that we only take "complete" sets.  For example,
+        if we have k = 2 and
+
+            E -> "(" Value ")"
+
+        Then the value of `kfirst(S, 2) = kfirst(E, 2)`.  The value
+        `kfirst(E, 1) x kfirst(<s_0, S_1, ...,s_n>, 1)` would not be
+        valid.
+
+        """
+        grammar = r'''
+            start: <S>
+
+            <S> ::= <E> <M>
+                | <M>
+            <E> ::= "a" "b" "a"
+            <M> ::= "c"
+        '''
+        expected = {
+            'S': {
+                ('"a"', '"b"'),
+                # However, the value ('"a"', '"c"') should not appear.
+                '"a"',
+                '"c"',
+            },
+            'E': {
+                ('"a"', '"b"'),
+                '"a"',
+            },
+            'M': {
+                '"c"'
+            },
+        }
+        gen = LLTableGenerator(grammar, lookahead=2)
+        actual = gen.kfirst(2)
+        self.assertEqual(
+            actual,
+            expected,
+            f'\n\nGot:\n{actual}\n\nExpected:\n{expected}'
+        )
+
+    def test_first_with_three_lookahead_no_partials_deep_tree(self):
+        grammar = r'''
+        start: <S>
+
+        <S> ::= <A> <M>
+        <A> ::= "a" <B>
+        <B> ::= "b" <C>
+        <C> ::= "c"
+        <M> ::= "m"
+        '''
+        expected = {
+            'S': {
+               '"a"',
+               ('"a"', '"b"'),
+               ('"a"', '"b"', '"c"'),
+            },
+            'A': {
+               '"a"',
+               ('"a"', '"b"'),
+               ('"a"', '"b"', '"c"'),
+            },
+            'B': {
+               '"b"',
+               ('"b"', '"c"'),
+            },
+            'C': {
+               '"c"',
+            },
+            'M': {
+               '"m"',
+            },
+        }
+        gen = LLTableGenerator(grammar, lookahead=3, debug=True)
+        actual = gen.kfirst(3)
+        if gen.debug:
+            dot = gen.debug.get_dot()
+            with open('/tmp/debug.dot', 'w') as fout:
+                fout.write(dot)
+        self.assertEqual(
+            actual,
+            expected,
+            f'\n\nGot:\n{actual}\n\nExpected:\n{expected}'
+        )

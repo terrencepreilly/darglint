@@ -21,6 +21,7 @@ from bnf_to_cnf.parser import (  # type: ignore
     Node,
 )
 from .production import Production
+from .debug import RecurseDebug
 
 
 def is_term(symbol: str) -> bool:
@@ -126,6 +127,9 @@ class SubProduction:
             return self.__key() == other.__key()
         return False
 
+    def __getitem__(self, index: int) -> str:
+        return self.symbols[index]
+
 
 class FirstSet:
 
@@ -183,12 +187,17 @@ class Grammar:
 
 class LLTableGenerator:
 
-    def __init__(self, grammar: str, lookahead: int = 1) -> None:
+    def __init__(self,
+                 grammar: str,
+                 lookahead: int = 1,
+                 debug: bool = False
+                 ) -> None:
         self.lookahead = lookahead
         self.bnf = Parser().parse(grammar)
         self._table = None  # type: Optional[List[Production]]
         self._adjacency_matrix = None  # type: Optional[Dict[str, List[List[str]]]]  # noqa
         self.start = next(self.bnf.filter(Node.is_start)).value
+        self.debug = RecurseDebug('fi') if debug else None
 
     @property
     def terminals(self) -> Iterable[str]:
@@ -346,7 +355,11 @@ class LLTableGenerator:
                     yield rhs[i]
 
     @gen_cache(max_iterator_depth=1000)
-    def _kfirst(self, symbol: Union[str, SubProduction], k: int
+    def _kfirst(self,
+                symbol: Union[str, SubProduction],
+                k: int,
+                allow_underflow: bool = True,
+                parent_debug: Optional[str] = None,
                 ) -> Iterable[FirstSet]:
         """Get the k-first lookup table.
 
@@ -370,35 +383,66 @@ class LLTableGenerator:
         middle of any of the subproductions in the yielded sets.
         These are valid, even if they're not of the correct length.
 
+        Args:
+            symbol: The lhs or rhs for which we should generate kfirst.
+            k: The maximum number of symbols in the yielded firstset.
+            allow_underflow: Whether we can yield firstsets of less than
+                k length.
+
+        Yields:
+            Lists of terminal symbols.
+
         """
+        debug_symbol = None
+        if self.debug:
+            debug_symbol = self.debug.add_call(
+                [symbol, k],
+                {'allow_underflow': allow_underflow},
+                extra=[]
+            )
+        if parent_debug:
+            self.debug.add_child(parent_debug, debug_symbol)
+
         G = Grammar(self.table)
 
         # Fi(S, k)
         if isinstance(symbol, str):
             for subproduction in G[symbol]:
-                yield from self._kfirst(subproduction, k)
+                yield from self._kfirst(subproduction,
+                                        k,
+                                        allow_underflow=allow_underflow,
+                                        parent_debug=debug_symbol)
             return
 
         assert isinstance(symbol, SubProduction)
         # Fi(<>, k)
         if not symbol:
+            if self.debug:
+                self.debug.add_result(debug_symbol, '<>')
             yield FirstSet()
             return
 
         # Fi(<s1, s2, ..., s_k>, k)
         terms, rest = symbol.initial_terminals(k)
         # There will be more than k terms if k = 0 and symbol contains ε.
-        if len(terms) == 1 and k == 0:
+        if len(terms) == 1 and terms[0] == 'ε' and k == 0:
+            if self.debug:
+                self.debug.add_result(debug_symbol, terms[0])
             yield FirstSet(terms)
             return
         if terms and len(terms) == k:
-            yield FirstSet(terms)
-            return
+            if allow_underflow or len(rest) == 0:
+                if self.debug:
+                    self.debug.add_result(debug_symbol, terms)
+                yield FirstSet(terms)
+                return
         # len(terms) < k
 
         # Fi(<s1, s2, ..., s_(k - n)>, k), where n > 0
         # We can't build up to k symbols.
         if not rest:
+            if self.debug:
+                self.debug.add_result(debug_symbol, 'X')
             return
 
         # Fi(<S, s2, ...>, k)
@@ -406,19 +450,42 @@ class LLTableGenerator:
         if len(terms) == 0:
             head, rest = symbol.head()
             assert head is not None
-            yield from self._kfirst(head, k)
+            yield from self._kfirst(
+                head,
+                k,
+                allow_underflow,
+                parent_debug=debug_symbol
+            )
             # At i = k, first_first will be _kfirst(head, 0)
             # This is meaningful if head has <ε>.
             for i in range(1, k + 1):
-                for first_first in self._kfirst(head, k - i):
-                    for second_first in self._kfirst(rest, i):
+                for first_first in self._kfirst(
+                    head,
+                    k - i,
+                    False,
+                    parent_debug=debug_symbol
+                ):
+                    for second_first in self._kfirst(
+                        rest,
+                        i,
+                        allow_underflow,
+                        parent_debug=debug_symbol
+                    ):
+                        if self.debug:
+                            self.debug.add_result(
+                                debug_symbol,
+                                first_first * second_first
+                            )
                         yield first_first * second_first
             return
 
         # Fi(<s1, s2, ..., s_(k - n), S, ...>, k), where n > 0
         # There are < k terminals, followed by at least one non-terminal.
-        rest_kfirst = self._kfirst(rest, k - len(terms))
+        rest_kfirst = self._kfirst(
+            rest, k - len(terms), allow_underflow, parent_debug=debug_symbol)
         rest_kfirst = reduce(FirstSet.__or__, rest_kfirst, FirstSet())
+        if self.debug:
+            self.debug.add_result(debug_symbol, FirstSet(terms) * rest_kfirst)
         yield FirstSet(terms) * rest_kfirst
 
     def kfirst(self, k: int) -> Dict[str, Set[str]]:
