@@ -215,7 +215,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
             errors = config['darglint']['ignore']
             for error in errors.split(','):
                 ignore.append(error.strip())
-        if 'enable' in config.sections():
+        if 'enable' in config['darglint']:
             to_enable = config['darglint']['enable']
             for error in to_enable.split(','):
                 enable.append(error.strip())
