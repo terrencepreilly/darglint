@@ -43,6 +43,14 @@ parser.add_argument(
     ),
 )
 parser.add_argument(
+    '--ignore-regex',
+    '-i',
+    type=str,
+    help=(
+        'Specifies functions regex to ignore.'
+    ),
+)
+parser.add_argument(
     '--raise-syntax',
     action='store_true',
     help=(
@@ -277,6 +285,9 @@ def main():
 
         if args.log_level:
             config.log_level = LogLevel.from_string(args.log_level)
+
+        if args.ignore_regex:
+            config.ignore_regex = args.ignore_regex
 
         raise_errors_for_syntax = args.raise_syntax or False
         for filename in files:
