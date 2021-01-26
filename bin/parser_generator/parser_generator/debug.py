@@ -48,6 +48,9 @@ class RecurseDebug:
     def _normalize(self, symbol):
         return symbol.replace(
             '"', '').replace(
+            '(', '').replace(
+            '$', '').replace(
+            ')', '').replace(
             '[', '').replace(
             ']', '').replace(
             '{', '').replace(
@@ -58,6 +61,7 @@ class RecurseDebug:
             ' ', '').replace(
             '-', '_').replace(
             ':', '').replace(
+            '.', '_').replace(
             "'", '')
 
     def _label_normalize(self, label):

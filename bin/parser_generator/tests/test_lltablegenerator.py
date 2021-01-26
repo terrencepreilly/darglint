@@ -113,7 +113,7 @@ class LLTableGeneratorTests(TestCase):
             <C> ::= "TokenType\.C"
         '''
         expected = {
-            'S': {'"TokenType.C"', '"TokenType.B"'},
+            'S': {'"TokenType.C"', '"TokenType.B"', 'ε'},
             'A': {'"TokenType.C"', 'ε'},
             'B': {'"TokenType.B"'},
             'C': {'"TokenType.C"'},
@@ -142,6 +142,7 @@ class LLTableGeneratorTests(TestCase):
                 '"TokenType.B"',
                 '"TokenType.C"',
                 '"TokenType.D"',
+                'ε',
             },
             'A': {'"TokenType.A"', 'ε'},
             'B': {'"TokenType.B"', 'ε'},
@@ -446,34 +447,59 @@ class LLTableGeneratorTests(TestCase):
         '''
         expected = {
             'S': {
-               '"a"',
-               ('"a"', '"b"'),
-               ('"a"', '"b"', '"c"'),
+                '"a"',
+                ('"a"', '"b"'),
+                ('"a"', '"b"', '"c"'),
             },
             'A': {
-               '"a"',
-               ('"a"', '"b"'),
-               ('"a"', '"b"', '"c"'),
+                '"a"',
+                ('"a"', '"b"'),
+                ('"a"', '"b"', '"c"'),
             },
             'B': {
-               '"b"',
-               ('"b"', '"c"'),
+                '"b"',
+                ('"b"', '"c"'),
             },
             'C': {
-               '"c"',
+                '"c"',
             },
             'M': {
-               '"m"',
+                '"m"',
             },
         }
-        gen = LLTableGenerator(grammar, lookahead=3, debug=True)
+        gen = LLTableGenerator(grammar, lookahead=3)
         actual = gen.kfirst(3)
-        if gen.debug:
-            dot = gen.debug.get_dot()
-            with open('/tmp/debug.dot', 'w') as fout:
-                fout.write(dot)
         self.assertEqual(
             actual,
             expected,
             f'\n\nGot:\n{actual}\n\nExpected:\n{expected}'
+        )
+
+    def test_kfollow_with_two_lookahead(self):
+        expected = {
+            'S': {
+            },
+            'A': {
+            },
+        }
+        gen = LLTableGenerator(TWO_LOOKAHEAD)
+        actual = gen.kfollow(2)
+        expected = {
+            'S': {
+                '$',
+                '"TokenType.A"',
+                '"TokenType.C"',
+                ('"TokenType.A"', '"TokenType.B"')
+            },
+            'A': {
+                '$',
+                '"TokenType.A"',
+                '"TokenType.C"',
+                ('"TokenType.A"', '"TokenType.B"')
+            },
+        }
+        self.assertEqual(
+            actual,
+            expected,
+            f'\n\nGot:\n{actual}\n\nExpected:\n{expected}',
         )

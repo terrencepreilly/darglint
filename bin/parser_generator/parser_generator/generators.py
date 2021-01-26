@@ -6,6 +6,7 @@ from typing import (
     Dict,
     List,
     Iterable,
+    Iterator,
     Optional,
     Set,
     Tuple,
@@ -40,9 +41,6 @@ def gen_cache(max_iterator_depth=200):
     Args:
         max_iterator_depth: The maximum amount of items which can be pulled
             from the generator.
-
-    Raises:
-        Exception: If the maximum iterator depth has been exceeded.
 
     Returns:
         A decorator which caches the results from functions which return
@@ -80,6 +78,7 @@ class SubProduction:
 
     def __init__(self, symbols: List[str]):
         self.symbols = symbols
+        self.__index = 0
 
     def head(self) -> Tuple[Optional[str], 'SubProduction']:
         if self.symbols:
@@ -127,8 +126,27 @@ class SubProduction:
             return self.__key() == other.__key()
         return False
 
-    def __getitem__(self, index: int) -> str:
-        return self.symbols[index]
+    def __getitem__(self,
+                    index: Union[int, slice]
+                    ) -> Union[str, 'SubProduction']:
+        if isinstance(index, int):
+            return self.symbols[index]
+        else:
+            return SubProduction(self.symbols.__getitem__(index))
+
+    # Although __getitem__ makes it possible to pass this
+    # into a list, mypy wants to know that this is an iterator.
+    def __iter__(self) -> Iterator[str]:
+        self.__index = 0
+        return self
+
+    def __next__(self) -> str:
+        if self.__index >= len(self):
+            raise StopIteration
+        ret = self[self.__index]
+        self.__index += 1
+        assert isinstance(ret, str)
+        return ret
 
 
 class FirstSet:
@@ -184,20 +202,211 @@ class Grammar:
                 'or non-terminal symbol.'
             )
 
+    def __iter__(self) -> Iterator[Tuple[str, SubProduction]]:
+        return (
+            (lhs, SubProduction(rhs))
+            for lhs, rhs in self.table
+        )
+
+    def get_exact(self, start: str, k: int) -> Iterable[SubProduction]:
+        """Get a derivation of a symbol, which is of an exact length.
+
+        Args:
+            start: The symbol at which we should begin the derivation.
+            k: The exact length we are hoping to obtain.
+
+        Yields:
+            SubProductions of length k which are derived from the given
+                symbol, start.
+
+        """
+        if is_term(start):
+            if k == 1:
+                yield SubProduction([start])
+            return
+
+        queue = [(SubProduction([]), SubProduction([start]))]
+        while queue:
+            curr, rem = queue.pop()
+            if not rem:
+                if len(curr) == k:
+                    yield curr
+                continue
+            head, rest = rem[0], rem[1:]
+            assert isinstance(head, str), "Integer index didn't result in str"
+            for prod in self[head]:
+                if len(prod) == 1 and prod[0] == 'ε':
+                    assert isinstance(rest, SubProduction)
+                    queue.append((curr, rest))
+                    continue
+                first_nonterm = 0
+                while (first_nonterm < len(prod)
+                        and isinstance(first_nonterm, SubProduction)
+                        and is_term(prod[first_nonterm])):
+                    first_nonterm += 1
+                if len(curr) + first_nonterm > k:
+                    continue
+                prod_before_first_nonterm = prod[first_nonterm:]
+                assert isinstance(prod_before_first_nonterm, SubProduction)
+                prod_after_first_nonterm = prod[:first_nonterm]
+                assert isinstance(prod_after_first_nonterm, SubProduction)
+                assert isinstance(rest, SubProduction)
+                queue.append((
+                    curr + prod_after_first_nonterm,
+                    prod_before_first_nonterm + rest
+                ))
+
+
+class FollowSet:
+    """Represents a complete or partial follow set.
+
+    Can be iterated over to find the solutions so far.
+
+    """
+
+    def __init__(self,
+                 partials: List[SubProduction],
+                 complete: List[SubProduction],
+                 follow: str,
+                 k: int,
+                 ):
+        """Create a new FollowSet.
+
+        Args:
+            partials: Partial solutions, if this is a partial followset.
+            complete: Complete solutions, if this is a complete followset.
+            follow: The symbol which occurred on the LHS of the production
+                under consideration.
+            k: The lookahead we are aiming for.
+
+        """
+        self.partials = partials
+        self.completes = complete
+        self.follow = follow
+        self.changed = False
+        self.k = k
+        self.is_complete = bool(complete)
+        self.additional = set()  # type: Set[SubProduction]
+
+    @staticmethod
+    def complete(subproductions: List[SubProduction],
+                 follow: str,
+                 k: int) -> 'FollowSet':
+        return FollowSet([], subproductions, follow, k)
+
+    @staticmethod
+    def empty(follow: str, k: int) -> 'FollowSet':
+        """Create an null-value followset.
+
+        This followset shouldn't be used as a value itself.  It should only
+        be used as a basis for constructing further followsets.  (Say,
+        through a fold/reduce/etc.)  For that reason, it is complete.
+
+        Args:
+            follow: The lhs of the production where this symbol occurs.
+            k: The production length we're aiming for.
+
+        """
+        f = FollowSet([], [], follow, k)
+        f.is_complete = True
+        return f
+
+    @staticmethod
+    def partial(partials: List[SubProduction],
+                follow: str,
+                k: int,
+                ) -> 'FollowSet':
+        return FollowSet(
+            partials,
+            [],
+            follow,
+            k,
+        )
+
+    def append(self, followset: 'FollowSet'):
+        """Append the followset of the lhs to this one's solutions.
+
+        Args:
+            followset: The followset of the lhs of a production.
+
+        """
+        def _add(partial, sub, remaining):
+            if len(sub) >= remaining:
+                new_complete = (partial + sub)[:self.k]
+                if new_complete not in self.additional:
+                    self.changed = True
+                    self.additional.add(new_complete)
+
+        assert not self.is_complete, 'Complete followsets are immutable.'
+
+        for partial in self.partials:
+            remaining = self.k - len(partial)
+            if followset.is_complete:
+                for complete in followset.completes:
+                    _add(partial, complete, remaining)
+            else:
+                for other_partial in followset.partials:
+                    _add(partial, other_partial, remaining)
+                for complete in followset.additional:
+                    _add(partial, complete, remaining)
+
+    def upgrade(self, followset: 'FollowSet'):
+        """Upgrade the lookahead, k, of the followset by absorbing another.
+
+        In this way, you can go through a grammar, and calculate from i = 0..n
+        the followset, upgrading the followsets for a particular symbol along
+        the way.
+
+        Args:
+            followset: The basis for the upgrade (should contain a partial or
+               complete solution.)
+
+        """
+        assert self.follow == followset.follow, (
+            'Can only upgrade to the same follow type.  '
+            'This ensures that the fixpoint solution will be found correctly.'
+        )
+        # I'm not sure if this is valid. But it shouldn't be problematic, if
+        # we're only calling this method after the fixpoint solution.
+        self.partials.extend(followset.partials)
+        self.completes.extend(followset.completes)
+        self.k = max(self.k, followset.k)
+        self.additional |= followset.additional
+        self.is_complete = self.is_complete and followset.is_complete
+
+    def __iter__(self) -> Iterator[SubProduction]:
+        """Return an iterator over the completed subproductions.
+
+        Returns:
+            An iterator over the completed subproductions.
+
+        """
+        return (x for x in self.additional)
+
+    def __str__(self) -> str:
+        return (
+            f'<FollowSet {self.follow} {self.partials} '
+            f'{self.completes} {self.additional}>'
+        )
+
+    def __repr__(self) -> str:
+        return str(self)
+
 
 class LLTableGenerator:
 
     def __init__(self,
                  grammar: str,
                  lookahead: int = 1,
-                 debug: bool = False
+                 debug: Set[str] = set()
                  ) -> None:
         self.lookahead = lookahead
         self.bnf = Parser().parse(grammar)
         self._table = None  # type: Optional[List[Production]]
         self._adjacency_matrix = None  # type: Optional[Dict[str, List[List[str]]]]  # noqa
         self.start = next(self.bnf.filter(Node.is_start)).value
-        self.debug = RecurseDebug('fi') if debug else None
+        self.fi_debug = RecurseDebug('fi') if 'kfirst' in debug else None
+        self.fo_debug = RecurseDebug('fo') if 'kfollow' in debug else None
 
     @property
     def terminals(self) -> Iterable[str]:
@@ -388,20 +597,23 @@ class LLTableGenerator:
             k: The maximum number of symbols in the yielded firstset.
             allow_underflow: Whether we can yield firstsets of less than
                 k length.
+            parent_debug: A debug argument which allows us to capture calls
+                to this algorithm, and from which, we can print out a
+                graphviz graph.
 
         Yields:
             Lists of terminal symbols.
 
         """
         debug_symbol = None
-        if self.debug:
-            debug_symbol = self.debug.add_call(
+        if self.fi_debug:
+            debug_symbol = self.fi_debug.add_call(
                 [symbol, k],
                 {'allow_underflow': allow_underflow},
                 extra=[]
             )
-        if parent_debug:
-            self.debug.add_child(parent_debug, debug_symbol)
+        if debug_symbol and parent_debug and self.fi_debug:
+            self.fi_debug.add_child(parent_debug, debug_symbol)
 
         G = Grammar(self.table)
 
@@ -417,8 +629,8 @@ class LLTableGenerator:
         assert isinstance(symbol, SubProduction)
         # Fi(<>, k)
         if not symbol:
-            if self.debug:
-                self.debug.add_result(debug_symbol, '<>')
+            if self.fi_debug and debug_symbol:
+                self.fi_debug.add_result(debug_symbol, '<>')
             yield FirstSet()
             return
 
@@ -426,14 +638,14 @@ class LLTableGenerator:
         terms, rest = symbol.initial_terminals(k)
         # There will be more than k terms if k = 0 and symbol contains ε.
         if len(terms) == 1 and terms[0] == 'ε' and k == 0:
-            if self.debug:
-                self.debug.add_result(debug_symbol, terms[0])
+            if self.fi_debug and debug_symbol:
+                self.fi_debug.add_result(debug_symbol, terms[0])
             yield FirstSet(terms)
             return
         if terms and len(terms) == k:
             if allow_underflow or len(rest) == 0:
-                if self.debug:
-                    self.debug.add_result(debug_symbol, terms)
+                if self.fi_debug and debug_symbol:
+                    self.fi_debug.add_result(debug_symbol, terms)
                 yield FirstSet(terms)
                 return
         # len(terms) < k
@@ -441,8 +653,8 @@ class LLTableGenerator:
         # Fi(<s1, s2, ..., s_(k - n)>, k), where n > 0
         # We can't build up to k symbols.
         if not rest:
-            if self.debug:
-                self.debug.add_result(debug_symbol, 'X')
+            if self.fi_debug and debug_symbol:
+                self.fi_debug.add_result(debug_symbol, 'X')
             return
 
         # Fi(<S, s2, ...>, k)
@@ -471,8 +683,8 @@ class LLTableGenerator:
                         allow_underflow,
                         parent_debug=debug_symbol
                     ):
-                        if self.debug:
-                            self.debug.add_result(
+                        if self.fi_debug and debug_symbol:
+                            self.fi_debug.add_result(
                                 debug_symbol,
                                 first_first * second_first
                             )
@@ -484,12 +696,12 @@ class LLTableGenerator:
         rest_kfirst = self._kfirst(
             rest, k - len(terms), allow_underflow, parent_debug=debug_symbol)
         rest_kfirst = reduce(FirstSet.__or__, rest_kfirst, FirstSet())
-        if self.debug:
-            self.debug.add_result(debug_symbol, FirstSet(terms) * rest_kfirst)
+        if debug_symbol and self.fi_debug:
+            self.fi_debug.add_result(debug_symbol, FirstSet(terms) * rest_kfirst)
         yield FirstSet(terms) * rest_kfirst
 
-    def kfirst(self, k: int) -> Dict[str, Set[str]]:
-        F = {x: set() for x, _ in self.table}
+    def kfirst(self, k: int) -> Dict[str, Set[Union[str, Tuple[str, ...]]]]:
+        F = {x: set() for x, _ in self.table}  # type: Dict[str, Set[Union[str, Tuple[str, ...]]]]
         for i in range(1, k + 1):
             for symbol in F.keys():
                 first_set = reduce(
@@ -502,7 +714,12 @@ class LLTableGenerator:
                     if len(normalized) == 1:
                         F[symbol].add(normalized[0])
                     else:
-                        F[symbol].add(tuple(normalized))
+                        # If the subproductions were just epsilons, add an
+                        # epsilon.
+                        if not normalized:
+                            F[symbol].add('ε')
+                        else:
+                            F[symbol].add(tuple(normalized))
         return F
 
     def first(self) -> Dict[str, Set[str]]:
@@ -513,33 +730,240 @@ class LLTableGenerator:
             symbols (or ε), which can occur in them.
 
         """
-        G = self.table
-        F = {x: set() for x, _ in G}  # type: Dict[str, Set[str]]
+        return {
+            key: {x for x in value if isinstance(x, str)}
+            for key, value in self.kfirst(1).items()
+        }
+
+    def _kfollow_resolve_permutation(self,
+                                     production: Production,
+                                     base_index: int,
+                                     current_permutation: Tuple[int, ...],
+                                     parent_debug: Optional[str] = None,
+                                     ) -> Iterable[SubProduction]:
+        """Get all derivations from this subproduction of the exact lengths.
+
+        Args:
+            production: The production from which we will take derivations.
+            base_index: How far into the rhs the derivations should start.
+                That is, our derivation will be for production[1][base_index:].
+            current_permutation: The exact lengths we are searching for.  For
+                example, if current_permutation is [1, 0, 2], our production
+                is ('A', ['a', 'B', 'C', 'D']), and the base index is 1, then
+                we are seeking all derivations of ['B', 'C', 'D'] such that the
+                derivation of 'B' is of length 1, the derivation of 'C' is a
+                epsilon, and the derivation of 'D' is of length 2.
+
+        """
+        debug = None
+        if self.fo_debug and parent_debug:
+            debug = self.fo_debug.add_call(
+                [production, base_index, current_permutation],
+                dict(),
+                ['_kfollow_resolve_permutations']
+            )
+            self.fo_debug.add_child(parent_debug, debug)
+        lhs, rhs = production
+        assert base_index < len(rhs), (
+            f'The permutation should have some symbols, but it starts '
+            f'at {base_index} for {rhs}'
+        )
+
+        # TODO: See if we can combine this with the below to
+        # make it in one generation.
+        # Build up all possible productions of the length given in
+        # the permutation.
+        G = Grammar(self.table)
+        unzipped_permutations = list()
+        for i in range(len(current_permutation)):
+            symbol = rhs[i + base_index]
+
+            # Get all productions of the exact length specified.
+            # If it's not possible, abort.
+            all_exact_length_productions = list(
+                G.get_exact(symbol, current_permutation[i])
+            )
+            if not all_exact_length_productions:
+                return
+            unzipped_permutations.append(all_exact_length_productions)
+
+        # Zip up the productions of exact length to form the permutations.
+        stack = [(SubProduction([]), 0)]
+        while stack:
+            curr, i = stack.pop()
+            if i == len(unzipped_permutations):
+                if debug and self.fo_debug:
+                    self.fo_debug.add_result(
+                        debug,
+                        curr,
+                    )
+                yield curr
+                continue
+            for terminal in unzipped_permutations[i]:
+                stack.append((curr + terminal, i + 1))
+
+    def _kfollow_permutations(self,
+                              production: Production,
+                              base_index: int,
+                              k: int,
+                              parent_debug: Optional[str] = None,
+                              ) -> Iterable[FollowSet]:
+        debug = None
+        if self.fo_debug and parent_debug:
+            debug = self.fo_debug.add_call([production, base_index, k], dict(), ['_kfollow_permutations'])
+            self.fo_debug.add_child(parent_debug, debug)
+
+        lhs, rhs = production
+        # If the symbol occurred at the end of the RHS, then we have
+        # no permutations -- it'll be composed of the LHS followset.
+        if base_index == len(rhs):
+            yield FollowSet.partial([SubProduction([])], lhs, k)
+            return
+
+        queue = [(i,) for i in range(k + 1)]  # type: List[Tuple[int, ...]]
+        guard = 500
+        while queue:
+            if not guard:
+                raise Exception('Reached max iteration.')
+            guard -= 1
+
+            current_permutation = queue.pop()
+            if debug and self.fo_debug:
+                new_debug = self.fo_debug.add_call(
+                    [current_permutation],
+                    dict(),
+                    ['_kfollow_permutations', f'iteration {500 - guard}'],
+                )
+                self.fo_debug.add_child(debug, new_debug)
+                debug = new_debug
+            at_max_k = sum(current_permutation) == k
+            assigned_each_symbol_value = base_index >= len(current_permutation)
+            at_last_of_rhs = base_index == len(current_permutation) - 1
+            if at_max_k:
+                ret = FollowSet.complete(
+                    list(self._kfollow_resolve_permutation(
+                        production,
+                        base_index,
+                        current_permutation,
+                        parent_debug = debug,
+                    )),
+                    lhs,
+                    k
+                )
+                if debug and self.fo_debug:
+                    self.fo_debug.add_result(debug, ret)
+                yield ret
+            elif assigned_each_symbol_value:
+                # This means we have a partial solution, which will need to
+                # be resolved during the fixpoint phase.
+                ret = FollowSet.partial([], lhs, k)
+                if debug and self.fo_debug:
+                    self.fo_debug.add_result(debug, ret)
+                return ret
+            elif at_last_of_rhs:
+                remaining = k - sum(current_permutation)
+
+                # TODO: Is this append in the right order?  Ditto for below.
+                queue.append((remaining,) + current_permutation)
+            else:
+                for i in range(k - sum(current_permutation) + 1):
+                    queue.append((i,) + current_permutation)
+
+    def _kfollow(self, symbol, k: int, parent_debug: Optional[str] = None) -> Iterable[FollowSet]:
+        debug = None
+        if self.fo_debug and parent_debug:
+            debug = self.fo_debug.add_call([symbol, k], dict(), ['_kfollow'])
+            self.fo_debug.add_child(parent_debug, debug)
+
+        G = Grammar(self.table)
+        for lhs, rhs in G:
+            for i in [i for i, s in enumerate(rhs) if s == symbol]:
+                yield from self._kfollow_permutations(
+                    (lhs, list(rhs)), i + 1, k, parent_debug=debug
+                )
+
+    def _kfollow_fixpoint_solution(self,
+                                   followset_lookup: Dict[str, List[FollowSet]],
+                                   parent_debug: Optional[str] = None,
+                                   ) -> Dict[str, List[FollowSet]]:
+        """Resolve partial followsets into complete followsets.
+
+        Args:
+            followsets: A dictionary containing the non-terminal symbols
+                and their complete/partial followsets.  Assumes that all
+                non-terminal symbols present are keys in this dictionary,
+                and that all followsets have the same k value.
+
+        Returns:
+            The dict of followsets, but completed.
+
+        """
+        debug = None
+        if self.fo_debug and parent_debug:
+            debug = self.fo_debug.add_call(
+                [followset_lookup],
+                dict(),
+                ['_kfollow_fixpoint_solution']
+            )
+            self.fo_debug.add_child(parent_debug, debug)
+
+        iteration_guard = 500
         changed = True
         while changed:
             changed = False
-            for lhs, rhs in G:
-                prev = copy(F[lhs])
-                if self._is_term(rhs[0]) or rhs[0] == 'ε':
-                    F[lhs].add(rhs[0])
-                for i in range(len(rhs)):
-                    if self._is_term(rhs[i]) or rhs[i] == 'ε' or 'ε' not in F[rhs[i]]:
-                        break
-                    for lhs2, rhs2 in G:
-                        for s1, s2 in self._after(rhs[i], rhs2):
-                            if self._is_term(s1):
-                                F[lhs].add(s1)
-                            elif s2 and 'ε' in F[s1]:
-                                F[lhs] |= (
-                                    F[s1]
-                                    | ({s2} if self._is_term(s2) else F[s2])
-                                ) - {'ε'}
-                            else:
-                                F[lhs] |= F[s1]
-                if not self._is_term(rhs[0]) and rhs[0] != 'ε' and F[rhs[0]] != 'ε':
-                    F[lhs] |= F[rhs[0]] - {'ε'}
-                changed |= prev != F[lhs]
-        return F
+
+            if not iteration_guard:
+                raise Exception(
+                    'Reached iteration limit during fixpoint solution.'
+                )
+            iteration_guard -= 1
+
+            for followsets in followset_lookup.values():
+                for followset in followsets:
+                    followset.changed = False
+                    if followset.is_complete:
+                        continue
+                    for other in followset_lookup[followset.follow]:
+                        followset.append(other)
+                changed |= any([x.changed for x in followsets])
+
+        if debug and self.fo_debug:
+            self.fo_debug.add_result(debug, followset_lookup)
+
+        return followset_lookup
+
+    def kfollow(self,
+                k: int
+                ) -> Dict[str, Set[Union[str, Tuple[str, ...]]]]:
+        # Track debugging information.
+        debug = None
+        if self.fo_debug:
+            debug = self.fo_debug.add_call([k], dict(), ['kfollow'])
+
+        F = {x: [] for x, _ in self.table}  # type: Dict[str, List[FollowSet]]
+        initial_start = FollowSet.complete([SubProduction(['$'])], 'S', 1)
+        F[self.start].append(initial_start)
+        for i in range(1, k + 1):
+            for symbol in F.keys():
+                for followset in self._kfollow(symbol, i, parent_debug=debug):
+                    F[symbol].append(followset)
+            F = self._kfollow_fixpoint_solution(F, parent_debug=debug)
+        ret = dict()  # type: Dict[str, Set[Union[str, Tuple[str, ...]]]]
+        for symbol, followsets in F.items():
+            followset = reduce(FollowSet.upgrade, followsets)
+            ret[symbol] = set()
+            for subproduction in followset.additional | set(followset.completes):
+                if len(subproduction) == 1:
+                    item = subproduction[0]
+                    assert isinstance(item, str)
+                    ret[symbol].add(item)
+                else:
+                    ret[symbol].add(tuple(subproduction))
+
+        if debug and self.fo_debug:
+            self.fo_debug.add_result(debug, ret)
+
+        return ret
 
     def follow(self, first: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
         """Calculate the follow set for generating an LL(1) table.
@@ -552,31 +976,10 @@ class LLTableGenerator:
             terminals which can follows them.
 
         """
-        G = self.table
-        F = {x: set() for x, _ in G}  # type: Dict[str, Set[str]]
-        F[self.start] = {'$'}
-
-        changed = True
-        while changed:
-            changed = False
-            for lhs, rhs in G:
-                for term1, term2 in self.two_iter(rhs):
-                    if self._is_term(term1):
-                        continue
-                    if self._is_term(term2):
-                        changed |= term2 not in F[term1]
-                        F[term1].add(term2)
-                    else:
-                        for x in filter(self._is_term, first[term2]):
-                            changed |= x not in F[term1]
-                            F[term1].add(x)
-                        if 'ε' in first[term2]:
-                            changed |= bool(F[term2] - F[term1])
-                            F[term1] |= F[term2]
-                for term in self.reverse_nonterms(rhs, first):
-                    changed |= bool(F[lhs] - F[term])
-                    F[term] |= F[lhs]
-        return F
+        return {
+            key: {x for x in value if isinstance(x, str)}
+            for key, value in self.kfollow(1).items()
+        }
 
     def goes_to(self,
                 nonterm: str,

@@ -15,6 +15,7 @@ pytest = "^6.0.1"
 mypy = "^0.782"
 autopep8 = "^1.5.4"
 python-language-server = {extras = ["all"], version = "^0.35.0"}
+pyls-mypy = "^0.1.8"
 
 [build-system]
 requires = ["poetry>=0.12"]
