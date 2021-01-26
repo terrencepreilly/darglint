@@ -3,6 +3,14 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.5.9]
+
+### Changed
+
+- Deprecated Python3.5 support, since it breaks the Travis CI build.  I've left
+  the dockerfile test for it in, as everything still works.
+- Added Python3.9 support.
+
 ## [1.5.8]
 
 ### Fixed
