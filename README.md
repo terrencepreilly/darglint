@@ -454,7 +454,7 @@ repos:
 Then run `pre-commit install` and you're ready to go. Before commiting,
 `darglint` will be run on the staged files. If it finds any errors, the user
 is notified and the commit is aborted. Store necessary configuration (such as
-error formatting) in `.darglint`, `config.cfg` or `tox.ini`.
+error formatting) in `.darglint`, `setup.cfg` or `tox.ini`.
 
 
 ## Roadmap
