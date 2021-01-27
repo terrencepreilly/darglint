@@ -438,7 +438,8 @@ class IntegrityChecker(object):
         exception_types = docstring.get_items(Sections.RAISES_SECTION)
         docstring_raises = set(exception_types or [])
         actual_raises = function.raises
-        missing_in_doc = actual_raises - docstring_raises
+        ignore_raise = set(self.config.ignore_raise)
+        missing_in_doc = actual_raises - docstring_raises - ignore_raise
 
         missing_in_doc = self._remove_ignored(
             docstring,

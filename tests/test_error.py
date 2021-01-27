@@ -338,3 +338,25 @@ class ErrorTest(TestCase):
             len(errors),
             1,
         )
+
+    def test_ignore_raise(self):
+        ignore_raise_config = {
+            'ignore_raise': ['ValueError']
+        }
+        src = '\n'.join([
+            'def undocumented_exception():',
+            '    """Make sure ignore_raise works correctly."""',
+            '    raise ValueError',
+        ])
+
+        errors = self.get_n_errors(1, src)
+        self.assertEqual(
+            len(errors),
+            1,
+        )
+
+        errors = self.get_n_errors(0, src, ignore_raise_config)
+        self.assertEqual(
+            len(errors),
+            0,
+        )
