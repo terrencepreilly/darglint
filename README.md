@@ -454,7 +454,7 @@ repos:
 Then run `pre-commit install` and you're ready to go. Before commiting,
 `darglint` will be run on the staged files. If it finds any errors, the user
 is notified and the commit is aborted. Store necessary configuration (such as
-error formatting) in `.darglint`, `config.cfg` or `tox.ini`.
+error formatting) in `.darglint`, `setup.cfg` or `tox.ini`.
 
 
 ## Roadmap
@@ -518,7 +518,7 @@ and `pydocstyle`, as well as by `darglint` itself.
 
 
 A dockerfile exists for testing with Python3.4.  Although it's not
-officially supported (only 3.5+), it's nice to try to make minor
+officially supported (only 3.6+), it's nice to try to make minor
 version numbers support it.  You would build the dockerfile and
 test using something like
 

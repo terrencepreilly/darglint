@@ -71,16 +71,16 @@ setup(
     install_requires=requirements,
     setup_requires=requirements,
     tests_require=['pytest', 'tox'] + requirements,
-    python_requires='>=3.5',
+    python_requires='>=3.6',
     classifiers=[
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Documentation',
         'Topic :: Software Development :: Quality Assurance',
         'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.5',
     ],
     cmdclass={
         'clean': CleanCommand,
