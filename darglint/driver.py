@@ -52,7 +52,7 @@ parser.add_argument(
 )
 parser.add_argument(
     '--ignore-raise',
-    '-ir',
+    '-c',
     type=str,
     help=(
         'Exceptions that don\'t need to be documented in docstrings. '
