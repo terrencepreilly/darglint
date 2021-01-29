@@ -88,9 +88,9 @@ class LogLevel(Enum):
 class Configuration(object):
 
     def __init__(self, ignore, message_template, style, strictness,
-                 ignore_regex=None, enable=[], indentation=4,
+                 ignore_regex=None, ignore_raise=[], enable=[], indentation=4,
                  assert_style=AssertStyle.LOG, log_level=LogLevel.CRITICAL):
-        # type: (List[str], Optional[str], DocstringStyle, Strictness, Optional[str], List[str], int, AssertStyle, LogLevel) -> None  # noqa: E501
+        # type: (List[str], Optional[str], DocstringStyle, Strictness, Optional[str], List[str], List[str], int, AssertStyle, LogLevel) -> None  # noqa: E501
         """Initialize the configuration object.
 
         Args:
@@ -100,6 +100,8 @@ class Configuration(object):
             strictness: The minimum strictness to allow.
             ignore_regex: A regular expression which enables ignoring
                 functions/methods by name.
+            ignore_raise: A list of exceptions that don't need to be
+                documented.
             enable: A list of of error codes that are disabled by default.
             indentation: The number of spaces to count as an indent.
             assert_style: The assert style to use (e.g. log on failed
@@ -113,6 +115,7 @@ class Configuration(object):
         self.strictness = strictness
         self.errors_to_ignore = self._get_errors_to_ignore()
         self.ignore_regex = ignore_regex
+        self.ignore_raise = ignore_raise
         self.indentation = indentation
         self.assert_style = assert_style
         self.log_level = log_level
@@ -138,6 +141,7 @@ class Configuration(object):
             'indentation={indentation}',
             'ignore={errors_to_ignore}',
             'ignore_regex={ignore_regex}',
+            'ignore_raise={ignore_raise}',
         ]).format(**self.__dict__)
 
     @classmethod
@@ -206,6 +210,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
     enable = list()
     message_template = None
     ignore_regex = None
+    ignore_raise = list()
     style = DocstringStyle.GOOGLE
     strictness = Strictness.FULL_DESCRIPTION
     indentation = 4
@@ -223,6 +228,10 @@ def load_config_file(filename):  # type: (str) -> Configuration
             message_template = config['darglint']['message_template']
         if 'ignore_regex' in config['darglint']:
             ignore_regex = config['darglint']['ignore_regex']
+        if 'ignore_raise' in config['darglint']:
+            to_ignore_raise = config['darglint']['ignore_raise']
+            for exception in to_ignore_raise.split(','):
+                ignore_raise.append(exception.strip())
         if 'docstring_style' in config['darglint']:
             raw_style = config['darglint']['docstring_style']
             style = DocstringStyle.from_string(raw_style)
@@ -250,6 +259,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
         style=style,
         strictness=strictness,
         ignore_regex=ignore_regex,
+        ignore_raise=ignore_raise,
         enable=enable,
         indentation=indentation,
     )

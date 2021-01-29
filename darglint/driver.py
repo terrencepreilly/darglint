@@ -51,6 +51,15 @@ parser.add_argument(
     ),
 )
 parser.add_argument(
+    '--ignore-raise',
+    '-c',
+    type=str,
+    help=(
+        'Exceptions that don\'t need to be documented in docstrings. '
+        'Accepts a comma-separated list. E.g.: "ValueError,MyCustomError"'
+    ),
+)
+parser.add_argument(
     '--raise-syntax',
     action='store_true',
     help=(
@@ -288,6 +297,10 @@ def main():
 
         if args.ignore_regex:
             config.ignore_regex = args.ignore_regex
+        if args.ignore_raise:
+            config.ignore_raise = [
+                x.strip() for x in args.ignore_raise.split(",")
+            ]
 
         raise_errors_for_syntax = args.raise_syntax or False
         for filename in files:
