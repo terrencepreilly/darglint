@@ -47,7 +47,8 @@ parser.add_argument(
     '-i',
     type=str,
     help=(
-        'Specifies functions regex to ignore.'
+        'Methods/function names matching this regex will be skipped '
+        'during analysis.'
     ),
 )
 parser.add_argument(
@@ -232,7 +233,7 @@ def print_error_list():
 
 
 def print_version():
-    print('1.5.8')
+    print('1.6.0')
 
 
 def main():

@@ -3,13 +3,32 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [1.5.9]
+## [1.6.0]
+
+### Added
+
+- Added an option to ignore the presence of certain exceptions.  This is
+  useful if your project has a common error which you don't want to have to
+  document everywhere (for example, a custom assertion error.)  This can be
+  used through the `ignore_raise` configuration option, or command-line option.
+  Thanks to @palt0 for the pull request!
+- Added `ignore_regex` as a command-line option (this already existed as a
+  configuration option, but I overlooked it as a command-line option.)  Thanks
+  to @saroad2 for the pull request!
 
 ### Changed
 
 - Deprecated Python3.5 support, since it breaks the Travis CI build.  I've left
   the dockerfile test for it in, as everything still works.
 - Added Python3.9 support.
+
+### Fixed
+
+- Changed *config.cfg* to *setup.cfg* in the pre-commit documentation, which was
+  the correct name.  Thanks to @nuno-andre for the pull request.
+- Load the `enable` option from the configuration file, so that disabled-by-default
+  errors can be shown.  Thanks to @palt0 for the pull request!
+
 
 ## [1.5.8]
 
@@ -18,6 +37,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Bare returns now do not have to be documented.  This aligns better with
   expectations for docstrings, and matches what darglint did prior to refactoring
   to handle nested functions.
+
 
 ## [1.5.7]
 
