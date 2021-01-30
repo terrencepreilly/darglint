@@ -241,7 +241,6 @@ class Grammar:
                     continue
                 first_nonterm = 0
                 while (first_nonterm < len(prod)
-                        and isinstance(first_nonterm, SubProduction)
                         and is_term(prod[first_nonterm])):
                     first_nonterm += 1
                 if len(curr) + first_nonterm > k:
@@ -361,6 +360,9 @@ class FollowSet:
             followset: The basis for the upgrade (should contain a partial or
                complete solution.)
 
+        Returns:
+            The upgraded followset instance.
+
         """
         assert self.follow == followset.follow, (
             'Can only upgrade to the same follow type.  '
@@ -373,6 +375,7 @@ class FollowSet:
         self.k = max(self.k, followset.k)
         self.additional |= followset.additional
         self.is_complete = self.is_complete and followset.is_complete
+        return self
 
     def __iter__(self) -> Iterator[SubProduction]:
         """Return an iterator over the completed subproductions.

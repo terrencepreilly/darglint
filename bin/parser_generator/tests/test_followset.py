@@ -1,4 +1,5 @@
 from copy import copy
+from functools import reduce
 from unittest import TestCase
 
 from parser_generator.generators import (
@@ -75,6 +76,33 @@ class FollowSetTests(TestCase):
                 SubProduction(['a']),
                 SubProduction(['b', 'c']),
             ],
+        )
+
+    def test_upgrade_can_be_used_in_reduce(self):
+        leftmost = FollowSet.empty('S', 1)
+        followsets = [
+            leftmost,
+            FollowSet.partial([SubProduction(['a'])], 'S', 2),
+            FollowSet.complete([SubProduction(list('bc'))], 'S', 2),
+        ]
+
+        result = reduce(FollowSet.upgrade, followsets)
+
+        self.assertTrue(
+            result == leftmost,
+            'The result should be the same as the first instance in the list.'
+        )
+        self.assertEqual(
+            result.completes,
+            [SubProduction(['b', 'c'])],
+        )
+        self.assertEqual(
+            result.partials,
+            [SubProduction(['a'])],
+        )
+        self.assertEqual(
+            result.follow,
+            'S',
         )
 
     def test_create_a_partial_followset(self):
