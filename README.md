@@ -50,7 +50,8 @@ Finally, the configuration file must be located either in the directory
 directory.
 
 Currently, the configuration file allows us to ignore errors, to specify
-message templates, and to specify the strictness of checks.
+message templates, to specify the strictness of checks and to ignore common
+exceptions.
 
 ### Error Configuration
 
@@ -158,6 +159,16 @@ strictness=short
 ```
 
 In your configuration file.
+
+### Ignoring common exceptions
+
+We can specify a list of exceptions that don't need to be documented in the
+raises section of a docstring. For example,
+
+```ini
+[darglint]
+ignore_raise=ValueError,MyCustomError
+```
 
 ### Logging
 

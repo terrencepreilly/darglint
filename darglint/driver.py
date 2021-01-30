@@ -47,7 +47,17 @@ parser.add_argument(
     '-i',
     type=str,
     help=(
-        'Specifies functions regex to ignore.'
+        'Methods/function names matching this regex will be skipped '
+        'during analysis.'
+    ),
+)
+parser.add_argument(
+    '--ignore-raise',
+    '-c',
+    type=str,
+    help=(
+        'Exceptions that don\'t need to be documented in docstrings. '
+        'Accepts a comma-separated list. E.g.: "ValueError,MyCustomError"'
     ),
 )
 parser.add_argument(
@@ -223,7 +233,7 @@ def print_error_list():
 
 
 def print_version():
-    print('1.5.8')
+    print('1.6.0')
 
 
 def main():
@@ -288,6 +298,10 @@ def main():
 
         if args.ignore_regex:
             config.ignore_regex = args.ignore_regex
+        if args.ignore_raise:
+            config.ignore_raise = [
+                x.strip() for x in args.ignore_raise.split(",")
+            ]
 
         raise_errors_for_syntax = args.raise_syntax or False
         for filename in files:
