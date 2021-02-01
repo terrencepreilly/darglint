@@ -88,8 +88,9 @@ class LogLevel(Enum):
 class Configuration(object):
 
     def __init__(self, ignore, message_template, style, strictness,
-                 ignore_regex=None, ignore_raise=[], enable=[], indentation=4,
-                 assert_style=AssertStyle.LOG, log_level=LogLevel.CRITICAL):
+                 ignore_regex=None, ignore_raise=[], ignore_properties=False, enable=[],
+                 indentation=4, assert_style=AssertStyle.LOG,
+                 log_level=LogLevel.CRITICAL):
         # type: (List[str], Optional[str], DocstringStyle, Strictness, Optional[str], List[str], List[str], int, AssertStyle, LogLevel) -> None  # noqa: E501
         """Initialize the configuration object.
 
@@ -102,6 +103,8 @@ class Configuration(object):
                 functions/methods by name.
             ignore_raise: A list of exceptions that don't need to be
                 documented.
+            ignore_properties: Bool indicating whether to ignore properties functions
+                or not.
             enable: A list of of error codes that are disabled by default.
             indentation: The number of spaces to count as an indent.
             assert_style: The assert style to use (e.g. log on failed
@@ -116,6 +119,7 @@ class Configuration(object):
         self.errors_to_ignore = self._get_errors_to_ignore()
         self.ignore_regex = ignore_regex
         self.ignore_raise = ignore_raise
+        self.ignore_properties = ignore_properties
         self.indentation = indentation
         self.assert_style = assert_style
         self.log_level = log_level
@@ -232,6 +236,8 @@ def load_config_file(filename):  # type: (str) -> Configuration
             to_ignore_raise = config['darglint']['ignore_raise']
             for exception in to_ignore_raise.split(','):
                 ignore_raise.append(exception.strip())
+        if 'ignore_properties' in config['darglint']:
+            ignore_properties = config['darglint']['ignore_properties']
         if 'docstring_style' in config['darglint']:
             raw_style = config['darglint']['docstring_style']
             style = DocstringStyle.from_string(raw_style)
@@ -260,6 +266,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
         strictness=strictness,
         ignore_regex=ignore_regex,
         ignore_raise=ignore_raise,
+        ignore_properties=ignore_properties,
         enable=enable,
         indentation=indentation,
     )

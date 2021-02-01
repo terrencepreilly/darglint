@@ -125,8 +125,11 @@ class IntegrityChecker(object):
             self.config.ignore_regex and
             re.match(self.config.ignore_regex, function.name)
         )
+        skip_property = (
+            self.config.ignore_properties and function.is_property
+        )
 
-        return bool(no_docsting or skip_by_regex)
+        return bool(no_docsting or skip_by_regex or skip_property)
 
     def _check_parameter_types(self, docstring, function):
         # type: (FunctionDescription) -> None
