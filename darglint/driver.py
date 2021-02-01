@@ -61,6 +61,13 @@ parser.add_argument(
     ),
 )
 parser.add_argument(
+    '--ignore-properties',
+    '-p',
+    action="store_true",
+    default=False,
+    help='Class property methods will be ignored by darglint',
+)
+parser.add_argument(
     '--raise-syntax',
     action='store_true',
     help=(
@@ -302,6 +309,8 @@ def main():
             config.ignore_raise = [
                 x.strip() for x in args.ignore_raise.split(",")
             ]
+        if args.ignore_properties:
+            config.ignore_properties = args.ignore_properties
 
         raise_errors_for_syntax = args.raise_syntax or False
         for filename in files:
