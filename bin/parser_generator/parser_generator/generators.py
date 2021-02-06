@@ -1,4 +1,5 @@
 import datetime
+from collections import defaultdict
 from copy import copy
 from functools import (lru_cache, reduce)
 from typing import (
@@ -742,6 +743,7 @@ class LLTableGenerator:
                                      production: Production,
                                      base_index: int,
                                      current_permutation: Tuple[int, ...],
+                                     allow_firstset: bool = True,
                                      parent_debug: Optional[str] = None,
                                      ) -> Iterable[SubProduction]:
         """Get all derivations from this subproduction of the exact lengths.
@@ -756,6 +758,15 @@ class LLTableGenerator:
                 we are seeking all derivations of ['B', 'C', 'D'] such that the
                 derivation of 'B' is of length 1, the derivation of 'C' is a
                 epsilon, and the derivation of 'D' is of length 2.
+            allow_firstset: If true, then we should allow the returned
+                subproductions to include values taken from the firstset of a
+                production.
+            parent_debug: If we're debugging the algorithm, the debug
+                information of the parent call.
+
+        Yields:
+            SubProductions which follow the given permutation's length
+            requirements.
 
         """
         debug = None
@@ -772,8 +783,11 @@ class LLTableGenerator:
             f'at {base_index} for {rhs}'
         )
 
-        # TODO: See if we can combine this with the below to
-        # make it in one generation.
+
+        last_nonzero = len(current_permutation) - 1
+        while last_nonzero >= 0 and current_permutation[last_nonzero] == 0:
+            last_nonzero -= 1
+
         # Build up all possible productions of the length given in
         # the permutation.
         G = Grammar(self.table)
@@ -781,11 +795,33 @@ class LLTableGenerator:
         for i in range(len(current_permutation)):
             symbol = rhs[i + base_index]
 
-            # Get all productions of the exact length specified.
-            # If it's not possible, abort.
-            all_exact_length_productions = list(
-                G.get_exact(symbol, current_permutation[i])
-            )
+            # If the symbol is a terminal, _kfirst won't return anything.
+            # (Although, it should really return that symbol, if we have
+            # a k of 1.)  So, instead, we get the exact length production,
+            # which will return the symbol. (If it's a k of 1.)
+            #
+            # We should only allow adding a firstset to the result if the
+            # result will be used in a _completed_ followset.  Otherwise, the
+            # partial firstset could be appended to during the fixpoint solution.
+            if i == last_nonzero and not is_term(symbol) and allow_firstset:
+                all_exact_length_productions = list()
+                for item in self._kfirst(
+                    symbol,
+                    current_permutation[i],
+                    True,
+                    debug
+                ):
+                    for subproduction in item.sequences:
+                        if len(subproduction) == 1 and subproduction[0] == 'ε':
+                            continue
+                        all_exact_length_productions.append(subproduction)
+            else:
+                # Get all productions of the exact length specified.
+                # If it's not possible, abort.
+                all_exact_length_productions = list(
+                    G.get_exact(symbol, current_permutation[i])
+                )
+
             if not all_exact_length_productions:
                 return
             unzipped_permutations.append(all_exact_length_productions)
@@ -840,15 +876,16 @@ class LLTableGenerator:
                 self.fo_debug.add_child(debug, new_debug)
                 debug = new_debug
             at_max_k = sum(current_permutation) == k
-            assigned_each_symbol_value = base_index >= len(current_permutation)
-            at_last_of_rhs = base_index == len(current_permutation) - 1
+            assigned_each_symbol_value = (len(rhs) - base_index) <= len(
+                current_permutation)
             if at_max_k:
                 ret = FollowSet.complete(
                     list(self._kfollow_resolve_permutation(
                         production,
                         base_index,
                         current_permutation,
-                        parent_debug = debug,
+                        allow_firstset=True,
+                        parent_debug=debug,
                     )),
                     lhs,
                     k
@@ -859,18 +896,23 @@ class LLTableGenerator:
             elif assigned_each_symbol_value:
                 # This means we have a partial solution, which will need to
                 # be resolved during the fixpoint phase.
-                ret = FollowSet.partial([], lhs, k)
+                ret = FollowSet.partial(
+                    list(self._kfollow_resolve_permutation(
+                        production,
+                        base_index,
+                        current_permutation,
+                        allow_firstset=False,
+                        parent_debug=debug,
+                    )),
+                    lhs,
+                    k
+                )
                 if debug and self.fo_debug:
                     self.fo_debug.add_result(debug, ret)
-                return ret
-            elif at_last_of_rhs:
-                remaining = k - sum(current_permutation)
-
-                # TODO: Is this append in the right order?  Ditto for below.
-                queue.append((remaining,) + current_permutation)
+                yield ret
             else:
                 for i in range(k - sum(current_permutation) + 1):
-                    queue.append((i,) + current_permutation)
+                    queue.append(current_permutation + (i,))
 
     def _kfollow(self, symbol, k: int, parent_debug: Optional[str] = None) -> Iterable[FollowSet]:
         debug = None
@@ -885,6 +927,9 @@ class LLTableGenerator:
                     (lhs, list(rhs)), i + 1, k, parent_debug=debug
                 )
 
+    # FIXME: Produces erroneous solutions.
+    # The problem is that when we get the partial firstset of an
+    # item, it can't be appended to.
     def _kfollow_fixpoint_solution(self,
                                    followset_lookup: Dict[str, List[FollowSet]],
                                    parent_debug: Optional[str] = None,
@@ -944,29 +989,43 @@ class LLTableGenerator:
             debug = self.fo_debug.add_call([k], dict(), ['kfollow'])
 
         F = {x: [] for x, _ in self.table}  # type: Dict[str, List[FollowSet]]
-        initial_start = FollowSet.complete([SubProduction(['$'])], 'S', 1)
+        initial_start = FollowSet.complete(
+            [SubProduction(['$'])],
+            self.start,
+            1
+        )
         F[self.start].append(initial_start)
         for i in range(1, k + 1):
             for symbol in F.keys():
                 for followset in self._kfollow(symbol, i, parent_debug=debug):
                     F[symbol].append(followset)
             F = self._kfollow_fixpoint_solution(F, parent_debug=debug)
-        ret = dict()  # type: Dict[str, Set[Union[str, Tuple[str, ...]]]]
+        ret = defaultdict(lambda: set())  # type: Dict[str, Set[Union[str, Tuple[str, ...]]]]  # noqa: E501
         for symbol, followsets in F.items():
-            followset = reduce(FollowSet.upgrade, followsets)
-            ret[symbol] = set()
-            for subproduction in followset.additional | set(followset.completes):
-                if len(subproduction) == 1:
-                    item = subproduction[0]
-                    assert isinstance(item, str)
-                    ret[symbol].add(item)
-                else:
-                    ret[symbol].add(tuple(subproduction))
+            for follow in {followset.follow for followset in followsets}:
+                # TODO: This could probably be improved, performance-wise.
+                followset = reduce(
+                    FollowSet.upgrade,
+                    [
+                        followset
+                        for followset in followsets
+                        if followset.follow == follow
+                    ]
+                )
+                for subproduction in (
+                    followset.additional | set(followset.completes)
+                ):
+                    if len(subproduction) == 1:
+                        item = subproduction[0]
+                        assert isinstance(item, str)
+                        ret[symbol].add(item)
+                    else:
+                        ret[symbol].add(tuple(subproduction))
 
         if debug and self.fo_debug:
             self.fo_debug.add_result(debug, ret)
 
-        return ret
+        return dict(ret)
 
     def follow(self, first: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
         """Calculate the follow set for generating an LL(1) table.

@@ -126,7 +126,7 @@ class FollowSetTests(TestCase):
         self.assertEqual(complete.completes, [SubProduction(['a', 'b', 'c'])])
         self.assertEqual(complete.k, 3)
 
-    def test_cannot_add_to_a_complete_followset(self):
+    def test_cannot_append_to_a_complete_followset(self):
         complete = FollowSet.complete(
             [SubProduction(list('abc'))],
             'A',
@@ -166,7 +166,7 @@ class FollowSetTests(TestCase):
             3,
         )
 
-    def test_add_from_partial(self):
+    def test_append_from_partial(self):
         partial = FollowSet.partial(
             [SubProduction(list('a'))],
             'A',
@@ -183,7 +183,7 @@ class FollowSetTests(TestCase):
             {SubProduction(list('ab'))},
         )
 
-    def test_add_from_complete(self):
+    def test_append_from_complete(self):
         partial = FollowSet.partial(
             [SubProduction(list('abc'))],
             'A',
@@ -200,7 +200,7 @@ class FollowSetTests(TestCase):
             {SubProduction(list('abcd'))}
         )
 
-    def test_add_from_derived(self):
+    def test_append_from_derived(self):
         partial = FollowSet.partial(
             [SubProduction(list('a'))],
             'A',
