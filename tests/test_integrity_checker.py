@@ -209,10 +209,8 @@ class IntegrityCheckerNumpyTestCase(TestCase):
                 'EmptyDescriptionError not defined for {}'.format(section),
             )
             self.assertTrue(
-                any([
-                    isinstance(error, EmptyDescriptionError)
-                    for error in errors
-                ]),
+                any(isinstance(error, EmptyDescriptionError)
+                    for error in errors),
                 'EmptyDescriptionError not defined for {}: {}'.format(
                     section,
                     errors,
@@ -385,10 +383,8 @@ class IntegrityCheckerSphinxTestCase(TestCase):
                 'EmptyDescriptionError not defined for {}'.format(section),
             )
             self.assertTrue(
-                any([
-                    isinstance(error, EmptyDescriptionError)
-                    for error in errors
-                ]),
+                any(isinstance(error, EmptyDescriptionError)
+                    for error in errors),
                 'EmptyDescriptionError not defined for {}: {}'.format(
                     section,
                     errors,
@@ -1178,10 +1174,8 @@ class IntegrityCheckerTestCase(TestCase):
                 'Failed to raise any errors for {}'.format(section),
             )
             self.assertTrue(
-                any([
-                    isinstance(error, EmptyDescriptionError)
-                    for error in errors
-                ]),
+                any(isinstance(error, EmptyDescriptionError)
+                    for error in errors),
                 'Failed to raise EmptyDescriptionError for {}'.format(section),
             )
 

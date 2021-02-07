@@ -17,9 +17,7 @@ from darglint.parse.identifiers import (
     ArgumentItemIdentifier,
     ArgumentTypeIdentifier,
     NoqaIdentifier,
-    ExceptionIdentifier,
-    ExceptionItemIdentifier,
-)
+    ExceptionItemIdentifier)
 from darglint.errors import (
     EmptyTypeError,
 )

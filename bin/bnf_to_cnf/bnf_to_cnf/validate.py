@@ -63,10 +63,8 @@ class Validator(object):
                     f'"{sequence}" has only one node: it should be terminal.'
                 )
         elif len(sequence.children) == 2:
-            if not all([
-                x.node_type == NodeType.SYMBOL
-                for x in sequence.children
-            ]):
+            if not all(x.node_type == NodeType.SYMBOL
+                for x in sequence.children):
                 return self._wrap(
                     f'"{sequence}" has two nodes: they should '
                     f'be non-terminals.'

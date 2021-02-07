@@ -80,7 +80,7 @@ class Stats(object):
     @staticmethod
     def decode(datum):
         # type: (Dict[str, Any]) -> Stats
-        datum['by_length'] = [(x, y) for x, y in datum['by_length']]
+        datum['by_length'] = list(datum['by_length'])
         return Stats(**datum)
 
     def encode(self):
@@ -380,7 +380,7 @@ class PerformanceRegressionTest(TestCase):
         # Capture stats and test.
         perf = Performance()
         self.stats = perf.test_golden_performance()
-        if not self.prev_stats or not len(self.prev_stats.times):
+        if not self.prev_stats or not self.prev_stats.times:
             return
         prev_mean = mean(self.prev_stats.times)
         prev_stdev = stdev(self.prev_stats.times)
@@ -431,14 +431,14 @@ def _main():
     print_version()
     stats = _read_from_cache()
     perf = Performance(stats)
-    if not stats or stats.is_stale() or not len(stats.times):
+    if not stats or stats.is_stale() or not stats.times:
         stats = perf.test_golden_performance()
         _write_to_cache(stats)
 
     module_stats = _read_from_cache('.performance_module_testrun')
     if (not module_stats
             or module_stats.is_stale()
-            or not len(module_stats.times)):
+            or not module_stats.times):
         module_stats = perf.test_repo_performance()
         _write_to_cache(module_stats, '.performance_module_testrun')
     perf.module_stats = module_stats

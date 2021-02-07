@@ -1,7 +1,5 @@
 from collections import (
-    defaultdict,
-    deque,
-)
+    deque)
 import re
 from typing import (
     Callable,
@@ -271,10 +269,8 @@ class Translator(object):
         def _production_is_empty(x: Node) -> bool:
             return (
                 Node.is_production(x)
-                and all([
-                    _expression_is_empty(expression)
-                    for expression in x.filter(Node.is_expression)
-                ])
+                and all(_expression_is_empty(expression)
+                    for expression in x.filter(Node.is_expression))
             )
 
         # This could be far more efficient by doing a BFS,
@@ -657,8 +653,7 @@ class Translator(object):
 
             changed = False
             # Remove all sequences where the children are nonfruitful.
-            changed |= tree.remove(lambda x: Node.is_sequence(x) and all([
-                y.value in nonfruitful for y in x.filter(Node.is_symbol)]))
+            changed |= tree.remove(lambda x: Node.is_sequence(x) and all(y.value in nonfruitful for y in x.filter(Node.is_symbol)))
 
             # Remove all empty productions.
             changed |= tree.remove(

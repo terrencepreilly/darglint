@@ -13,10 +13,6 @@ from darglint.token import (
     TokenType,
     Token,
 )
-from darglint.config import (
-    get_config,
-    Configuration,
-)
 
 
 REFACTORING_COMPLETE = True

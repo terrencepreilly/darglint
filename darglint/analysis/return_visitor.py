@@ -6,12 +6,6 @@ from typing import (
     Optional,
     Union,
 )
-from ..config import (
-    get_logger,
-)
-from ..custom_assert import (
-    Assert,
-)
 
 
 class ReturnVisitor(ast.NodeVisitor):

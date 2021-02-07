@@ -24,9 +24,7 @@ class FunctionAndMethodVisitor(ast.NodeVisitor):
     def visit_ClassDef(self, node):
         # type: (ast.ClassDef) -> ast.AST
         for item in node.body:
-            if isinstance(item, ast.FunctionDef) or isinstance(
-                item, ast.AsyncFunctionDef
-            ):
+            if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 self._methods.add(item)
         return self.generic_visit(node)
 

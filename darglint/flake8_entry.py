@@ -12,9 +12,7 @@ from .function_description import (
 )
 from .integrity_checker import IntegrityChecker
 from .config import (
-    Configuration,
-    get_config,
-)
+    get_config)
 from .strictness import Strictness
 
 

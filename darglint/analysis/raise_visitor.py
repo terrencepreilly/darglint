@@ -2,7 +2,6 @@ import ast
 from collections import (
     deque,
 )
-import copy
 from typing import (
     Any,
     Dict,
@@ -284,10 +283,7 @@ class RaiseVisitor(ast.NodeVisitor):
             self.visit(child)
         for handler in node.handlers:
             if handler.type:
-                if handler.name and (
-                    isinstance(handler.type, ast.Name) or
-                    isinstance(handler.type, ast.Tuple)
-                ):
+                if handler.name and isinstance(handler.type, (ast.Name, ast.Tuple)):
                     self.context.add_variable(handler.name, handler.type)
                 elif isinstance(handler.type, ast.Attribute):
                     self.context.set_handling(handler.type)

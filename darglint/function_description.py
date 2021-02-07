@@ -1,6 +1,5 @@
 """A linter for docstrings following the google docstring format."""
 import ast
-from collections import deque
 import sys
 from typing import (
     Callable,

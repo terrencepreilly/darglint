@@ -197,16 +197,12 @@ class Node(object):
         elif self.node_type == NodeType.SEQUENCE:
             return (
                 self.probability == other.probability
-                and all([
-                    x.equals(y)
-                    for x, y in zip(self.children, other.children)
-                ])
+                and all(x.equals(y)
+                    for x, y in zip(self.children, other.children))
             )
         elif self.node_type in NONTERMINAL_NODES:
-            return all([
-                x.equals(y)
-                for x, y in zip(self.children, other.children)
-            ])
+            return all(x.equals(y)
+                for x, y in zip(self.children, other.children))
         elif self.node_type == NodeType.IMPORTS:
             # We ignore imports, since they should have been
             # expanded before translation.

@@ -4,12 +4,6 @@ from typing import (
     Dict,
     List,
 )
-from ..config import (
-    get_logger,
-)
-from ..custom_assert import (
-    Assert,
-)
 
 
 class YieldVisitor(ast.NodeVisitor):

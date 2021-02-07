@@ -46,7 +46,7 @@ class WalkPathTestCase(TestCase):
         cwd = '/' + '/'.join(directories)
         mock_getcwd.return_value = cwd
         path_walker = walk_path()
-        paths_walked = [x for x in path_walker]
+        paths_walked = list(path_walker)
         self.assertEqual(
             len(paths_walked),
             len(directories) + 1,

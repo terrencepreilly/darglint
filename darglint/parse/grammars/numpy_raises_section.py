@@ -18,9 +18,7 @@ from darglint.parse.identifiers import (
 )
 
 from darglint.errors import (
-    EmptyDescriptionError,
-    EmptyTypeError,
-)
+    EmptyTypeError)
 
 class RaisesGrammar(BaseGrammar):
     productions = [

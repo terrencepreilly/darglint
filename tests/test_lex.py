@@ -15,10 +15,8 @@ class LexTestCase(TestCase):
     def test_lex_yields_indent_for_four_spaces(self):
         tokens = list(lex(' ' * 8))
         self.assertEqual(len(tokens), 2)
-        self.assertTrue(all([
-            x.token_type == TokenType.INDENT
-            for x in tokens
-        ]))
+        self.assertTrue(all(x.token_type == TokenType.INDENT
+            for x in tokens))
 
     def test_lex_yields_newlines_for_newlines(self):
         tokens = list(lex('\n'))

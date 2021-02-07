@@ -1,8 +1,6 @@
 
 from lark import (
-    Lark,
-    Tree,
-)
+    Lark)
 
 from .node import (
     Node,

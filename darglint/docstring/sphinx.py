@@ -28,7 +28,6 @@ from ..lex import (
     lex,
     condense,
 )
-from ..strictness import Strictness
 from ..errors import (
     DarglintError,
 )

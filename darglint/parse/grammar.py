@@ -134,7 +134,7 @@ class BaseGrammar(abc.ABC):
                     annotations = [x.__name__ for x in derivation[0]]
                     if annotations:
                         node_color = '#c8e6c9'
-                        if any(['error' in x.lower() for x in annotations]):
+                        if any('error' in x.lower() for x in annotations):
                             node_color = '#ffcdd2'
                         ret += (
                             '  {} [label="{}", shape="rect", '

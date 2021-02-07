@@ -34,7 +34,6 @@ from .style import DocstringStyle
 from ..node import (
     CykNode,
 )
-from ..strictness import Strictness
 from ..parse.numpy import (
     parse,
 )

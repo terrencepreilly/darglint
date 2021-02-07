@@ -33,10 +33,8 @@ def _is(peaker, token_type, index=1):
 
 def _are(peaker, *token_types):
     # type: (Peaker[Token], Optional[TokenType]) -> bool
-    return all([
-        _is(peaker, token_type, i + 1)
-        for i, token_type in enumerate(token_types)
-    ])
+    return all(_is(peaker, token_type, i + 1)
+        for i, token_type in enumerate(token_types))
 
 
 def _parse_noqa_head(peaker):
