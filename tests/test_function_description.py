@@ -474,3 +474,22 @@ class GetFunctionsAndDocstrings(TestCase):
             function.argument_names,
             [],
         )
+
+    def test_property(self):
+        program = reindent(r'''
+            class A:
+                @property
+                def f() -> int:
+                    return 3
+        ''')
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        self.assertEqual(
+            len(functions),
+            1,
+        )
+        function = functions[0]
+        self.assertTrue(
+            function.is_property,
+            [],
+        )
