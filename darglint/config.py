@@ -91,7 +91,7 @@ class Configuration(object):
                  ignore_regex=None, ignore_raise=[], ignore_properties=False, enable=[],
                  indentation=4, assert_style=AssertStyle.LOG,
                  log_level=LogLevel.CRITICAL):
-        # type: (List[str], Optional[str], DocstringStyle, Strictness, Optional[str], List[str], List[str], int, AssertStyle, LogLevel) -> None  # noqa: E501
+        # type: (List[str], Optional[str], DocstringStyle, Strictness, Optional[str], List[str], bool, List[str], int, AssertStyle, LogLevel) -> None  # noqa: E501
         """Initialize the configuration object.
 
         Args:
@@ -215,6 +215,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
     message_template = None
     ignore_regex = None
     ignore_raise = list()
+    ignore_properties = False
     style = DocstringStyle.GOOGLE
     strictness = Strictness.FULL_DESCRIPTION
     indentation = 4

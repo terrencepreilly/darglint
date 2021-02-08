@@ -489,7 +489,4 @@ class GetFunctionsAndDocstrings(TestCase):
             1,
         )
         function = functions[0]
-        self.assertTrue(
-            function.is_property,
-            [],
-        )
+        self.assertTrue(function.is_property)
