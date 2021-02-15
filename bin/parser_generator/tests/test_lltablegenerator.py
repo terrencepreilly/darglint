@@ -6,16 +6,31 @@ from unittest import (
 
 from parser_generator.generators import (
     LLTableGenerator,
+    Grammar,
 )
 from .grammars import (
     TWO_LOOKAHEAD,
 )
 from .utils import (
     GrammarGenerator,
+    FollowSetGenerator,
 )
 
 
 MAX_FUZZ_TEST = 50
+
+
+class FollowFuzz(TestCase):
+    def test_follows(self):
+        known_followsets = list()
+        while not known_followsets:
+            productions = GrammarGenerator().generate_ll1_grammar()
+            start, productions = productions[0], productions[1:]
+            grammar = Grammar(productions)
+            fsg = FollowSetGenerator(grammar, start[1][0], 2)
+            known_followsets = list(fsg)
+        self.fail(f'Make sure it works: {known_followsets}')
+
 
 
 class LLTableGeneratorTests(TestCase):
