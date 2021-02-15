@@ -556,6 +556,42 @@ class IntegrityCheckerTestCase(TestCase):
             errors = checker.errors
             self.assertEqual(len(errors), 1)
 
+    def test_ignore_properties(self):
+        program = '\n'.join([
+            'class A:'
+            '',
+            '    @property',
+            '    def a() -> int:',
+            '        """Property of A"""',
+            '        return 2',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        with ConfigurationContext(
+            ignore=[],
+            message_template=None,
+            style=DocstringStyle.GOOGLE,
+            strictness=Strictness.FULL_DESCRIPTION,
+            ignore_properties=False  # Run WITHOUT ignoring properties
+        ):
+            checker = IntegrityChecker()
+            checker.run_checks(functions[0])
+
+            errors = checker.errors
+            self.assertEqual(len(errors), 1)
+        with ConfigurationContext(
+            ignore=[],
+            message_template=None,
+            style=DocstringStyle.GOOGLE,
+            strictness=Strictness.FULL_DESCRIPTION,
+            ignore_properties=True  # Run WITH ignoring properties
+        ):
+            checker = IntegrityChecker()
+            checker.run_checks(functions[0])
+
+            errors = checker.errors
+            self.assertEqual(len(errors), 0)
+
     def test_ignore_style_errors(self):
         program = '\n'.join([
             'class WebsiteChecker:',

@@ -2,6 +2,7 @@
 import ast
 from collections import deque
 import sys
+from enum import Enum
 from typing import (
     Callable,
     Iterator,
@@ -128,6 +129,13 @@ def get_line_number_from_function(fn):
     return line_number
 
 
+class FunctionType(Enum):
+
+    FUNCTION = 1
+    METHOD = 2
+    PROPERTY = 3
+
+
 class FunctionDescription(object):
     """Describes a function or method.
 
@@ -137,17 +145,17 @@ class FunctionDescription(object):
 
     """
 
-    def __init__(self, is_method, function):
-        # type: (bool, Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> None
+    def __init__(self, function_type, function):
+        # type: (FunctionType, Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> None
         """Create a new FunctionDescription.
 
         Args:
-            is_method: True if this is a method. Will attempt to remove
-                self or cls if appropriate.
+            function_type: Type of the function.
             function: The base node of the function.
 
         """
-        self.is_method = is_method
+        self.is_method = (function_type == FunctionType.METHOD)
+        self.is_property = (function_type == FunctionType.PROPERTY)
         self.function = function
         self.line_number = get_line_number_from_function(function)
         self.name = function.name
@@ -160,7 +168,7 @@ class FunctionDescription(object):
             return
         self.argument_names = visitor.arguments
         self.argument_types = visitor.types
-        if is_method and len(self.argument_names) > 0:
+        if function_type != FunctionType.FUNCTION and len(self.argument_names) > 0:
             if not _is_staticmethod(function):
                 self.argument_names.pop(0)
                 self.argument_types.pop(0)
@@ -192,10 +200,19 @@ def get_function_descriptions(program):
 
     visitor = FunctionAndMethodVisitor()
     visitor.visit(program)
+    for prop in visitor.properties:
+        ret.append(
+            FunctionDescription(function_type=FunctionType.PROPERTY, function=prop)
+        )
+
     for method in visitor.methods:
-        ret.append(FunctionDescription(is_method=True, function=method))
+        ret.append(
+            FunctionDescription(function_type=FunctionType.METHOD, function=method)
+        )
 
     for function in visitor.functions:
-        ret.append(FunctionDescription(is_method=False, function=function))
+        ret.append(
+            FunctionDescription(function_type=FunctionType.FUNCTION, function=function)
+        )
 
     return ret

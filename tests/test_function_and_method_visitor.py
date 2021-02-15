@@ -14,6 +14,20 @@ from .utils import (
 
 class FunctionAndMethodVisitorTests(TestCase):
 
+    def parse_and_visit(self, program):
+        """Parse a program and visit it with the visitor.
+
+        Args:
+            program: The program to run the analysis on.
+
+        Returns:
+            The visitor
+        """
+        function = ast.parse(reindent(program))
+        visitor = FunctionAndMethodVisitor()
+        visitor.visit(function)
+        return visitor
+
     def assertFoundMethods(self, program, *args):
         """Assert that the given methods were found.
 
@@ -26,9 +40,7 @@ class FunctionAndMethodVisitorTests(TestCase):
             The visitor, in case you want to do more analysis.
 
         """
-        function = ast.parse(reindent(program))
-        visitor = FunctionAndMethodVisitor()
-        visitor.visit(function)
+        visitor = self.parse_and_visit(program)
         self.assertEqual(sorted({
             method.name for method in visitor.methods
         }), sorted(args))
@@ -46,11 +58,27 @@ class FunctionAndMethodVisitorTests(TestCase):
             The visitor, in case you want to do more analysis.
 
         """
-        function = ast.parse(reindent(program))
-        visitor = FunctionAndMethodVisitor()
-        visitor.visit(function)
+        visitor = self.parse_and_visit(program)
         self.assertEqual(sorted({
             function.name for function in visitor.functions
+        }), sorted(args))
+        return visitor
+
+    def assertFoundProperties(self, program, *args):
+        """Assert that the given functions were found.
+
+        Args:
+            program: The program to run the analysis on.
+            args: The names of the properties we expect to have found.
+                If there are none, then this is an empty list.
+
+        Returns:
+            The visitor, in case you want to do more analysis.
+
+        """
+        visitor = self.parse_and_visit(program)
+        self.assertEqual(sorted({
+            function.name for function in visitor.properties
         }), sorted(args))
         return visitor
 
@@ -60,6 +88,7 @@ class FunctionAndMethodVisitorTests(TestCase):
         '''
         self.assertFoundFunctions(program)
         self.assertFoundMethods(program)
+        self.assertFoundProperties(program)
 
     def test_functions_found(self):
         program = '''
@@ -71,6 +100,7 @@ class FunctionAndMethodVisitorTests(TestCase):
         '''
         self.assertFoundFunctions(program, 'double', 'halve')
         self.assertFoundMethods(program)
+        self.assertFoundProperties(program)
 
     def test_methods_found(self):
         program = '''
@@ -84,6 +114,23 @@ class FunctionAndMethodVisitorTests(TestCase):
         '''
         self.assertFoundFunctions(program)
         self.assertFoundMethods(program, '_my_inner_method', 'apply')
+        self.assertFoundProperties(program)
+
+    def test_properties_found(self):
+        program = '''
+            class Ops(object):
+
+                @property
+                def a(self):
+                    return "a"
+                
+                @property
+                def b(self):
+                    return "b"
+        '''
+        self.assertFoundFunctions(program)
+        self.assertFoundMethods(program)
+        self.assertFoundProperties(program, "a", "b")
 
     def test_nested_functions_found(self):
         program = '''
@@ -95,6 +142,7 @@ class FunctionAndMethodVisitorTests(TestCase):
         '''
         self.assertFoundFunctions(program, 'log_arguments', '_inner')
         self.assertFoundMethods(program)
+        self.assertFoundProperties(program)
 
     def test_functions_nested_in_method(self):
         program = '''
@@ -106,6 +154,7 @@ class FunctionAndMethodVisitorTests(TestCase):
         '''
         self.assertFoundFunctions(program, 'f')
         self.assertFoundMethods(program, 'x')
+        self.assertFoundProperties(program)
 
     def test_methods_nested_in_function(self):
         program = '''
@@ -123,6 +172,26 @@ class FunctionAndMethodVisitorTests(TestCase):
         '''
         self.assertFoundFunctions(program, 'f')
         self.assertFoundMethods(program, '__init__', 'translate')
+        self.assertFoundProperties(program)
+
+    def test_properties_nested_in_function(self):
+        program = '''
+            def f(language):
+                class Translator(BaseTranslator):
+
+                    def __init__(self):
+                        super(Translator, self).__init__()
+                        self.language = language
+                    
+                    @property
+                    def language(self, word):
+                        return "English"
+
+                return Translator
+        '''
+        self.assertFoundFunctions(program, 'f')
+        self.assertFoundMethods(program, '__init__')
+        self.assertFoundProperties(program, "language")
 
     def test_lambdas_not_functions(self):
         program = '''
@@ -131,3 +200,4 @@ class FunctionAndMethodVisitorTests(TestCase):
         '''
         self.assertFoundFunctions(program)
         self.assertFoundMethods(program)
+        self.assertFoundProperties(program)
