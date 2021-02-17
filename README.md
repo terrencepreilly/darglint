@@ -367,7 +367,7 @@ enable=DAR104
 
 ## Scope
 
-Darglint's primary focus is to identify incorrect and missing documentationd
+Darglint's primary focus is to identify incorrect and missing documentations
 of a function's signature. Checking style is a stretch goal, and is supported
 on a best-effort basis.  Darglint does not check stylistic preferences expressed
 by tools in the Python Code Quality Authority (through tools such as `pydocstyle`).
