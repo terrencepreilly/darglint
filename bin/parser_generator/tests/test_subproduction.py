@@ -6,10 +6,9 @@ from parser_generator.generators import (
 
 
 class SubProductionTests(TestCase):
-
     def test_subproduction_is_iterable(self):
-        sub = SubProduction(list('abc'))
+        sub = SubProduction(list("abc"))
         self.assertEqual(
             list(sub),
-            ['a', 'b', 'c'],
+            ["a", "b", "c"],
         )

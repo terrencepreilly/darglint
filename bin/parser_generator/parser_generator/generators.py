@@ -3,10 +3,9 @@ from collections import (
     defaultdict,
     deque,
 )
-from copy import copy
-from functools import (lru_cache, reduce)
+from functools import reduce
 from typing import (
-    Any,
+    cast,
     Deque,
     Dict,
     List,
@@ -17,9 +16,6 @@ from typing import (
     Tuple,
     Union,
 )
-from itertools import (
-    chain,
-)
 
 from bnf_to_cnf.parser import (  # type: ignore
     Parser,
@@ -27,23 +23,17 @@ from bnf_to_cnf.parser import (  # type: ignore
     Node,
 )
 from .production import Production
+from .subproduction import SubProduction
+from .sequence import Sequence
 from .debug import RecurseDebug
 from .utils import (
-    Sequence,
     longest_sequence,
 )
-
-
-def is_term(symbol: str) -> bool:
-    return symbol.startswith('"') and symbol.endswith('"')
-
-
-def is_epsilon(symbol: str) -> bool:
-    return symbol == 'ε'
-
-
-def is_nonterm(symbol: str) -> bool:
-    return not (is_term(symbol) or is_epsilon(symbol))
+from .symbols import (
+    is_term,
+    is_nonterm,
+    is_epsilon,
+)
 
 
 def gen_cache(max_iterator_depth=200):
@@ -64,6 +54,7 @@ def gen_cache(max_iterator_depth=200):
         generators.
 
     """
+
     def _wrapper(fun):
         _cache = dict()
 
@@ -76,115 +67,28 @@ def gen_cache(max_iterator_depth=200):
                     _cache[key].append(value)
                     counter += 1
                     if counter > max_iterator_depth:
-                        raise Exception('Max iterator depth reached.')
+                        raise Exception("Max iterator depth reached.")
             return (x for x in _cache[key])
+
         return _inner
+
     return _wrapper
 
 
-class SubProduction:
-    """Identifies a subset of a give production.
-
-    A subset of a production is here given to be some
-    ordered set of terminal and non-terminal symbols which
-    occur on the RHS of some production P in G:
-
-        ⟨s₁, s₂, ..., sₙ⟩
-
-    """
-
-    def __init__(self, symbols: List[str]):
-        self.symbols = symbols
-        self.__index = 0
-
-    @staticmethod
-    def from_sequence(sequence: Sequence) -> 'SubProduction':
-        return SubProduction(sequence.sequence)
-
-    def head(self) -> Tuple[Optional[str], 'SubProduction']:
-        if self.symbols:
-            return self.symbols[0], SubProduction(self.symbols[1:])
-        return None, self
-
-    def initial_terminals(self, k: int
-                          ) -> Tuple['SubProduction', 'SubProduction']:
-        if k == 0 and self.symbols and self.symbols[0] == 'ε':
-            return SubProduction(['ε']), SubProduction([])
-        i = 0
-        while i < k and i < len(self.symbols) and (
-                is_term(self.symbols[i]) or self.symbols[i] == 'ε'):
-            i += 1
-        return SubProduction(self.symbols[:i]), SubProduction(self.symbols[i:])
-
-    def normalized(self) -> List[str]:
-        if len(self) <= 1:
-            return self.symbols
-        return [x for x in self.symbols if x != 'ε']
-
-    def __add__(self, other: 'SubProduction') -> 'SubProduction':
-        return SubProduction(self.symbols + other.symbols)
-
-    def __str__(self) -> str:
-        return repr(self.symbols)
-
-    def __repr__(self) -> str:
-        return str(self)
-
-    def __bool__(self) -> bool:
-        return bool(self.symbols)
-
-    def __len__(self) -> int:
-        return len(self.symbols)
-
-    def __key(self) -> Tuple[str, ...]:
-        return tuple(self.symbols)
-
-    def __hash__(self) -> int:
-        return hash(self.__key())
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, SubProduction):
-            return self.__key() == other.__key()
-        return False
-
-    def __getitem__(self,
-                    index: Union[int, slice]
-                    ) -> Union[str, 'SubProduction']:
-        if isinstance(index, int):
-            return self.symbols[index]
-        else:
-            return SubProduction(self.symbols.__getitem__(index))
-
-    # Although __getitem__ makes it possible to pass this
-    # into a list, mypy wants to know that this is an iterator.
-    def __iter__(self) -> Iterator[str]:
-        self.__index = 0
-        return self
-
-    def __next__(self) -> str:
-        if self.__index >= len(self):
-            raise StopIteration
-        ret = self[self.__index]
-        self.__index += 1
-        assert isinstance(ret, str)
-        return ret
-
-
 class FirstSet:
-
     def __init__(self, *sequences: SubProduction):
         self.sequences = list(sequences)
 
     def __len__(self) -> int:
         return len(self.sequences)
 
-    def __mul__(self, other: 'FirstSet') -> 'FirstSet':
+    def __mul__(self, other: "FirstSet") -> "FirstSet":
         result = FirstSet()
         for first_sequence in self.sequences:
             for second_sequence in other.sequences:
-                if first_sequence == ['ε']:
+                if first_sequence == ["ε"]:
                     result.sequences.append(second_sequence)
-                elif second_sequence == ['ε']:
+                elif second_sequence == ["ε"]:
                     result.sequences.append(first_sequence)
                 else:
                     result.sequences.append(first_sequence + second_sequence)
@@ -193,11 +97,11 @@ class FirstSet:
     def __bool__(self) -> bool:
         return bool(self.sequences)
 
-    def __or__(self, other: 'FirstSet') -> 'FirstSet':
+    def __or__(self, other: "FirstSet") -> "FirstSet":
         return FirstSet(*self.sequences, *other.sequences)
 
     def __str__(self) -> str:
-        return '{' + ', '.join(map(str, self.sequences)) + '}'
+        return "{" + ", ".join(map(str, self.sequences)) + "}"
 
     def __repr__(self) -> str:
         return str(self)
@@ -209,48 +113,46 @@ class Grammar:
         self.start = start
 
     def __getitem__(
-        self,
-        key: Union[int, str]
+        self, key: Union[int, str]
     ) -> Union[SubProduction, List[SubProduction]]:
         if isinstance(key, int):
             return SubProduction(self.table[key][1])
         elif isinstance(key, str):
             return [
-                SubProduction(rhs) for lhs, rhs in self.table if lhs == key
+                SubProduction(rhs)
+                for lhs, rhs in self.table
+                if lhs == key
             ]
         else:
             raise ValueError(
-                'Grammar only indexed by production index '
-                'or non-terminal symbol.'
+                "Grammar only indexed by production index "
+                "or non-terminal symbol."
             )
 
     def __iter__(self) -> Iterator[Tuple[str, SubProduction]]:
-        return (
-            (lhs, SubProduction(rhs))
-            for lhs, rhs in self.table
-        )
+        return ((lhs, SubProduction(rhs)) for lhs, rhs in self.table)
 
     def __str__(self) -> str:
         if self.start:
-            lines = [f'start: <{self.start}>\n']
+            lines = [f"start: <{self.start}>\n"]
         else:
             lines = []
         prev = None
         for lhs, rhs in self.table:
             if lhs == prev:
-                line = f'  | '
+                line = "  | "
             else:
-                line = f'<{lhs}> ::='
+                line = f"<{lhs}> ::="
             for symbol in rhs:
                 if is_epsilon(symbol):
-                    line += f' {symbol}'
+                    line += f" {symbol}"
                 elif is_nonterm(symbol):
-                    line += f' <{symbol}>'
+                    line += f" <{symbol}>"
                 else:
-                    line += f' {symbol}'
+                    line += f" {symbol}"
             prev = lhs
             lines.append(line)
-        return '\n'.join(lines)
+        return "\n".join(lines)
 
     def __repr__(self) -> str:
         return str(self)
@@ -282,13 +184,14 @@ class Grammar:
             head, rest = rem[0], rem[1:]
             assert isinstance(head, str), "Integer index didn't result in str"
             for prod in self[head]:
-                if len(prod) == 1 and prod[0] == 'ε':
+                if len(prod) == 1 and prod[0] == "ε":
                     assert isinstance(rest, SubProduction)
                     queue.append((curr, rest))
                     continue
                 first_nonterm = 0
-                while (first_nonterm < len(prod)
-                        and is_term(prod[first_nonterm])):
+                while first_nonterm < len(prod) and is_term(
+                    cast(str, prod[first_nonterm])
+                ):
                     first_nonterm += 1
                 if len(curr) + first_nonterm > k:
                     continue
@@ -298,10 +201,12 @@ class Grammar:
                 assert isinstance(prod_after_first_nonterm, SubProduction)
 
                 assert isinstance(rest, SubProduction)
-                queue.append((
-                    curr + prod_after_first_nonterm,
-                    prod_before_first_nonterm + rest
-                ))
+                queue.append(
+                    (
+                        curr + prod_after_first_nonterm,
+                        prod_before_first_nonterm + rest,
+                    )
+                )
 
     def _has_infinite_left_recursion(self, start: str) -> Optional[Set[str]]:
         """Return the set of encountered symbols from this start symbol.
@@ -313,6 +218,8 @@ class Grammar:
             The set of encountered symbols, if we did not encounter infinite
             recursion.  Otherwise, None.
 
+        # noqa: DAR401
+
         """
         encountered = set()
         queue = deque([start])  # type: Deque[Union[str, SubProduction]]
@@ -322,10 +229,10 @@ class Grammar:
                 key = curr
                 rest = SubProduction([])
             elif isinstance(curr, SubProduction):
-                key = curr[0]
-                rest = curr[1:]
+                key = cast(str, curr[0])
+                rest = cast(SubProduction, curr[1:])
             else:
-                raise Exception('Expected only strings and subproductions.')
+                raise Exception("Expected only strings and subproductions.")
 
             if key in encountered:
                 return None
@@ -334,28 +241,29 @@ class Grammar:
 
             for production in self[key]:
                 assert isinstance(production, SubProduction)
-                if is_nonterm(production[0]):
+                symbol = production[0]
+                assert isinstance(symbol, str)
+                if is_nonterm(symbol):
                     # We have to continue the search with nonterminals.
                     # If this production is only nonterminals, we have to
                     # continue with the rest of the current search, as well.
                     # Otherwise, we know that a fruitful production would
                     # occur in between, and we could just consider this
                     # next set of nonterminals.
-                    sequence = longest_sequence(is_nonterm, production, 0)
+                    sequence = longest_sequence(
+                        is_nonterm, production, 0
+                    )  # type: Sequence[str]
                     if len(sequence) == len(production):
                         queue.appendleft(
-                            SubProduction.from_sequence(sequence) +
-                                rest
+                            SubProduction.from_sequence(sequence) + rest
                         )
                     else:
-                        queue.appendleft(
-                            SubProduction.from_sequence(sequence)
-                        )
-                elif is_term(production[0]):
+                        queue.appendleft(SubProduction.from_sequence(sequence))
+                elif is_term(symbol):
                     # Since it's a terminal, we can stop looking -- it
                     # was fruitful.
                     pass
-                elif is_epsilon(production[0]):
+                elif is_epsilon(symbol):
                     # The symbols after whatever this is replacing
                     # could result in an infinite recursion. So we
                     # have to check them, if they exist.
@@ -366,7 +274,12 @@ class Grammar:
         return encountered
 
     def has_infinite_left_recursion(self) -> bool:
-        """Return whether this grammar contains infinite left recursion."""
+        """Return whether this grammar contains infinite left recursion.
+
+        Returns:
+            True if this grammar has an instance of infinite left recursion.
+
+        """
         symbols = {lhs for lhs, rhs in self}
         while symbols:
             symbol = list(symbols)[0]
@@ -385,12 +298,13 @@ class FollowSet:
 
     """
 
-    def __init__(self,
-                 partials: List[SubProduction],
-                 complete: List[SubProduction],
-                 follow: str,
-                 k: int,
-                 ):
+    def __init__(
+        self,
+        partials: List[SubProduction],
+        complete: List[SubProduction],
+        follow: str,
+        k: int,
+    ):
         """Create a new FollowSet.
 
         Args:
@@ -410,13 +324,13 @@ class FollowSet:
         self.additional = set()  # type: Set[SubProduction]
 
     @staticmethod
-    def complete(subproductions: List[SubProduction],
-                 follow: str,
-                 k: int) -> 'FollowSet':
+    def complete(
+        subproductions: List[SubProduction], follow: str, k: int
+    ) -> "FollowSet":
         return FollowSet([], subproductions, follow, k)
 
     @staticmethod
-    def empty(follow: str, k: int) -> 'FollowSet':
+    def empty(follow: str, k: int) -> "FollowSet":
         """Create an null-value followset.
 
         This followset shouldn't be used as a value itself.  It should only
@@ -427,16 +341,20 @@ class FollowSet:
             follow: The lhs of the production where this symbol occurs.
             k: The production length we're aiming for.
 
+        Returns:
+            An empty followset.
+
         """
         f = FollowSet([], [], follow, k)
         f.is_complete = True
         return f
 
     @staticmethod
-    def partial(partials: List[SubProduction],
-                follow: str,
-                k: int,
-                ) -> 'FollowSet':
+    def partial(
+        partials: List[SubProduction],
+        follow: str,
+        k: int,
+    ) -> "FollowSet":
         return FollowSet(
             partials,
             [],
@@ -444,21 +362,22 @@ class FollowSet:
             k,
         )
 
-    def append(self, followset: 'FollowSet'):
+    def append(self, followset: "FollowSet"):
         """Append the followset of the lhs to this one's solutions.
 
         Args:
             followset: The followset of the lhs of a production.
 
         """
+
         def _add(partial, sub, remaining):
             if len(sub) >= remaining:
-                new_complete = (partial + sub)[:self.k]
+                new_complete = (partial + sub)[: self.k]
                 if new_complete not in self.additional:
                     self.changed = True
                     self.additional.add(new_complete)
 
-        assert not self.is_complete, 'Complete followsets are immutable.'
+        assert not self.is_complete, "Complete followsets are immutable."
 
         for partial in self.partials:
             remaining = self.k - len(partial)
@@ -471,7 +390,7 @@ class FollowSet:
                 for complete in followset.additional:
                     _add(partial, complete, remaining)
 
-    def upgrade(self, followset: 'FollowSet'):
+    def upgrade(self, followset: "FollowSet"):
         """Upgrade the lookahead, k, of the followset by absorbing another.
 
         In this way, you can go through a grammar, and calculate from i = 0..n
@@ -480,15 +399,15 @@ class FollowSet:
 
         Args:
             followset: The basis for the upgrade (should contain a partial or
-               complete solution.)
+                complete solution.)
 
         Returns:
             The upgraded followset instance.
 
         """
         assert self.follow == followset.follow, (
-            'Can only upgrade to the same follow type.  '
-            'This ensures that the fixpoint solution will be found correctly.'
+            "Can only upgrade to the same follow type.  "
+            "This ensures that the fixpoint solution will be found correctly."
         )
         # I'm not sure if this is valid. But it shouldn't be problematic, if
         # we're only calling this method after the fixpoint solution.
@@ -510,8 +429,8 @@ class FollowSet:
 
     def __str__(self) -> str:
         return (
-            f'<FollowSet {self.follow} {self.partials} '
-            f'{self.completes} {self.additional}>'
+            f"<FollowSet {self.follow} {self.partials} "
+            f"{self.completes} {self.additional}>"
         )
 
     def __repr__(self) -> str:
@@ -519,19 +438,18 @@ class FollowSet:
 
 
 class LLTableGenerator:
-
-    def __init__(self,
-                 grammar: str,
-                 lookahead: int = 1,
-                 debug: Set[str] = set()
-                 ) -> None:
+    def __init__(
+        self, grammar: str, lookahead: int = 1, debug: Set[str] = set()
+    ) -> None:
         self.lookahead = lookahead
         self.bnf = Parser().parse(grammar)
         self._table = None  # type: Optional[List[Production]]
-        self._adjacency_matrix = None  # type: Optional[Dict[str, List[List[str]]]]  # noqa
+        self._adjacency_matrix = (
+            None
+        )  # type: Optional[Dict[str, List[List[str]]]]  # noqa
         self.start = next(self.bnf.filter(Node.is_start)).value
-        self.fi_debug = RecurseDebug('fi') if 'kfirst' in debug else None
-        self.fo_debug = RecurseDebug('fo') if 'kfollow' in debug else None
+        self.fi_debug = RecurseDebug("fi") if "kfirst" in debug else None
+        self.fo_debug = RecurseDebug("fo") if "kfollow" in debug else None
 
     @property
     def terminals(self) -> Iterable[str]:
@@ -546,7 +464,7 @@ class LLTableGenerator:
             yield rhs
 
     def _normalize_terminal_value(self, value: str) -> str:
-        return value.replace('\\', '')
+        return value.replace("\\", "")
 
     @property
     def adjacency_matrix(self) -> Dict[str, List[List[str]]]:
@@ -607,9 +525,9 @@ class LLTableGenerator:
                         if child.node_type == NodeType.SYMBOL:
                             rhs.append(child.value)
                         elif child.node_type == NodeType.TERMINAL:
-                            rhs.append(self._normalize_terminal_value(
-                                child.value
-                            ))
+                            rhs.append(
+                                self._normalize_terminal_value(child.value)
+                            )
                     self._table.append((lhs, rhs))
         return self._table
 
@@ -618,7 +536,7 @@ class LLTableGenerator:
 
     def _eps(self, grammar: List[Production]) -> Iterable[Production]:
         for lhs, rhs in grammar:
-            if len(rhs) == 1 and rhs[0] == 'ε':
+            if len(rhs) == 1 and rhs[0] == "ε":
                 yield (lhs, rhs)
 
     def _terms(self, grammar: List[Production]) -> Iterable[Production]:
@@ -637,10 +555,12 @@ class LLTableGenerator:
 
         """
         for lhs, rhs in grammar:
-            if len(rhs) > 0 and not self._is_term(rhs[0]) and rhs[0] != 'ε':
+            if len(rhs) > 0 and not self._is_term(rhs[0]) and rhs[0] != "ε":
                 yield (lhs, rhs)
 
-    def _after(self, needle: str, haystack: List[str]) -> Iterable[Tuple[str, Optional[str]]]:
+    def _after(
+        self, needle: str, haystack: List[str]
+    ) -> Iterable[Tuple[str, Optional[str]]]:
         gen = (x for x in haystack)
         try:
             while True:
@@ -660,9 +580,9 @@ class LLTableGenerator:
         for i in range(len(rhs) - 1):
             yield rhs[i], rhs[i + 1]
 
-    def reverse_nonterms(self, rhs: List[str],
-                         first: Dict[str, Set[str]]
-                         ) -> Iterable[str]:
+    def reverse_nonterms(
+        self, rhs: List[str], first: Dict[str, Set[str]]
+    ) -> Iterable[str]:
         """Return production-end non-terminals.
 
         Args:
@@ -679,22 +599,23 @@ class LLTableGenerator:
         for i in range(len(rhs))[::-1]:
             if self._is_term(rhs[i]):
                 break
-            elif rhs[i] == 'ε':
+            elif rhs[i] == "ε":
                 continue
             else:
-                if 'ε' not in first[rhs[i]]:
+                if "ε" not in first[rhs[i]]:
                     yield rhs[i]
                     break
                 else:
                     yield rhs[i]
 
     @gen_cache(max_iterator_depth=1000)
-    def _kfirst(self,
-                symbol: Union[str, SubProduction],
-                k: int,
-                allow_underflow: bool = True,
-                parent_debug: Optional[str] = None,
-                ) -> Iterable[FirstSet]:
+    def _kfirst(
+        self,
+        symbol: Union[str, SubProduction],
+        k: int,
+        allow_underflow: bool = True,
+        parent_debug: Optional[str] = None,
+    ) -> Iterable[FirstSet]:
         """Get the k-first lookup table.
 
         This method satisfies
@@ -733,9 +654,7 @@ class LLTableGenerator:
         debug_symbol = None
         if self.fi_debug:
             debug_symbol = self.fi_debug.add_call(
-                [symbol, k],
-                {'allow_underflow': allow_underflow},
-                extra=[]
+                [symbol, k], {"allow_underflow": allow_underflow}, extra=[]
             )
         if debug_symbol and parent_debug and self.fi_debug:
             self.fi_debug.add_child(parent_debug, debug_symbol)
@@ -745,24 +664,26 @@ class LLTableGenerator:
         # Fi(S, k)
         if isinstance(symbol, str):
             for subproduction in G[symbol]:
-                yield from self._kfirst(subproduction,
-                                        k,
-                                        allow_underflow=allow_underflow,
-                                        parent_debug=debug_symbol)
+                yield from self._kfirst(
+                    subproduction,
+                    k,
+                    allow_underflow=allow_underflow,
+                    parent_debug=debug_symbol,
+                )
             return
 
         assert isinstance(symbol, SubProduction)
         # Fi(<>, k)
         if not symbol:
             if self.fi_debug and debug_symbol:
-                self.fi_debug.add_result(debug_symbol, '<>')
+                self.fi_debug.add_result(debug_symbol, "<>")
             yield FirstSet()
             return
 
         # Fi(<s1, s2, ..., s_k>, k)
         terms, rest = symbol.initial_terminals(k)
         # There will be more than k terms if k = 0 and symbol contains ε.
-        if len(terms) == 1 and terms[0] == 'ε' and k == 0:
+        if len(terms) == 1 and terms[0] == "ε" and k == 0:
             if self.fi_debug and debug_symbol:
                 self.fi_debug.add_result(debug_symbol, terms[0])
             yield FirstSet(terms)
@@ -779,7 +700,7 @@ class LLTableGenerator:
         # We can't build up to k symbols.
         if not rest:
             if self.fi_debug and debug_symbol:
-                self.fi_debug.add_result(debug_symbol, 'X')
+                self.fi_debug.add_result(debug_symbol, "X")
             return
 
         # Fi(<S, s2, ...>, k)
@@ -788,30 +709,20 @@ class LLTableGenerator:
             head, rest = symbol.head()
             assert head is not None
             yield from self._kfirst(
-                head,
-                k,
-                allow_underflow,
-                parent_debug=debug_symbol
+                head, k, allow_underflow, parent_debug=debug_symbol
             )
             # At i = k, first_first will be _kfirst(head, 0)
             # This is meaningful if head has <ε>.
             for i in range(1, k + 1):
                 for first_first in self._kfirst(
-                    head,
-                    k - i,
-                    False,
-                    parent_debug=debug_symbol
+                    head, k - i, False, parent_debug=debug_symbol
                 ):
                     for second_first in self._kfirst(
-                        rest,
-                        i,
-                        allow_underflow,
-                        parent_debug=debug_symbol
+                        rest, i, allow_underflow, parent_debug=debug_symbol
                     ):
                         if self.fi_debug and debug_symbol:
                             self.fi_debug.add_result(
-                                debug_symbol,
-                                first_first * second_first
+                                debug_symbol, first_first * second_first
                             )
                         yield first_first * second_first
             return
@@ -819,20 +730,23 @@ class LLTableGenerator:
         # Fi(<s1, s2, ..., s_(k - n), S, ...>, k), where n > 0
         # There are < k terminals, followed by at least one non-terminal.
         rest_kfirst = self._kfirst(
-            rest, k - len(terms), allow_underflow, parent_debug=debug_symbol)
+            rest, k - len(terms), allow_underflow, parent_debug=debug_symbol
+        )
         rest_kfirst = reduce(FirstSet.__or__, rest_kfirst, FirstSet())
         if debug_symbol and self.fi_debug:
-            self.fi_debug.add_result(debug_symbol, FirstSet(terms) * rest_kfirst)
+            self.fi_debug.add_result(
+                debug_symbol, FirstSet(terms) * rest_kfirst
+            )
         yield FirstSet(terms) * rest_kfirst
 
     def kfirst(self, k: int) -> Dict[str, Set[Union[str, Tuple[str, ...]]]]:
-        F = {x: set() for x, _ in self.table}  # type: Dict[str, Set[Union[str, Tuple[str, ...]]]]
+        F = {
+            x: set() for x, _ in self.table
+        }  # type: Dict[str, Set[Union[str, Tuple[str, ...]]]]
         for i in range(1, k + 1):
             for symbol in F.keys():
                 first_set = reduce(
-                    FirstSet.__or__,
-                    self._kfirst(symbol, i),
-                    FirstSet()
+                    FirstSet.__or__, self._kfirst(symbol, i), FirstSet()
                 )
                 for subproduction in first_set.sequences:
                     normalized = subproduction.normalized()
@@ -842,7 +756,7 @@ class LLTableGenerator:
                         # If the subproductions were just epsilons, add an
                         # epsilon.
                         if not normalized:
-                            F[symbol].add('ε')
+                            F[symbol].add("ε")
                         else:
                             F[symbol].add(tuple(normalized))
         return F
@@ -860,13 +774,14 @@ class LLTableGenerator:
             for key, value in self.kfirst(1).items()
         }
 
-    def _kfollow_resolve_permutation(self,
-                                     production: Production,
-                                     base_index: int,
-                                     current_permutation: Tuple[int, ...],
-                                     allow_firstset: bool = True,
-                                     parent_debug: Optional[str] = None,
-                                     ) -> Iterable[SubProduction]:
+    def _kfollow_resolve_permutation(
+        self,
+        production: Production,
+        base_index: int,
+        current_permutation: Tuple[int, ...],
+        allow_firstset: bool = True,
+        parent_debug: Optional[str] = None,
+    ) -> Iterable[SubProduction]:
         """Get all derivations from this subproduction of the exact lengths.
 
         Args:
@@ -895,15 +810,14 @@ class LLTableGenerator:
             debug = self.fo_debug.add_call(
                 [production, base_index, current_permutation],
                 dict(),
-                ['_kfollow_resolve_permutations']
+                ["_kfollow_resolve_permutations"],
             )
             self.fo_debug.add_child(parent_debug, debug)
         lhs, rhs = production
         assert base_index < len(rhs), (
-            f'The permutation should have some symbols, but it starts '
-            f'at {base_index} for {rhs}'
+            f"The permutation should have some symbols, but it starts "
+            f"at {base_index} for {rhs}"
         )
-
 
         last_nonzero = len(current_permutation) - 1
         while last_nonzero >= 0 and current_permutation[last_nonzero] == 0:
@@ -923,17 +837,15 @@ class LLTableGenerator:
             #
             # We should only allow adding a firstset to the result if the
             # result will be used in a _completed_ followset.  Otherwise, the
-            # partial firstset could be appended to during the fixpoint solution.
+            # partial firstset could be appended to during the fixpoint
+            # solution.
             if i == last_nonzero and not is_term(symbol) and allow_firstset:
                 all_exact_length_productions = list()
                 for item in self._kfirst(
-                    symbol,
-                    current_permutation[i],
-                    True,
-                    debug
+                    symbol, current_permutation[i], True, debug
                 ):
                     for subproduction in item.sequences:
-                        if len(subproduction) == 1 and subproduction[0] == 'ε':
+                        if len(subproduction) == 1 and subproduction[0] == "ε":
                             continue
                         all_exact_length_productions.append(subproduction)
             else:
@@ -962,15 +874,18 @@ class LLTableGenerator:
             for terminal in unzipped_permutations[i]:
                 stack.append((curr + terminal, i + 1))
 
-    def _kfollow_permutations(self,
-                              production: Production,
-                              base_index: int,
-                              k: int,
-                              parent_debug: Optional[str] = None,
-                              ) -> Iterable[FollowSet]:
+    def _kfollow_permutations(
+        self,
+        production: Production,
+        base_index: int,
+        k: int,
+        parent_debug: Optional[str] = None,
+    ) -> Iterable[FollowSet]:
         debug = None
         if self.fo_debug and parent_debug:
-            debug = self.fo_debug.add_call([production, base_index, k], dict(), ['_kfollow_permutations'])
+            debug = self.fo_debug.add_call(
+                [production, base_index, k], dict(), ["_kfollow_permutations"]
+            )
             self.fo_debug.add_child(parent_debug, debug)
 
         lhs, rhs = production
@@ -984,7 +899,7 @@ class LLTableGenerator:
         guard = 500
         while queue:
             if not guard:
-                raise Exception('Reached max iteration.')
+                raise Exception("Reached max iteration.")
             guard -= 1
 
             current_permutation = queue.pop()
@@ -992,24 +907,27 @@ class LLTableGenerator:
                 new_debug = self.fo_debug.add_call(
                     [current_permutation],
                     dict(),
-                    ['_kfollow_permutations', f'iteration {500 - guard}'],
+                    ["_kfollow_permutations", f"iteration {500 - guard}"],
                 )
                 self.fo_debug.add_child(debug, new_debug)
                 debug = new_debug
             at_max_k = sum(current_permutation) == k
             assigned_each_symbol_value = (len(rhs) - base_index) <= len(
-                current_permutation)
+                current_permutation
+            )
             if at_max_k:
                 ret = FollowSet.complete(
-                    list(self._kfollow_resolve_permutation(
-                        production,
-                        base_index,
-                        current_permutation,
-                        allow_firstset=True,
-                        parent_debug=debug,
-                    )),
+                    list(
+                        self._kfollow_resolve_permutation(
+                            production,
+                            base_index,
+                            current_permutation,
+                            allow_firstset=True,
+                            parent_debug=debug,
+                        )
+                    ),
                     lhs,
-                    k
+                    k,
                 )
                 if debug and self.fo_debug:
                     self.fo_debug.add_result(debug, ret)
@@ -1018,15 +936,17 @@ class LLTableGenerator:
                 # This means we have a partial solution, which will need to
                 # be resolved during the fixpoint phase.
                 ret = FollowSet.partial(
-                    list(self._kfollow_resolve_permutation(
-                        production,
-                        base_index,
-                        current_permutation,
-                        allow_firstset=False,
-                        parent_debug=debug,
-                    )),
+                    list(
+                        self._kfollow_resolve_permutation(
+                            production,
+                            base_index,
+                            current_permutation,
+                            allow_firstset=False,
+                            parent_debug=debug,
+                        )
+                    ),
                     lhs,
-                    k
+                    k,
                 )
                 if debug and self.fo_debug:
                     self.fo_debug.add_result(debug, ret)
@@ -1035,10 +955,12 @@ class LLTableGenerator:
                 for i in range(k - sum(current_permutation) + 1):
                     queue.append(current_permutation + (i,))
 
-    def _kfollow(self, symbol, k: int, parent_debug: Optional[str] = None) -> Iterable[FollowSet]:
+    def _kfollow(
+        self, symbol, k: int, parent_debug: Optional[str] = None
+    ) -> Iterable[FollowSet]:
         debug = None
         if self.fo_debug and parent_debug:
-            debug = self.fo_debug.add_call([symbol, k], dict(), ['_kfollow'])
+            debug = self.fo_debug.add_call([symbol, k], dict(), ["_kfollow"])
             self.fo_debug.add_child(parent_debug, debug)
 
         G = Grammar(self.table)
@@ -1048,28 +970,30 @@ class LLTableGenerator:
                     (lhs, list(rhs)), i + 1, k, parent_debug=debug
                 )
 
-    def _kfollow_fixpoint_solution(self,
-                                   followset_lookup: Dict[str, List[FollowSet]],
-                                   parent_debug: Optional[str] = None,
-                                   ) -> Dict[str, List[FollowSet]]:
+    def _kfollow_fixpoint_solution(
+        self,
+        followset_lookup: Dict[str, List[FollowSet]],
+        parent_debug: Optional[str] = None,
+    ) -> Dict[str, List[FollowSet]]:
         """Resolve partial followsets into complete followsets.
 
         Args:
-            followsets: A dictionary containing the non-terminal symbols
+            followset_lookup: A dictionary containing the non-terminal symbols
                 and their complete/partial followsets.  Assumes that all
                 non-terminal symbols present are keys in this dictionary,
                 and that all followsets have the same k value.
+            parent_debug: A debugging token.
 
         Returns:
             The dict of followsets, but completed.
+
+        # noqa: DAR401
 
         """
         debug = None
         if self.fo_debug and parent_debug:
             debug = self.fo_debug.add_call(
-                [followset_lookup],
-                dict(),
-                ['_kfollow_fixpoint_solution']
+                [followset_lookup], dict(), ["_kfollow_fixpoint_solution"]
             )
             self.fo_debug.add_child(parent_debug, debug)
 
@@ -1080,7 +1004,7 @@ class LLTableGenerator:
 
             if not iteration_guard:
                 raise Exception(
-                    'Reached iteration limit during fixpoint solution.'
+                    "Reached iteration limit during fixpoint solution."
                 )
             iteration_guard -= 1
 
@@ -1098,19 +1022,15 @@ class LLTableGenerator:
 
         return followset_lookup
 
-    def kfollow(self,
-                k: int
-                ) -> Dict[str, Set[Union[str, Tuple[str, ...]]]]:
+    def kfollow(self, k: int) -> Dict[str, Set[Union[str, Tuple[str, ...]]]]:
         # Track debugging information.
         debug = None
         if self.fo_debug:
-            debug = self.fo_debug.add_call([k], dict(), ['kfollow'])
+            debug = self.fo_debug.add_call([k], dict(), ["kfollow"])
 
         F = {x: [] for x, _ in self.table}  # type: Dict[str, List[FollowSet]]
         initial_start = FollowSet.complete(
-            [SubProduction(['$'])],
-            self.start,
-            1
+            [SubProduction(["$"])], self.start, 1
         )
         F[self.start].append(initial_start)
         for i in range(1, k + 1):
@@ -1118,7 +1038,9 @@ class LLTableGenerator:
                 for followset in self._kfollow(symbol, i, parent_debug=debug):
                     F[symbol].append(followset)
             F = self._kfollow_fixpoint_solution(F, parent_debug=debug)
-        ret = defaultdict(lambda: set())  # type: Dict[str, Set[Union[str, Tuple[str, ...]]]]  # noqa: E501
+        ret = defaultdict(
+            lambda: set()
+        )  # type: Dict[str, Set[Union[str, Tuple[str, ...]]]]  # noqa: E501
         for symbol, followsets in F.items():
             for follow in {followset.follow for followset in followsets}:
                 # TODO: This could probably be improved, performance-wise.
@@ -1128,10 +1050,10 @@ class LLTableGenerator:
                         followset
                         for followset in followsets
                         if followset.follow == follow
-                    ]
+                    ],
                 )
-                for subproduction in (
-                    followset.additional | set(followset.completes)
+                for subproduction in followset.additional | set(
+                    followset.completes
                 ):
                     if len(subproduction) == 1:
                         item = subproduction[0]
@@ -1161,20 +1083,18 @@ class LLTableGenerator:
             for key, value in self.kfollow(1).items()
         }
 
-    def goes_to(self,
-                nonterm: str,
-                term: str) -> bool:
+    def goes_to(self, nonterm: str, term: str) -> bool:
         stack = [nonterm]
         encountered = set()
         while stack:
             curr = stack.pop()
             encountered.add(curr)
             for lhs in self.adjacency_matrix[curr]:
-                assert len(lhs) > 0, 'Expected a non-empty LHS.'
+                assert len(lhs) > 0, "Expected a non-empty LHS."
                 if self._is_term(lhs[0]):
                     if lhs[0] == term:
                         return True
-                elif lhs[0] == 'ε':
+                elif lhs[0] == "ε":
                     continue
                 elif lhs[0] not in encountered:
                     stack.append(lhs[0])
@@ -1182,35 +1102,32 @@ class LLTableGenerator:
 
     # TODO: Change to handle multiple terminals
     # TODO: Change to be stored as an intermediate result of Fi, Fo
-    def get_production_leading_to_terminal(self,
-                                           nonterm: str,
-                                           term: str
-                                           ) -> Iterable[Production]:
+    def get_production_leading_to_terminal(
+        self, nonterm: str, term: str
+    ) -> Iterable[Production]:
         for lhs in self.adjacency_matrix[nonterm]:
             if self._is_term(lhs[0]) and lhs[0] == term:
                 yield (nonterm, lhs)
-            elif lhs[0] == 'ε' and lhs[0] == term:
+            elif lhs[0] == "ε" and lhs[0] == term:
                 yield (nonterm, lhs)
-            elif not self._is_term(lhs[0]) and lhs[0] != 'ε':
+            elif not self._is_term(lhs[0]) and lhs[0] != "ε":
                 if self.goes_to(lhs[0], term):
                     yield (nonterm, lhs)
 
-    def generate_table(self,
-                       first: Dict[str, Set[str]],
-                       follow: Dict[str, Set[str]]
-                       ) -> Dict[str, Dict[str, Production]]:
+    def generate_table(
+        self, first: Dict[str, Set[str]], follow: Dict[str, Set[str]]
+    ) -> Dict[str, Dict[str, Production]]:
         table = {
-            nonterm: dict()
-            for nonterm in self.nonterminals
+            nonterm: dict() for nonterm in self.nonterminals
         }  # type: Dict[str, Dict[str, Production]]
         for nonterm, terms in first.items():
             for term in terms:
-                productions = list(self.get_production_leading_to_terminal(
-                    nonterm, term
-                ))
-                assert len(productions) == 1, 'Ambiguous grammar.'
+                productions = list(
+                    self.get_production_leading_to_terminal(nonterm, term)
+                )
+                assert len(productions) == 1, "Ambiguous grammar."
                 production = productions[0]
-                if term == 'ε':
+                if term == "ε":
                     for term2 in follow[nonterm]:
                         table[nonterm][term2] = production
                 else:
@@ -1224,12 +1141,12 @@ def normalize_for_table(symbol: str) -> str:
     return repr(symbol)
 
 
-PARSE_EXCEPTION = r'''
+PARSE_EXCEPTION = r"""
 class ParseException(Exception):
     pass
-'''
+"""
 
-PARSE = r'''
+PARSE = r"""
     def parse(self):
         # type: () -> Optional[Node]
         root = Node(node_type={start_symbol})
@@ -1280,7 +1197,7 @@ PARSE = r'''
             curr.children = children
             stack.extendleft(children[::-1])
         return root
-'''
+"""
 
 
 def generate_parser(grammar: str, imports: Optional[str]) -> str:
@@ -1289,39 +1206,39 @@ def generate_parser(grammar: str, imports: Optional[str]) -> str:
     follow = generator.follow(first)
     table = generator.generate_table(first, follow)
     if imports:
-        imports_or_blank = f'\n{imports}\n'
+        imports_or_blank = f"\n{imports}\n"
     else:
-        imports_or_blank = ''
+        imports_or_blank = ""
 
     parser = [
-        f'# Generated on {datetime.datetime.now()}',
-        '',
-        'from collections import deque',
-        'from typing import (Iterator, Optional)',
+        f"# Generated on {datetime.datetime.now()}",
+        "",
+        "from collections import deque",
+        "from typing import (Iterator, Optional)",
         imports_or_blank,
         PARSE_EXCEPTION,
-        'class Parser(object):',
-        '    table = {'
+        "class Parser(object):",
+        "    table = {",
     ]
     for row_value, row in table.items():
-        parser.append(' ' * 8 + f'{normalize_for_table(row_value)}: {{')
+        parser.append(" " * 8 + f"{normalize_for_table(row_value)}: {{")
         for col_value, production in row.items():
-            parser.append(' ' * 12 + f'{normalize_for_table(col_value)}: (')
+            parser.append(" " * 12 + f"{normalize_for_table(col_value)}: (")
             lhs, rhs = production
-            parser.append(' ' * 16 + f'{normalize_for_table(lhs)},')
-            parser.append(' ' * 16 + '[')
+            parser.append(" " * 16 + f"{normalize_for_table(lhs)},")
+            parser.append(" " * 16 + "[")
             for value in rhs:
-                parser.append(' ' * 20 + f'{normalize_for_table(value)},')
-            parser.append(' ' * 16 + ']')
-            parser.append(' ' * 12 + '),')
-        parser.append(' ' * 8 + '},')
-    parser.append(' ' * 4 + '}')
+                parser.append(" " * 20 + f"{normalize_for_table(value)},")
+            parser.append(" " * 16 + "]")
+            parser.append(" " * 12 + "),")
+        parser.append(" " * 8 + "},")
+    parser.append(" " * 4 + "}")
 
-    parser.append('')
-    parser.append('    def __init__(self, tokens):')
-    parser.append('        # type: (Iterator[Token]) -> None')
-    parser.append('        self.tokens = tokens')
-    parser.append('')
-    parser.append(PARSE.strip('\n').format(start_symbol=repr(generator.start)))
+    parser.append("")
+    parser.append("    def __init__(self, tokens):")
+    parser.append("        # type: (Iterator[Token]) -> None")
+    parser.append("        self.tokens = tokens")
+    parser.append("")
+    parser.append(PARSE.strip("\n").format(start_symbol=repr(generator.start)))
 
-    return '\n'.join(parser)
+    return "\n".join(parser)

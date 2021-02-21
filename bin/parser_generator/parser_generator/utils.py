@@ -1,36 +1,25 @@
-from dataclasses import (
-    dataclass,
-    field,
-)
 from typing import (
+    cast,
+    Any,
     Callable,
-    Generic,
     List,
-    Optional,
     TypeVar,
+    Union,
 )
+from .sequence import (
+    Sequence,
+)
+from .subproduction import SubProduction
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
-@dataclass
-class Sequence(Generic[T]):
-
-    start: Optional[int] = None
-    end: Optional[int] = None
-    sequence: List[T] = field(default_factory=list)
-
-    def __bool__(self) -> bool:
-        return self.start is not None and bool(self.sequence)
-
-    def __len__(self) -> int:
-        return len(self.sequence)
-
-
-def longest_sequence(test: Callable[[T], bool],
-                     items: List[T],
-                     index: int = 0) -> Sequence[T]:
+def longest_sequence(
+    test: Callable[[Any], bool],
+    items: Union[List[T], SubProduction],
+    index: int = 0,
+) -> Sequence[T]:
     seq = list()
     i = index
 
@@ -44,7 +33,8 @@ def longest_sequence(test: Callable[[T], bool],
 
     # Move the pointer forward while it passes.
     while i < len(items) and test(items[i]):
-        seq.append(items[i])
+        item = cast(T, items[i])
+        seq.append(item)
         i += 1
 
     return Sequence(start=start, end=i, sequence=seq)

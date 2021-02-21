@@ -31,10 +31,11 @@ class RecurseDebug:
 
     """
 
-    def __init__(self,
-                 function_name: str,
-                 get_memo_key: Optional[Callable[[Any], Any]] = None
-                 ):
+    def __init__(
+        self,
+        function_name: str,
+        get_memo_key: Optional[Callable[[Any], Any]] = None,
+    ):
         self.function_name = function_name
 
         # Holds the call graph to be drawn.  Each key
@@ -46,50 +47,44 @@ class RecurseDebug:
         self.labels = dict()  # type: Dict[str, str]
 
     def _normalize(self, symbol):
-        return symbol.replace(
-            '"', '').replace(
-            '(', '').replace(
-            '$', '').replace(
-            ')', '').replace(
-            '[', '').replace(
-            ']', '').replace(
-            '{', '').replace(
-            '}', '').replace(
-            '<', '').replace(
-            '>', '').replace(
-            ',', '').replace(
-            ' ', '').replace(
-            '-', '_').replace(
-            ':', '').replace(
-            '.', '_').replace(
-            "'", '')
+        return (
+            symbol.replace('"', "")
+            .replace("(", "")
+            .replace("$", "")
+            .replace(")", "")
+            .replace("[", "")
+            .replace("]", "")
+            .replace("{", "")
+            .replace("}", "")
+            .replace("<", "")
+            .replace(">", "")
+            .replace(",", "")
+            .replace(" ", "")
+            .replace("-", "_")
+            .replace(":", "")
+            .replace(".", "_")
+            .replace("'", "")
+        )
 
     def _label_normalize(self, label):
         return label.replace('"', '\\"')
 
-    def add_call(self,
-                 args: List[Any],
-                 kwargs: Dict[str, Any],
-                 extra: List[str] = []
-                 ) -> str:
-        symbol = self._normalize(
-            f'{repr(kwargs)}_{uuid.uuid4()}'
-        )
+    def add_call(
+        self, args: List[Any], kwargs: Dict[str, Any], extra: List[str] = []
+    ) -> str:
+        symbol = self._normalize(f"{repr(kwargs)}_{uuid.uuid4()}")
         self.debug[symbol] = list()
-        args_labels = [
-            self._label_normalize(f'{arg}')
-            for arg in args
-        ]
+        args_labels = [self._label_normalize(f"{arg}") for arg in args]
         kwargs_labels = [
-            self._label_normalize(f'{key}={value}')
+            self._label_normalize(f"{key}={value}")
             for key, value in kwargs.items()
         ]
         all_arg_labels = args_labels + kwargs_labels
         label = f'{self.function_name}({", ".join(all_arg_labels)})'
         if extra:
-            label += '\\n'
+            label += "\\n"
         for item in extra:
-            label += f'\\n{item}'
+            label += f"\\n{item}"
         self.labels[symbol] = f'[label = "{label}"]'
         return symbol
 
@@ -97,18 +92,18 @@ class RecurseDebug:
         self.debug[parent_symbol].append(child_symbol)
 
     def add_result(self, symbol: str, result: Any):
-        result_repr = self._normalize(f'result_{uuid.uuid4()}_{result}')
+        result_repr = self._normalize(f"result_{uuid.uuid4()}_{result}")
         self.debug[symbol].append(result_repr)
         result_label = repr(result).replace('"', '\\"')
         self.labels[result_repr] = f'[label = "{result_label}", shape="rect"]'
 
     def get_dot(self) -> str:
-        ret = ['digraph G {']
+        ret = ["digraph G {"]
         for key, label in self.labels.items():
-            ret.append(f'{key} {label};')
+            ret.append(f"{key} {label};")
         for key, values in self.debug.items():
             for value in values:
-                ret.append(f'{key} -> {{ {value} }};')
-            ret.append('')
-        ret.append('}')
-        return '\n'.join(ret)
+                ret.append(f"{key} -> {{ {value} }};")
+            ret.append("")
+        ret.append("}")
+        return "\n".join(ret)

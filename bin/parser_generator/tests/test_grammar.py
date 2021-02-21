@@ -11,7 +11,6 @@ from .grammars import (
 
 
 class GrammarTests(TestCase):
-
     def setUp(self):
         gen = LLTableGenerator(TWO_LOOKAHEAD)
         self.two_lookahead = Grammar(gen.table)
@@ -19,45 +18,45 @@ class GrammarTests(TestCase):
     def test_get_by_index(self):
         self.assertEqual(
             self.two_lookahead[0],
-            SubProduction(['"TokenType.A"', 'S', 'A']),
+            SubProduction(['"TokenType.A"', "S", "A"]),
         )
 
     def test_get_by_symbol(self):
         self.assertEqual(
-            self.two_lookahead['S'],
+            self.two_lookahead["S"],
             [
-                SubProduction(['"TokenType.A"', 'S', 'A']),
-                SubProduction(['ε']),
+                SubProduction(['"TokenType.A"', "S", "A"]),
+                SubProduction(["ε"]),
             ],
         )
 
     def test_get_exact_production_length_simple(self):
         self.assertEqual(
-            list(self.two_lookahead.get_exact('S', 0)),
+            list(self.two_lookahead.get_exact("S", 0)),
             [SubProduction([])],
         )
 
     def test_get_exact_production_length_doesnt_exist(self):
         self.assertEqual(
-            list(self.two_lookahead.get_exact('S', 1)),
+            list(self.two_lookahead.get_exact("S", 1)),
             [],
         )
 
     def test_get_exact_production_length_longer(self):
         self.assertEqual(
-            list(self.two_lookahead.get_exact('S', 2)),
+            list(self.two_lookahead.get_exact("S", 2)),
             [SubProduction(['"TokenType.A"', '"TokenType.C"'])],
         )
 
     def test_get_exact_production_length_terminals_are_one(self):
         # A grammar for words starting with "a" and having one or more "b"s.
-        raw_grammar = '''
+        raw_grammar = """
             start: <A>
 
             <A> ::= "a" <B>
             <B> ::= "b" <B>
                 | "b"
-        '''
+        """
         gen = LLTableGenerator(raw_grammar)
         grammar = Grammar(gen.table)
         self.assertEqual(
@@ -65,31 +64,29 @@ class GrammarTests(TestCase):
             [SubProduction(['"a"'])],
         )
         self.assertEqual(
-            list(grammar.get_exact('A', 2)),
+            list(grammar.get_exact("A", 2)),
             [SubProduction(['"a"', '"b"'])],
         )
         self.assertEqual(
-            list(grammar.get_exact('A', 3)),
+            list(grammar.get_exact("A", 3)),
             [SubProduction(['"a"', '"b"', '"b"'])],
         )
 
     def test_get_exact_larger_number(self):
-        got = list(self.two_lookahead.get_exact('S', 10))
+        got = list(self.two_lookahead.get_exact("S", 10))
         self.assertTrue(
             len(got) > 0,
         )
-        self.assertTrue(
-            all([len(x) == 10 for x in got])
-        )
+        self.assertTrue(all([len(x) == 10 for x in got]))
 
     def test_can_iterate_through_grammar(self):
         self.assertEqual(
             [x for x in self.two_lookahead],
             [
-                ('S', SubProduction(['"TokenType.A"', 'S', 'A'])),
-                ('S', SubProduction(['ε'])),
-                ('A', SubProduction(['"TokenType.A"', '"TokenType.B"', 'S'])),
-                ('A', SubProduction(['"TokenType.C"'])),
+                ("S", SubProduction(['"TokenType.A"', "S", "A"])),
+                ("S", SubProduction(["ε"])),
+                ("A", SubProduction(['"TokenType.A"', '"TokenType.B"', "S"])),
+                ("A", SubProduction(['"TokenType.C"'])),
             ],
         )
 
@@ -99,33 +96,33 @@ class LeftRecursionTests(TestCase):
     # I've included the comments in the grammars to aide in
     # debugging.
     RECURSIVE = [
-        '''
+        """
         # A short chain without terminals.
         start: <S>
 
         <S> ::= <S>
-        ''',
-        '''
+        """,
+        """
         # A short chain with terminals.
         start: <S>
 
         <S> ::= <S> "a"
-        ''',
-        '''
+        """,
+        """
         # A chain without terminals.
         start: <S>
 
         <S> ::= <A>
         <A> ::= <S>
-        ''',
-        '''
+        """,
+        """
         # A chain with terminals.
         start: <S>
 
         <S> ::= <A> "a"
         <A> ::= <S> "b"
-        ''',
-        '''
+        """,
+        """
         # A very long chain in a graph.
         start: <S>
 
@@ -134,8 +131,8 @@ class LeftRecursionTests(TestCase):
         <B> ::= <C> "c"
         <C> ::= <D> "d"
         <D> ::= <S> "e"
-        ''',
-        '''
+        """,
+        """
         # A recursion which is part of a subgraph.
         start: <S>
 
@@ -144,16 +141,16 @@ class LeftRecursionTests(TestCase):
         <B> ::= <C> "c"
         <C> ::= <D> "d"
         <D> ::= <A> "e"
-        ''',
-        '''
+        """,
+        """
         # With an epsilon that results in recursion.
         start: <S>
 
         <S> ::= <A> <S>
         <A> ::= "a"
             | ε
-        ''',
-        '''
+        """,
+        """
         # With many epsilons, one of which could result in recursion.
         start: <S>
 
@@ -168,16 +165,16 @@ class LeftRecursionTests(TestCase):
             | ε
         <E> ::= "e"
             | ε
-        ''',
+        """,
     ]
     NON_RECURSIVE = [
-        '''
+        """
         # The simplest grammar.
         start: <S>
 
         <S> ::= "a"
-        ''',
-        '''
+        """,
+        """
         # A deep chain, but which has no left-recursion.
         start: <S>
 
@@ -186,23 +183,23 @@ class LeftRecursionTests(TestCase):
         <B> ::= <C> "b"
         <C> ::= <D> "c"
         <D> ::= "d"
-        ''',
-        '''
+        """,
+        """
         # With epsilons.
         start: <S>
 
         <S> ::= <A> "s"
         <A> ::= "a"
             | ε
-        ''',
-        '''
+        """,
+        """
         # With right recursion.
         start: <S>
 
         <S> ::= <A> <S>
             | ε
         <A> ::= "a"
-        ''',
+        """,
     ]
 
     def _get_grammar(self, raw_grammar: str) -> Grammar:

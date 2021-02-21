@@ -15,7 +15,6 @@ from .grammars import (
 
 
 class ParserGeneratorTests(TestCase):
-
     def assertTerminals(self, node, *terminals):
         """Assert the node's terminal values in an In-Order Traversal.
 
@@ -36,62 +35,55 @@ class ParserGeneratorTests(TestCase):
                 )
             stack.extend(curr.children[::-1])
 
-
     def test_one_token_grammar(self):
         parser_repr = generate_parser(
-            ONE_TOKEN_GRAMMAR,
-            'from .grammars import (Token, TokenType, Node)'
+            ONE_TOKEN_GRAMMAR, "from .grammars import (Token, TokenType, Node)"
         )
         module = globals()
         exec(parser_repr, module)
-        Parser = module['Parser']
-        node = Parser(lex('1')).parse()
+        Parser = module["Parser"]
+        node = Parser(lex("1")).parse()
         self.assertEqual(
             node.node_type,
-            'one',
+            "one",
         )
         self.assertTerminals(
             node,
-            '1',
+            "1",
         )
 
     def test_binary_grammar(self):
         parser_repr = generate_parser(
-            BINARY_GRAMMAR,
-            'from .grammars import (Token, TokenType, Node)'
+            BINARY_GRAMMAR, "from .grammars import (Token, TokenType, Node)"
         )
         module = globals()
         exec(parser_repr, module)
-        Parser = module['Parser']
-        node = Parser(lex('0010101')).parse()
+        Parser = module["Parser"]
+        node = Parser(lex("0010101")).parse()
         self.assertEqual(
             node.node_type,
-            'number',
+            "number",
         )
         self.assertEqual(
             node.value,
             None,
         )
-        self.assertTerminals(
-            node,
-            *'0010101'
-        )
+        self.assertTerminals(node, *"0010101")
 
     def test_two_lookahead_grammar(self):
         parser_repr = generate_parser(
-            TWO_LOOKAHEAD,
-            'from .grammars import (Token, TokenType, Node)'
+            TWO_LOOKAHEAD, "from .grammars import (Token, TokenType, Node)"
         )
         module = globals()
         exec(parser_repr, module)
-        Parser = module['Parser']
-        content = 'aabbcacb'
-        node = Parser(lex('aabbcacb')).parse()
+        Parser = module["Parser"]
+        content = "aabbcacb"
+        node = Parser(lex("aabbcacb")).parse()
         self.assertEqual(
             node.node_type,
-            'S',
+            "S",
         )
         self.assertTerminals(
             node,
             *content,
-       )
+        )

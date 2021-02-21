@@ -29,23 +29,27 @@ from typing import (
 )
 from parser_generator.generators import (
     Grammar,
-    is_term,
 )
 from parser_generator.utils import (
-    Sequence,
     longest_sequence,
+)
+from parser_generator.symbols import (
+    is_term,
+)
+from parser_generator.sequence import (
+    Sequence,
 )
 
 
 def is_epsilon(symbol: str) -> bool:
-    return symbol == 'ε'
+    return symbol == "ε"
 
 
 def is_nonterm(symbol: str) -> bool:
     return not (is_term(symbol) or is_epsilon(symbol))
 
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def count(test: Callable[[T], bool], items: Iterable[T]) -> int:
@@ -108,7 +112,7 @@ class FollowSetGenerator:
         self.final_guard = 200
 
     def _new_language(self):
-        old_language = ''.join(self._language)
+        old_language = "".join(self._language)
         if old_language not in self._new_language_count:
             self._new_language_count[old_language] = 0
         self._new_language_count[old_language] += 1
@@ -117,7 +121,7 @@ class FollowSetGenerator:
         self._count = 0
         self._language = [self.start_symbol]  # type: List[str]
         self._next_queue = []  # type: List[Tuple[str, Tuple[str, ...]]]
-        evaluated = old_language.replace('"', '')
+        evaluated = old_language.replace('"', "")
 
     def get_debug(self):
         self.debug.seek(0)
@@ -156,7 +160,7 @@ class FollowSetGenerator:
             self._new_language()
             return
 
-        evaluated = ''.join(self._language).replace('"', '')
+        evaluated = "".join(self._language).replace('"', "")
         nonterm_index = choice(list(nonterm_indices.keys()))
         nonterm = nonterm_indices[nonterm_index]
         productions = self.grammar[nonterm]
@@ -166,11 +170,11 @@ class FollowSetGenerator:
             return
 
         production = choice(productions)
-        production_evaluated = ''.join(production).replace('"', '')
+        production_evaluated = "".join(production).replace('"', "")
         self._language = (
-            self._language[:nonterm_index] +
-            list(production) +
-            self._language[nonterm_index + 1:]
+            self._language[:nonterm_index]
+            + list(production)
+            + self._language[nonterm_index + 1 :]
         )
         for followset in self.gen_followsets():
             self._next_queue.append(followset)
@@ -184,8 +188,10 @@ class FollowSetGenerator:
             index = nonterms.end - 1
             terms = longest_sequence(is_term, self._language, index)
             if terms and terms.start == nonterms.end and len(terms) >= self.k:
-                yield (self._language[index], terms.sequence[:self.k])
-            nonterms = longest_sequence(is_nonterm, self._language, nonterms.end)
+                yield (self._language[index], terms.sequence[: self.k])
+            nonterms = longest_sequence(
+                is_nonterm, self._language, nonterms.end
+            )
 
 
 class GrammarGenerator:
@@ -196,26 +202,29 @@ class GrammarGenerator:
         self.symbols = list()
         self.terminals = set()
         self.terminal_length = 1
-        self.terminal_perms = permutations(string.ascii_lowercase, self.terminal_length)
+        self.terminal_perms = permutations(
+            string.ascii_lowercase, self.terminal_length
+        )
         self.nonterminal_length = 1
-        self.nonterminal_perms = permutations(string.ascii_uppercase, self.nonterminal_length)
+        self.nonterminal_perms = permutations(
+            string.ascii_uppercase, self.nonterminal_length
+        )
 
     def generate_symbols(self) -> Iterable[str]:
         while True:
             for nonterm in self.nonterminal_perms:
-                next_symbol = ''.join(nonterm)
+                next_symbol = "".join(nonterm)
                 self.symbols.append(next_symbol)
                 yield next_symbol
             self.nonterminal_length += 1
             self.nonterminal_perms = permutations(
-                string.ascii_uppercase,
-                self.nonterminal_length
+                string.ascii_uppercase, self.nonterminal_length
             )
 
     def generate_terminal(self):
         while True:
             for term in self.terminal_perms:
-                next_term = '"' + ''.join(term) + '"'
+                next_term = '"' + "".join(term) + '"'
                 self.terminals.add(next_term)
                 yield next_term
             self.terminal_length += 1
@@ -264,7 +273,7 @@ class GrammarGenerator:
         return max_depth
 
     def to_dot(self, productions):
-        ret = ['digraph G {']
+        ret = ["digraph G {"]
         nodes = list()
         nodes_represented = set()
         relations = list()
@@ -275,16 +284,16 @@ class GrammarGenerator:
             for r in rhs:
                 if r not in nodes_represented:
                     if r.startswith('"'):
-                        nodes.append(f'  term_{r[1:-1]} [label="{r[1:-1]}", shape="oval"];')
-                        rnode = f'term_{r[1:-1]}'
+                        nodes.append(
+                            f'  term_{r[1:-1]} [label="{r[1:-1]}", shape="oval"];'
+                        )
+                        rnode = f"term_{r[1:-1]}"
                     else:
                         nodes.append(f'  {r} [shape="rect"];')
                         rnode = r
-                relations.append(
-                    f'  {lhs} -> {rnode};'
-                )
-        ret = ret + ['\n'] + nodes + ['\n'] + relations + ['}']
-        return '\n'.join(ret)
+                relations.append(f"  {lhs} -> {rnode};")
+        ret = ret + ["\n"] + nodes + ["\n"] + relations + ["}"]
+        return "\n".join(ret)
 
     def generate_ll1_grammar(self):
         # Generate some productions.
@@ -341,7 +350,7 @@ class GrammarGenerator:
         for leaf in leaves:
             productions.append((leaf, [next(term_gen)]))
 
-        productions.insert(0, ('start', [root]))
+        productions.insert(0, ("start", [root]))
 
         # Add ε to prevent mandatory-infinite recursion.
         new_productions = list()
@@ -356,9 +365,9 @@ class GrammarGenerator:
                             rhs2 = [x for x in rhs2 if is_term(x)]
                         rhs = rhs2
                     except AttributeError:
-                        rhs = ['ε']
+                        rhs = ["ε"]
                 else:
-                    rhs = ['ε']
+                    rhs = ["ε"]
                 new_productions.append((lhs, rhs))
         productions.extend(new_productions)
 
@@ -368,20 +377,19 @@ class GrammarGenerator:
         ret = list()
         rules = dict()
         for lhs, rhs in productions:
-            if lhs == 'start':
-                ret.append(f'start: <{rhs[0]}>\n')
+            if lhs == "start":
+                ret.append(f"start: <{rhs[0]}>\n")
                 continue
 
             if lhs not in rules:
                 rules[lhs] = list()
-            rules[lhs].append(' '.join([
-                f'{r}' if r.startswith('"') else f'<{r}>'
-                for r in rhs
-            ]))
+            rules[lhs].append(
+                " ".join([f"<{r}>" if is_nonterm(r) else f"{r}" for r in rhs])
+            )
         for rhs in rules:
             for i, lhs in enumerate(rules[rhs]):
                 if i == 0:
-                    ret.append(f'<{rhs}> ::= {lhs}')
+                    ret.append(f"<{rhs}> ::= {lhs}")
                 else:
-                    ret.append(f'  | {lhs}')
-        return '\n'.join(ret)
+                    ret.append(f"  | {lhs}")
+        return "\n".join(ret)

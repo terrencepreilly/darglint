@@ -21,7 +21,6 @@ MAX_FUZZ_TEST = 50
 
 
 class FollowFuzz(TestCase):
-
     def _followtest(self, instance=0):
         known_followsets = list()
         while not known_followsets:
@@ -45,17 +44,17 @@ class FollowFuzz(TestCase):
         for key in known_lookup:
             if key not in actual:
                 self.fail(
-                    f'Known lookup contains {key}, which is not in actual.\n\n'
-                    f'{grammar}'
+                    f"Known lookup contains {key}, which is not in actual.\n\n"
+                    f"{grammar}"
                 )
             message = (
-                f'{instance} For the following grammar:\n\n'
-                f'{grammar}\n\nMissing from followset for {key}: {{}}'
+                f"{instance} For the following grammar:\n\n"
+                f"{grammar}\n\nMissing from followset for {key}: {{}}"
             )
             self.assertEqual(
                 len(known_lookup[key] - actual[key]),
                 0,
-                message.format(known_lookup[key] - actual[key])
+                message.format(known_lookup[key] - actual[key]),
             )
 
     def test_follows(self):
@@ -64,7 +63,6 @@ class FollowFuzz(TestCase):
 
 
 class LLTableGeneratorTests(TestCase):
-
     def test_fuzz_first(self):
         """Make sure it doen't barf when generating the first set."""
         for _ in range(MAX_FUZZ_TEST):
@@ -73,7 +71,7 @@ class LLTableGeneratorTests(TestCase):
             table_gen = LLTableGenerator(grammar)
             table_gen.first()
 
-    @skip('Hanging.')
+    @skip("Hanging.")
     def test_fuzz_follow(self):
         """Make sure it dosen't barf when generating the follow set."""
         for _ in range(MAX_FUZZ_TEST):
@@ -84,7 +82,7 @@ class LLTableGeneratorTests(TestCase):
             table_gen.follow(first)
 
     def test_table(self):
-        grammar = r'''
+        grammar = r"""
             start: <S>
 
             <S> ::= <E>
@@ -96,18 +94,18 @@ class LLTableGeneratorTests(TestCase):
             <Minus> ::= "TokenType\.Minus"
             <LP> ::= "TokenType\.LeftParen"
             <RP> ::= "TokenType\.RightParen"
-        '''
+        """
         gen = LLTableGenerator(grammar)
         expected = [
-            ('S', ['E']),
-            ('E', ['T', 'Plus', 'E']),
-            ('E', ['T', 'Minus', 'E']),
-            ('T', ['"TokenType.Int"']),
-            ('T', ['LP', 'E', 'RP']),
-            ('Plus', ['"TokenType.Plus"']),
-            ('Minus', ['"TokenType.Minus"']),
-            ('LP', ['"TokenType.LeftParen"']),
-            ('RP', ['"TokenType.RightParen"']),
+            ("S", ["E"]),
+            ("E", ["T", "Plus", "E"]),
+            ("E", ["T", "Minus", "E"]),
+            ("T", ['"TokenType.Int"']),
+            ("T", ["LP", "E", "RP"]),
+            ("Plus", ['"TokenType.Plus"']),
+            ("Minus", ['"TokenType.Minus"']),
+            ("LP", ['"TokenType.LeftParen"']),
+            ("RP", ['"TokenType.RightParen"']),
         ]
         self.assertEqual(
             expected,
@@ -115,13 +113,13 @@ class LLTableGeneratorTests(TestCase):
         )
 
     def test_first_one_terminal(self):
-        grammar = r'''
+        grammar = r"""
             start: <S>
 
             <S> ::= "TokenType\.A"
-        '''
+        """
         expected = {
-            'S': {'"TokenType.A"'},
+            "S": {'"TokenType.A"'},
         }
         gen = LLTableGenerator(grammar)
         self.assertEqual(
@@ -130,51 +128,51 @@ class LLTableGeneratorTests(TestCase):
         )
 
     def test_first_infer_from_nonterminal(self):
-        grammar = r'''
+        grammar = r"""
             start: <S>
 
             <S> ::= <A> | <B>
             <A> ::= "TokenType\.A"
             <B> ::= "TokenType\.B"
-        '''
+        """
         expected = {
-            'S': {'"TokenType.A"', '"TokenType.B"'},
-            'A': {'"TokenType.A"'},
-            'B': {'"TokenType.B"'},
+            "S": {'"TokenType.A"', '"TokenType.B"'},
+            "A": {'"TokenType.A"'},
+            "B": {'"TokenType.B"'},
         }
         gen = LLTableGenerator(grammar)
         actual = gen.first()
         self.assertEqual(
             actual,
             expected,
-            f'\n\nGot:\n{actual}\n\nExpected:\n{expected}',
+            f"\n\nGot:\n{actual}\n\nExpected:\n{expected}",
         )
 
     def test_first_infer_with_epsilon(self):
-        grammar = r'''
+        grammar = r"""
             start: <S>
 
             <S> ::= <A> <B>
             <A> ::= <C> | ε
             <B> ::= "TokenType\.B"
             <C> ::= "TokenType\.C"
-        '''
+        """
         expected = {
-            'S': {'"TokenType.C"', '"TokenType.B"', 'ε'},
-            'A': {'"TokenType.C"', 'ε'},
-            'B': {'"TokenType.B"'},
-            'C': {'"TokenType.C"'},
+            "S": {'"TokenType.C"', '"TokenType.B"', "ε"},
+            "A": {'"TokenType.C"', "ε"},
+            "B": {'"TokenType.B"'},
+            "C": {'"TokenType.C"'},
         }
         gen = LLTableGenerator(grammar)
         actual = gen.first()
         self.assertEqual(
             actual,
             expected,
-            f'\n\nGot:\n{actual}\n\nExpected:\n{expected}',
+            f"\n\nGot:\n{actual}\n\nExpected:\n{expected}",
         )
 
     def test_first_with_lots_of_epsilons(self):
-        grammar = r'''
+        grammar = r"""
             start: <S>
 
             <S> ::= <A> <B> <C> <D>
@@ -182,53 +180,53 @@ class LLTableGeneratorTests(TestCase):
             <B> ::= "TokenType\.B" | ε
             <C> ::= "TokenType\.C" | ε
             <D> ::= "TokenType\.D"
-        '''
+        """
         expected = {
-            'S': {
+            "S": {
                 '"TokenType.A"',
                 '"TokenType.B"',
                 '"TokenType.C"',
                 '"TokenType.D"',
-                'ε',
+                "ε",
             },
-            'A': {'"TokenType.A"', 'ε'},
-            'B': {'"TokenType.B"', 'ε'},
-            'C': {'"TokenType.C"', 'ε'},
-            'D': {'"TokenType.D"'},
+            "A": {'"TokenType.A"', "ε"},
+            "B": {'"TokenType.B"', "ε"},
+            "C": {'"TokenType.C"', "ε"},
+            "D": {'"TokenType.D"'},
         }
         gen = LLTableGenerator(grammar)
         actual = gen.first()
         self.assertEqual(
             actual,
             expected,
-            f'\n\nGot:\n{actual}\n\nExpected:\n{expected}',
+            f"\n\nGot:\n{actual}\n\nExpected:\n{expected}",
         )
 
     def test_follow_simple(self):
-        grammar = r'''
+        grammar = r"""
             start: <S>
 
             <S> ::= <A> <B>
             <A> ::= "TokenType\.A"
             <B> ::= "TokenType\.B"
 
-        '''
+        """
         gen = LLTableGenerator(grammar)
         first = gen.first()
         actual = gen.follow(first)
         expected = {
-            'S': {'$'},
-            'A': {'"TokenType.B"'},
-            'B': {'$'},
+            "S": {"$"},
+            "A": {'"TokenType.B"'},
+            "B": {"$"},
         }
         self.assertEqual(
             actual,
             expected,
-            f'\n\nGot:\n{actual}\n\nExpected:\n{expected}',
+            f"\n\nGot:\n{actual}\n\nExpected:\n{expected}",
         )
 
     def test_follow_complex_example(self):
-        grammar = r'''
+        grammar = r"""
             start: <E>
 
             <E> ::= <T> <E2>
@@ -239,19 +237,20 @@ class LLTableGeneratorTests(TestCase):
                 | ε
             <F> ::= "TokenType\.LParen" <E> "TokenType\.RParen"
                 | "TokenType\.Int"
-        '''
+        """
         gen = LLTableGenerator(grammar)
         first = gen.first()
         actual = gen.follow(first)
         expected = {
-            'E': {'$', '"TokenType.RParen"'},
-            'E2': {'$', '"TokenType.RParen"'},
-            'T': {'"TokenType.Plus"', '$', '"TokenType.RParen"'},
-            'T2': {'"TokenType.Plus"', '$', '"TokenType.RParen"'},
-            'F': {
+            "E": {"$", '"TokenType.RParen"'},
+            "E2": {"$", '"TokenType.RParen"'},
+            "T": {'"TokenType.Plus"', "$", '"TokenType.RParen"'},
+            "T2": {'"TokenType.Plus"', "$", '"TokenType.RParen"'},
+            "F": {
                 '"TokenType.Times"',
-                '"TokenType.Plus"', '$',
-                '"TokenType.RParen"'
+                '"TokenType.Plus"',
+                "$",
+                '"TokenType.RParen"',
             },
         }
         extra = {
@@ -265,12 +264,12 @@ class LLTableGeneratorTests(TestCase):
         self.assertEqual(
             actual,
             expected,
-            f'\n\nGot extra:\n{extra}\n\nMissing:\n{missing}\n\n'
-            f'Got:\n{actual}\n\nExpected:\n{expected}',
+            f"\n\nGot extra:\n{extra}\n\nMissing:\n{missing}\n\n"
+            f"Got:\n{actual}\n\nExpected:\n{expected}",
         )
 
     def test_follow_many_epsilons(self):
-        grammar = r'''
+        grammar = r"""
             start: <S>
 
             <S> ::= <A> <B> <C> <D>
@@ -281,25 +280,25 @@ class LLTableGeneratorTests(TestCase):
                 | ε
             <D> ::= "D"
                 | ε
-        '''
+        """
         gen = LLTableGenerator(grammar)
         first = gen.first()
         actual = gen.follow(first)
         expected = {
-            'S': {'$'},
-            'A': {'$', '"B"', '"C"', '"D"'},
-            'B': {'$', '"C"', '"D"'},
-            'C': {'$', '"D"'},
-            'D': {'$'},
+            "S": {"$"},
+            "A": {"$", '"B"', '"C"', '"D"'},
+            "B": {"$", '"C"', '"D"'},
+            "C": {"$", '"D"'},
+            "D": {"$"},
         }
         self.assertEqual(
             actual,
             expected,
-            f'\n\nGot:\n{actual}\n\nExpected:\n{expected}',
+            f"\n\nGot:\n{actual}\n\nExpected:\n{expected}",
         )
 
     def test_table_complex_example(self):
-        grammar = r'''
+        grammar = r"""
             start: <E>
 
             <E> ::= <T> <E2>
@@ -310,36 +309,37 @@ class LLTableGeneratorTests(TestCase):
                 | ε
             <F> ::= "TokenType\.LParen" <E> "TokenType\.RParen"
                 | "TokenType\.Int"
-        '''
+        """
         gen = LLTableGenerator(grammar)
         first = gen.first()
         follow = gen.follow(first)
         actual = gen.generate_table(first, follow)
         expected = {
-            'E': {
-                '"TokenType.LParen"': ('E', ['T', 'E2']),
-                '"TokenType.Int"': ('E', ['T', 'E2']),
+            "E": {
+                '"TokenType.LParen"': ("E", ["T", "E2"]),
+                '"TokenType.Int"': ("E", ["T", "E2"]),
             },
-            'E2': {
-                '"TokenType.Plus"': ('E2', ['"TokenType.Plus"', 'T', 'E2']),
-                '"TokenType.RParen"': ('E2', ['ε']),
-                '$': ('E2', ['ε']),
+            "E2": {
+                '"TokenType.Plus"': ("E2", ['"TokenType.Plus"', "T", "E2"]),
+                '"TokenType.RParen"': ("E2", ["ε"]),
+                "$": ("E2", ["ε"]),
             },
-            'T': {
-                '"TokenType.LParen"': ('T', ['F', 'T2']),
-                '"TokenType.Int"': ('T', ['F', 'T2']),
+            "T": {
+                '"TokenType.LParen"': ("T", ["F", "T2"]),
+                '"TokenType.Int"': ("T", ["F", "T2"]),
             },
-            'T2': {
-                '"TokenType.Plus"': ('T2', ['ε']),
-                '"TokenType.Times"': ('T2', ['"TokenType.Times"', 'F', 'T2']),
-                '"TokenType.RParen"': ('T2', ['ε']),
-                '$': ('T2', ['ε']),
+            "T2": {
+                '"TokenType.Plus"': ("T2", ["ε"]),
+                '"TokenType.Times"': ("T2", ['"TokenType.Times"', "F", "T2"]),
+                '"TokenType.RParen"': ("T2", ["ε"]),
+                "$": ("T2", ["ε"]),
             },
-            'F': {
+            "F": {
                 '"TokenType.LParen"': (
-                    'F', ['"TokenType.LParen"', 'E', '"TokenType.RParen"']
+                    "F",
+                    ['"TokenType.LParen"', "E", '"TokenType.RParen"'],
                 ),
-                '"TokenType.Int"': ('F', ['"TokenType.Int"']),
+                '"TokenType.Int"': ("F", ['"TokenType.Int"']),
             },
         }
         # Loop through the keys and values to have an easier time
@@ -349,39 +349,33 @@ class LLTableGeneratorTests(TestCase):
                 self.assertEqual(
                     actual[key][key2],
                     expected[key][key2],
-                    f'\n\nProduct at index <{key}, {key2}> was\n\n'
-                    f'{actual[key][key2]}\n\n'
-                    f'but expected\n\n'
-                    f'{expected[key][key2]}\n\n'
+                    f"\n\nProduct at index <{key}, {key2}> was\n\n"
+                    f"{actual[key][key2]}\n\n"
+                    f"but expected\n\n"
+                    f"{expected[key][key2]}\n\n",
                 )
-            self.assertEqual(
-                len(expected[key].keys()),
-                len(actual[key].keys())
-            )
-        self.assertEqual(
-            len(expected.keys()),
-            len(actual.keys())
-        )
+            self.assertEqual(len(expected[key].keys()), len(actual[key].keys()))
+        self.assertEqual(len(expected.keys()), len(actual.keys()))
 
     def test_table_simple_example(self):
-        grammar = r'''
+        grammar = r"""
             start: <S>
 
             <S> ::= <F>
             <S> ::= "LParen" <S> "Plus" <F> "RParen"
             <F> ::= "Int"
-        '''
+        """
         gen = LLTableGenerator(grammar)
         first = gen.first()
         follow = gen.follow(first)
         actual = gen.generate_table(first, follow)
         expected = {
-            'S': {
-                '"LParen"': ('S', ['"LParen"', 'S', '"Plus"', 'F', '"RParen"']),
-                '"Int"': ('S', ['F']),
+            "S": {
+                '"LParen"': ("S", ['"LParen"', "S", '"Plus"', "F", '"RParen"']),
+                '"Int"': ("S", ["F"]),
             },
-            'F': {
-                '"Int"': ('F', ['"Int"']),
+            "F": {
+                '"Int"': ("F", ['"Int"']),
             },
         }
         self.assertEqual(
@@ -391,13 +385,13 @@ class LLTableGeneratorTests(TestCase):
 
     def test_first_with_two_lookahead(self):
         expected = {
-            'S': {
+            "S": {
                 '"TokenType.A"',
-                'ε',
+                "ε",
                 ('"TokenType.A"', '"TokenType.A"'),
-                ('"TokenType.A"', '"TokenType.C"')
+                ('"TokenType.A"', '"TokenType.C"'),
             },
-            'A': {
+            "A": {
                 '"TokenType.A"',
                 '"TokenType.C"',
                 ('"TokenType.A"', '"TokenType.B"'),
@@ -411,27 +405,27 @@ class LLTableGeneratorTests(TestCase):
         )
 
     def test_first_with_three_lookahead(self):
-        grammar = r'''
+        grammar = r"""
             start: <S>
 
             <S> ::= <A>
               | <B>
             <A> ::= "a" "a" "a"
             <B> ::= "a" "a" "b"
-        '''
+        """
         expected = {
-            'S': {
+            "S": {
                 ('"a"', '"a"', '"a"'),
                 ('"a"', '"a"', '"b"'),
                 ('"a"', '"a"'),
                 '"a"',
             },
-            'A': {
+            "A": {
                 ('"a"', '"a"', '"a"'),
                 ('"a"', '"a"'),
                 '"a"',
             },
-            'B': {
+            "B": {
                 ('"a"', '"a"', '"b"'),
                 ('"a"', '"a"'),
                 '"a"',
@@ -460,39 +454,35 @@ class LLTableGeneratorTests(TestCase):
         valid.
 
         """
-        grammar = r'''
+        grammar = r"""
             start: <S>
 
             <S> ::= <E> <M>
                 | <M>
             <E> ::= "a" "b" "a"
             <M> ::= "c"
-        '''
+        """
         expected = {
-            'S': {
+            "S": {
                 ('"a"', '"b"'),
                 # However, the value ('"a"', '"c"') should not appear.
                 '"a"',
                 '"c"',
             },
-            'E': {
+            "E": {
                 ('"a"', '"b"'),
                 '"a"',
             },
-            'M': {
-                '"c"'
-            },
+            "M": {'"c"'},
         }
         gen = LLTableGenerator(grammar, lookahead=2)
         actual = gen.kfirst(2)
         self.assertEqual(
-            actual,
-            expected,
-            f'\n\nGot:\n{actual}\n\nExpected:\n{expected}'
+            actual, expected, f"\n\nGot:\n{actual}\n\nExpected:\n{expected}"
         )
 
     def test_first_with_three_lookahead_no_partials_deep_tree(self):
-        grammar = r'''
+        grammar = r"""
         start: <S>
 
         <S> ::= <A> <M>
@@ -500,58 +490,56 @@ class LLTableGeneratorTests(TestCase):
         <B> ::= "b" <C>
         <C> ::= "c"
         <M> ::= "m"
-        '''
+        """
         expected = {
-            'S': {
+            "S": {
                 '"a"',
                 ('"a"', '"b"'),
                 ('"a"', '"b"', '"c"'),
             },
-            'A': {
+            "A": {
                 '"a"',
                 ('"a"', '"b"'),
                 ('"a"', '"b"', '"c"'),
             },
-            'B': {
+            "B": {
                 '"b"',
                 ('"b"', '"c"'),
             },
-            'C': {
+            "C": {
                 '"c"',
             },
-            'M': {
+            "M": {
                 '"m"',
             },
         }
         gen = LLTableGenerator(grammar, lookahead=3)
         actual = gen.kfirst(3)
         self.assertEqual(
-            actual,
-            expected,
-            f'\n\nGot:\n{actual}\n\nExpected:\n{expected}'
+            actual, expected, f"\n\nGot:\n{actual}\n\nExpected:\n{expected}"
         )
 
     def test_kfollow_with_two_lookahead(self):
         gen = LLTableGenerator(TWO_LOOKAHEAD)
         actual = gen.kfollow(2)
         expected = {
-            'S': {
-                '$',
+            "S": {
+                "$",
                 '"TokenType.A"',
                 '"TokenType.C"',
                 ('"TokenType.A"', '"TokenType.B"'),
                 ('"TokenType.C"', '"TokenType.C"'),
                 ('"TokenType.C"', '"TokenType.A"'),
-                ('"TokenType.C"', '$'),
+                ('"TokenType.C"', "$"),
             },
-            'A': {
-                '$',
+            "A": {
+                "$",
                 '"TokenType.A"',
                 '"TokenType.C"',
                 ('"TokenType.A"', '"TokenType.B"'),
                 ('"TokenType.C"', '"TokenType.C"'),
                 ('"TokenType.C"', '"TokenType.A"'),
-                ('"TokenType.C"', '$'),
+                ('"TokenType.C"', "$"),
             },
         }
         extra = {
@@ -567,6 +555,6 @@ class LLTableGeneratorTests(TestCase):
         self.assertEqual(
             actual,
             expected,
-            f'\n\nGot extra:\n{extra}\n\nMissing:\n{missing}\n\n'
-            f'Got:\n{actual}\n\nExpected:\n{expected}',
+            f"\n\nGot extra:\n{extra}\n\nMissing:\n{missing}\n\n"
+            f"Got:\n{actual}\n\nExpected:\n{expected}",
         )
