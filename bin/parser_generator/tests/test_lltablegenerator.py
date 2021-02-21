@@ -21,16 +21,46 @@ MAX_FUZZ_TEST = 50
 
 
 class FollowFuzz(TestCase):
-    def test_follows(self):
+
+    def _followtest(self, instance=0):
         known_followsets = list()
         while not known_followsets:
             productions = GrammarGenerator().generate_ll1_grammar()
             start, productions = productions[0], productions[1:]
-            grammar = Grammar(productions)
+            grammar = Grammar(productions, start[1][0])
+
+            # We don't want infinite left recursion.
+            if grammar.has_infinite_left_recursion():
+                continue
+
             fsg = FollowSetGenerator(grammar, start[1][0], 2)
             known_followsets = list(fsg)
-        self.fail(f'Make sure it works: {known_followsets}')
+        known_lookup = dict()
+        for key, values in known_followsets:
+            if key not in known_lookup:
+                known_lookup[key] = set()
+            known_lookup[key].add(tuple(values))
+        gen = LLTableGenerator(str(grammar))
+        actual = gen.kfollow(2)
+        for key in known_lookup:
+            if key not in actual:
+                self.fail(
+                    f'Known lookup contains {key}, which is not in actual.\n\n'
+                    f'{grammar}'
+                )
+            message = (
+                f'{instance} For the following grammar:\n\n'
+                f'{grammar}\n\nMissing from followset for {key}: {{}}'
+            )
+            self.assertEqual(
+                len(known_lookup[key] - actual[key]),
+                0,
+                message.format(known_lookup[key] - actual[key])
+            )
 
+    def test_follows(self):
+        for i in range(MAX_FUZZ_TEST):
+            self._followtest()
 
 
 class LLTableGeneratorTests(TestCase):
@@ -502,10 +532,8 @@ class LLTableGeneratorTests(TestCase):
         )
 
     def test_kfollow_with_two_lookahead(self):
-        gen = LLTableGenerator(TWO_LOOKAHEAD, debug={'kfollow'})
+        gen = LLTableGenerator(TWO_LOOKAHEAD)
         actual = gen.kfollow(2)
-        with open('/tmp/debug.dot', 'w') as fout:
-            fout.write(gen.fo_debug.get_dot())
         expected = {
             'S': {
                 '$',

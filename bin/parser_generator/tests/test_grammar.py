@@ -92,3 +92,135 @@ class GrammarTests(TestCase):
                 ('A', SubProduction(['"TokenType.C"'])),
             ],
         )
+
+
+class LeftRecursionTests(TestCase):
+
+    # I've included the comments in the grammars to aide in
+    # debugging.
+    RECURSIVE = [
+        '''
+        # A short chain without terminals.
+        start: <S>
+
+        <S> ::= <S>
+        ''',
+        '''
+        # A short chain with terminals.
+        start: <S>
+
+        <S> ::= <S> "a"
+        ''',
+        '''
+        # A chain without terminals.
+        start: <S>
+
+        <S> ::= <A>
+        <A> ::= <S>
+        ''',
+        '''
+        # A chain with terminals.
+        start: <S>
+
+        <S> ::= <A> "a"
+        <A> ::= <S> "b"
+        ''',
+        '''
+        # A very long chain in a graph.
+        start: <S>
+
+        <S> ::= <A> "a"
+        <A> ::= <B> "b"
+        <B> ::= <C> "c"
+        <C> ::= <D> "d"
+        <D> ::= <S> "e"
+        ''',
+        '''
+        # A recursion which is part of a subgraph.
+        start: <S>
+
+        <S> ::= <A> "a"
+        <A> ::= <B> "b"
+        <B> ::= <C> "c"
+        <C> ::= <D> "d"
+        <D> ::= <A> "e"
+        ''',
+        '''
+        # With an epsilon that results in recursion.
+        start: <S>
+
+        <S> ::= <A> <S>
+        <A> ::= "a"
+            | ε
+        ''',
+        '''
+        # With many epsilons, one of which could result in recursion.
+        start: <S>
+
+        <S> ::= <A> <B> <C> <D> <E> <S>
+        <A> ::= "a"
+            | ε
+        <B> ::= "b"
+            | ε
+        <C> ::= "c"
+            | ε
+        <D> ::= "d"
+            | ε
+        <E> ::= "e"
+            | ε
+        ''',
+    ]
+    NON_RECURSIVE = [
+        '''
+        # The simplest grammar.
+        start: <S>
+
+        <S> ::= "a"
+        ''',
+        '''
+        # A deep chain, but which has no left-recursion.
+        start: <S>
+
+        <S> ::= <A>
+        <A> ::= <B> "a"
+        <B> ::= <C> "b"
+        <C> ::= <D> "c"
+        <D> ::= "d"
+        ''',
+        '''
+        # With epsilons.
+        start: <S>
+
+        <S> ::= <A> "s"
+        <A> ::= "a"
+            | ε
+        ''',
+        '''
+        # With right recursion.
+        start: <S>
+
+        <S> ::= <A> <S>
+            | ε
+        <A> ::= "a"
+        ''',
+    ]
+
+    def _get_grammar(self, raw_grammar: str) -> Grammar:
+        gen = LLTableGenerator(raw_grammar)
+        return Grammar(gen.table)
+
+    def test_with_left_recursion(self):
+        for raw_grammar in self.RECURSIVE:
+            grammar = self._get_grammar(raw_grammar)
+            self.assertTrue(
+                grammar.has_infinite_left_recursion(),
+                raw_grammar,
+            )
+
+    def test_without_left_recursion(self):
+        for raw_grammar in self.NON_RECURSIVE:
+            grammar = self._get_grammar(raw_grammar)
+            self.assertFalse(
+                grammar.has_infinite_left_recursion(),
+                raw_grammar,
+            )

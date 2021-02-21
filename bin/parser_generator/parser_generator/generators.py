@@ -1,9 +1,13 @@
 import datetime
-from collections import defaultdict
+from collections import (
+    defaultdict,
+    deque,
+)
 from copy import copy
 from functools import (lru_cache, reduce)
 from typing import (
     Any,
+    Deque,
     Dict,
     List,
     Iterable,
@@ -24,10 +28,22 @@ from bnf_to_cnf.parser import (  # type: ignore
 )
 from .production import Production
 from .debug import RecurseDebug
+from .utils import (
+    Sequence,
+    longest_sequence,
+)
 
 
 def is_term(symbol: str) -> bool:
     return symbol.startswith('"') and symbol.endswith('"')
+
+
+def is_epsilon(symbol: str) -> bool:
+    return symbol == 'ε'
+
+
+def is_nonterm(symbol: str) -> bool:
+    return not (is_term(symbol) or is_epsilon(symbol))
 
 
 def gen_cache(max_iterator_depth=200):
@@ -80,6 +96,10 @@ class SubProduction:
     def __init__(self, symbols: List[str]):
         self.symbols = symbols
         self.__index = 0
+
+    @staticmethod
+    def from_sequence(sequence: Sequence) -> 'SubProduction':
+        return SubProduction(sequence.sequence)
 
     def head(self) -> Tuple[Optional[str], 'SubProduction']:
         if self.symbols:
@@ -184,8 +204,9 @@ class FirstSet:
 
 
 class Grammar:
-    def __init__(self, table: List[Production]):
+    def __init__(self, table: List[Production], start: Optional[str] = None):
         self.table = table
+        self.start = start
 
     def __getitem__(
         self,
@@ -208,6 +229,31 @@ class Grammar:
             (lhs, SubProduction(rhs))
             for lhs, rhs in self.table
         )
+
+    def __str__(self) -> str:
+        if self.start:
+            lines = [f'start: <{self.start}>\n']
+        else:
+            lines = []
+        prev = None
+        for lhs, rhs in self.table:
+            if lhs == prev:
+                line = f'  | '
+            else:
+                line = f'<{lhs}> ::='
+            for symbol in rhs:
+                if is_epsilon(symbol):
+                    line += f' {symbol}'
+                elif is_nonterm(symbol):
+                    line += f' <{symbol}>'
+                else:
+                    line += f' {symbol}'
+            prev = lhs
+            lines.append(line)
+        return '\n'.join(lines)
+
+    def __repr__(self) -> str:
+        return str(self)
 
     def get_exact(self, start: str, k: int) -> Iterable[SubProduction]:
         """Get a derivation of a symbol, which is of an exact length.
@@ -250,11 +296,86 @@ class Grammar:
                 assert isinstance(prod_before_first_nonterm, SubProduction)
                 prod_after_first_nonterm = prod[:first_nonterm]
                 assert isinstance(prod_after_first_nonterm, SubProduction)
+
                 assert isinstance(rest, SubProduction)
                 queue.append((
                     curr + prod_after_first_nonterm,
                     prod_before_first_nonterm + rest
                 ))
+
+    def _has_infinite_left_recursion(self, start: str) -> Optional[Set[str]]:
+        """Return the set of encountered symbols from this start symbol.
+
+        Args:
+            start: The symbol where we should start.
+
+        Returns:
+            The set of encountered symbols, if we did not encounter infinite
+            recursion.  Otherwise, None.
+
+        """
+        encountered = set()
+        queue = deque([start])  # type: Deque[Union[str, SubProduction]]
+        while queue:
+            curr = queue.pop()
+            if isinstance(curr, str):
+                key = curr
+                rest = SubProduction([])
+            elif isinstance(curr, SubProduction):
+                key = curr[0]
+                rest = curr[1:]
+            else:
+                raise Exception('Expected only strings and subproductions.')
+
+            if key in encountered:
+                return None
+
+            encountered.add(key)
+
+            for production in self[key]:
+                assert isinstance(production, SubProduction)
+                if is_nonterm(production[0]):
+                    # We have to continue the search with nonterminals.
+                    # If this production is only nonterminals, we have to
+                    # continue with the rest of the current search, as well.
+                    # Otherwise, we know that a fruitful production would
+                    # occur in between, and we could just consider this
+                    # next set of nonterminals.
+                    sequence = longest_sequence(is_nonterm, production, 0)
+                    if len(sequence) == len(production):
+                        queue.appendleft(
+                            SubProduction.from_sequence(sequence) +
+                                rest
+                        )
+                    else:
+                        queue.appendleft(
+                            SubProduction.from_sequence(sequence)
+                        )
+                elif is_term(production[0]):
+                    # Since it's a terminal, we can stop looking -- it
+                    # was fruitful.
+                    pass
+                elif is_epsilon(production[0]):
+                    # The symbols after whatever this is replacing
+                    # could result in an infinite recursion. So we
+                    # have to check them, if they exist.
+                    #
+                    # We assume epsilons only occur on their own in a RHS.
+                    if rest:
+                        queue.appendleft(rest)
+        return encountered
+
+    def has_infinite_left_recursion(self) -> bool:
+        """Return whether this grammar contains infinite left recursion."""
+        symbols = {lhs for lhs, rhs in self}
+        while symbols:
+            symbol = list(symbols)[0]
+            encountered = self._has_infinite_left_recursion(symbol)
+            if encountered:
+                symbols -= encountered
+            else:
+                return True
+        return False
 
 
 class FollowSet:
@@ -927,9 +1048,6 @@ class LLTableGenerator:
                     (lhs, list(rhs)), i + 1, k, parent_debug=debug
                 )
 
-    # FIXME: Produces erroneous solutions.
-    # The problem is that when we get the partial firstset of an
-    # item, it can't be appended to.
     def _kfollow_fixpoint_solution(self,
                                    followset_lookup: Dict[str, List[FollowSet]],
                                    parent_debug: Optional[str] = None,

@@ -5,6 +5,9 @@ from dataclasses import (
     dataclass,
     field,
 )
+from itertools import (
+    permutations,
+)
 from random import (
     paretovariate,
     randint,
@@ -18,6 +21,7 @@ from typing import (
     Callable,
     Optional,
     List,
+    Dict,
     Set,
     Tuple,
     TypeVar,
@@ -26,6 +30,10 @@ from typing import (
 from parser_generator.generators import (
     Grammar,
     is_term,
+)
+from parser_generator.utils import (
+    Sequence,
+    longest_sequence,
 )
 
 
@@ -56,42 +64,6 @@ def rfind(test: Callable[[T], bool], items: List[T]) -> Optional[int]:
         if test(items[i]):
             return i
         i -= 1
-
-
-@dataclass
-class Sequence(Generic[T]):
-
-    start: Optional[int] = None
-    end: Optional[int] = None
-    sequence: List[T] = field(default_factory=list)
-
-    def __bool__(self) -> bool:
-        return self.start is not None and bool(self.sequence)
-
-    def __len__(self) -> int:
-        return len(self.sequence)
-
-
-def longest_sequence(test: Callable[[T], bool],
-                     items: List[T],
-                     index: int = 0) -> Sequence[T]:
-    seq = list()
-    i = index
-
-    # Move the pointer to the first passing item.
-    while i < len(items) and not test(items[i]):
-        i += 1
-
-    if i == len(items):
-        return Sequence()
-    start = i
-
-    # Move the pointer forward while it passes.
-    while i < len(items) and test(items[i]):
-        seq.append(items[i])
-        i += 1
-
-    return Sequence(start=start, end=i, sequence=seq)
 
 
 class FollowSetGenerator:
@@ -129,7 +101,7 @@ class FollowSetGenerator:
         self.grammar = grammar
         self.start_symbol = start_symbol
         self.encountered = set()  # type: Set[Tuple[str, Tuple[str, ...]]]
-        self._language = []
+        self._language = []  # type: List[str]
         self._new_language_count = dict()  # type: Dict[str, int]
         self._new_language()
         self.k = k
@@ -145,6 +117,11 @@ class FollowSetGenerator:
         self._count = 0
         self._language = [self.start_symbol]  # type: List[str]
         self._next_queue = []  # type: List[Tuple[str, Tuple[str, ...]]]
+        evaluated = old_language.replace('"', '')
+
+    def get_debug(self):
+        self.debug.seek(0)
+        return self.debug.read()
 
     def __iter__(self) -> Iterator[Tuple[str, Tuple[str, ...]]]:
         return self
@@ -157,7 +134,14 @@ class FollowSetGenerator:
             self._step()
             if any([x > 5 for x in self._new_language_count.values()]):
                 raise StopIteration
-        return self._next_queue.pop()
+            if self._next_queue:
+                key = self._next_queue[-1]
+                key = (key[0], tuple(key[1]))
+                if key in self.encountered:
+                    self._next_queue.pop()
+        value = self._next_queue.pop()
+        self.encountered.add((value[0], tuple(value[1])))
+        return value
 
     def _step(self):
         if self._count >= self._length:
@@ -172,6 +156,7 @@ class FollowSetGenerator:
             self._new_language()
             return
 
+        evaluated = ''.join(self._language).replace('"', '')
         nonterm_index = choice(list(nonterm_indices.keys()))
         nonterm = nonterm_indices[nonterm_index]
         productions = self.grammar[nonterm]
@@ -181,28 +166,26 @@ class FollowSetGenerator:
             return
 
         production = choice(productions)
+        production_evaluated = ''.join(production).replace('"', '')
         self._language = (
             self._language[:nonterm_index] +
             list(production) +
             self._language[nonterm_index + 1:]
         )
+        for followset in self.gen_followsets():
+            self._next_queue.append(followset)
 
-        # Find any new followsets produced.
-        index = rfind(is_nonterm, self._language[:nonterm_index])
-        under_consideration = self._language[index:nonterm_index + len(production)]
-        if index:
-            sequence = longest_sequence(is_term, under_consideration, index)
-            loop_guard = 1000
-            while sequence:
-                loop_guard -= 1
-                if not loop_guard:
-                    raise Exception('Failed loop guard.')
-                if len(sequence) >= self.k:
-                    self._next_queue.append(
-                        (self._language[index], sequence.sequence[:self.k])
-                    )
-                index = sequence.end
-                sequence = longest_sequence(is_term, under_consideration, index)
+    def gen_followsets(self):
+        index = 0
+        if not self._language:
+            return
+        nonterms = longest_sequence(is_nonterm, self._language, index)
+        while nonterms:
+            index = nonterms.end - 1
+            terms = longest_sequence(is_term, self._language, index)
+            if terms and terms.start == nonterms.end and len(terms) >= self.k:
+                yield (self._language[index], terms.sequence[:self.k])
+            nonterms = longest_sequence(is_nonterm, self._language, nonterms.end)
 
 
 class GrammarGenerator:
@@ -212,38 +195,42 @@ class GrammarGenerator:
         # An ordered set of symbols.
         self.symbols = list()
         self.terminals = set()
+        self.terminal_length = 1
+        self.terminal_perms = permutations(string.ascii_lowercase, self.terminal_length)
+        self.nonterminal_length = 1
+        self.nonterminal_perms = permutations(string.ascii_uppercase, self.nonterminal_length)
 
     def generate_symbols(self) -> Iterable[str]:
         while True:
-            next_symbol = ''
-            while next_symbol == '' or next_symbol in self.symbols:
-                # Choose the next symbol at random, prefering smaller symbols
-                # to large ones.
-                next_symbol = ''.join([
-                    choice(string.ascii_uppercase)
-                    for _ in range(min(5, round(paretovariate(1))))
-                ])
-            self.symbols.append(next_symbol)
-            yield next_symbol
+            for nonterm in self.nonterminal_perms:
+                next_symbol = ''.join(nonterm)
+                self.symbols.append(next_symbol)
+                yield next_symbol
+            self.nonterminal_length += 1
+            self.nonterminal_perms = permutations(
+                string.ascii_uppercase,
+                self.nonterminal_length
+            )
 
     def generate_terminal(self):
         while True:
-            next_term = ''
-            while next_term == '' or next_term in self.terminals:
-                next_term = '"' + ''.join([
-                    choice(string.ascii_lowercase)
-                    for _ in range(randint(1, 10))
-                ]) + '"'
-            self.terminals.add(next_term)
-            yield next_term
+            for term in self.terminal_perms:
+                next_term = '"' + ''.join(term) + '"'
+                self.terminals.add(next_term)
+                yield next_term
+            self.terminal_length += 1
+            self.terminal_perms = permutations(
+                string.ascii_lowercase,
+                self.terminal_length,
+            )
 
-    def generate_rhs(self):
+    def generate_lhs(self):
         if len(self.symbols) > 1 and random() < 0.1:
             yield choice(self.symbols)
         else:
             yield next(self.generate_symbols())
 
-    def generate_lhs(self, exclude=None):
+    def generate_rhs(self, exclude=None):
         lhs = list()
         for _ in range(min(4, round(paretovariate(1)))):
             if len(self.symbols) > 1 and random() < 0.5:
@@ -259,7 +246,9 @@ class GrammarGenerator:
 
     def generate_productions(self):
         while True:
-            yield (next(self.generate_rhs()), next(self.generate_lhs()))
+            lhs = next(self.generate_rhs())
+            rhs = next(self.generate_lhs())
+            yield rhs, lhs
 
     def get_depth(self, adjacency_graph, root):
         visited = set()
@@ -296,7 +285,6 @@ class GrammarGenerator:
                 )
         ret = ret + ['\n'] + nodes + ['\n'] + relations + ['}']
         return '\n'.join(ret)
-
 
     def generate_ll1_grammar(self):
         # Generate some productions.
@@ -354,6 +342,26 @@ class GrammarGenerator:
             productions.append((leaf, [next(term_gen)]))
 
         productions.insert(0, ('start', [root]))
+
+        # Add ε to prevent mandatory-infinite recursion.
+        new_productions = list()
+        for lhs, rhs in productions:
+            if lhs in rhs:
+                if random() > 0.1:
+                    try:
+                        rhs2 = next(self.generate_rhs())
+                        rhs2 = [x for x in rhs2 if is_term(x)]
+                        while not rhs2:
+                            rhs2 = next(self.generate_rhs())
+                            rhs2 = [x for x in rhs2 if is_term(x)]
+                        rhs = rhs2
+                    except AttributeError:
+                        rhs = ['ε']
+                else:
+                    rhs = ['ε']
+                new_productions.append((lhs, rhs))
+        productions.extend(new_productions)
+
         return productions
 
     def to_grammar(self, productions):
