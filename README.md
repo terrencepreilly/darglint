@@ -49,9 +49,11 @@ Finally, the configuration file must be located either in the directory
 *darglint* is called from, or from a parent directory of that working
 directory.
 
-Currently, the configuration file allows us to ignore errors, to specify
-message templates, to specify the strictness of checks and to ignore common
-exceptions.
+Currently, the configuration file allows us:
+1. Error Configuration
+2. Message Template Configuration
+3. Strictness Configuration
+4. Ignoring common exceptions
 
 ### Error Configuration
 
