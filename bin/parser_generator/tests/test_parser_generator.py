@@ -34,6 +34,12 @@ class ParserGeneratorTests(TestCase):
                     curr.value.value,
                 )
             stack.extend(curr.children[::-1])
+        self.assertEqual(
+            len(terminals_remaining),
+            0,
+            f'Expected to have encountered all terminals, but didn\'t find '
+            f'{terminals_remaining} in node.',
+        )
 
     def test_one_token_grammar(self):
         parser_repr = generate_parser(
@@ -72,7 +78,9 @@ class ParserGeneratorTests(TestCase):
 
     def test_two_lookahead_grammar(self):
         parser_repr = generate_parser(
-            TWO_LOOKAHEAD, "from .grammars import (Token, TokenType, Node)"
+            TWO_LOOKAHEAD,
+            "from .grammars import (Token, TokenType, Node)",
+            2,
         )
         module = globals()
         exec(parser_repr, module)

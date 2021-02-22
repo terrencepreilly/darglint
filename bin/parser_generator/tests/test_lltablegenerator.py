@@ -71,7 +71,6 @@ class LLTableGeneratorTests(TestCase):
             table_gen = LLTableGenerator(grammar)
             table_gen.first()
 
-    @skip("Hanging.")
     def test_fuzz_follow(self):
         """Make sure it dosen't barf when generating the follow set."""
         for _ in range(MAX_FUZZ_TEST):

@@ -478,10 +478,10 @@ class LLTableGenerator:
         if self._adjacency_matrix:
             return self._adjacency_matrix
         self._adjacency_matrix = dict()
-        for rhs, lhs in self.table:
-            if rhs not in self._adjacency_matrix:
-                self._adjacency_matrix[rhs] = list()
-            self._adjacency_matrix[rhs].append(lhs)
+        for lhs, rhs in self.table:
+            if lhs not in self._adjacency_matrix:
+                self._adjacency_matrix[lhs] = list()
+            self._adjacency_matrix[lhs].append(rhs)
         return self._adjacency_matrix
 
     @property
@@ -1083,45 +1083,71 @@ class LLTableGenerator:
             for key, value in self.kfollow(1).items()
         }
 
-    def goes_to(self, nonterm: str, term: str) -> bool:
-        stack = [nonterm]
-        encountered = set()
-        while stack:
-            curr = stack.pop()
-            encountered.add(curr)
-            for lhs in self.adjacency_matrix[curr]:
-                assert len(lhs) > 0, "Expected a non-empty LHS."
-                if self._is_term(lhs[0]):
-                    if lhs[0] == term:
-                        return True
-                elif lhs[0] == "ε":
-                    continue
-                elif lhs[0] not in encountered:
-                    stack.append(lhs[0])
-        return False
+    def _matches(self, rhs: Tuple[str, ...], terms: Tuple[str, ...]) -> bool:
+        queue = deque([(rhs, terms)])
+        while queue:
+            children, remaining = queue.pop()
 
-    # TODO: Change to handle multiple terminals
+            # Consume the terminal symbols.
+            i = 0
+            skip_this = False
+            while (i < len(children)
+                   and i < len(remaining)
+                   and not is_nonterm(children[i])):
+                if children[i] != remaining[i]:
+                    skip_this = True
+                    break
+                i += 1
+            if skip_this:
+                continue
+            if not is_nonterm(children[0]):
+                children, remaining = children[i:], remaining[i:]
+
+            if not remaining:
+                return True
+            if not children:
+                continue
+            if not is_nonterm(children[0]):
+                return False
+
+            head, rest = children[0], children[1:]
+            for production in self.adjacency_matrix[head]:
+                if is_epsilon(production[0]):
+                    queue.appendleft((rest, remaining))
+                else:
+                    queue.appendleft((tuple(production) + rest, remaining))
+
     # TODO: Change to be stored as an intermediate result of Fi, Fo
     def get_production_leading_to_terminal(
-        self, nonterm: str, term: str
+        self, nonterm: str, term: Union[str, Tuple[str, ...]]
     ) -> Iterable[Production]:
-        for lhs in self.adjacency_matrix[nonterm]:
-            if self._is_term(lhs[0]) and lhs[0] == term:
-                yield (nonterm, lhs)
-            elif lhs[0] == "ε" and lhs[0] == term:
-                yield (nonterm, lhs)
-            elif not self._is_term(lhs[0]) and lhs[0] != "ε":
-                if self.goes_to(lhs[0], term):
-                    yield (nonterm, lhs)
+        def has_nonterm(l: List[str], value: Union[str, Tuple[str, ...]]) -> bool:
+            if isinstance(value, str):
+                return is_nonterm(l[0])
+            else:
+                return any(map(is_nonterm, l[:len(value)]))
 
-    def generate_table(
-        self, first: Dict[str, Set[str]], follow: Dict[str, Set[str]]
-    ) -> Dict[str, Dict[str, Production]]:
+        for rhs in self.adjacency_matrix[nonterm]:
+            remaining = term
+            if isinstance(term, str):
+                remaining = (term,)
+            if self._matches(tuple(rhs), remaining):
+                yield (nonterm, rhs)
+
+
+    def generate_ktable(
+        self,
+        first: Dict[str, Set[Union[str, Tuple[str, ...]]]],
+        follow: Dict[str, Set[Union[str, Tuple[str, ...]]]],
+        k: int,
+    ) -> Dict[str, Dict[Union[str, Tuple[str, ...]], Production]]:
         table = {
             nonterm: dict() for nonterm in self.nonterminals
-        }  # type: Dict[str, Dict[str, Production]]
+        }  # type: Dict[str, Dict[Union[str, Tuple[str, ...]]]]
         for nonterm, terms in first.items():
             for term in terms:
+                if len(term) < k:
+                    continue
                 productions = list(
                     self.get_production_leading_to_terminal(nonterm, term)
                 )
@@ -1134,11 +1160,23 @@ class LLTableGenerator:
                     table[nonterm][term] = production
         return table
 
+    def generate_table(
+        self, first: Dict[str, Set[str]], follow: Dict[str, Set[str]]
+    ) -> Dict[str, Dict[str, Production]]:
+        return self.generate_ktable(first, follow, 1)
 
-def normalize_for_table(symbol: str) -> str:
-    if symbol.startswith('"') and symbol.endswith('"'):
+
+def normalize_for_table(symbol: Union[str, Tuple[str, ...]]) -> str:
+    if (
+        isinstance(symbol, str)
+        and symbol.startswith('"')
+        and symbol.endswith('"')
+    ):
         return symbol[1:-1]
-    return repr(symbol)
+    elif isinstance(symbol, str):
+        return repr(symbol)
+    elif isinstance(symbol, tuple):
+        return '(' + ', '.join(map(normalize_for_table, symbol)) + ')'
 
 
 PARSE_EXCEPTION = r"""
@@ -1200,11 +1238,13 @@ PARSE = r"""
 """
 
 
-def generate_parser(grammar: str, imports: Optional[str]) -> str:
+def generate_parser(grammar: str,
+                    imports: Optional[str],
+                    k: int = 1) -> str:
     generator = LLTableGenerator(grammar)
-    first = generator.first()
-    follow = generator.follow(first)
-    table = generator.generate_table(first, follow)
+    first = generator.kfirst(k)
+    follow = generator.kfollow(k)
+    table = generator.generate_ktable(first, follow, k)
     if imports:
         imports_or_blank = f"\n{imports}\n"
     else:
@@ -1238,6 +1278,7 @@ def generate_parser(grammar: str, imports: Optional[str]) -> str:
     parser.append("    def __init__(self, tokens):")
     parser.append("        # type: (Iterator[Token]) -> None")
     parser.append("        self.tokens = tokens")
+    parser.append(f"        self.k = {k}")
     parser.append("")
     parser.append(PARSE.strip("\n").format(start_symbol=repr(generator.start)))
 
