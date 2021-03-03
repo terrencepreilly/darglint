@@ -10,6 +10,7 @@ from parser_generator.generators import (
 )
 from .grammars import (
     TWO_LOOKAHEAD,
+    BINARY_GRAMMAR,
 )
 from .utils import (
     GrammarGenerator,
@@ -75,8 +76,14 @@ class LLTableGeneratorTests(TestCase):
         """Make sure it dosen't barf when generating the follow set."""
         for _ in range(MAX_FUZZ_TEST):
             gen = GrammarGenerator()
-            grammar = gen.to_grammar(gen.generate_ll1_grammar())
-            table_gen = LLTableGenerator(grammar)
+            productions = gen.generate_ll1_grammar()
+            start, productions = productions[0], productions[1:]
+            grammar = Grammar(productions, start[1][0])
+            while grammar.has_infinite_left_recursion():
+                productions = gen.generate_ll1_grammar()
+                start, productions = productions[0], productions[1:]
+                grammar = Grammar(productions, start[1][0])
+            table_gen = LLTableGenerator(str(grammar))
             first = table_gen.first()
             table_gen.follow(first)
 
@@ -224,6 +231,21 @@ class LLTableGeneratorTests(TestCase):
             f"\n\nGot:\n{actual}\n\nExpected:\n{expected}",
         )
 
+    def test_follow_binary(self):
+        gen = LLTableGenerator(BINARY_GRAMMAR)
+        first = gen.first()
+        actual = gen.follow(first)
+        expected = {
+            "number": {"$"},
+            "one": {'"TokenType.ONE"', '"TokenType.ZERO"', "$"},
+            "zero": {'"TokenType.ONE"', '"TokenType.ZERO"', "$"},
+        }
+        self.assertEqual(
+            actual,
+            expected,
+            f"\n\nGot:\n{actual}\n\nExpected:\n{expected}",
+        )
+
     def test_follow_complex_example(self):
         grammar = r"""
             start: <E>
@@ -296,6 +318,41 @@ class LLTableGeneratorTests(TestCase):
             f"\n\nGot:\n{actual}\n\nExpected:\n{expected}",
         )
 
+    def test_table_binary(self):
+        gen = LLTableGenerator(BINARY_GRAMMAR)
+        first = gen.first()
+        follow = gen.follow(first)
+        actual = gen.generate_table(first, follow)
+        expected = {
+            'number': {
+                '"TokenType.ZERO"': (
+                    'number',
+                    ['zero', 'number'],
+                ),
+                '"TokenType.ONE"': (
+                    'number',
+                    ['one', 'number'],
+                ),
+                '$': (
+                    'number',
+                    ['ε'],
+                ),
+            },
+            'one': {
+                '"TokenType.ONE"': (
+                    'one',
+                    ['"TokenType.ONE"'],
+                ),
+            },
+            'zero': {
+                '"TokenType.ZERO"': (
+                    'zero',
+                    ['"TokenType.ZERO"'],
+                ),
+            }
+        }
+        self.assertEqual(actual, expected)
+
     def test_table_complex_example(self):
         grammar = r"""
             start: <E>
@@ -353,7 +410,8 @@ class LLTableGeneratorTests(TestCase):
                     f"but expected\n\n"
                     f"{expected[key][key2]}\n\n",
                 )
-            self.assertEqual(len(expected[key].keys()), len(actual[key].keys()))
+            self.assertEqual(
+                len(expected[key].keys()), len(actual[key].keys()))
         self.assertEqual(len(expected.keys()), len(actual.keys()))
 
     def test_table_simple_example(self):
@@ -557,3 +615,94 @@ class LLTableGeneratorTests(TestCase):
             f"\n\nGot extra:\n{extra}\n\nMissing:\n{missing}\n\n"
             f"Got:\n{actual}\n\nExpected:\n{expected}",
         )
+
+    def test_table_with_two_lookahead(self):
+        expected = {
+            'S': {
+                '$': (
+                    'S', ['ε']
+                ),
+                '"TokenType.A"': (
+                    'S',
+                    [
+                        '"TokenType.A"',
+                        'S',
+                        'A',
+                    ]
+                ),
+                ('"TokenType.A"', '"TokenType.A"'): (
+                    'S',
+                    [
+                        '"TokenType.A"',
+                        'S',
+                        'A',
+                    ]
+                ),
+                ('"TokenType.A"', '"TokenType.B"'): (
+                    'S', ['ε']
+                ),
+                ('"TokenType.A"', '"TokenType.C"'): (
+                    'S',
+                    [
+                        '"TokenType.A"',
+                        'S',
+                        'A',
+                    ]
+                ),
+                '"TokenType.C"': (
+                    'S', ['ε']
+                ),
+                ('"TokenType.C"', "$"): (
+                    'S', ['ε']
+                ),
+                ('"TokenType.C"', '"TokenType.A"'): (
+                    'S', ['ε']
+                ),
+                ('"TokenType.C"', '"TokenType.C"'): (
+                    'S', ['ε']
+                ),
+            },
+            'A': {
+                '"TokenType.A"': (
+                    'A', ['"TokenType.A"', '"TokenType.B"', 'S']
+                ),
+                '"TokenType.C"': (
+                    'A', ['"TokenType.C"']
+                ),
+                ('"TokenType.A"', '"TokenType.B"'): (
+                    'A', ['"TokenType.A"', '"TokenType.B"', 'S']
+                ),
+            },
+        }
+        gen = LLTableGenerator(TWO_LOOKAHEAD)
+        first = gen.kfirst(2)
+        follow = gen.kfollow(2)
+        actual = gen.generate_ktable(first, follow, 2)
+        # Loop through the keys and values to have an easier time
+        # seeing where they differ.
+        for key in expected:
+            for key2 in expected[key]:
+                self.assertEqual(
+                    actual[key][key2],
+                    expected[key][key2],
+                    f"\n\nProduct at index <{key}, {key2}> was\n\n"
+                    f"{actual[key][key2]}\n\n"
+                    f"but expected\n\n"
+                    f"{expected[key][key2]}\n\n",
+                )
+            missing = set(expected[key].keys()) - set(actual[key].keys())
+            self.assertEqual(
+                len(missing),
+                0,
+                f'Missing expected keys {key}: {missing}'
+            )
+            extra = set(actual[key].keys()) - set(expected[key].keys())
+            self.assertEqual(
+                len(extra),
+                0,
+                f'Extra keys at {key}: {extra}'
+            )
+        missing = set(expected.keys()) - set(actual.keys())
+        self.assertEqual(len(missing), 0, f'Missing expected keys {missing}')
+        extra = set(actual.keys()) - set(expected.keys())
+        self.assertEqual(len(extra), 0, f'Extra keys {extra}')

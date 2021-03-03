@@ -175,7 +175,14 @@ class Grammar:
             return
 
         queue = [(SubProduction([]), SubProduction([start]))]
+        iteration_guard = 50000
         while queue:
+            iteration_guard -= 1
+            if not iteration_guard:
+                raise Exception(
+                    'Surpassed iteration limit: '
+                    'Check for infinite left recursion.'
+                )
             curr, rem = queue.pop()
             if not rem:
                 if len(curr) == k:
@@ -1146,8 +1153,6 @@ class LLTableGenerator:
         }  # type: Dict[str, Dict[Union[str, Tuple[str, ...]]]]
         for nonterm, terms in first.items():
             for term in terms:
-                if len(term) < k:
-                    continue
                 productions = list(
                     self.get_production_leading_to_terminal(nonterm, term)
                 )
@@ -1155,7 +1160,8 @@ class LLTableGenerator:
                 production = productions[0]
                 if term == "ε":
                     for term2 in follow[nonterm]:
-                        table[nonterm][term2] = production
+                        if term2 not in table[nonterm]:
+                            table[nonterm][term2] = production
                 else:
                     table[nonterm][term] = production
         return table
@@ -1185,53 +1191,88 @@ class ParseException(Exception):
 """
 
 PARSE = r"""
+    def _fill_buff(self, token_buff):
+        # type: (Tuple[BuffToken, ...]) -> Tuple[BuffToken, ...]
+        new_buff = token_buff
+        while len(new_buff) < self.k:
+            try:
+                new_buff += (next(self.tokens),)
+            except StopIteration:
+                if None not in token_buff:
+                    new_buff += (None,)
+                break
+        return new_buff
+
+    def _behead(self, buff):
+        # type: (Tuple[T, ...]) -> Tuple[Optional[T], Tuple[T, ...]]
+        head = None
+        if buff:
+            head = buff[0]
+        return head, tuple([x for x in buff[1:]])
+
+    def _get_token_type_buff(self, token_buff):
+        # type: (Tuple[BuffToken, ...]) -> Tuple[BuffTokenType, ...]
+        return tuple([x.token_type if x else "$" for x in token_buff])
+
     def parse(self):
-        # type: () -> Optional[Node]
+        # type: () -> Node
         root = Node(node_type={start_symbol})
         stack = deque([root])
-        token = next(self.tokens)
-        token_type = token.token_type
+        token_buff = self._fill_buff(tuple())
+        token_type_buff = self._get_token_type_buff(token_buff)
         while stack:
             curr = stack.popleft()
-            if curr.node_type == 'ε':
-                # TODO: Should this ever happen?
+            if curr.node_type == "ε":
                 continue
+
+            # We're at a terminal node; we should be able to consume
+            # from the token stream.
             if isinstance(curr.node_type, TokenType):
-                if curr.node_type == token_type:
-                    curr.value = token
-                    try:
-                        token = next(self.tokens)
-                        token_type = token.token_type
-                    except StopIteration:
-                        token = None
-                        token_type = '$'
+                if (
+                    len(token_type_buff) > 0
+                    and curr.node_type == token_type_buff[0]
+                ):
+                    curr.value, token_buff = self._behead(token_buff)
+                    token_buff = self._fill_buff(token_buff)
+                    token_type_buff = self._get_token_type_buff(token_buff)
                     continue
                 else:
                     raise ParseException(
-                        'Expected token type {{}}, but got {{}}'.format(
-                            token_type, curr.node_type
+                        "Expected token type {{}}, but got {{}}".format(
+                            token_type_buff, curr.node_type
                         )
                     )
             if curr.node_type not in self.table:
                 raise ParseException(
-                    'Expected {{}} to be in grammar, but was not.'.format(
+                    "Expected {{}} to be in grammar, but was not.".format(
                         curr,
                     )
                 )
-            if token_type not in self.table[curr.node_type]:
+
+            # Drop off the end of the token lookahead to see if a shorter
+            # version is in the table.
+            index = tuple(token_type_buff)
+            if len(index) == 1:
+                index = index[0]
+            while index and index not in self.table[curr.node_type]:
+                if isinstance(index, str):
+                    index = None
+                    break
+                index = index[:-1]
+                if len(index) == 1:
+                    index = index[0]
+            if not index:
                 raise ParseException(
-                    'Expected {{}} to be in a production '
-                    'of {{}}, but was not.'.format(
-                        token, curr
-                    )
+                    "Expected {{}} to be in a production "
+                    "of {{}}, but was not.".format(token_buff, curr)
                 )
-            lhs, rhs = self.table[curr.node_type][token_type]
+            lhs, rhs = self.table[curr.node_type][index]
 
             # `extendleft` appends in reverse order,
             # so we have to reverse before extending.
             # Otherwise, right-recursive productions will
             # never finish parsing.
-            children = [Node(x) for x in rhs]
+            children = [Node(x) for x in rhs]  # type: ignore
             curr.children = children
             stack.extendleft(children[::-1])
         return root
@@ -1254,9 +1295,17 @@ def generate_parser(grammar: str,
         f"# Generated on {datetime.datetime.now()}",
         "",
         "from collections import deque",
-        "from typing import (Iterator, Optional)",
+        "from typing import Dict, List, Iterator, Optional, Tuple, TypeVar, Union",  # noqa: E501
         imports_or_blank,
         PARSE_EXCEPTION,
+        "",
+        "",
+        "T = TypeVar(\"T\")",
+        "",
+        "",
+        "# Types which allow for sentinal values None and \"$\"",
+        "BuffToken = Optional[Token]",
+        "BuffTokenType = Union[TokenType, str]",
         "class Parser(object):",
         "    table = {",
     ]

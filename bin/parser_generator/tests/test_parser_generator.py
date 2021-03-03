@@ -85,8 +85,8 @@ class ParserGeneratorTests(TestCase):
         module = globals()
         exec(parser_repr, module)
         Parser = module["Parser"]
-        content = "aabbcacb"
-        node = Parser(lex("aabbcacb")).parse()
+        content = "aaababac"
+        node = Parser(lex(content)).parse()
         self.assertEqual(
             node.node_type,
             "S",
