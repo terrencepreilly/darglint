@@ -706,3 +706,24 @@ class LLTableGeneratorTests(TestCase):
         self.assertEqual(len(missing), 0, f'Missing expected keys {missing}')
         extra = set(actual.keys()) - set(expected.keys())
         self.assertEqual(len(extra), 0, f'Extra keys {extra}')
+
+    def test_table_single_forward_to_epsilon(self):
+        grammar = '''
+            Grammar: ShortDescriptionGrammar
+
+            start: <short-description>
+
+            <short-description> ::= <line>
+
+            <line> ::= <word> <line>
+              | ε
+
+            <word> ::= "buffalo" | "Buffalo"
+        '''
+        gen = LLTableGenerator(grammar)
+        first = gen.first()
+        follow = gen.follow(first)
+
+        # This was previously failing because it couldn't look up
+        # the production `L -> ε`
+        gen.generate_table(first, follow)

@@ -41,6 +41,13 @@ parser.add_argument(
         'The output file.'
     )
 )
+parser.add_argument(
+    '--resolve_imports',
+    action='store_true',
+    help=(
+        'Resolve imports, format, and trim without translating the tree.'
+    ),
+)
 
 
 class Driver(object):
@@ -128,6 +135,11 @@ def load_script(filename: str, cache: Dict[str, Driver] = dict()):
 def main():
     args = parser.parse_args()
     driver = load_script(args.file[0])
+
+    if args.resolve_imports:
+        print(driver.write(args.format))
+        return
+
     translated = driver.translate().validate().write(args.format)
 
     if args.output:

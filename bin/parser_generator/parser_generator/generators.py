@@ -22,426 +22,18 @@ from bnf_to_cnf.parser import (  # type: ignore
     NodeType,
     Node,
 )
+from .firstset import FirstSet
+from .followset import FollowSet
 from .production import Production
+from .grammar import Grammar
 from .subproduction import SubProduction
-from .sequence import Sequence
 from .debug import RecurseDebug
-from .utils import (
-    longest_sequence,
-)
 from .symbols import (
     is_term,
     is_nonterm,
     is_epsilon,
 )
-
-
-def gen_cache(max_iterator_depth=200):
-    """A memoization wrapper for functions which return generators.
-
-    The generator is evaluated at cache time, and a new generator
-    is returned based on those results.  This means that the generator
-    which is returned cannot be cyclic in nature, or caching it will
-    loop forever.  For that reason, you can specify a max recursion depth
-    for this cache.
-
-    Args:
-        max_iterator_depth: The maximum amount of items which can be pulled
-            from the generator.
-
-    Returns:
-        A decorator which caches the results from functions which return
-        generators.
-
-    """
-
-    def _wrapper(fun):
-        _cache = dict()
-
-        def _inner(*args, **kwargs):
-            key = (tuple(args), tuple(kwargs.items()))
-            if key not in _cache:
-                _cache[key] = list()
-                counter = 0
-                for value in fun(*args, **kwargs):
-                    _cache[key].append(value)
-                    counter += 1
-                    if counter > max_iterator_depth:
-                        raise Exception("Max iterator depth reached.")
-            return (x for x in _cache[key])
-
-        return _inner
-
-    return _wrapper
-
-
-class FirstSet:
-    def __init__(self, *sequences: SubProduction):
-        self.sequences = list(sequences)
-
-    def __len__(self) -> int:
-        return len(self.sequences)
-
-    def __mul__(self, other: "FirstSet") -> "FirstSet":
-        result = FirstSet()
-        for first_sequence in self.sequences:
-            for second_sequence in other.sequences:
-                if first_sequence == ["ε"]:
-                    result.sequences.append(second_sequence)
-                elif second_sequence == ["ε"]:
-                    result.sequences.append(first_sequence)
-                else:
-                    result.sequences.append(first_sequence + second_sequence)
-        return result
-
-    def __bool__(self) -> bool:
-        return bool(self.sequences)
-
-    def __or__(self, other: "FirstSet") -> "FirstSet":
-        return FirstSet(*self.sequences, *other.sequences)
-
-    def __str__(self) -> str:
-        return "{" + ", ".join(map(str, self.sequences)) + "}"
-
-    def __repr__(self) -> str:
-        return str(self)
-
-
-class Grammar:
-    def __init__(self, table: List[Production], start: Optional[str] = None):
-        self.table = table
-        self.start = start
-
-    def __getitem__(
-        self, key: Union[int, str]
-    ) -> Union[SubProduction, List[SubProduction]]:
-        if isinstance(key, int):
-            return SubProduction(self.table[key][1])
-        elif isinstance(key, str):
-            return [
-                SubProduction(rhs)
-                for lhs, rhs in self.table
-                if lhs == key
-            ]
-        else:
-            raise ValueError(
-                "Grammar only indexed by production index "
-                "or non-terminal symbol."
-            )
-
-    def __iter__(self) -> Iterator[Tuple[str, SubProduction]]:
-        return ((lhs, SubProduction(rhs)) for lhs, rhs in self.table)
-
-    def __str__(self) -> str:
-        if self.start:
-            lines = [f"start: <{self.start}>\n"]
-        else:
-            lines = []
-        prev = None
-        for lhs, rhs in self.table:
-            if lhs == prev:
-                line = "  | "
-            else:
-                line = f"<{lhs}> ::="
-            for symbol in rhs:
-                if is_epsilon(symbol):
-                    line += f" {symbol}"
-                elif is_nonterm(symbol):
-                    line += f" <{symbol}>"
-                else:
-                    line += f" {symbol}"
-            prev = lhs
-            lines.append(line)
-        return "\n".join(lines)
-
-    def __repr__(self) -> str:
-        return str(self)
-
-    def get_exact(self, start: str, k: int) -> Iterable[SubProduction]:
-        """Get a derivation of a symbol, which is of an exact length.
-
-        Args:
-            start: The symbol at which we should begin the derivation.
-            k: The exact length we are hoping to obtain.
-
-        Yields:
-            SubProductions of length k which are derived from the given
-                symbol, start.
-
-        """
-        if is_term(start):
-            if k == 1:
-                yield SubProduction([start])
-            return
-
-        queue = [(SubProduction([]), SubProduction([start]))]
-        iteration_guard = 50000
-        while queue:
-            iteration_guard -= 1
-            if not iteration_guard:
-                raise Exception(
-                    'Surpassed iteration limit: '
-                    'Check for infinite left recursion.'
-                )
-            curr, rem = queue.pop()
-            if not rem:
-                if len(curr) == k:
-                    yield curr
-                continue
-            head, rest = rem[0], rem[1:]
-            assert isinstance(head, str), "Integer index didn't result in str"
-            for prod in self[head]:
-                if len(prod) == 1 and prod[0] == "ε":
-                    assert isinstance(rest, SubProduction)
-                    queue.append((curr, rest))
-                    continue
-                first_nonterm = 0
-                while first_nonterm < len(prod) and is_term(
-                    cast(str, prod[first_nonterm])
-                ):
-                    first_nonterm += 1
-                if len(curr) + first_nonterm > k:
-                    continue
-                prod_before_first_nonterm = prod[first_nonterm:]
-                assert isinstance(prod_before_first_nonterm, SubProduction)
-                prod_after_first_nonterm = prod[:first_nonterm]
-                assert isinstance(prod_after_first_nonterm, SubProduction)
-
-                assert isinstance(rest, SubProduction)
-                queue.append(
-                    (
-                        curr + prod_after_first_nonterm,
-                        prod_before_first_nonterm + rest,
-                    )
-                )
-
-    def _has_infinite_left_recursion(self, start: str) -> Optional[Set[str]]:
-        """Return the set of encountered symbols from this start symbol.
-
-        Args:
-            start: The symbol where we should start.
-
-        Returns:
-            The set of encountered symbols, if we did not encounter infinite
-            recursion.  Otherwise, None.
-
-        # noqa: DAR401
-
-        """
-        encountered = set()
-        queue = deque([start])  # type: Deque[Union[str, SubProduction]]
-        while queue:
-            curr = queue.pop()
-            if isinstance(curr, str):
-                key = curr
-                rest = SubProduction([])
-            elif isinstance(curr, SubProduction):
-                key = cast(str, curr[0])
-                rest = cast(SubProduction, curr[1:])
-            else:
-                raise Exception("Expected only strings and subproductions.")
-
-            if key in encountered:
-                return None
-
-            encountered.add(key)
-
-            for production in self[key]:
-                assert isinstance(production, SubProduction)
-                symbol = production[0]
-                assert isinstance(symbol, str)
-                if is_nonterm(symbol):
-                    # We have to continue the search with nonterminals.
-                    # If this production is only nonterminals, we have to
-                    # continue with the rest of the current search, as well.
-                    # Otherwise, we know that a fruitful production would
-                    # occur in between, and we could just consider this
-                    # next set of nonterminals.
-                    sequence = longest_sequence(
-                        is_nonterm, production, 0
-                    )  # type: Sequence[str]
-                    if len(sequence) == len(production):
-                        queue.appendleft(
-                            SubProduction.from_sequence(sequence) + rest
-                        )
-                    else:
-                        queue.appendleft(SubProduction.from_sequence(sequence))
-                elif is_term(symbol):
-                    # Since it's a terminal, we can stop looking -- it
-                    # was fruitful.
-                    pass
-                elif is_epsilon(symbol):
-                    # The symbols after whatever this is replacing
-                    # could result in an infinite recursion. So we
-                    # have to check them, if they exist.
-                    #
-                    # We assume epsilons only occur on their own in a RHS.
-                    if rest:
-                        queue.appendleft(rest)
-        return encountered
-
-    def has_infinite_left_recursion(self) -> bool:
-        """Return whether this grammar contains infinite left recursion.
-
-        Returns:
-            True if this grammar has an instance of infinite left recursion.
-
-        """
-        symbols = {lhs for lhs, rhs in self}
-        while symbols:
-            symbol = list(symbols)[0]
-            encountered = self._has_infinite_left_recursion(symbol)
-            if encountered:
-                symbols -= encountered
-            else:
-                return True
-        return False
-
-
-class FollowSet:
-    """Represents a complete or partial follow set.
-
-    Can be iterated over to find the solutions so far.
-
-    """
-
-    def __init__(
-        self,
-        partials: List[SubProduction],
-        complete: List[SubProduction],
-        follow: str,
-        k: int,
-    ):
-        """Create a new FollowSet.
-
-        Args:
-            partials: Partial solutions, if this is a partial followset.
-            complete: Complete solutions, if this is a complete followset.
-            follow: The symbol which occurred on the LHS of the production
-                under consideration.
-            k: The lookahead we are aiming for.
-
-        """
-        self.partials = partials
-        self.completes = complete
-        self.follow = follow
-        self.changed = False
-        self.k = k
-        self.is_complete = bool(complete)
-        self.additional = set()  # type: Set[SubProduction]
-
-    @staticmethod
-    def complete(
-        subproductions: List[SubProduction], follow: str, k: int
-    ) -> "FollowSet":
-        return FollowSet([], subproductions, follow, k)
-
-    @staticmethod
-    def empty(follow: str, k: int) -> "FollowSet":
-        """Create an null-value followset.
-
-        This followset shouldn't be used as a value itself.  It should only
-        be used as a basis for constructing further followsets.  (Say,
-        through a fold/reduce/etc.)  For that reason, it is complete.
-
-        Args:
-            follow: The lhs of the production where this symbol occurs.
-            k: The production length we're aiming for.
-
-        Returns:
-            An empty followset.
-
-        """
-        f = FollowSet([], [], follow, k)
-        f.is_complete = True
-        return f
-
-    @staticmethod
-    def partial(
-        partials: List[SubProduction],
-        follow: str,
-        k: int,
-    ) -> "FollowSet":
-        return FollowSet(
-            partials,
-            [],
-            follow,
-            k,
-        )
-
-    def append(self, followset: "FollowSet"):
-        """Append the followset of the lhs to this one's solutions.
-
-        Args:
-            followset: The followset of the lhs of a production.
-
-        """
-
-        def _add(partial, sub, remaining):
-            if len(sub) >= remaining:
-                new_complete = (partial + sub)[: self.k]
-                if new_complete not in self.additional:
-                    self.changed = True
-                    self.additional.add(new_complete)
-
-        assert not self.is_complete, "Complete followsets are immutable."
-
-        for partial in self.partials:
-            remaining = self.k - len(partial)
-            if followset.is_complete:
-                for complete in followset.completes:
-                    _add(partial, complete, remaining)
-            else:
-                for other_partial in followset.partials:
-                    _add(partial, other_partial, remaining)
-                for complete in followset.additional:
-                    _add(partial, complete, remaining)
-
-    def upgrade(self, followset: "FollowSet"):
-        """Upgrade the lookahead, k, of the followset by absorbing another.
-
-        In this way, you can go through a grammar, and calculate from i = 0..n
-        the followset, upgrading the followsets for a particular symbol along
-        the way.
-
-        Args:
-            followset: The basis for the upgrade (should contain a partial or
-                complete solution.)
-
-        Returns:
-            The upgraded followset instance.
-
-        """
-        assert self.follow == followset.follow, (
-            "Can only upgrade to the same follow type.  "
-            "This ensures that the fixpoint solution will be found correctly."
-        )
-        # I'm not sure if this is valid. But it shouldn't be problematic, if
-        # we're only calling this method after the fixpoint solution.
-        self.partials.extend(followset.partials)
-        self.completes.extend(followset.completes)
-        self.k = max(self.k, followset.k)
-        self.additional |= followset.additional
-        self.is_complete = self.is_complete and followset.is_complete
-        return self
-
-    def __iter__(self) -> Iterator[SubProduction]:
-        """Return an iterator over the completed subproductions.
-
-        Returns:
-            An iterator over the completed subproductions.
-
-        """
-        return (x for x in self.additional)
-
-    def __str__(self) -> str:
-        return (
-            f"<FollowSet {self.follow} {self.partials} "
-            f"{self.completes} {self.additional}>"
-        )
-
-    def __repr__(self) -> str:
-        return str(self)
+from .utils import gen_cache
 
 
 class LLTableGenerator:
@@ -615,7 +207,7 @@ class LLTableGenerator:
                 else:
                     yield rhs[i]
 
-    @gen_cache(max_iterator_depth=1000)
+    @gen_cache(max_iterator_depth=10000)
     def _kfirst(
         self,
         symbol: Union[str, SubProduction],
@@ -1094,6 +686,8 @@ class LLTableGenerator:
         queue = deque([(rhs, terms)])
         while queue:
             children, remaining = queue.pop()
+            if not (children and remaining):
+                continue
 
             # Consume the terminal symbols.
             i = 0
@@ -1156,7 +750,10 @@ class LLTableGenerator:
                 productions = list(
                     self.get_production_leading_to_terminal(nonterm, term)
                 )
-                assert len(productions) == 1, "Ambiguous grammar."
+                assert len(productions) == 1, (
+                    f"Ambiguous grammar.  Firstset contains multiple productions"
+                    f" for {nonterm} when encountering {term}: {productions}."
+                )
                 production = productions[0]
                 if term == "ε":
                     for term2 in follow[nonterm]:

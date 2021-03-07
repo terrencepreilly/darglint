@@ -25,3 +25,6 @@ line_length = 80
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
+[tool.poetry.scripts]
+genparse = "parser_generator.driver:main"
