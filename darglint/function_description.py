@@ -21,6 +21,9 @@ from .analysis.analysis_visitor import (
 from .analysis.function_and_method_visitor import (
     FunctionAndMethodVisitor,
 )
+from .analysis.pure_abstract_analyzer import (
+    analyze_pure_abstract
+)
 from .config import get_logger
 
 
@@ -180,7 +183,7 @@ class FunctionDescription(object):
         self.docstring = _get_docstring(function)
         self.variables = [x.id for x in visitor.variables]
         self.raises_assert = bool(visitor.asserts)
-        self.abstract_pure = visitor.is_pure_abstract
+        self.abstract_pure = analyze_pure_abstract(function)
 
 
 def get_function_descriptions(program):

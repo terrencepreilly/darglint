@@ -5,7 +5,6 @@ from .function_scoped_visitor import FunctionScopedVisitorMixin
 from .argument_visitor import ArgumentVisitor
 from .assert_visitor import AssertVisitor
 from .variable_visitor import VariableVisitor
-from .pure_abstract_visitor import PureAbstractVisitor
 
 
 class AnalysisVisitor(FunctionScopedVisitorMixin,
@@ -14,7 +13,6 @@ class AnalysisVisitor(FunctionScopedVisitorMixin,
                       ArgumentVisitor,
                       VariableVisitor,
                       ReturnVisitor,
-                      AssertVisitor,
-                      PureAbstractVisitor):
+                      AssertVisitor):
     """Finds attributes which should be part of the function signature."""
     pass
