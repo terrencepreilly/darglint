@@ -35,7 +35,10 @@ class PureAbstractVisitorTests(TestCase):
 
     def check_abstract_toggle_doc(self, program, result=True, doc="None"):
         self.check_abstract_decoration(program.format(docstring=""), result)
-        self.check_abstract_decoration(program.format(docstring=f'"""{doc}"""'), result)
+        self.check_abstract_decoration(
+            program.format(docstring=f'"""{doc}"""'),
+            result
+        )
 
     def test_pass(self):
         program = r"""
@@ -73,7 +76,7 @@ class PureAbstractVisitorTests(TestCase):
         program = r"""
             def f():
                 {docstring}
-                raise NotImplementedException
+                raise NotImplementedError
         """
         self.check_abstract_toggle_doc(program)
 
@@ -81,7 +84,7 @@ class PureAbstractVisitorTests(TestCase):
         program = r"""
             def f():
                 {docstring}
-                raise NotImplementedException("Malte did not want to.")
+                raise NotImplementedError("Malte did not want to.")
         """
         self.check_abstract_toggle_doc(program)
 
