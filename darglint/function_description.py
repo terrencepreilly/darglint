@@ -180,6 +180,7 @@ class FunctionDescription(object):
         self.docstring = _get_docstring(function)
         self.variables = [x.id for x in visitor.variables]
         self.raises_assert = bool(visitor.asserts)
+        self.abstract_pure = visitor.is_pure_abstract
 
 
 def get_function_descriptions(program):
