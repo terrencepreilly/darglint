@@ -2,7 +2,7 @@ language: python
 
 dist: xenial
 
-install: pip install tox pytest
+install: pip install tox-travis pytest
 
 script: tox
 
