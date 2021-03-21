@@ -5,9 +5,11 @@ from .function_scoped_visitor import FunctionScopedVisitorMixin
 from .argument_visitor import ArgumentVisitor
 from .assert_visitor import AssertVisitor
 from .variable_visitor import VariableVisitor
+from .abstract_callable_visitor import AbstractCallableVisitor
 
 
-class AnalysisVisitor(FunctionScopedVisitorMixin,
+class AnalysisVisitor(AbstractCallableVisitor,
+                      FunctionScopedVisitorMixin,
                       RaiseVisitor,
                       YieldVisitor,
                       ArgumentVisitor,
