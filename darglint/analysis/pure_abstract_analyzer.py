@@ -9,17 +9,29 @@ from typing import (
 def _is_docstring(node):
     # type: (ast.Return) -> bool
     return (
-        isinstance(node, ast.Expr) and
-        isinstance(node.value, ast.Constant) and
-        isinstance(node.value.value, str)
+        isinstance(node, ast.Expr) and (
+            (
+                isinstance(node.value, ast.Constant) and
+                isinstance(node.value.value, str)
+            ) or (
+                isinstance(node.value, ast.Str) # Python < 3.8
+            )
+        )
     )
 
 def _is_ellipsis(node):
     # type: (ast.Return) -> bool
+    print(f"{getattr(node,'value','')} ellipsis")
+
     return (
-        isinstance(node, ast.Expr) and
-        isinstance(node.value, ast.Constant) and
-        node.value.value is Ellipsis
+        isinstance(node, ast.Expr) and (
+            (
+                isinstance(node.value, ast.Constant) and
+                node.value.value is Ellipsis
+            ) or (
+                isinstance(node.value, ast.Ellipsis) # Python < 3.8
+            )
+        )
     )
 
 def _is_raise_NotImplementedException(node):
@@ -56,7 +68,6 @@ def _is_abstract(node):
 
 def analyze_pure_abstract(node):
     # type: (ast.Return) -> bool
-    print(node.__class__.__name__)
     assert isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)), (
         "Assuming this analysis is only called on functions"
     )
