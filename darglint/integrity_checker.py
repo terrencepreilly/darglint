@@ -210,7 +210,7 @@ class IntegrityChecker(object):
 
     def _check_return_type(self, docstring, function):
         # type: (FunctionDescription) -> None
-        if function.abstract_pure:
+        if function.is_abstract:
             return
 
         if self._ignore_error(docstring, ReturnTypeMismatchError):
@@ -236,7 +236,7 @@ class IntegrityChecker(object):
 
     def _check_yield(self, docstring, function):
         # type: (FunctionDescription) -> None
-        if function.abstract_pure:
+        if function.is_abstract:
             return
 
         doc_yield = docstring.get_section(Sections.YIELDS_SECTION)
@@ -261,7 +261,7 @@ class IntegrityChecker(object):
     def _check_return(self, docstring, function):
         # type: (FunctionDescription) -> None
 
-        if function.abstract_pure:
+        if function.is_abstract:
             return
 
         # If there is an empty return, we don't want to make any
@@ -447,7 +447,7 @@ class IntegrityChecker(object):
 
     def _check_raises(self, docstring, function):
         # type: (FunctionDescription) -> None
-        if function.abstract_pure:
+        if function.is_abstract:
             return
 
         exception_types = docstring.get_items(Sections.RAISES_SECTION)

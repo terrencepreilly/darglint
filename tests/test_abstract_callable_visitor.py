@@ -2,8 +2,11 @@ import ast
 from unittest import (
     TestCase,
 )
-from darglint.analysis.pure_abstract_analyzer import (
-    analyze_pure_abstract,
+from darglint.analysis.abstract_callable_visitor import (
+    AbstractCallableVisitor,
+)
+from darglint.analysis.analysis_visitor import (
+    AnalysisVisitor
 )
 from .utils import (
     reindent,
@@ -13,13 +16,16 @@ from .utils import (
 class PureAbstractVisitorTests(TestCase):
     def analyzeAbstract(self, program):
         function = ast.parse(reindent(program)).body[0]
-        return analyze_pure_abstract(function)
+        #visitor = AnalysisVisitor()
+        visitor = AbstractCallableVisitor()
+        visitor.visit(function)
+        return visitor
 
     def check_abstract_decoration(self, program, result=True):
-        is_pure_abstract = self.analyzeAbstract(program)
-        self.assertFalse(is_pure_abstract)
-        is_pure_abstract = self.analyzeAbstract("@abstractmethod\n" + reindent(program))
-        self.assertEqual(is_pure_abstract, result)
+        visitor = self.analyzeAbstract(program)
+        self.assertFalse(visitor.is_abstract)
+        visitor = self.analyzeAbstract("@abstractmethod\n" + reindent(program))
+        self.assertEqual(visitor.is_abstract, result)
 
     def check_abstract_toggle_doc(self, program, result=True, doc="None"):
         self.check_abstract_decoration(program.format(docstring=""), result)
