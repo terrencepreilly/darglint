@@ -190,14 +190,12 @@ def reindent(program):
     # Find the first non-space character in a line.
     def _non_space(line):
         for i, c in enumerate(line):
-            if c == ' ':
-                continue
-            else:
+            if c != ' ':
                 return i
         return -1
     lines = program.split('\n')
     amount = min(filter(lambda x: x >= 0, map(_non_space, lines)))
-    ret = '\n'.join([
+    ret = '\n'.join(
         line[amount:] for line in lines
-    ])
+    )
     return ret
