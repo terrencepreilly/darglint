@@ -38,7 +38,7 @@ class FunctionAndMethodVisitor(VisitorBase):
             if isinstance(item, ast.FunctionDef) or isinstance(
                 item, ast.AsyncFunctionDef
             ):
-                if self._has_property_decorator(item):
+                if self._has_decorator(item, "property"):
                     self._properties.add(item)
                 else:
                     self._methods.add(item)
@@ -52,10 +52,3 @@ class FunctionAndMethodVisitor(VisitorBase):
     def visit_AsyncFunctionDef(self, node):
         # type: (ast.AsyncFunctionDef) -> ast.AST
         self.callables.add(node)
-
-    def _has_property_decorator(self, node):
-        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> bool
-        for decorator in node.decorator_list:
-            if isinstance(decorator, ast.Name) and decorator.id == "property":
-                return True
-        return False

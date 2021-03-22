@@ -77,29 +77,6 @@ def _get_all_methods(tree):  # type: (ast.AST) -> Iterator[Union[ast.FunctionDef
             yield fun
 
 
-def _get_decorator_names(fun):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> List[str]  # noqa: E501
-    """Get decorator names from the function.
-
-    Args:
-        fun: The function whose decorators we are getting.
-
-    Returns:
-        The names of the decorators. Does not include setters and
-        getters.
-
-    """
-    ret = list()
-    for decorator in fun.decorator_list:
-        # Attributes (setters and getters) won't have an id.
-        if hasattr(decorator, 'id'):
-            ret.append(getattr(decorator, 'id'))
-    return ret
-
-
-def _is_staticmethod(fun):  # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> bool  # noqa: E501
-    return 'staticmethod' in _get_decorator_names(fun)
-
-
 def _get_return_type(fn):
     # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Optional[str]
     if fn.returns is not None and hasattr(fn.returns, 'id'):
@@ -169,7 +146,7 @@ class FunctionDescription(object):
         self.argument_names = visitor.arguments
         self.argument_types = visitor.types
         if function_type != FunctionType.FUNCTION and len(self.argument_names) > 0:
-            if not _is_staticmethod(function):
+            if not visitor._has_decorator(function, "staticmethod"):
                 self.argument_names.pop(0)
                 self.argument_types.pop(0)
         self.has_return = bool(visitor.returns)

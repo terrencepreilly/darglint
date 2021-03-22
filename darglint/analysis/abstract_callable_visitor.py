@@ -66,22 +66,13 @@ class AbstractCallableVisitor(VisitorBase):
             node.value.id == "NotImplemented"
         )
 
-    def _is_abstract(self, node):
-        # type: (ast.Return) -> bool
-        for decorator in node.decorator_list:
-            # apparently there can be decorators without id's
-            if getattr(decorator, "id", "") == ("abstractmethod"):
-                return True
-
-        return False
-
     def analyze_pure_abstract(self, node):
         # type: (ast.Return) -> bool
         assert isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)), (
             "Assuming this analysis is only called on functions"
         )
 
-        if not self._is_abstract(node):
+        if not self._has_decorator(node, "abstractmethod"):
             return False
 
         children = len(node.body)
