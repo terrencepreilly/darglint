@@ -3,8 +3,12 @@ from typing import (
     Set,
 )
 
+from .visitor_base import (
+    VisitorBase
+)
 
-class FunctionAndMethodVisitor(ast.NodeVisitor):
+
+class FunctionAndMethodVisitor(VisitorBase):
 
     def __init__(self):
         # type: () -> None
@@ -27,6 +31,7 @@ class FunctionAndMethodVisitor(ast.NodeVisitor):
         # type: () -> Union[ast.FunctionDef, ast.AsyncFunctionDef]
         return list(self._properties)
 
+    @VisitorBase.continue_visiting
     def visit_ClassDef(self, node):
         # type: (ast.ClassDef) -> ast.AST
         for item in node.body:
@@ -37,17 +42,16 @@ class FunctionAndMethodVisitor(ast.NodeVisitor):
                     self._properties.add(item)
                 else:
                     self._methods.add(item)
-        return self.generic_visit(node)
 
+    @VisitorBase.continue_visiting
     def visit_FunctionDef(self, node):
         # type: (ast.FunctionDef) -> ast.AST
         self.callables.add(node)
-        return self.generic_visit(node)
 
+    @VisitorBase.continue_visiting
     def visit_AsyncFunctionDef(self, node):
         # type: (ast.AsyncFunctionDef) -> ast.AST
         self.callables.add(node)
-        return self.generic_visit(node)
 
     def _has_property_decorator(self, node):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> bool

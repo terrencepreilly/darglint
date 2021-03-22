@@ -5,9 +5,12 @@ from typing import (
     Dict,
     List,
 )
+from .visitor_base import (
+    VisitorBase
+)
 
 
-class AssertVisitor(ast.NodeVisitor):
+class AssertVisitor(VisitorBase):
 
     def __init__(self, *args, **kwargs):
         # type: (List[Any], Dict[str, Any]) -> None
@@ -17,7 +20,7 @@ class AssertVisitor(ast.NodeVisitor):
 
         self.asserts = list()  # type: ast.AST
 
+    @VisitorBase.continue_visiting
     def visit_Assert(self, node):
         # type: (ast.Assert) -> ast.AST:
         self.asserts.append(node)
-        return self.generic_visit(node)

@@ -8,8 +8,11 @@ from .variable_visitor import VariableVisitor
 from .abstract_callable_visitor import AbstractCallableVisitor
 
 
-class AnalysisVisitor(AbstractCallableVisitor,
-                      FunctionScopedVisitorMixin,
+# ATTENTION: FunctionScopedVisitorMixin needs to be first,
+# otherwise it is not able to stop descending into wrapped
+# functions.
+class AnalysisVisitor(FunctionScopedVisitorMixin,
+                      AbstractCallableVisitor,
                       RaiseVisitor,
                       YieldVisitor,
                       ArgumentVisitor,

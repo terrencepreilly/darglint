@@ -4,10 +4,11 @@ from typing import (
     Dict,
     List,
 )
+from .visitor_base import (
+    VisitorBase
+)
 
-
-class AbstractCallableVisitor(ast.NodeVisitor):
-
+class AbstractCallableVisitor(VisitorBase):
     def __init__(self, *args, **kwargs):
         # type: (List[Any], Dict[str, Any]) -> None
         super().__init__(*args, **kwargs)
@@ -111,12 +112,12 @@ class AbstractCallableVisitor(ast.NodeVisitor):
 
         return False
 
+    @VisitorBase.continue_visiting
     def visit_FunctionDef(self, node):
         # type: (ast.FunctionDef) -> ast.AST
         self.is_abstract = self.analyze_pure_abstract(node)
-        return getattr(super(), "visit_FunctionDef", super().generic_visit)(node)
 
+    @VisitorBase.continue_visiting
     def visit_AsyncFunctionDef(self, node):
         # type: (ast.AsyncFunctionDef) -> ast.AST
         self.is_abstract = self.analyze_pure_abstract(node)
-        return getattr(super(), "visit_AsyncFunctionDef", super().generic_visit)(node)

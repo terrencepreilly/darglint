@@ -5,8 +5,11 @@ from typing import (
     List,
 )
 
+from .visitor_base import (
+    VisitorBase
+)
 
-class ArgumentVisitor(ast.NodeVisitor):
+class ArgumentVisitor(VisitorBase):
     """Reports which arguments a function contains."""
 
     def __init__(self, *args, **kwargs):
@@ -24,6 +27,7 @@ class ArgumentVisitor(ast.NodeVisitor):
         else:
             self.types.append(None)
 
+    @VisitorBase.continue_visiting
     def visit_arguments(self, node):
         # type: (ast.arguments) -> ast.AST:
         if hasattr(node, 'posonlyargs'):
@@ -44,4 +48,3 @@ class ArgumentVisitor(ast.NodeVisitor):
         if node.kwarg is not None:
             name = '**' + node.kwarg.arg
             self.add_arg_by_name(name, node.kwarg)
-        return self.generic_visit(node)
