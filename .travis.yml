@@ -1,12 +1,13 @@
+os: linux
 language: python
 
-dist: xenial
+dist: bionic
 
 install: pip install tox pytest
 
 script: tox
 
-matrix:
+jobs:
   include:
     - env: TOXENV=py36
       python: 3.6
