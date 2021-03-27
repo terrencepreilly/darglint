@@ -4,11 +4,12 @@ from typing import (
     Dict,
     List,
 )
-from .visitor_base import (
-    VisitorBase
+
+from .analysis_helpers import (
+    _has_decorator
 )
 
-class AbstractCallableVisitor(VisitorBase):
+class AbstractCallableVisitor(ast.NodeVisitor):
     def __init__(self, *args, **kwargs):
         # type: (List[Any], Dict[str, Any]) -> None
         super().__init__(*args, **kwargs)
@@ -72,7 +73,7 @@ class AbstractCallableVisitor(VisitorBase):
             "Assuming this analysis is only called on functions"
         )
 
-        if not self._has_decorator(node, "abstractmethod"):
+        if not _has_decorator(node, "abstractmethod"):
             return False
 
         children = len(node.body)
@@ -103,14 +104,12 @@ class AbstractCallableVisitor(VisitorBase):
 
         return False
 
-#    @VisitorBase.continue_visiting
     def visit_FunctionDef(self, node):
         # type: (ast.FunctionDef) -> ast.AST
         self.is_abstract = self.analyze_pure_abstract(node)
-        # return super().visit(node)  # breaks
-        return super().generic_visit(node)
+        return self.generic_visit(node)
 
-    @VisitorBase.continue_visiting
     def visit_AsyncFunctionDef(self, node):
         # type: (ast.AsyncFunctionDef) -> ast.AST
         self.is_abstract = self.analyze_pure_abstract(node)
+        return self.generic_visit(node)

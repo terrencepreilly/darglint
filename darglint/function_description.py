@@ -22,6 +22,9 @@ from .analysis.function_and_method_visitor import (
     FunctionAndMethodVisitor,
 )
 from .config import get_logger
+from .analysis.analysis_helpers import (
+    _has_decorator
+)
 
 
 logger = get_logger()
@@ -146,7 +149,7 @@ class FunctionDescription(object):
         self.argument_names = visitor.arguments
         self.argument_types = visitor.types
         if function_type != FunctionType.FUNCTION and len(self.argument_names) > 0:
-            if not visitor._has_decorator(function, "staticmethod"):
+            if not _has_decorator(function, "staticmethod"):
                 self.argument_names.pop(0)
                 self.argument_types.pop(0)
         self.has_return = bool(visitor.returns)

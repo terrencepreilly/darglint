@@ -10,12 +10,9 @@ from ..config import (
 from ..custom_assert import (
     Assert,
 )
-from .visitor_base import (
-    VisitorBase
-)
 
 
-class YieldVisitor(VisitorBase):
+class YieldVisitor(ast.NodeVisitor):
     """A visitor which checks for *returns* nodes."""
 
     def __init__(self, *args, **kwargs):
@@ -25,12 +22,12 @@ class YieldVisitor(VisitorBase):
         # A list of the return nodes encountered.
         self.yields = list()  # type: List[Union[ast.Yield, ast.YieldFrom]]
 
-    @VisitorBase.continue_visiting
     def visit_Yield(self, node):
         # type: (ast.Yield) -> ast.AST
         self.yields.append(node)
+        return self.generic_visit(node)
 
-    @VisitorBase.continue_visiting
     def visit_YieldFrom(self, node):
         # type: (ast.Yield) -> ast.AST
         self.yields.append(node)
+        return self.generic_visit(node)

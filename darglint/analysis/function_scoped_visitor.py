@@ -22,7 +22,7 @@ class FunctionScopedVisitorMixin(ast.NodeVisitor):
             self.in_function = True
             return getattr(
                 super(),
-                "visit_FunctionDef",
+                "visit_Lambda",
                 super().generic_visit
             )(node)
 
@@ -30,12 +30,11 @@ class FunctionScopedVisitorMixin(ast.NodeVisitor):
         # type: (ast.FunctionDef) -> ast.AST
         if not self.in_function:
             self.in_function = True
-            # return getattr(
-            #     super(),
-            #     "visit_FunctionDef",
-            #     super().generic_visit
-            # )(node)
-            super().generic_visit(node)
+            return getattr(
+                super(),
+                "visit_FunctionDef",
+                super().generic_visit
+            )(node)
 
     def visit_AsyncFunctionDef(self, node):
         # type: (ast.AsyncFunctionDef) -> ast.AST
@@ -43,6 +42,6 @@ class FunctionScopedVisitorMixin(ast.NodeVisitor):
             self.in_function = True
             return getattr(
                 super(),
-                "visit_FunctionDef",
+                "visit_AsyncFunctionDef",
                 super().generic_visit
             )(node)
