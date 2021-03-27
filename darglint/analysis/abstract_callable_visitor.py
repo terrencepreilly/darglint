@@ -103,10 +103,12 @@ class AbstractCallableVisitor(VisitorBase):
 
         return False
 
-    @VisitorBase.continue_visiting
+#    @VisitorBase.continue_visiting
     def visit_FunctionDef(self, node):
         # type: (ast.FunctionDef) -> ast.AST
         self.is_abstract = self.analyze_pure_abstract(node)
+        # return super().visit(node)  # breaks
+        return super().generic_visit(node)
 
     @VisitorBase.continue_visiting
     def visit_AsyncFunctionDef(self, node):
