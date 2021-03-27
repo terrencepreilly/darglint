@@ -3,6 +3,10 @@ from typing import (
     Set,
 )
 
+from .analysis_helpers import (
+    _has_decorator
+)
+
 
 class FunctionAndMethodVisitor(ast.NodeVisitor):
 
@@ -33,7 +37,7 @@ class FunctionAndMethodVisitor(ast.NodeVisitor):
             if isinstance(item, ast.FunctionDef) or isinstance(
                 item, ast.AsyncFunctionDef
             ):
-                if self._has_property_decorator(item):
+                if _has_decorator(item, "property"):
                     self._properties.add(item)
                 else:
                     self._methods.add(item)
@@ -48,10 +52,3 @@ class FunctionAndMethodVisitor(ast.NodeVisitor):
         # type: (ast.AsyncFunctionDef) -> ast.AST
         self.callables.add(node)
         return self.generic_visit(node)
-
-    def _has_property_decorator(self, node):
-        # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> bool
-        for decorator in node.decorator_list:
-            if isinstance(decorator, ast.Name) and decorator.id == "property":
-                return True
-        return False

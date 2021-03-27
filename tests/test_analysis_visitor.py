@@ -73,3 +73,26 @@ class AnalysisVisitorTests(TestCase):
                 return _inner()
         '''
         self.assertFound(program, 'returns', [1], lambda x: 1)
+
+    def test_finds_abstract(self):
+        program = r'''
+            @abstractmethod
+            def f(x):
+                """Halves the argument."""
+                pass
+        '''
+        function = ast.parse(reindent(program))
+        visitor = AnalysisVisitor()
+        visitor.visit(function)
+        self.assertTrue(visitor.is_abstract, 'Should have been marked abstract.')
+
+    def test_finds_not_abstract(self):
+        program = r'''
+            def f(x):
+                """Halves the argument."""
+                return x / 2
+        '''
+        function = ast.parse(reindent(program))
+        visitor = AnalysisVisitor()
+        visitor.visit(function)
+        self.assertFalse(visitor.is_abstract, 'Should have been marked abstract.')

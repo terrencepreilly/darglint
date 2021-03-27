@@ -5,9 +5,14 @@ from .function_scoped_visitor import FunctionScopedVisitorMixin
 from .argument_visitor import ArgumentVisitor
 from .assert_visitor import AssertVisitor
 from .variable_visitor import VariableVisitor
+from .abstract_callable_visitor import AbstractCallableVisitor
 
 
+# ATTENTION: FunctionScopedVisitorMixin needs to be first,
+# otherwise it is not able to stop descending into wrapped
+# functions.
 class AnalysisVisitor(FunctionScopedVisitorMixin,
+                      AbstractCallableVisitor,
                       RaiseVisitor,
                       YieldVisitor,
                       ArgumentVisitor,
