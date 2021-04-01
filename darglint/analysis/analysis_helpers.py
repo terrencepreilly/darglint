@@ -5,7 +5,7 @@ from typing import (
 )
 
 def _has_decorator(function, decorators):
-    # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Union[str, Iterable[str]]) -> bool
+    # # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], Union[str, Iterable[str]]) -> bool
     if isinstance(decorators, str):
         decorators = (decorators,)
 

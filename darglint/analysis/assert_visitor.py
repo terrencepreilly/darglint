@@ -18,6 +18,6 @@ class AssertVisitor(ast.NodeVisitor):
         self.asserts = list()  # type: ast.AST
 
     def visit_Assert(self, node):
-        # type: (ast.Assert) -> ast.AST:
+        # type: (ast.Assert) -> ast.AST
         self.asserts.append(node)
         return self.generic_visit(node)

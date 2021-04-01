@@ -10,14 +10,14 @@ from .analysis_helpers import (
 )
 
 class AbstractCallableVisitor(ast.NodeVisitor):
+
     def __init__(self, *args, **kwargs):
-        # type: (List[Any], Dict[str, Any]) -> None
         super().__init__(*args, **kwargs)
 
         self.is_abstract = None
 
     def _is_docstring(self, node):
-        # type: (ast.Return) -> bool
+        # type: (ast.AST) -> bool
         return (
             isinstance(node, ast.Expr) and (
                 (
@@ -30,7 +30,7 @@ class AbstractCallableVisitor(ast.NodeVisitor):
         )
 
     def _is_ellipsis(self, node):
-        # type: (ast.Return) -> bool
+        # type: (ast.AST) -> bool
         print(f"{getattr(node,'value','')} ellipsis")
 
         return (
@@ -45,7 +45,7 @@ class AbstractCallableVisitor(ast.NodeVisitor):
         )
 
     def _is_raise_NotImplementedException(self, node):
-        # type: (ast.Return) -> bool
+        # type: (ast.AST) -> bool
         return (
             isinstance(node, ast.Raise) and (
                 (
@@ -60,7 +60,7 @@ class AbstractCallableVisitor(ast.NodeVisitor):
         )
 
     def _is_return_NotImplemented(self, node):
-        # type: (ast.Return) -> bool
+        # type: (ast.AST) -> bool
         return (
             isinstance(node, ast.Return) and
             isinstance(node.value, ast.Name) and
@@ -68,7 +68,7 @@ class AbstractCallableVisitor(ast.NodeVisitor):
         )
 
     def analyze_pure_abstract(self, node):
-        # type: (ast.Return) -> bool
+        # type: (ast.AST) -> bool
         assert isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)), (
             "Assuming this analysis is only called on functions"
         )
