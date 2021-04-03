@@ -31,7 +31,6 @@ class AbstractCallableVisitor(ast.NodeVisitor):
 
     def _is_ellipsis(self, node):
         # type: (ast.AST) -> bool
-        print(f"{getattr(node,'value','')} ellipsis")
 
         return (
             isinstance(node, ast.Expr) and (

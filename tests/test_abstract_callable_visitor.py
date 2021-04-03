@@ -30,7 +30,7 @@ class PureAbstractVisitorTests(TestCase):
     def check_abstract_toggle_doc(self, program, result=True, doc="None"):
         self.check_abstract_decoration(program.format(docstring=""), result)
         self.check_abstract_decoration(
-            program.format(docstring=f'"""{doc}"""'),
+            program.format(docstring='"""{}"""'.format(doc)),
             result
         )
 
