@@ -18,8 +18,10 @@ class ReturnVisitor(ast.NodeVisitor):
     """A visitor which checks for *returns* nodes."""
 
     def __init__(self, *args, **kwargs):
-        # type: (List[Any], Dict[str, Any]) -> None
-        super(ReturnVisitor, self).__init__(*args, **kwargs)
+        # type: (Any, Any) -> None
+
+        # TODO: https://github.com/python/mypy/issues/4001
+        super(ReturnVisitor, self).__init__(*args, **kwargs)  # type: ignore
 
         # A list of the return nodes encountered.
         self.returns = list()  # type: List[Optional[ast.Return]]

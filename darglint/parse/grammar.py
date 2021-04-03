@@ -11,10 +11,11 @@ from typing import (  # noqa: F401
 )
 
 from ..custom_assert import Assert
+from ..token import TokenType
 
-
-NonTerminalDerivation = Tuple[List, str, str, int]
-TerminalDerivation = Tuple[str, int]
+Annotation = Any # TODO(000): This should actually be Union[Identifier, DarglintError]
+NonTerminalDerivation = Tuple[List[Annotation], str, str, int]
+TerminalDerivation = Tuple[TokenType, int]
 Derivation = Union[NonTerminalDerivation, TerminalDerivation]
 
 

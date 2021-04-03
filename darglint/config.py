@@ -238,7 +238,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
             for exception in to_ignore_raise.split(','):
                 ignore_raise.append(exception.strip())
         if 'ignore_properties' in config['darglint']:
-            ignore_properties = config['darglint']['ignore_properties']
+            ignore_properties = bool(config['darglint']['ignore_properties'])
         if 'docstring_style' in config['darglint']:
             raw_style = config['darglint']['docstring_style']
             style = DocstringStyle.from_string(raw_style)

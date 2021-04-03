@@ -21,7 +21,7 @@ DAR101.
 
 """
 import ast  # noqa: F401
-from typing import (  # noqa: F401
+from typing import (
     Tuple,
     Union,
 )
@@ -122,7 +122,7 @@ class PythonSyntaxError(DarglintError):
         """
         self.general_message = 'Python syntax error'
         self.terse_message = 's {}'.format(source)
-        self.line_numbers = (source.lineno, source.lineno)
+        self.line_numbers = (source.lineno or 0, source.lineno or 0)
 
 
 class GenericSyntaxError(DarglintError):

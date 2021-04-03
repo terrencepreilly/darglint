@@ -1,6 +1,8 @@
 import ast
 from typing import (
+    List,
     Set,
+    Union,
 )
 
 from .analysis_helpers import (
@@ -12,23 +14,23 @@ class FunctionAndMethodVisitor(ast.NodeVisitor):
 
     def __init__(self):
         # type: () -> None
-        self.callables = set()  # type: Set[ast.FunctionDef, ast.AsyncFunctionDef]
-        self._methods = set()  # type: Set[ast.FunctionDef, ast.AsyncFunctionDef]
-        self._properties = set()  # type: Set[ast.FunctionDef, ast.AsyncFunctionDef]
+        self.callables = set()  # type: Set[Union[ast.FunctionDef, ast.AsyncFunctionDef]]
+        self._methods = set()  # type: Set[Union[ast.FunctionDef, ast.AsyncFunctionDef]]
+        self._properties = set()  # type: Set[Union[ast.FunctionDef, ast.AsyncFunctionDef]]
 
     @property
     def functions(self):
-        # type: () -> Union[ast.FunctionDef, ast.AsyncFunctionDef]
+        # type: () -> List[Union[ast.FunctionDef, ast.AsyncFunctionDef]]
         return list(self.callables - self._methods - self._properties)
 
     @property
     def methods(self):
-        # type: () -> Union[ast.FunctionDef, ast.AsyncFunctionDef]
+        # type: () -> List[Union[ast.FunctionDef, ast.AsyncFunctionDef]]
         return list(self._methods)
 
     @property
     def properties(self):
-        # type: () -> Union[ast.FunctionDef, ast.AsyncFunctionDef]
+        # type: () -> List[Union[ast.FunctionDef, ast.AsyncFunctionDef]]
         return list(self._properties)
 
     def visit_ClassDef(self, node):

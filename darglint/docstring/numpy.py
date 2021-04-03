@@ -13,6 +13,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Type,
     Union,
 )
 from collections import (
@@ -97,7 +98,9 @@ class Docstring(BaseDocstring):
             lookup[node.symbol].append(node)
             for annotation in node.annotations:
                 if issubclass(annotation, Identifier):
-                    lookup[annotation.key].append(node)
+
+                    # TODO(000): Currently, annotations are being typed as Any.
+                    lookup[annotation.key].append(node)  # type: ignore
         return lookup
 
     def get_section(self, section):
@@ -189,18 +192,23 @@ class Docstring(BaseDocstring):
             return None
 
         if section == Sections.ARGUMENTS_SECTION:
-            item_identifier = ArgumentItemIdentifier
-            type_identifier = ArgumentTypeIdentifier
+            item_identifier = ArgumentItemIdentifier  # type: Type[Identifier]
+            type_identifier = ArgumentTypeIdentifier  # type: Type[Identifier]
         elif section == Sections.RAISES_SECTION:
             item_identifier = ExceptionItemIdentifier
-            type_identifier = ExceptionTypeIdentifier
+
+            # The type is the same as the thing being raised.
+            type_identifier = ExceptionItemIdentifier
 
 
         type_lookup = dict()
         for item in items:
             lookup = self._discover(item)
             item_value = item_identifier.extract(item)
-            type_nodes = lookup.get(type_identifier.key, [])
+
+            # Ignoring the type.  Abstract base classes and class variables
+            # don't mix well with mypy, as far as I can see.
+            type_nodes = lookup.get(type_identifier.key, [])  # type: ignore
             if not type_nodes:
                 type_lookup[item_value] = ''
             else:
@@ -212,7 +220,7 @@ class Docstring(BaseDocstring):
                     type_lookup[value.strip()] = type_identifier.extract(type_nodes[0])
 
         item_type_pairs = sorted(type_lookup.items())
-        sorted_types = [x[1] for x in item_type_pairs]
+        sorted_types = [x[1] for x in item_type_pairs]  # type: List[Optional[str]]  # noqa: E501
         return sorted_types
 
     def _get_items_unsorted(self, section):

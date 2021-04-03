@@ -82,6 +82,7 @@ class CykNode(object):
         return ret
 
     def in_order_traverse(self):
+        # type: () -> Iterator[CykNode]
         if self.lchild:
             yield from self.lchild.in_order_traverse()
         yield self

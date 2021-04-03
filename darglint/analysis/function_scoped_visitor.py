@@ -1,5 +1,9 @@
 import ast
 
+from typing import (
+    Any,
+)
+
 class FunctionScopedVisitorMixin(ast.NodeVisitor):
     """A visitor which is scoped to a single function.
 
@@ -10,8 +14,10 @@ class FunctionScopedVisitorMixin(ast.NodeVisitor):
     """
 
     def __init__(self, *args, **kwargs):
-        # type: (List[Any], Dict[str, Any]) -> None
-        super(FunctionScopedVisitorMixin, self).__init__(*args, **kwargs)
+        # type: (Any, Any) -> None
+
+        # TODO: https://github.com/python/mypy/issues/4001
+        super(FunctionScopedVisitorMixin, self).__init__(*args, **kwargs)  # type: ignore  # noqa: E501
 
         # Whether we have passed the initial `FunctionDef` node.
         self.in_function = False
@@ -25,6 +31,11 @@ class FunctionScopedVisitorMixin(ast.NodeVisitor):
                 "visit_Lambda",
                 super().generic_visit
             )(node)
+        else:
+            # Return a synthetic Pass node, to make type checking happy
+            # (and to not violate the contract.)  Since it has no children,
+            # it will effectively stop the visit.
+            return ast.Pass()
 
     def visit_FunctionDef(self, node):
         # type: (ast.FunctionDef) -> ast.AST
@@ -35,6 +46,8 @@ class FunctionScopedVisitorMixin(ast.NodeVisitor):
                 "visit_FunctionDef",
                 super().generic_visit
             )(node)
+        else:
+            return ast.Pass()
 
     def visit_AsyncFunctionDef(self, node):
         # type: (ast.AsyncFunctionDef) -> ast.AST
@@ -45,3 +58,5 @@ class FunctionScopedVisitorMixin(ast.NodeVisitor):
                 "visit_AsyncFunctionDef",
                 super().generic_visit
             )(node)
+        else:
+            return ast.Pass()

@@ -55,7 +55,7 @@ def read_program(filename):  # type: (str) -> Union[bytes, str]
     return program or ''
 
 
-def _get_docstring(fun):  # type: (ast.AST) -> str
+def _get_docstring(fun):  # type: (ast.AST) -> Optional[str]
     return ast.get_docstring(fun)
 
 
@@ -153,7 +153,13 @@ class FunctionDescription(object):
                 self.argument_names.pop(0)
                 self.argument_types.pop(0)
         self.has_return = bool(visitor.returns)
-        self.has_empty_return = self.has_return and visitor.returns[0].value is None
+        self.has_empty_return = False
+        if self.has_return:
+            return_value = visitor.returns[0]
+            self.has_empty_return = (
+                return_value is not None
+                and return_value.value is None
+            )
         self.return_type = _get_return_type(function)
         self.has_yield = bool(visitor.yields)
         self.raises = visitor.exceptions
