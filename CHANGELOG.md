@@ -3,6 +3,19 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.8.0]
+
+### Added
+
+- We now ignore return, pass, yield, and raise in abstract methods.
+  Thanks to @maltevesper!
+
+### Fixed
+
+- Resolved most of the mypy issues in the repository.  This is mostly a
+  code cleanliness issue.
+
+
 ## [1.7.0]
 
 ### Added
