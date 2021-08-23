@@ -60,9 +60,10 @@ class WalkPathTestCase(TestCase):
 class FindConfigFileInPathTestCase(TestCase):
     """Test that the config file is being found."""
 
+    @mock.patch('darglint.config.tomli')
     @mock.patch('darglint.config.configparser.ConfigParser')
     @mock.patch('darglint.config.os.listdir')
-    def test_filename_checked(self, mock_listdir, mock_ConfigParser):
+    def test_filename_checked(self, mock_listdir, mock_ConfigParser, mock_tomli):
         """Check that only the necessary filenames are identified.  # noqa """
         fake_files = [
             ''.join([choice(ascii_letters + '_-')
@@ -82,6 +83,12 @@ class FindConfigFileInPathTestCase(TestCase):
             return mock.MagicMock()
 
         config_parser.read = read_file
+        
+        def load_file(reader):
+            contents_checked.append('./' + reader.name)
+            return mock.MagicMock()
+
+        mock_tomli.load = load_file
 
         find_config_file_in_path('./')
 

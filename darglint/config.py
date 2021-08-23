@@ -21,6 +21,8 @@ from typing import (  # noqa
     Optional,
 )
 
+import tomli
+
 from .docstring.style import DocstringStyle
 from .strictness import Strictness
 
@@ -39,6 +41,7 @@ POSSIBLE_CONFIG_FILENAMES = (
     '.darglint',
     'setup.cfg',
     'tox.ini',
+    'pyproject.toml',
 )
 
 DEFAULT_DISABLED = {'DAR104'}
@@ -208,8 +211,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
         A Configuration object.
 
     """
-    config = configparser.ConfigParser()
-    config.read(filename)
+    darglint_config = None
     ignore = list()
     enable = list()
     message_template = None
@@ -220,46 +222,56 @@ def load_config_file(filename):  # type: (str) -> Configuration
     strictness = Strictness.FULL_DESCRIPTION
     indentation = 4
     log_level = LogLevel.CRITICAL
-    if 'darglint' in config.sections():
-        if 'ignore' in config['darglint']:
-            errors = config['darglint']['ignore']
+    if filename.lower().endswith('.toml'):
+        with open(filename, "rb") as bin_config_file:
+            config = tomli.load(bin_config_file)
+            if 'darglint' in config['tool']:
+                darglint_config = config['tool']['darglint']
+    else:
+        config = configparser.ConfigParser()
+        config.read(filename)
+        if 'darglint' in config.sections():
+            darglint_config = config['darglint']
+    if darglint_config is not None:
+        if 'ignore' in darglint_config:
+            errors = darglint_config['ignore']
             for error in errors.split(','):
                 ignore.append(error.strip())
-        if 'enable' in config['darglint']:
-            to_enable = config['darglint']['enable']
+        if 'enable' in darglint_config:
+            to_enable = darglint_config['enable']
             for error in to_enable.split(','):
                 enable.append(error.strip())
-        if 'message_template' in config['darglint']:
-            message_template = config['darglint']['message_template']
-        if 'ignore_regex' in config['darglint']:
-            ignore_regex = config['darglint']['ignore_regex']
-        if 'ignore_raise' in config['darglint']:
-            to_ignore_raise = config['darglint']['ignore_raise']
+        if 'message_template' in darglint_config:
+            message_template = darglint_config['message_template']
+        if 'ignore_regex' in darglint_config:
+            ignore_regex = darglint_config['ignore_regex']
+        if 'ignore_raise' in darglint_config:
+            to_ignore_raise = darglint_config['ignore_raise']
             for exception in to_ignore_raise.split(','):
                 ignore_raise.append(exception.strip())
-        if 'ignore_properties' in config['darglint']:
-            ignore_properties = bool(config['darglint']['ignore_properties'])
-        if 'docstring_style' in config['darglint']:
-            raw_style = config['darglint']['docstring_style']
+        if 'ignore_properties' in darglint_config:
+            ignore_properties = bool(darglint_config['ignore_properties'])
+        if 'docstring_style' in darglint_config:
+            raw_style = darglint_config['docstring_style']
             style = DocstringStyle.from_string(raw_style)
 
-        if 'strictness' in config['darglint']:
-            raw_strictness = config['darglint']['strictness']
+        if 'strictness' in darglint_config:
+            raw_strictness = darglint_config['strictness']
             strictness = Strictness.from_string(raw_strictness)
 
-        if 'indentation' in config['darglint']:
+        if 'indentation' in darglint_config:
             try:
-                indentation = int(config['darglint']['indentation'])
+                indentation = int(darglint_config['indentation'])
             except ValueError:
                 raise Exception(
                     'Unrecognized value for indentation.  Expected '
                     'a non-zero, positive integer, but received {}'.format(
-                        config['darglint']['indentation']
+                        darglint_config['indentation']
                     )
                 )
 
-        if 'log_level' in config['darglint']:
-            log_level = LogLevel.from_string(config['darglint']['log_level'])
+        if 'log_level' in darglint_config:
+            log_level = LogLevel.from_string(darglint_config['log_level'])
     return Configuration(
         ignore=ignore,
         message_template=message_template,
@@ -311,16 +323,27 @@ def find_config_file_in_path(path):  # type: (str) -> Optional[str]
         return None
     for filename in filenames:
         if filename in POSSIBLE_CONFIG_FILENAMES:
-            config = configparser.ConfigParser()
             fully_qualified_path = os.path.join(path, filename)
-            try:
-                config.read(fully_qualified_path)
-                if 'darglint' in config.sections():
-                    return fully_qualified_path
-            except configparser.ParsingError:
-                get_logger().error('Unable to parse file {}'.format(
-                    fully_qualified_path
-                ))
+            if filename.lower().endswith('.toml'):
+                try:
+                    with open(filename, "rb") as bin_config_file:
+                        config = tomli.load(bin_config_file)
+                    if 'darglint' in config['tool']:
+                        return fully_qualified_path
+                except tomli.TOMLDecodeError:
+                    get_logger().error('Unable to parse file {}'.format(
+                        fully_qualified_path
+                    ))
+            else:
+                config = configparser.ConfigParser()
+                try:
+                    config.read(fully_qualified_path)
+                    if 'darglint' in config.sections():
+                        return fully_qualified_path
+                except configparser.ParsingError:
+                    get_logger().error('Unable to parse file {}'.format(
+                        fully_qualified_path
+                    ))
     return None
 
 
