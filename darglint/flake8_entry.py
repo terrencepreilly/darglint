@@ -84,7 +84,16 @@ class DarglintChecker(object):
             help='Strictness level to use for Darglint',
         )
 
+        option_manager.add_option(
+            '--darglint-ignore',
+            default=defaults.ignore,
+            parse_from_config=True,
+            nargs='+',
+            help='Codes to ignore for Darglint',
+        )
+
     @classmethod
     def parse_options(cls, options):
         cls.config.style = DocstringStyle.from_string(options.docstring_style)
         cls.config.strictness = Strictness.from_string(options.strictness)
+        cls.config.ignore = [error.strip() for error in options.darglint_ignore]
