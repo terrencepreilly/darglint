@@ -85,7 +85,7 @@ class DarglintChecker(object):
         )
 
         option_manager.add_option(
-            '--darglint-disable',
+            '--disable-darglint',
             default=False,
             action='store_true',
             help='Disable Darglint with flake8',
@@ -95,5 +95,5 @@ class DarglintChecker(object):
     def parse_options(cls, options):
         cls.config.style = DocstringStyle.from_string(options.docstring_style)
         cls.config.strictness = Strictness.from_string(options.strictness)
-        if options.darglint_disable:
+        if options.disable_darglint:
             cls.config.ignore = ['*']
