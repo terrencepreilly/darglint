@@ -85,15 +85,16 @@ class DarglintChecker(object):
         )
 
         option_manager.add_option(
-            '--disable-darglint',
-            default=False,
-            action='store_true',
-            help='Disable Darglint with flake8',
+            '--darglint-ignore-regex',
+            type=str,
+            help=(
+                'Methods/function names matching this regex will be skipped '
+                'by Darglint during analysis.'
+            ),
         )
 
     @classmethod
     def parse_options(cls, options):
         cls.config.style = DocstringStyle.from_string(options.docstring_style)
         cls.config.strictness = Strictness.from_string(options.strictness)
-        if options.disable_darglint:
-            cls.config.ignore = ['*']
+        cls.config.ignore_regex = options.darglint_ignore_regex
