@@ -18,7 +18,7 @@ from .config import (
 from .strictness import Strictness
 
 
-__version__ = '1.7.0'
+__version__ = '1.8.0'
 
 
 class DarglintChecker(object):
@@ -84,7 +84,17 @@ class DarglintChecker(object):
             help='Strictness level to use for Darglint',
         )
 
+        option_manager.add_option(
+            '--darglint-ignore-regex',
+            type=str,
+            help=(
+                'Methods/function names matching this regex will be skipped '
+                'by Darglint during analysis.'
+            ),
+        )
+
     @classmethod
     def parse_options(cls, options):
         cls.config.style = DocstringStyle.from_string(options.docstring_style)
         cls.config.strictness = Strictness.from_string(options.strictness)
+        cls.config.ignore_regex = options.darglint_ignore_regex
