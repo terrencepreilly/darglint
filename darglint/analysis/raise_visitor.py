@@ -82,6 +82,15 @@ class Context(object):
                             )
                         )
                 return names
+            elif isinstance(curr, ast.Call):
+                logger.info(
+                    'Encountered exception classes generated from function '
+                    'call.  These can\'t always be known from static '
+                    'analysis, an in fact we won\'t even try: {}'.format(
+                        curr.__class__.__name__
+                    )
+                )
+                curr = None
             else:
                 logger.error(
                     'While getting ast.Attribute representation '
