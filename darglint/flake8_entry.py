@@ -18,7 +18,7 @@ from .config import (
 from .strictness import Strictness
 
 
-__version__ = '1.8.0'
+__version__ = '1.8.1'
 
 
 class DarglintChecker(object):

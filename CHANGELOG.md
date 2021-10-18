@@ -3,6 +3,21 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.8.1]
+
+### Added
+
+- There is now a Flake8 flag exposing the ignore regex option.  This will
+  allow you to ignore a given file/set of files based on a regex during
+  a CI pipeline, etc.  Thanks to @AdamGleave for the pull request!
+
+### Changed
+
+- Removed logging for some aspects of analysis, and an assertion from the
+  raise visitor.  They were a little overly-broad, and it was causing some
+  integration tests to fail when run against new repos.
+
+
 ## [1.8.0]
 
 ### Added
