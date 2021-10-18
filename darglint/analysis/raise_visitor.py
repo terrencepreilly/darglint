@@ -276,10 +276,6 @@ class RaiseVisitor(ast.NodeVisitor):
         # type: (ast.Raise) -> ast.AST
         bubbles = self.context.add_exception(node)
         if bubbles:
-            Assert(
-                len(self.contexts) > 1,
-                'We should only encounter bare raises in a handler.'
-            )
             if len(self.contexts) < 2:
                 return self.generic_visit(node)
             parent_context = self.contexts[-2]
