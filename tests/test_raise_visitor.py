@@ -1,6 +1,10 @@
 import ast
 from unittest import TestCase
 from darglint.analysis.raise_visitor import RaiseVisitor
+from unittest.mock import (
+    patch,
+    Mock,
+)
 
 
 class RaiseVisitorTestCase(TestCase):
@@ -20,8 +24,9 @@ class RaiseVisitorTestCase(TestCase):
         for exception in exceptions:
             self.assertTrue(
                 exception in visitor.exceptions,
-                'Expected to find {} in exceptions, but did not.'.format(
-                    exception
+                'Expected to find {} in exceptions {}, but did not.'.format(
+                    exception,
+                    repr(visitor.exceptions),
                 )
             )
 
@@ -267,3 +272,24 @@ class RaiseVisitorTestCase(TestCase):
             '        raise MyException()',
         ])
         self.assertFound(program, 'MyException')
+
+    @patch('darglint.analysis.raise_visitor.logger')
+    def test_visits_dynamic_exceptions_with_no_error_logs(self, mock_logger):
+        mock_logger.error = Mock()
+        program = '\n'.join([
+            'def g():',
+            '    try:',
+            '        f("a")',
+            '    except self.PropertyDynamicException:',
+            '        pass',
+            '    except MethodDynamicException().__class__:',
+            '        raise Exception("Reraise.")',
+        ])
+        self.assertFound(program, 'Exception')
+        self.assertFalse(
+            mock_logger.error.called,
+            'Unexpected error log.  Dynamic exception types from '
+            'members of a class or calls to a function shouldn\'t '
+            'result in error logs, but only info logs.  We should '
+            'effictively ignore them.'
+        )

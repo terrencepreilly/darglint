@@ -82,6 +82,15 @@ class Context(object):
                             )
                         )
                 return names
+            elif isinstance(curr, ast.Call):
+                logger.info(
+                    'Encountered exception classes generated from function '
+                    'call.  These can\'t always be known from static '
+                    'analysis, an in fact we won\'t even try: {}'.format(
+                        curr.__class__.__name__
+                    )
+                )
+                curr = None
             else:
                 logger.error(
                     'While getting ast.Attribute representation '
@@ -267,10 +276,6 @@ class RaiseVisitor(ast.NodeVisitor):
         # type: (ast.Raise) -> ast.AST
         bubbles = self.context.add_exception(node)
         if bubbles:
-            Assert(
-                len(self.contexts) > 1,
-                'We should only encounter bare raises in a handler.'
-            )
             if len(self.contexts) < 2:
                 return self.generic_visit(node)
             parent_context = self.contexts[-2]

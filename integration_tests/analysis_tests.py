@@ -59,7 +59,11 @@ class RaiseAnalysisTest(TestCase):
                     continue
                 functions = get_function_descriptions(tree)
                 for function in functions:
-                    visitor.visit(function.function)
+                    try:
+                        visitor.visit(function.function)
+                    except:
+                        print('Visitor error raised during {}'.format(module))
+                        raise
                     self.assertFalse(
                         mock_logger.error.called,
                         'Unexpected error log at {}'.format(
