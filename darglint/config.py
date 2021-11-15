@@ -21,7 +21,12 @@ from typing import (  # noqa
     Optional,
 )
 
-import tomli
+try:
+    import tomli
+except ImportError:
+    _has_tomli = False
+else:
+    _has_tomli = True
 
 from .docstring.style import DocstringStyle
 from .strictness import Strictness
@@ -205,6 +210,7 @@ def load_config_file(filename):  # type: (str) -> Configuration
         filename: A valid filename to read from.
 
     Raises:
+        ImportError: When trying to load a ".toml"-file without `tomli` installed.
         Exception: When the configuration style is not a valid choice.
 
     Returns:
@@ -223,6 +229,8 @@ def load_config_file(filename):  # type: (str) -> Configuration
     indentation = 4
     log_level = LogLevel.CRITICAL
     if filename.lower().endswith('.toml'):
+        if not _has_tomli:
+            raise ImportError("Missing optional dependency `tomli`. Install with `pip install darglint['toml']`.")
         with open(filename, "rb") as bin_config_file:
             config = tomli.load(bin_config_file)
             if 'darglint' in config['tool']:

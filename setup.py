@@ -18,7 +18,8 @@ def read_full_documentation(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-requirements = ['tomli']
+requirements = []
+extra_requirements = {"toml": "tomli"}
 
 
 class CleanCommand(Command):
@@ -72,6 +73,7 @@ setup(
     setup_requires=requirements,
     tests_require=['pytest', 'tox'] + requirements,
     python_requires='>=3.6',
+    extras_require=extra_requirements,
     classifiers=[
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Documentation',
