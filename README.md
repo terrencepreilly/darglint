@@ -350,7 +350,7 @@ argument as missing.  See Issue #90.)
 - *DAR105*: The docstring parameter type is malformed.
 - *DAR201*: The docstring is missing a return from definition.
 - *DAR202*: The docstring has a return not in definition.
-- *DAR203*: The docstring parameter type doesn't match function.
+- *DAR203*: The docstring return type doesn't match function.
 - *DAR301*: The docstring is missing a yield present in definition.
 - *DAR302*: The docstring has a yield not in definition.
 - *DAR401*: The docstring is missing an exception raised.

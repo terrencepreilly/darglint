@@ -432,7 +432,7 @@ class ReturnTypeMismatchError(DarglintError):
     """Describes when a docstring parameter type doesn't match function."""
 
     error_code = 'DAR203'
-    description = 'The docstring parameter type doesn\'t match function.'
+    description = 'The docstring return type doesn\'t match function.'
 
     def __init__(self, function, expected, actual, line_numbers=None):
         # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef], str, str, Tuple[int, int]) -> None
