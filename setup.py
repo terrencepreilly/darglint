@@ -4,6 +4,8 @@ import os
 from setuptools import setup, find_packages, Command
 import subprocess
 
+from build import build
+
 
 def read_full_documentation(fname):
     """Get long documentation from the README.rst.
@@ -46,7 +48,6 @@ class CleanCommand(Command):
 
 flake8_entry_point = 'flake8.extension'
 
-
 setup(
     name="darglint",
     version="1.8.1",
@@ -85,4 +86,5 @@ setup(
     cmdclass={
         'clean': CleanCommand,
     },
+    **build(),
 )
