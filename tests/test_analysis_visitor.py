@@ -1,14 +1,9 @@
 import ast
-from unittest import TestCase
-
-from .utils import reindent
 
 from darglint.analysis.analysis_visitor import AnalysisVisitor
+from darglint.utils import AnnotationsUtils, AstNodeUtils
 
-from darglint.utils import (
-    AnnotationsUtils,
-    AstNodeUtils,
-)
+from .utils import TestCase, reindent
 
 
 class AnalysisVisitorTests(TestCase):
@@ -32,7 +27,6 @@ class AnalysisVisitorTests(TestCase):
         visitor = AnalysisVisitor()
         visitor.visit(function)
         actual = getattr(visitor, attribute)
-
         if transform:
             if isinstance(actual, list):
                 actual = list(map(transform, actual))
@@ -59,6 +53,28 @@ class AnalysisVisitorTests(TestCase):
         '''
         self.assertFound(program, 'arguments', ['x'])
         self.assertFound(program, 'annotations', AnnotationsUtils.parse_types_and_dump(['int']), postprocess_actual=AstNodeUtils.dump)
+        self.assertFound(program, 'exceptions', {'Exception'})
+
+        # Just check that an assert is present by registering a number.
+        self.assertFound(program, 'asserts', [1], lambda x: 1)
+        self.assertFound(program, 'returns', [1], lambda x: 1)
+
+        self.assertFound(program, 'variables', ['ret'], lambda x: x.id)
+        self.assertFound(program, 'yields', [1], lambda x: 1)
+
+    def test_analyze_single_function_with_everything_with_complicated_types(self):
+        program = r'''
+            def f(x: {}) -> int:
+                """Halves the argument."""
+                assert x > 0
+                ret = x / 2
+                if ret < 0:
+                    raise Exception('It\'s less than 0!')
+                yield None
+                return ret
+        '''.format(self.complicated_type_hint)
+        self.assertFound(program, 'arguments', ['x'])
+        self.assertFound(program, 'annotations', AnnotationsUtils.parse_types_and_dump([self.complicated_type_hint]), postprocess_actual=AstNodeUtils.dump)
         self.assertFound(program, 'exceptions', {'Exception'})
 
         # Just check that an assert is present by registering a number.
