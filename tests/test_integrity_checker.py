@@ -1,41 +1,23 @@
 import ast
-from unittest import (
-    TestCase,
-    skip,
-)
+from unittest import skip
 
-from darglint.strictness import Strictness
 from darglint.docstring.style import DocstringStyle
-from darglint.integrity_checker import (
-    IntegrityChecker,
-)
-from darglint.function_description import (
-    get_function_descriptions,
-)
-from darglint.errors import (
-    EmptyDescriptionError,
-    EmptyTypeError,
-    ExcessParameterError,
-    ExcessRaiseError,
-    ExcessVariableError,
-    ExcessYieldError,
-    GenericSyntaxError,
-    IndentError,
-    MissingParameterError,
-    MissingRaiseError,
-    MissingReturnError,
-    MissingYieldError,
-    ParameterTypeMismatchError,
-    ParameterTypeMissingError,
-    ParameterMalformedError,
-    ReturnTypeMismatchError,
-)
-from darglint.utils import (
-    ConfigurationContext,
-    AnnotationsUtils,
-)
+from darglint.errors import (EmptyDescriptionError, EmptyTypeError,
+                             ExcessParameterError, ExcessRaiseError,
+                             ExcessVariableError, ExcessYieldError,
+                             GenericSyntaxError, IndentError,
+                             MissingParameterError, MissingRaiseError,
+                             MissingReturnError, MissingYieldError,
+                             ParameterMalformedError,
+                             ParameterTypeMismatchError,
+                             ParameterTypeMissingError,
+                             ReturnTypeMismatchError)
+from darglint.function_description import get_function_descriptions
+from darglint.integrity_checker import IntegrityChecker
+from darglint.strictness import Strictness
+from darglint.utils import AnnotationsUtils, ConfigurationContext
 
-from .utils import reindent
+from .utils import TestCase, reindent
 
 
 class IntegrityCheckerNumpyTestCase(TestCase):
@@ -877,6 +859,30 @@ class IntegrityCheckerTestCase(TestCase):
         error = checker.errors[0]
         self.assertTrue(isinstance(error, ParameterTypeMismatchError))
         self.assertEqual([error.expected], AnnotationsUtils.parse_types_and_dump(['int']))
+        self.assertEqual(error.actual, 'float')
+
+    def test_complicated_arg_types_checked_if_in_both_docstring_and_function(self):
+        program = '\n'.join([
+            'def square_root(x: {}) -> float:'.format(self.complicated_type_hint),
+            '    """Get the square root of the number.',
+            '',
+            '    Args:',
+            '        x (float): The number to root.',
+            '',
+            '    Returns:',
+            '        float: The square root',
+            '',
+            '    """',
+            '    return x ** 0.5',
+        ])
+        tree = ast.parse(program)
+        functions = get_function_descriptions(tree)
+        checker = IntegrityChecker()
+        checker.run_checks(functions[0])
+        self.assertEqual(len(checker.errors), 1)
+        error = checker.errors[0]
+        self.assertTrue(isinstance(error, ParameterTypeMismatchError))
+        self.assertEqual([error.expected], AnnotationsUtils.parse_types_and_dump([self.complicated_type_hint]))
         self.assertEqual(error.actual, 'float')
 
     def test_return_type_unchecked_if_not_defined_in_docstring(self):
