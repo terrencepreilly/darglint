@@ -5,10 +5,15 @@ from .utils import reindent
 
 from darglint.analysis.analysis_visitor import AnalysisVisitor
 
+from darglint.utils import (
+    AnnotationsUtils,
+    AstNodeUtils,
+)
+
 
 class AnalysisVisitorTests(TestCase):
 
-    def assertFound(self, program, attribute, args, transform=None):
+    def assertFound(self, program, attribute, args, transform=None, postprocess_actual=None):
         """Assert that the given attribute values were found.
 
         Args:
@@ -17,6 +22,7 @@ class AnalysisVisitorTests(TestCase):
             args: The value(s) which should exist in the attribute.
             transform: If supplied, a function which transforms
                 the attribute values prior to comparison.
+            postprocess_actual: postprocess actual value
 
         Returns:
             The visitor, in case you want to do more analysis.
@@ -26,6 +32,7 @@ class AnalysisVisitorTests(TestCase):
         visitor = AnalysisVisitor()
         visitor.visit(function)
         actual = getattr(visitor, attribute)
+
         if transform:
             if isinstance(actual, list):
                 actual = list(map(transform, actual))
@@ -34,7 +41,7 @@ class AnalysisVisitorTests(TestCase):
             else:
                 actual = transform(actual)
         self.assertEqual(
-            actual,
+            actual if postprocess_actual is None else postprocess_actual(actual),
             args,
         )
         return visitor
@@ -51,7 +58,7 @@ class AnalysisVisitorTests(TestCase):
                 return ret
         '''
         self.assertFound(program, 'arguments', ['x'])
-        self.assertFound(program, 'types', ['int'])
+        self.assertFound(program, 'annotations', AnnotationsUtils.parse_types_and_dump(['int']), postprocess_actual=AstNodeUtils.dump)
         self.assertFound(program, 'exceptions', {'Exception'})
 
         # Just check that an assert is present by registering a number.

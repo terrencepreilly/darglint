@@ -1,6 +1,7 @@
 import ast
 from unittest import TestCase
 from darglint.function_description import get_function_descriptions
+from darglint.utils import AnnotationsUtils
 from .utils import (
     require_python,
     reindent,
@@ -159,7 +160,7 @@ class GetFunctionsAndDocstrings(TestCase):
         ])
         tree = ast.parse(program)
         function = get_function_descriptions(tree)[0]
-        self.assertEqual(function.argument_types, ['int'])
+        AnnotationsUtils.assertEqual_annotations_and_types(function.argument_annotations, ['int'])
 
     def test_argument_types_are_non_if_not_specified(self):
         program = '\n'.join([
@@ -168,7 +169,7 @@ class GetFunctionsAndDocstrings(TestCase):
         ])
         tree = ast.parse(program)
         function = get_function_descriptions(tree)[0]
-        self.assertEqual(function.argument_types, [None])
+        AnnotationsUtils.assertEqual_annotations_and_types(function.argument_annotations, [None])
 
     def test_extracts_return_type(self):
         program = '\n'.join([
@@ -244,7 +245,7 @@ class GetFunctionsAndDocstrings(TestCase):
         tree = ast.parse(program)
         function = get_function_descriptions(tree)[0]
         self.assertEqual(function.argument_names, ['a', 'b', 'key'])
-        self.assertEqual(function.argument_types, [None, None, None])
+        AnnotationsUtils.assertEqual_annotations_and_types(function.argument_annotations, [None, None, None])
 
     def test_keyword_only_arguments_with_type_hints(self):
         program = '\n'.join([
@@ -254,7 +255,7 @@ class GetFunctionsAndDocstrings(TestCase):
         tree = ast.parse(program)
         function = get_function_descriptions(tree)[0]
         self.assertEqual(function.argument_names, ['a', 'key'])
-        self.assertEqual(function.argument_types, ['int', 'bool'])
+        AnnotationsUtils.assertEqual_annotations_and_types(function.argument_annotations, ['int', 'bool'])
 
     def test_has_assert(self):
         asserting_programs = [

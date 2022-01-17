@@ -32,6 +32,7 @@ from darglint.errors import (
 )
 from darglint.utils import (
     ConfigurationContext,
+    AnnotationsUtils,
 )
 
 from .utils import reindent
@@ -237,7 +238,7 @@ class IntegrityCheckerNumpyTestCase(TestCase):
             '        ----------',
             '        load_name : str',
             '            The load name (one of \'ambient\', \'hot_load\', \'open\' or \'short\').',
-            '        direc : Union[str, Path]',
+            '        direc : [str, Path]',
             '            The top-level calibration observation directory.',
             '        run_num : Optional[int]',
             '            The run number to use for the spectra.',
@@ -875,7 +876,7 @@ class IntegrityCheckerTestCase(TestCase):
         self.assertEqual(len(checker.errors), 1)
         error = checker.errors[0]
         self.assertTrue(isinstance(error, ParameterTypeMismatchError))
-        self.assertEqual(error.expected, 'int')
+        self.assertEqual([error.expected], AnnotationsUtils.parse_types_and_dump(['int']))
         self.assertEqual(error.actual, 'float')
 
     def test_return_type_unchecked_if_not_defined_in_docstring(self):

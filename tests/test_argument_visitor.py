@@ -10,6 +10,10 @@ from .utils import (
     require_python,
 )
 
+from darglint.utils import (
+    AnnotationsUtils,
+)
+
 
 class ArgumentVisitorTests(TestCase):
 
@@ -35,7 +39,7 @@ class ArgumentVisitorTests(TestCase):
         function = ast.parse(reindent(program)).body[0]
         visitor = ArgumentVisitor()
         visitor.visit(function)
-        self.assertEqual(sorted(visitor.types), sorted(types))
+        AnnotationsUtils.assertEqual_annotations_and_types(visitor.annotations, types)
         return visitor
 
     def test_no_arguments(self):
