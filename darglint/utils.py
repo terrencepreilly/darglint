@@ -4,6 +4,8 @@ This file should not be imported into Darglint,
 and should ideally be excluded from the sources.
 
 """
+import ast
+
 from ast import (
     AST,
 )
@@ -22,8 +24,98 @@ from .config import (
     Configuration,
 )
 
+class AnnotationsUtils(object):
+    @staticmethod
+    def parse_annotation_or_types(source):
+        # type: (Optional[str]) -> Optional[ast.Ast]
+        ast_module = AstNodeUtils.parse(source) if source is not None else None
+        if ast_module is None:
+            return None
+        return ast_module.body[0].value if len(ast_module.body)>0 else None
+
+    @staticmethod
+    def parse_types(types):
+        # type : (list[Optional[str]]) -> list[Optional[ast.AST]]
+        return [AnnotationsUtils.parse_annotation_or_types(i) for i in types]
+
+    @staticmethod
+    def parse_types_and_dump(types):
+        # type : (list[Optional[str]]) -> list[Optional[str]]
+        return AstNodeUtils.dump([AnnotationsUtils.parse_annotation_or_types(i) for i in types])
+
+    @staticmethod
+    def compare_annotations_and_types(annotations, types):
+        # type : (list[Optional[ast.AST]], list[Optional[str]]) -> bool
+        return AstNodeUtils.compare_two_nodes(annotations, AnnotationsUtils.parse_types(types))
+
+    @staticmethod
+    def assertEqual_annotations_and_types(annotations, types):
+        # type : (list[Optional[ast.AST]], list[Optional[str]]) -> bool
+        dumped_annotations = AstNodeUtils.dump(annotations)
+        parsed_types = AnnotationsUtils.parse_types_and_dump(types)
+        if dumped_annotations is not None:
+            dumped_annotations=dumped_annotations.sort(key=lambda x: x or '')
+
+        if parsed_types is not None:
+            parsed_types = parsed_types.sort(key=lambda x: x or '')        
+
+        if dumped_annotations != parsed_types:
+            raise AssertionError(f"{dumped_annotations} != {parsed_types} ({types})")
 
 class AstNodeUtils(object):
+    @staticmethod
+    def parse(source):
+        # type: (str) -> Optional[ast.Module]
+        """Parse the python source text.
+
+        Args:
+            source: python source text
+
+        Returns:
+            Return the ast module.
+        """
+        # type: (str) -> ast.Module
+
+        try:
+            return ast.parse(source)
+        except SyntaxError as e:
+            return None
+
+    @staticmethod
+    def dump(nodes, annotate_fields=False):
+        # type: (list[Optional[ast.AST]], bool) -> Union[str,list[str]]
+        """Return a formatted dump of the tree in node. 
+
+        Args:
+            nodes: The node list
+            annotate_fields: The returned string will show the names and the values for fields if is true.
+
+        Returns:
+            Return a formatted dump of the tree in node. 
+
+        """
+        return_list = True
+        if type(nodes) is not list:
+            return_list = False
+            nodes = [nodes]
+        res = [ast.dump(node, annotate_fields=annotate_fields) if node is not None else None for node in nodes]
+        return res if return_list else res[0]
+
+    @staticmethod
+    def compare_two_nodes(node1, node2):
+        # type: (list[Optional[ast.AST]], list[Optional[str]]) -> bool
+        """Return true if node1 is equal to node2.
+
+        Check if the dump of node1 is equal to the dump of node2.
+
+        Args:
+            node1: the first node
+            node2: the second node
+
+        Returns:
+            True if the node1 is equal to node2, false otherwise.
+        """
+        return AstNodeUtils.dump(node1) == AstNodeUtils.dump(node2)
 
     @staticmethod
     def iter_fields(node):
