@@ -54,10 +54,10 @@ class AnnotationsUtils(object):
         dumped_annotations = AstNodeUtils.dump(annotations)
         parsed_types = AnnotationsUtils.parse_types_and_dump(types)
         if dumped_annotations is not None:
-            dumped_annotations=dumped_annotations.sort(key=lambda x: x or '')
+            dumped_annotations.sort(key=lambda x: x or '')
 
         if parsed_types is not None:
-            parsed_types = parsed_types.sort(key=lambda x: x or '')        
+            parsed_types.sort(key=lambda x: x or '')        
 
         if dumped_annotations != parsed_types:
             raise AssertionError(f"{dumped_annotations} != {parsed_types} ({types})")
