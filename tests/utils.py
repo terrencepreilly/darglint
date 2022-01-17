@@ -1,26 +1,17 @@
 import random
 import string
 import sys
-from typing import (
-    Callable,
-    Iterable,
-    List,
-    Set,
-)
+from typing import Callable, Iterable, List, Set
+from unittest import TestCase as OriginalTestCase
 from unittest import skip
 
-from darglint.token import (
-    TokenType,
-    Token,
-)
-from darglint.config import (
-    get_config,
-    Configuration,
-)
-
+from darglint.config import Configuration, get_config
+from darglint.token import Token, TokenType
 
 REFACTORING_COMPLETE = True
 
+class TestCase(OriginalTestCase):
+    complicated_type_hint = "List[Tuple[int, Optional[float]]]"
 
 def require_python(major=3, minor=8):
     """Skip a unit test if the python version is too old.
