@@ -1,18 +1,19 @@
 import ast
-from unittest import TestCase
 
 from darglint.analysis.argument_visitor import (
     ArgumentVisitor,
 )
 
-from .utils import (
-    reindent,
-    require_python,
-)
-
 from darglint.utils import (
     AnnotationsUtils,
 )
+
+from .utils import (
+    reindent,
+    require_python,
+    TestCase,
+)
+
 
 
 class ArgumentVisitorTests(TestCase):
@@ -123,6 +124,13 @@ class ArgumentVisitorTests(TestCase):
         '''
         self.assertTypesFound(program, 'int')
 
+    def test_argument_complicated_type_inline(self):
+        program = '''
+            def f(x: {}) -> float:
+                return x * 0.5
+        '''.format(self.complicated_type_hint)
+        self.assertTypesFound(program, self.complicated_type_hint)
+
     def test_no_argument_type(self):
         program = '''
             def f(x) -> str:
@@ -136,3 +144,10 @@ class ArgumentVisitorTests(TestCase):
                 return y * x
         '''
         self.assertTypesFound(program, 'int', 'str')
+
+    def test_multiple_complicated_types_ordered(self):
+        program = '''
+            def f(x: {}, y: str) -> str:
+                return y * x
+        '''.format(self.complicated_type_hint)
+        self.assertTypesFound(program, self.complicated_type_hint, 'str')
