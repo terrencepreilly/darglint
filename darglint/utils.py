@@ -5,6 +5,7 @@ and should ideally be excluded from the sources.
 
 """
 import ast
+from typing import Union, Optional, cast
 
 from ast import (
     AST,
@@ -27,11 +28,11 @@ from .config import (
 class AnnotationsUtils(object):
     @staticmethod
     def parse_annotation_or_types(source):
-        # type: (Optional[str]) -> Optional[ast.Ast]
+        # type: (Optional[str]) -> Optional[ast.AST]
         ast_module = AstNodeUtils.parse(source) if source is not None else None
         if ast_module is None:
             return None
-        return ast_module.body[0].value if len(ast_module.body)>0 else None
+        return cast(Union[ast.Subscript, ast.Expr],ast_module.body[0]).value if len(ast_module.body)>0 else None
 
     @staticmethod
     def parse_types(types):
@@ -74,8 +75,6 @@ class AstNodeUtils(object):
         Returns:
             Return the ast module.
         """
-        # type: (str) -> ast.Module
-
         try:
             return ast.parse(source)
         except SyntaxError as e:
@@ -83,11 +82,11 @@ class AstNodeUtils(object):
 
     @staticmethod
     def dump(nodes, annotate_fields=False):
-        # type: (list[Optional[ast.AST]], bool) -> Union[str,list[str]]
+        # type: (Union[list[Optional[ast.AST]],Optional[ast.AST]], bool) -> Union[List[Optional[str]], str, None]
         """Return a formatted dump of the tree in node. 
 
         Args:
-            nodes: The node list
+            nodes: The node list or one node
             annotate_fields: The returned string will show the names and the values for fields if is true.
 
         Returns:
@@ -97,13 +96,13 @@ class AstNodeUtils(object):
         return_list = True
         if type(nodes) is not list:
             return_list = False
-            nodes = [nodes]
+            nodes = cast(List[Optional[AST]],[nodes])
         res = [ast.dump(node, annotate_fields=annotate_fields) if node is not None else None for node in nodes]
         return res if return_list else res[0]
 
     @staticmethod
     def compare_two_nodes(node1, node2):
-        # type: (list[Optional[ast.AST]], list[Optional[str]]) -> bool
+        # type: (list[Optional[ast.AST]], list[Optional[ast.AST]]) -> bool
         """Return true if node1 is equal to node2.
 
         Check if the dump of node1 is equal to the dump of node2.
