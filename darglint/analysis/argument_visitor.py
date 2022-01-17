@@ -17,14 +17,14 @@ class ArgumentVisitor(ast.NodeVisitor):
 
         # The arguments found in the function.
         self.arguments = list()  # type: List[str]
-        self.types = list()  # type: List[str]
+        self.annotations = list()  # type: List[ast.Ast]
 
     def add_arg_by_name(self, name, arg):
         self.arguments.append(name)
-        if arg.annotation is not None and hasattr(arg.annotation, 'id'):
-            self.types.append(arg.annotation.id)
+        if arg.annotation is not None:
+            self.annotations.append(arg.annotation)
         else:
-            self.types.append(None)
+            self.annotations.append(None)
 
     def visit_arguments(self, node):
         # type: (ast.arguments) -> ast.AST

@@ -147,11 +147,11 @@ class FunctionDescription(object):
             logger.debug(msg)
             return
         self.argument_names = visitor.arguments
-        self.argument_types = visitor.types
+        self.argument_annotations = visitor.annotations
         if function_type != FunctionType.FUNCTION and len(self.argument_names) > 0:
             if not _has_decorator(function, "staticmethod"):
                 self.argument_names.pop(0)
-                self.argument_types.pop(0)
+                self.argument_annotations.pop(0)
         self.has_return = bool(visitor.returns)
         self.has_empty_return = False
         if self.has_return:

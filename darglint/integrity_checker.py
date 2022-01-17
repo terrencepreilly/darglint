@@ -37,7 +37,10 @@ from .error_report import (
 )
 from .config import get_config
 from .strictness import Strictness
-
+from .utils import (
+    AstNodeUtils,
+    AnnotationsUtils,
+)
 
 SYNTAX_NOQA = re.compile(r'#\s*noqa:\sS001')
 EXPLICIT_GLOBAL_NOQA = re.compile(r'#\s*noqa:\s*\*')
@@ -150,16 +153,16 @@ class IntegrityChecker(object):
             else:
                 doc_arg_types.append(argument_types[name])
         noqa_lookup = docstring.get_noqas()
-        for name, expected, actual in zip(
+        for name, expected_annotation, actual_type in zip(
                 function.argument_names,
-                function.argument_types,
+                function.argument_annotations,
                 doc_arg_types,
         ):
-            if expected is None or actual is None:
+            if expected_annotation is None or actual_type is None:
                 continue
             noqa_exists = error_code in noqa_lookup
             name_has_noqa = noqa_exists and name in noqa_lookup[error_code]
-            if not (expected == actual or name_has_noqa):
+            if not (AnnotationsUtils.compare_annotations_and_types([expected_annotation], [actual_type]) or name_has_noqa):
                 default_line_numbers = docstring.get_line_numbers(
                     'arguments-section'
                 )
@@ -171,8 +174,8 @@ class IntegrityChecker(object):
                     ParameterTypeMismatchError(
                         function.function,
                         name=name,
-                        expected=expected,
-                        actual=actual,
+                        expected=AstNodeUtils.dump(expected_annotation),
+                        actual=actual_type,
                         line_numbers=line_numbers,
                     )
                 )
