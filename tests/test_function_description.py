@@ -1,11 +1,9 @@
 import ast
-from unittest import TestCase
+
 from darglint.function_description import get_function_descriptions
 from darglint.utils import AnnotationsUtils
-from .utils import (
-    require_python,
-    reindent,
-)
+
+from .utils import TestCase, reindent, require_python
 
 
 class GetFunctionsAndDocstrings(TestCase):
@@ -162,6 +160,15 @@ class GetFunctionsAndDocstrings(TestCase):
         function = get_function_descriptions(tree)[0]
         AnnotationsUtils.assertEqual_annotations_and_types(function.argument_annotations, ['int'])
 
+    def test_extracts_complicated_type_hints_for_arguments(self):
+        program = '\n'.join([
+            'def square_root(x: {}) -> float:'.format(self.complicated_type_hint),
+            '    return x ** 0.5',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        AnnotationsUtils.assertEqual_annotations_and_types(function.argument_annotations, [self.complicated_type_hint])
+
     def test_argument_types_are_non_if_not_specified(self):
         program = '\n'.join([
             'def square_root(x):',
@@ -179,6 +186,17 @@ class GetFunctionsAndDocstrings(TestCase):
         tree = ast.parse(program)
         function = get_function_descriptions(tree)[0]
         self.assertEqual(function.return_type, 'float')
+
+    def test_extracts_complicated_return_type(self):
+        program = '\n'.join([
+            'def square_root(x: int) -> {}:'.format(self.complicated_type_hint),
+            '    return x ** 0.5',
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        # TODO: change test with :
+        # AnnotationsUtils.assertEqual_annotations_and_types(function.return_type, [self.complicated_type_hint])
+        self.assertNotEqual(function.return_type, self.complicated_type_hint)
 
     def test_return_type_non_if_not_specified(self):
         program = '\n'.join([
@@ -256,6 +274,16 @@ class GetFunctionsAndDocstrings(TestCase):
         function = get_function_descriptions(tree)[0]
         self.assertEqual(function.argument_names, ['a', 'key'])
         AnnotationsUtils.assertEqual_annotations_and_types(function.argument_annotations, ['int', 'bool'])
+
+    def test_keyword_only_arguments_with_complicated_type_hints(self):
+        program = '\n'.join([
+            'def random_function(*, a: {}, key: bool=True):'.format(self.complicated_type_hint),
+            '   pass'
+        ])
+        tree = ast.parse(program)
+        function = get_function_descriptions(tree)[0]
+        self.assertEqual(function.argument_names, ['a', 'key'])
+        AnnotationsUtils.assertEqual_annotations_and_types(function.argument_annotations, [self.complicated_type_hint, 'bool'])
 
     def test_has_assert(self):
         asserting_programs = [
