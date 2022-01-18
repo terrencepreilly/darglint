@@ -226,7 +226,7 @@ class IntegrityCheckerNumpyTestCase(TestCase):
             '    def from_load_name(',
             '        cls,',
             '        load_name: str,',
-            '        direc: [str, Path],',
+            '        direc: Union[str, Path],',
             '        run_num: Optional[int] = None,',
             '        filetype: Optional[str] = None,',
             '        **kwargs',
