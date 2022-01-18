@@ -11,7 +11,8 @@ RUN python -m pip install -U pip && \
     python -m pip install pytest \
                           mypy \
                           flake8 \
-                          typing
+                          typing \ 
+                          astunparse
 
 
 WORKDIR /code/

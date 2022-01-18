@@ -18,7 +18,7 @@ def read_full_documentation(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-requirements = []
+requirements = ['astunparse>=1.6.3,<2.0.0']
 
 
 class CleanCommand(Command):
