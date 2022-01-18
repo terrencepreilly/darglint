@@ -25,7 +25,7 @@ from .config import get_logger
 from .analysis.analysis_helpers import (
     _has_decorator
 )
-
+from .utils import unparse
 
 logger = get_logger()
 
@@ -82,8 +82,8 @@ def _get_all_methods(tree):  # type: (ast.AST) -> Iterator[Union[ast.FunctionDef
 
 def _get_return_type(fn):
     # type: (Union[ast.FunctionDef, ast.AsyncFunctionDef]) -> Optional[str]
-    if fn.returns is not None and hasattr(fn.returns, 'id'):
-        return getattr(fn.returns, 'id')
+    if fn.returns is not None:
+        return unparse(fn.returns)
     return None
 
 

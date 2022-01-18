@@ -4,7 +4,7 @@ from typing import (
     Dict,
     List,
 )
-
+from ..utils import unparse
 
 class ArgumentVisitor(ast.NodeVisitor):
     """Reports which arguments a function contains."""
@@ -21,8 +21,8 @@ class ArgumentVisitor(ast.NodeVisitor):
 
     def add_arg_by_name(self, name, arg):
         self.arguments.append(name)
-        if arg.annotation is not None and hasattr(arg.annotation, 'id'):
-            self.types.append(arg.annotation.id)
+        if arg.annotation is not None:
+            self.types.append(unparse(arg.annotation))
         else:
             self.types.append(None)
 

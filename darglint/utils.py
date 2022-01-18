@@ -4,6 +4,8 @@ This file should not be imported into Darglint,
 and should ideally be excluded from the sources.
 
 """
+import sys
+import re
 from ast import (
     AST,
 )
@@ -16,12 +18,20 @@ from typing import (
     Optional,
     Set,
 )
+if sys.version_info >= (3, 9):
+    from ast import unparse as ast_unparse
+else:
+    from astunparse import unparse as ast_unparse
+
 from .node import CykNode
 from .config import (
     get_config,
     Configuration,
 )
 
+def unparse(node):
+    # type (ast.AST) -> str
+    return re.sub("[\n()]","",ast_unparse(node))
 
 class AstNodeUtils(object):
 
