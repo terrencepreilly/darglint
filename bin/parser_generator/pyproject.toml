@@ -11,12 +11,12 @@ bnf_to_cnf = { path = "../bnf_to_cnf" }
 darglint = "^1.5.8"
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.0.1"
-mypy = "^0.782"
-autopep8 = "^1.5.4"
-python-language-server = {extras = ["all"], version = "^0.35.0"}
+pytest = "^6.2.5"
+mypy = "^0.931"
+autopep8 = "^1.5.0"
+python-language-server = {extras = ["all"], version = "^0.36.2"}
 pyls-mypy = "^0.1.8"
-black = "^20.8b1"
+black = "^22.1"
 
 [tool.black]
 exclude = '(.env|.mypy_cache)'

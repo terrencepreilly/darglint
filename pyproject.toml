@@ -25,7 +25,7 @@ pytest = "^6.2.5"
 tox = "^3.14"
 flake8 = "^3.7"
 neovim = "^0.3.1"
-mypy = "^0.730.0"
+mypy = "^0.931"
 pydocstyle = "^4.0"
 
 [tool.poetry.scripts]
