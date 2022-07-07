@@ -36,5 +36,5 @@ darglint = "darglint.driver:main"
 "DAR" = "darglint.flake8_entry:DarglintChecker"
 
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
