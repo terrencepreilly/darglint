@@ -10,7 +10,13 @@ def _has_decorator(function, decorators):
         decorators = (decorators,)
 
     for decorator in function.decorator_list:
-        # Attributes (setters and getters) won't have an id.
-        if isinstance(decorator, ast.Name) and decorator.id in decorators:
+        decorator_name = None
+        if isinstance(decorator, ast.Name):
+            # Attributes (setters and getters) won't have an id.
+            decorator_name = decorator.id
+        elif isinstance(decorator, ast.Attribute):
+            decorator_name = decorator.attr
+
+        if decorator_name in decorators:
             return True
     return False

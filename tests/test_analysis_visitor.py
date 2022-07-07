@@ -74,9 +74,21 @@ class AnalysisVisitorTests(TestCase):
         '''
         self.assertFound(program, 'returns', [1], lambda x: 1)
 
-    def test_finds_abstract(self):
+    def test_finds_bare_abstractmethod(self):
         program = r'''
             @abstractmethod
+            def f(x):
+                """Halves the argument."""
+                pass
+        '''
+        function = ast.parse(reindent(program))
+        visitor = AnalysisVisitor()
+        visitor.visit(function)
+        self.assertTrue(visitor.is_abstract, 'Should have been marked abstract.')
+
+    def test_finds_attribute_abstractmethod(self):
+        program = r'''
+            @abc.abstractmethod
             def f(x):
                 """Halves the argument."""
                 pass

@@ -26,6 +26,8 @@ class PureAbstractVisitorTests(TestCase):
         self.assertFalse(visitor.is_abstract)
         visitor = self.analyzeAbstract("@abstractmethod\n" + reindent(program))
         self.assertEqual(visitor.is_abstract, result)
+        visitor = self.analyzeAbstract("@abc.abstractmethod\n" + reindent(program))
+        self.assertEqual(visitor.is_abstract, result)
 
     def check_abstract_toggle_doc(self, program, result=True, doc="None"):
         self.check_abstract_decoration(program.format(docstring=""), result)
