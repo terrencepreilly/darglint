@@ -155,7 +155,7 @@ class IntegrityChecker(object):
                 function.argument_types,
                 doc_arg_types,
         ):
-            if expected is None or actual is None:
+            if expected is None or actual is None or (type(actual) is str and len(actual) == 0):
                 continue
             noqa_exists = error_code in noqa_lookup
             name_has_noqa = noqa_exists and name in noqa_lookup[error_code]
