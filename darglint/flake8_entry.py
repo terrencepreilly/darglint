@@ -87,6 +87,7 @@ class DarglintChecker(object):
         option_manager.add_option(
             '--darglint-ignore-regex',
             type=str,
+            parse_from_config=True,
             help=(
                 'Methods/function names matching this regex will be skipped '
                 'by Darglint during analysis.'
