@@ -29,6 +29,19 @@ class ArgumentVisitor(ast.NodeVisitor):
     def visit_arguments(self, node):
         # type: (ast.arguments) -> ast.AST
         if hasattr(node, 'posonlyargs'):
+            annotatable_args = [*node.posonlyargs, *node.args]
+        else:
+            annotatable_args = node.args
+        # make args with default values optional
+        for index, default in enumerate(node.defaults):
+            if default is not None:
+                if hasattr(annotatable_args[-index - 1].annotation, 'id'):
+                    if not 'optional' in annotatable_args[-index - 1].annotation.id.lower():
+                        annotatable_args[
+                            -index - 1
+                        ].annotation.id = f'{annotatable_args[-index - 1].annotation.id}, optional'
+
+        if hasattr(node, 'posonlyargs'):
             for arg in node.posonlyargs:
                 self.add_arg_by_name(arg.arg, arg)
 
